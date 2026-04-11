@@ -12,7 +12,7 @@ h2                = "2.3.232"
 ktlint-gradle     = "12.1.2"
 jmh               = "1.37"
 jmh-plugin        = "0.7.3"
-shadow            = "8.3.6"
+shadow            = "8.3.10"
 
 [libraries]
 # Paper
