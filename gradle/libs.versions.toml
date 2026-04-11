@@ -43,5 +43,5 @@ jmh-generator     = { module = "org.openjdk.jmh:jmh-generator-annprocess", versi
 [plugins]
 kotlin-jvm        = { id = "org.jetbrains.kotlin.jvm",    version.ref = "kotlin" }
 ktlint            = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
-shadow            = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+shadow            = { id = "com.gradleup.shadow",             version.ref = "shadow" }
 jmh               = { id = "me.champeau.jmh",             version.ref = "jmh-plugin" }
