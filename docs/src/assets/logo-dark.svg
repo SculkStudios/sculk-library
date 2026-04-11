@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" fill="none">
+  <!-- Stylised S glyph -->
+  <path d="M6 8 C6 5 9 3 13 3 L22 3 C26 3 29 5 29 8 C29 11 26 13 22 13 L13 13 C9 13 6 15 6 18 C6 21 9 23 13 23 L24 23 C28 23 31 25 31 28"
+        stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- Wordmark -->
+  <text x="38" y="22" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#e8f4f8" letter-spacing="0.5">Sculk Studio</text>
+</svg>

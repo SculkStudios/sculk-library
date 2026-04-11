@@ -1,0 +1,40 @@
+---
+title: Sculk Studio
+description: The Kotlin-first Minecraft plugin framework.
+template: splash
+hero:
+  title: '<span style="color:#00e5ff">Sculk Studio</span>'
+  tagline: A production-grade, Kotlin-first framework for building Minecraft plugins — zero boilerplate, full control.
+  actions:
+    - text: Get Started
+      link: /getting-started/installation/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/SculkStudios/sculk-studio
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+  <Card title="Commands" icon="list-format">
+    DSL-first command system. Clean sender-type routing, typed arguments, and auto tab-completion.
+  </Card>
+  <Card title="GUIs" icon="laptop">
+    Chest inventory GUIs with per-player sessions, click routing, and pagination — no manual cleanup.
+  </Card>
+  <Card title="Config" icon="setting">
+    Typed YAML configs with hot reload, validation, and auto-generation of missing keys.
+  </Card>
+  <Card title="Data" icon="open-book">
+    SQLite and MySQL via a repository pattern. Async by default, cached via Caffeine.
+  </Card>
+  <Card title="Effects" icon="star">
+    Particle + sound builders, animation timelines, and tick-accurate sequences.
+  </Card>
+  <Card title="Java-friendly" icon="puzzle">
+    Every Kotlin DSL has a paired fluent Java builder — first-class support for both.
+  </Card>
+</CardGrid>

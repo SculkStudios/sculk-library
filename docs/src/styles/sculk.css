@@ -1,0 +1,67 @@
+/* Sculk Studio — design system overrides for Starlight
+ * Background: #050A0F  Primary surface: #0B1E2D  Accent: #00E5FF
+ */
+
+:root {
+  --sl-color-accent:          #00e5ff;
+  --sl-color-accent-low:      #003d47;
+  --sl-color-accent-high:     #66f2ff;
+
+  --sl-color-bg:              #050a0f;
+  --sl-color-bg-nav:          #0b1e2d;
+  --sl-color-bg-sidebar:      #0b1e2d;
+  --sl-color-hairline:        #1a3a4d;
+  --sl-color-hairline-light:  #0f2a3a;
+  --sl-color-hairline-shade:  #0b1e2d;
+
+  --sl-color-white:           #e8f4f8;
+  --sl-color-gray-1:          #b0ccd8;
+  --sl-color-gray-2:          #7aa3b5;
+  --sl-color-gray-3:          #4d7a90;
+  --sl-color-gray-4:          #2a5268;
+  --sl-color-gray-5:          #163344;
+  --sl-color-gray-6:          #0b1e2d;
+  --sl-color-black:           #050a0f;
+
+  /* Subtle glow on the accent */
+  --sl-shadow-sm: 0 0 8px 0 rgba(0, 229, 255, 0.08);
+  --sl-shadow-md: 0 0 16px 0 rgba(0, 229, 255, 0.12);
+}
+
+/* Accent glow on links and interactive elements */
+a:hover,
+a:focus-visible {
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+}
+
+/* Sidebar active item glow */
+[aria-current='page'],
+[aria-current='page']:hover {
+  color: var(--sl-color-accent) !important;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+}
+
+/* Code blocks — slightly lighter surface */
+:not(pre) > code {
+  background: #0f2535;
+  border: 1px solid #1a3a4d;
+  color: #66f2ff;
+}
+
+pre {
+  background: #0a1a28 !important;
+  border: 1px solid #1a3a4d;
+  box-shadow: 0 0 20px 0 rgba(0, 229, 255, 0.06);
+}
+
+/* Hero accent line */
+.hero > .sl-flex {
+  border-left: 3px solid var(--sl-color-accent);
+  padding-left: 1.25rem;
+}
+
+/* Card glow on hover */
+.card:hover {
+  border-color: rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 20px 0 rgba(0, 229, 255, 0.08);
+}
