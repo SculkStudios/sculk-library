@@ -17,7 +17,7 @@ public class GuiItem
     constructor(
         public val slot: Int,
         public val stack: ItemStack,
-        internal val clickHandler: (GuiContext.() -> Unit)?,
+        @SculkInternal public val clickHandler: (GuiContext.() -> Unit)?,
     )
 
 /**
