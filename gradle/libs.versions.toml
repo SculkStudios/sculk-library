@@ -1,0 +1,47 @@
+[versions]
+kotlin            = "2.1.21"
+paper             = "1.21.11-R0.1-SNAPSHOT"
+adventure         = "4.17.0"
+minimessage       = "4.17.0"
+hikari            = "6.2.1"
+caffeine          = "3.2.0"
+snakeyaml         = "2.3"
+junit             = "5.11.4"
+mockito-kotlin    = "5.4.0"
+h2                = "2.3.232"
+ktlint-gradle     = "12.1.2"
+jmh               = "1.37"
+jmh-plugin        = "0.7.3"
+shadow            = "8.3.6"
+
+[libraries]
+# Paper
+paper-api         = { module = "io.papermc.paper:paper-api",            version.ref = "paper" }
+
+# Adventure (bundled in Paper — compileOnly for standalone modules)
+adventure-api     = { module = "net.kyori:adventure-api",               version.ref = "adventure" }
+adventure-mini    = { module = "net.kyori:adventure-text-minimessage",  version.ref = "minimessage" }
+
+# Database
+hikari            = { module = "com.zaxxer:HikariCP",                   version.ref = "hikari" }
+h2                = { module = "com.h2database:h2",                     version.ref = "h2" }
+
+# Cache
+caffeine          = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+
+# Config
+snakeyaml         = { module = "org.yaml:snakeyaml",                   version.ref = "snakeyaml" }
+
+# Test
+junit-jupiter     = { module = "org.junit.jupiter:junit-jupiter",       version.ref = "junit" }
+mockito-kotlin    = { module = "org.mockito.kotlin:mockito-kotlin",     version.ref = "mockito-kotlin" }
+
+# Benchmarks
+jmh-core          = { module = "org.openjdk.jmh:jmh-core",             version.ref = "jmh" }
+jmh-generator     = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
+
+[plugins]
+kotlin-jvm        = { id = "org.jetbrains.kotlin.jvm",    version.ref = "kotlin" }
+ktlint            = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
+shadow            = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+jmh               = { id = "me.champeau.jmh",             version.ref = "jmh-plugin" }

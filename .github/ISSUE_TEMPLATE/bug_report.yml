@@ -1,0 +1,64 @@
+name: Bug Report
+description: Report a bug in Sculk Studio
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill this out as completely as possible.
+
+  - type: input
+    id: version
+    attributes:
+      label: Sculk Studio Version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: paper-version
+    attributes:
+      label: Paper Version
+      placeholder: "Paper 1.21.11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Register a command with...
+        2. Execute /...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: stacktrace
+    attributes:
+      label: Stack Trace
+      description: If applicable, paste the full stack trace here.
+      render: text
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Minimal Reproduction Code
+      description: The smallest piece of code that reproduces the bug.
+      render: kotlin
