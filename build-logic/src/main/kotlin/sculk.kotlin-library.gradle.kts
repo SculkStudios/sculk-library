@@ -19,6 +19,11 @@ tasks.withType<Test> {
     jvmArgs("-XX:+EnableDynamicAgentLoading")
 }
 
+// Gradle 9 requires the JUnit Platform launcher on the test runtime classpath explicitly.
+dependencies {
+    "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+}
+
 ktlint {
     version = "1.5.0"
     android = false
