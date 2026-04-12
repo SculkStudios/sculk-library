@@ -229,6 +229,16 @@ player.reply(display)
 // recover — provide a fallback result on failure
 val safe: SculkResult<PlayerData> = repo.find(player.uniqueId)
     .recover { _, _ -> PlayerData(player.uniqueId) }
+
+// flatMap — chain an operation that itself returns SculkResult
+// failures short-circuit: if find fails, the flatMap block never runs
+repo.find(player.uniqueId)
+    .flatMap { data ->
+        if (data != null) SculkResult.success(data)
+        else SculkResult.failure("player not found")
+    }
+    .onSuccess { data -> player.sendMessage("<green>Welcome back, ${data.name}!") }
+    .onFailure { msg, _ -> player.sendMessage("<red>$msg") }
 ```
 </TabItem>
 <TabItem label="Java">

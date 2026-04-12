@@ -79,7 +79,7 @@ fun greetCommand() = command("greet") {
 ```java
 public class GreetCommand {
     public static CommandBuilder build() {
-        return JavaCommand.builder("greet")
+        return JavaCommandBuilder.create("greet")
             .permission("myplugin.greet")
             .string("message", true) // optional = true
             .player(ctx -> {

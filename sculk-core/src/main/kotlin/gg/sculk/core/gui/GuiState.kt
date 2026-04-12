@@ -27,6 +27,16 @@ public class GuiState {
     /** Retrieves the value for [key], or null if not present. */
     public operator fun get(key: String): Any? = backing[key]
 
+    /**
+     * Retrieves the value for [key] cast to [T], or null if not present or the wrong type.
+     *
+     * ```kotlin
+     * val category: String? = session.state.get<String>("category")
+     * ```
+     */
+    @JvmName("getTyped")
+    public inline fun <reified T> get(key: String): T? = this[key] as? T
+
     /** Stores [value] under [key]. */
     public operator fun set(
         key: String,

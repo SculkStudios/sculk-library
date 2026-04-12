@@ -46,7 +46,7 @@ fun homeCommand() = command("home") {
 ```java
 public class HomeCommand {
     public static CommandBuilder build() {
-        return JavaCommand.builder("home")
+        return JavaCommandBuilder.create("home")
             .description("Manage your homes.")
             .permission("homes.use")
             .sub("set", sub -> sub
@@ -136,7 +136,7 @@ public class WorldParser implements ArgumentParser<World> {
     }
 }
 
-JavaCommand.builder("spawn")
+JavaCommandBuilder.create("spawn")
     .argument("world", WorldParser.INSTANCE)
     .player(ctx -> {
         World world = ctx.argument("world");

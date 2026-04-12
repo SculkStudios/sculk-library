@@ -145,9 +145,9 @@ val session = filterMenu.openFor(player)
 session.state["category"] = "weapons"
 session.setEntries(getItemsForCategory("weapons"))
 
-// Inside an onClick handler — read and update state
+// Inside an onClick handler — typed read avoids unsafe casts
 onClick {
-    val category = session.state["category"] as? String ?: "all"
+    val category = session.state.get<String>("category") ?: "all"
     session.state["category"] = "armour"
     session.setEntries(getItemsForCategory("armour"))
     session.refresh(4)   // re-render the category indicator slot
@@ -162,6 +162,8 @@ session.setEntries(getItemsForCategory("weapons"));
 ```
 </TabItem>
 </Tabs>
+
+Use `session.state.get<T>("key")` for a safe typed read that returns `null` rather than throwing on a type mismatch. The untyped `session.state["key"]` returns `Any?` and requires a manual cast.
 
 State is tied to the `GuiSession` — it is cleared automatically when the player closes the inventory or the session ends. Use `open(otherGui)` to switch menus; the session (and its state) persists across the switch.
 

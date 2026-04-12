@@ -76,7 +76,13 @@ player {
 </TabItem>
 </Tabs>
 
-Entries are distributed across the defined slots automatically. Navigating with `previousPage()` / `nextPage()` re-renders the current page in-place with no inventory flicker.
+Entries are distributed across the defined slots automatically. Navigating with `previousPage()` / `nextPage()` re-renders the current page in-place with no inventory flicker. Use `session.setPage(n)` to jump directly to a specific page (0-indexed, clamped to the valid range):
+
+```kotlin
+onClick {
+    session.setPage(0)  // jump to first page
+}
+```
 
 ## Dynamic refresh
 

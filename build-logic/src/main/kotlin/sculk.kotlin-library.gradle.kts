@@ -35,7 +35,7 @@ publishing {
             from(components["java"])
 
             pom {
-                url = "https://github.com/SculkStudios/sculk-studio"
+                url = "https://github.com/SculkStudios/sculk-library"
                 licenses {
                     license {
                         name = "MIT License"
@@ -50,9 +50,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "scm:git:git://github.com/SculkStudios/sculk-studio.git"
-                    developerConnection = "scm:git:ssh://github.com/SculkStudios/sculk-studio.git"
-                    url = "https://github.com/SculkStudios/sculk-studio"
+                    connection = "scm:git:git://github.com/SculkStudios/sculk-library.git"
+                    developerConnection = "scm:git:ssh://github.com/SculkStudios/sculk-library.git"
+                    url = "https://github.com/SculkStudios/sculk-library"
                 }
             }
         }
