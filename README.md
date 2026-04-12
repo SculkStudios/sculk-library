@@ -10,13 +10,13 @@ Sculk Studio powers all internal [Sculk Studios](https://sculk.gg) plugins. Clea
 
 ## Features
 
-- **Command System** — Subcommand tree, auto tab-complete, auto help generation
-- **GUI System** — Chest & anvil GUIs, pagination, state-based updates
-- **Typed Config** — Data class configs, hot reload, MiniMessage messages
+- **Command System** — Subcommand tree, typed arguments, auto tab-complete, auto help
+- **GUI System** — Chest GUIs, per-player sessions, pagination, automatic cleanup
+- **Typed Config** — Data class configs, hot reload, validation, MiniMessage messages
 - **Series** — Registry-based cross-version material, sound & particle mapping
-- **Effects** — Particle builders, sound builders, animation timelines
-- **Data** — Async SQLite/MySQL abstraction with Caffeine caching
-- **Platform** — One-line Paper bootstrap with full lifecycle management
+- **Effects** — Particle builders, sound builders, animation timelines & sequences
+- **Data** — Async SQLite/MySQL via repository pattern + Caffeine cache layer
+- **Platform** — Single-line Paper bootstrap with full lifecycle management
 
 ## Quick Start
 
@@ -25,10 +25,24 @@ Sculk Studio powers all internal [Sculk Studios](https://sculk.gg) plugins. Clea
 ```kotlin
 repositories {
     maven("https://jitpack.io")
+    maven("https://repo.papermc.io/repository/maven-public/")
 }
 
 dependencies {
-    compileOnly("com.github.SculkStudios:sculk-platform:1.0.0")
+    implementation("com.github.SculkStudios:sculk-studio:sculk-platform:1.0.0")
+}
+```
+
+Shadow (shade) Sculk Studio into your plugin jar:
+
+```kotlin
+plugins {
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+}
+
+tasks.shadowJar {
+    archiveClassifier = ""
+    relocate("gg.sculk", "your.plugin.libs.sculk")
 }
 ```
 
@@ -40,19 +54,20 @@ class MyPlugin : JavaPlugin() {
 
     override fun onEnable() {
         sculk = SculkPlatform.create(this) {
-            commands()
             gui()
             config()
         }
 
-        command("hello") {
-            player {
-                reply("<gradient:aqua:blue>Hello from Sculk Studio!")
+        sculk.commands.register(
+            command("hello") {
+                player {
+                    reply("<gradient:aqua:blue>Hello from Sculk Studio!")
+                }
             }
-        }
+        )
     }
 
-    override fun onDisable() = sculk.close()
+    override fun onDisable(): Unit = sculk.close()
 }
 ```
 
@@ -64,11 +79,13 @@ public class MyPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        sculk = SculkPlatform.create(this, cfg -> cfg.commands().gui().config());
+        sculk = JavaSculkPlatform.create(this, cfg -> cfg.gui().config());
 
-        Command.builder("hello")
-            .player(ctx -> ctx.reply("<gradient:aqua:blue>Hello from Sculk Studio!"))
-            .register(this);
+        sculk.getCommands().register(
+            JavaCommand.builder("hello")
+                .player(ctx -> ctx.reply("<gradient:aqua:blue>Hello from Sculk Studio!"))
+                .build()
+        );
     }
 
     @Override
@@ -82,16 +99,16 @@ public class MyPlugin extends JavaPlugin {
 
 | Module | Description |
 |---|---|
-| `sculk-core` | Commands, GUI, Adventure wrapper, scheduler |
-| `sculk-config` | Typed configs, hot reload, message system |
+| `sculk-core` | Commands, GUI, Adventure wrapper, scheduler contracts |
+| `sculk-config` | Typed configs, hot reload, validation, message system |
 | `sculk-series` | Cross-version registry mapping |
 | `sculk-effects` | Particle & sound builders, animation timelines |
-| `sculk-data` | Async database abstraction + cache |
-| `sculk-platform` | Paper integration (use this one) |
+| `sculk-data` | Repository pattern, SQLite/MySQL, Caffeine cache |
+| `sculk-platform` | Paper integration — use this one |
 
 ## Documentation
 
-Full docs at [sculk.gg/docs](https://sculk.gg/docs) — every feature includes Kotlin and Java examples.
+Full docs at [docs.sculk.gg](https://docs.sculk.gg) — every feature includes Kotlin and Java examples.
 
 ## Requirements
 
