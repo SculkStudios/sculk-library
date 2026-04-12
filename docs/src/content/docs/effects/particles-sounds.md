@@ -25,7 +25,7 @@ particle(Particle.FLAME) {
 </TabItem>
 <TabItem label="Java">
 ```java
-ParticleBuilder.of(Particle.FLAME)
+JavaParticleBuilder.of(Particle.FLAME)
     .location(player.getLocation().add(0, 1, 0))
     .count(20)
     .offset(0.5, 0.5, 0.5)
@@ -62,7 +62,7 @@ particle(Particle.FIREWORK) {
 </TabItem>
 <TabItem label="Java">
 ```java
-ParticleBuilder.of(Particle.FIREWORK)
+JavaParticleBuilder.of(Particle.FIREWORK)
     .location(player.getLocation())
     .count(0)
     .offset(0.0, 1.0, 0.0)
@@ -89,7 +89,7 @@ particle(Particle.HEART) {
 </TabItem>
 <TabItem label="Java">
 ```java
-ParticleBuilder.of(Particle.HEART)
+JavaParticleBuilder.of(Particle.HEART)
     .location(player.getLocation().add(0, 2, 0))
     .count(5)
     .receivers(player)
@@ -116,7 +116,7 @@ sound(Sound.ENTITY_PLAYER_LEVELUP) {
 </TabItem>
 <TabItem label="Java">
 ```java
-SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP)
+JavaSoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP)
     .volume(1.0f)
     .pitch(1.2f)
     .playTo(player);
@@ -147,7 +147,7 @@ sound(Sound.BLOCK_ANVIL_LAND) {
 </TabItem>
 <TabItem label="Java">
 ```java
-SoundBuilder.of(Sound.BLOCK_ANVIL_LAND)
+JavaSoundBuilder.of(Sound.BLOCK_ANVIL_LAND)
     .volume(0.8f)
     .pitch(0.9f)
     .playAt(player.getLocation());
@@ -170,7 +170,7 @@ sound("myplugin:ui.click") {
 </TabItem>
 <TabItem label="Java">
 ```java
-SoundBuilder.ofKey("myplugin:ui.click")
+JavaSoundBuilder.ofKey("myplugin:ui.click")
     .volume(1.0f)
     .playTo(player);
 ```
@@ -204,13 +204,13 @@ fun onLevelUp(player: Player) {
 <TabItem label="Java">
 ```java
 void onLevelUp(Player player) {
-    ParticleBuilder.of(Particle.END_ROD)
+    JavaParticleBuilder.of(Particle.END_ROD)
         .location(player.getLocation().add(0, 1, 0))
         .count(40)
         .offset(0.4, 0.6, 0.4)
         .spawn();
 
-    SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP)
+    JavaSoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP)
         .pitch(1.3f)
         .playTo(player);
 }
@@ -239,7 +239,7 @@ particle(p) {
 ```java
 Particle p = SculkSeries.particle(config.getParticleType());
 if (p == null) p = Particle.FLAME;
-ParticleBuilder.of(p).location(player.getLocation()).count(10).spawn();
+JavaParticleBuilder.of(p).location(player.getLocation()).count(10).spawn();
 ```
 </TabItem>
 </Tabs>

@@ -8,19 +8,22 @@ import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 import java.io.StringWriter
+import java.util.UUID
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
+import kotlin.reflect.KType
 import kotlin.reflect.full.primaryConstructor
 
 /**
  * Internal YAML mapper: reads/writes data class instances from/to YAML files.
  *
- * Supports: String, Int, Long, Double, Float, Boolean, and nested data classes.
+ * Supports: String, Int, Long, Double, Float, Boolean, List<T>, Map<String, V>,
+ * Enum, UUID, and nested data classes.
  * Keys are kebab-case in YAML, camelCase in Kotlin.
  */
 @SculkInternal
 public object YamlMapper {
-    private val yaml: Yaml by lazy {
+    internal val yaml: Yaml by lazy {
         val opts =
             DumperOptions().apply {
                 defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
@@ -88,6 +91,36 @@ public object YamlMapper {
         return violations
     }
 
+    /**
+     * Returns the `configVersion` default value for [klass], or null if the class
+     * does not declare a `configVersion` parameter.
+     */
+    internal fun <T : Any> defaultConfigVersion(klass: KClass<T>): Int? {
+        val constructor = klass.primaryConstructor ?: return null
+        if (constructor.parameters.none { it.name == "configVersion" }) return null
+        return try {
+            val instance = createDefault(klass)
+            @Suppress("UNCHECKED_CAST")
+            klass.members.firstOrNull { it.name == "configVersion" }?.call(instance) as? Int
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Reads the `config-version` value from [file]'s YAML content, or null if absent or unreadable.
+     */
+    internal fun fileConfigVersion(file: File): Int? {
+        if (!file.exists() || file.length() == 0L) return null
+        return try {
+            @Suppress("UNCHECKED_CAST")
+            val raw = yaml.load<Any>(file.readText()) as? Map<String, Any?> ?: return null
+            (raw["config-version"] as? Number)?.toInt()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     // ---------------------------------------------------------------------------
     // Internals
     // ---------------------------------------------------------------------------
@@ -105,7 +138,7 @@ public object YamlMapper {
             val key = camelToKebab(param.name!!)
             val raw = map[key]
             if (raw != null) {
-                args[param] = coerce(raw, param)
+                args[param] = coerce(raw, param.type)
             }
             // Missing keys keep the constructor default — Kotlin handles this automatically.
         }
@@ -114,18 +147,47 @@ public object YamlMapper {
 
     @Suppress("UNCHECKED_CAST")
     private fun coerce(
-        value: Any,
-        param: KParameter,
+        value: Any?,
+        type: KType,
     ): Any? {
-        val type = param.type.classifier as? KClass<*> ?: return value
-        return when (type) {
+        if (value == null) return null
+
+        // List<T>
+        if (type.classifier == List::class) {
+            val elementType = type.arguments.firstOrNull()?.type ?: return value
+            return (value as? List<*>)?.map { coerce(it, elementType) } ?: emptyList<Any?>()
+        }
+
+        // Map<String, V>
+        if (type.classifier == Map::class) {
+            val valueType = type.arguments.getOrNull(1)?.type ?: return value
+            return (value as? Map<*, *>)?.mapValues { (_, v) -> coerce(v, valueType) } ?: emptyMap<String, Any?>()
+        }
+
+        val klass = type.classifier as? KClass<*> ?: return value
+
+        // UUID
+        if (klass == UUID::class) {
+            return runCatching { UUID.fromString(value.toString()) }.getOrNull() ?: value
+        }
+
+        // Enum
+        if (klass.java.isEnum) {
+            @Suppress("UNCHECKED_CAST")
+            val enumClass = klass.java as Class<out Enum<*>>
+            return enumClass.enumConstants
+                .firstOrNull { it.name.equals(value.toString(), ignoreCase = true) }
+                ?: value
+        }
+
+        return when (klass) {
             Int::class -> (value as? Number)?.toInt() ?: value
             Long::class -> (value as? Number)?.toLong() ?: value
             Double::class -> (value as? Number)?.toDouble() ?: value
             Float::class -> (value as? Number)?.toFloat() ?: value
             Boolean::class -> value
             String::class -> value.toString()
-            else -> if (value is Map<*, *>) fromMap(value as Map<String, Any?>, type) else value
+            else -> if (value is Map<*, *>) fromMap(value as Map<String, Any?>, klass) else value
         }
     }
 
@@ -135,11 +197,23 @@ public object YamlMapper {
         for (param in klass.primaryConstructor?.parameters ?: emptyList()) {
             val member = klass.members.firstOrNull { it.name == param.name } ?: continue
             val value = member.call(instance)
-            val key = camelToKebab(param.name!!)
-            map[key] = if (value != null && value::class.isData) toMap(value) else value
+            map[camelToKebab(param.name!!)] = toYamlValue(value)
         }
         return map
     }
+
+    private fun toYamlValue(value: Any?): Any? =
+        when (value) {
+            null -> null
+            is List<*> -> value.map { toYamlValue(it) }
+            is Map<*, *> ->
+                value
+                    .mapKeys { it.key.toString() }
+                    .mapValues { (_, v) -> toYamlValue(v) }
+            is Enum<*> -> value.name
+            is UUID -> value.toString()
+            else -> if (value::class.isData) toMap(value) else value
+        }
 
     private fun <T : Any> createDefault(klass: KClass<T>): T {
         val constructor = requireNotNull(klass.primaryConstructor)

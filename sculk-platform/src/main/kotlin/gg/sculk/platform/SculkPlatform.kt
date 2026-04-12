@@ -144,7 +144,6 @@ public class SculkPlatformBuilder(
         if (guiEnabled) {
             extraHandles +=
                 events.listen<InventoryClickEvent> { event ->
-                    val inv = event.clickedInventory ?: return@listen
                     val session = GuiRegistry.sessionForInventory(event.view.topInventory) ?: return@listen
                     val player = event.whoClicked as? Player ?: return@listen
                     event.isCancelled = true

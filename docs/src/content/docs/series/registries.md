@@ -177,26 +177,22 @@ If you need to look up a type not covered by the built-in registries, you can ex
 <Tabs>
 <TabItem label="Kotlin">
 ```kotlin
-// Register a custom mapping
-SculkSeries.register<MyType>(
-    SculkRegistry("my_type") { key ->
-        MyType.values().firstOrNull { it.key.equals(key, ignoreCase = true) }
-    }
-)
+// Register a custom resolver
+SculkSeries.register<MyType> { key ->
+    MyType.values().firstOrNull { it.name.equals(key, ignoreCase = true) }
+}
 
-// Use it
+// Look up a value
 val value = SculkSeries.lookup<MyType>("my_key")
 ```
 </TabItem>
 <TabItem label="Java">
 ```java
-SculkSeries.register(MyType.class,
-    new SculkRegistry<>("my_type", key ->
-        Arrays.stream(MyType.values())
-            .filter(t -> t.getKey().equalsIgnoreCase(key))
-            .findFirst()
-            .orElse(null)
-    )
+SculkSeries.register(MyType.class, key ->
+    Arrays.stream(MyType.values())
+        .filter(t -> t.name().equalsIgnoreCase(key))
+        .findFirst()
+        .orElse(null)
 );
 
 MyType value = SculkSeries.lookup(MyType.class, "my_key");

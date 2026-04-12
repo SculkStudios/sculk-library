@@ -57,17 +57,17 @@ Location origin = player.getLocation().clone();
 
 SculkHandle handle = JavaTimeline.builder()
     .at(0, () -> {
-        ParticleBuilder.of(Particle.SMOKE_NORMAL)
+        JavaParticleBuilder.of(Particle.SMOKE_NORMAL)
             .location(origin).count(15).offset(0.3, 0.3, 0.3).spawn();
     })
     .at(10, () -> {
-        SoundBuilder.of(Sound.ENTITY_BLAZE_AMBIENT)
+        JavaSoundBuilder.of(Sound.ENTITY_BLAZE_AMBIENT)
             .pitch(0.8f).playTo(player);
     })
     .at(20, () -> {
-        ParticleBuilder.of(Particle.FLAME)
+        JavaParticleBuilder.of(Particle.FLAME)
             .location(origin).count(40).offset(0.5, 0.8, 0.5).speed(0.05).spawn();
-        SoundBuilder.of(Sound.ENTITY_BLAZE_SHOOT)
+        JavaSoundBuilder.of(Sound.ENTITY_BLAZE_SHOOT)
             .pitch(1.2f).playTo(player);
     })
     .loop(3)
@@ -154,20 +154,20 @@ sequence {
 ```java
 JavaSequence.builder()
     .step(() -> {
-        ParticleBuilder.of(Particle.SMOKE_NORMAL)
+        JavaParticleBuilder.of(Particle.SMOKE_NORMAL)
             .location(origin).count(5).spawn();
     })
     .delay(5)
     .step(() -> {
-        ParticleBuilder.of(Particle.FLAME)
+        JavaParticleBuilder.of(Particle.FLAME)
             .location(origin).count(10).spawn();
     })
     .delay(5)
     .step(() -> {
-        ParticleBuilder.of(Particle.END_ROD)
+        JavaParticleBuilder.of(Particle.END_ROD)
             .location(origin.clone().add(0, 0.5, 0))
             .count(30).offset(0.4, 0.4, 0.4).spawn();
-        SoundBuilder.of(Sound.ENTITY_GENERIC_EXPLODE)
+        JavaSoundBuilder.of(Sound.ENTITY_GENERIC_EXPLODE)
             .volume(0.6f).pitch(1.4f).playTo(player);
     })
     .start(sculk.getScheduler());

@@ -90,6 +90,55 @@ public record Settings(
 
 Invalid values log a warning and fall back to the field's default — the plugin never crashes on bad config.
 
+## Lists, maps, enums, and UUIDs
+
+The config system supports collections, enums, and UUIDs out of the box:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+enum class Difficulty { EASY, NORMAL, HARD }
+
+@ConfigFile("settings.yml")
+data class Settings(
+    val allowedWorlds: List<String> = listOf("world", "world_nether"),
+    val rewards: Map<String, Int> = mapOf("daily" to 100, "weekly" to 500),
+    val difficulty: Difficulty = Difficulty.NORMAL,
+    val adminUuid: UUID? = null,
+)
+```
+
+Generated YAML:
+```yaml
+allowed-worlds:
+  - world
+  - world_nether
+rewards:
+  daily: 100
+  weekly: 500
+difficulty: NORMAL
+admin-uuid: null
+```
+</TabItem>
+<TabItem label="Java">
+```java
+@ConfigFile("settings.yml")
+public record Settings(
+    List<String> allowedWorlds,
+    Map<String, Integer> rewards,
+    Difficulty difficulty,
+    UUID adminUuid
+) {
+    public Settings() {
+        this(List.of("world", "world_nether"), Map.of("daily", 100), Difficulty.NORMAL, null);
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+Enum values are matched case-insensitively — `NORMAL`, `normal`, and `Normal` all resolve to the same constant.
+
 ## Message configs
 
 Messages are just another config file with string values. Use MiniMessage tags freely.

@@ -13,7 +13,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
  * Context available inside a `onClick { }` handler.
  *
  * Provides access to the player, the click type, the raw event,
- * and convenience helpers for messaging and closing the GUI.
+ * and convenience helpers for messaging, closing, and paginating the GUI.
  */
 @SculkStable
 public class GuiContext
@@ -52,4 +52,34 @@ public class GuiContext
 
         /** Opens another [gui] for the player, replacing this one. */
         public fun open(gui: Gui): Unit = session.openGui(gui)
+
+        /**
+         * Advances to the next page of a paginated GUI and re-renders the pagination slots.
+         *
+         * No-op when already on the last page.
+         *
+         * ```kotlin
+         * item(53) {
+         *     material = Material.ARROW
+         *     name = "<gray>Next →"
+         *     onClick { nextPage() }
+         * }
+         * ```
+         */
+        public fun nextPage(): Unit = session.nextPage()
+
+        /**
+         * Goes back to the previous page of a paginated GUI and re-renders the pagination slots.
+         *
+         * No-op when already on the first page.
+         *
+         * ```kotlin
+         * item(45) {
+         *     material = Material.ARROW
+         *     name = "<gray>← Previous"
+         *     onClick { previousPage() }
+         * }
+         * ```
+         */
+        public fun previousPage(): Unit = session.previousPage()
     }

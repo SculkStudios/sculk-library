@@ -19,7 +19,7 @@ public class SculkBukkitCommand(
         node.name,
         node.description,
         "/${node.name}",
-        emptyList(),
+        node.aliases.toList(),
     ) {
     init {
         permission = node.permission

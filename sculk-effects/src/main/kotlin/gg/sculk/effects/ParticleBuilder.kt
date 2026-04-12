@@ -4,9 +4,13 @@ import gg.sculk.core.annotation.SculkStable
 import org.bukkit.Location
 import org.bukkit.Particle
 import org.bukkit.World
+import org.bukkit.entity.Player
 
 /**
  * Builds and spawns a particle effect at a given [location].
+ *
+ * By default, particles are visible to all players in range. Use [receivers] to
+ * restrict visibility to specific players.
  *
  * Example:
  * ```kotlin
@@ -15,6 +19,14 @@ import org.bukkit.World
  *     count = 20
  *     offset(0.5, 0.5, 0.5)
  *     speed = 0.1
+ *     spawn()
+ * }
+ *
+ * // Only the player who triggered the effect sees it:
+ * particle(Particle.HEART) {
+ *     location = player.location
+ *     count = 5
+ *     receivers(player)
  *     spawn()
  * }
  * ```
@@ -41,6 +53,8 @@ public class ParticleBuilder(
     /** Particle speed / extra data parameter. */
     public var speed: Double = 0.0
 
+    private var receiverList: List<Player>? = null
+
     /** Sets all three offsets at once. */
     @SculkStable
     public fun offset(
@@ -54,15 +68,46 @@ public class ParticleBuilder(
     }
 
     /**
+     * Restricts particle visibility to [players] only.
+     *
+     * When set, [spawn] calls `player.spawnParticle` for each receiver instead of
+     * broadcasting to the world. This is useful for per-player effects like visual
+     * feedback or aura effects that shouldn't disturb other players.
+     *
+     * ```kotlin
+     * particle(Particle.CRIT) {
+     *     location = attacker.location
+     *     count = 10
+     *     receivers(attacker, victim)
+     *     spawn()
+     * }
+     * ```
+     */
+    @SculkStable
+    public fun receivers(vararg players: Player) {
+        receiverList = players.toList()
+    }
+
+    /**
      * Spawns the particle effect.
+     *
+     * If [receivers] was called, each receiver gets the particle individually.
+     * Otherwise the effect is broadcast to all players in range.
      *
      * @throws IllegalStateException if [location] has not been set.
      */
     @SculkStable
     public fun spawn() {
         val loc = requireNotNull(location) { "ParticleBuilder.location must be set before calling spawn()" }
-        val world: World = requireNotNull(loc.world) { "Location world must not be null" }
-        world.spawnParticle(type, loc, count, offsetX, offsetY, offsetZ, speed)
+        val recvs = receiverList
+        if (recvs != null) {
+            recvs.forEach { player ->
+                player.spawnParticle(type, loc, count, offsetX, offsetY, offsetZ, speed)
+            }
+        } else {
+            val world: World = requireNotNull(loc.world) { "Location world must not be null" }
+            world.spawnParticle(type, loc, count, offsetX, offsetY, offsetZ, speed)
+        }
     }
 }
 

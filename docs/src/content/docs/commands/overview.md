@@ -88,6 +88,30 @@ sculk.getCommands().registerAll(
 
 `player` is non-null inside a `player { }` block — no null checks needed.
 
+## Aliases
+
+Commands can have aliases — additional names that trigger the same handler:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+fun teleportCommand() = command("teleport") {
+    aliases = listOf("tp", "tele")
+    player {
+        // /teleport, /tp, and /tele all work
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+JavaCommand.builder("teleport")
+    .aliases("tp", "tele")
+    .player(ctx -> { /* ... */ });
+```
+</TabItem>
+</Tabs>
+
 ## Auto tab-completion
 
 Generated automatically from the subcommand tree and registered argument names. No extra code needed.
