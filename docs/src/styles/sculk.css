@@ -60,8 +60,20 @@ pre {
   padding-left: 1.25rem;
 }
 
-/* Card glow on hover */
-.card:hover {
-  border-color: rgba(0, 229, 255, 0.4);
-  box-shadow: 0 0 20px 0 rgba(0, 229, 255, 0.08);
+/* Cards — always lit, stronger on hover */
+.sl-card {
+  background: #0b1e2d;
+  border: 1px solid rgba(0, 229, 255, 0.18) !important;
+  box-shadow: 0 0 12px 0 rgba(0, 229, 255, 0.06);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sl-card:hover {
+  border-color: rgba(0, 229, 255, 0.5) !important;
+  box-shadow: 0 0 24px 0 rgba(0, 229, 255, 0.14);
+}
+
+/* Card icon in accent colour */
+.sl-card .sl-icon {
+  color: var(--sl-color-accent);
 }
