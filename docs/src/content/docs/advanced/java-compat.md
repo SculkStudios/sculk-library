@@ -1,12 +1,37 @@
 ---
 title: Java Compatibility
-description: Using Sculk Studio from Java plugins.
+description: Full guide to using Sculk Studio from Java plugins — every DSL entry point has a paired Java builder.
 ---
 
-Every Kotlin DSL entry point has a paired Java fluent builder. Java builders live in `gg.sculk.*.java` sub-packages.
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Sculk Studio is Kotlin-first but Java is a first-class citizen. Every Kotlin DSL entry point has a paired fluent builder in a `gg.sculk.*.java` sub-package. No generics in public APIs, no Kotlin-only return types, no gotchas.
 
 ## Bootstrap
 
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+class MyPlugin : JavaPlugin() {
+    lateinit var sculk: SculkPlatform
+
+    override fun onEnable() {
+        sculk = SculkPlatform.create(this) {
+            gui()
+            config()
+            data()
+        }
+        sculk.commands.registerAll(
+            greetCommand(),
+            adminCommand(sculk),
+        )
+    }
+
+    override fun onDisable(): Unit = sculk.close()
+}
+```
+</TabItem>
+<TabItem label="Java">
 ```java
 public class MyPlugin extends JavaPlugin {
     private SculkPlatform sculk;
@@ -18,12 +43,9 @@ public class MyPlugin extends JavaPlugin {
             .config()
             .data()
         );
-
-        sculk.getCommands().register(
-            JavaCommand.builder("greet")
-                .permission("myplugin.greet")
-                .player(ctx -> ctx.reply("<green>Hello, " + ctx.getPlayer().getName() + "!"))
-                .build()
+        sculk.getCommands().registerAll(
+            GreetCommand.build(),
+            AdminCommand.build(sculk)
         );
     }
 
@@ -33,57 +55,194 @@ public class MyPlugin extends JavaPlugin {
     }
 }
 ```
+</TabItem>
+</Tabs>
+
+---
 
 ## Commands
 
-```java
-JavaCommand.builder("homes")
-    .permission("homes.use")
-    .sub("set", sub -> sub
-        .string("name")
-        .player(ctx -> {
-            String name = ctx.argument("name");
-            ctx.reply("<green>Home '" + name + "' set.");
-        })
-    )
-    .build();
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+fun greetCommand() = command("greet") {
+    permission = "myplugin.greet"
+    string("message", optional = true)
+    player {
+        val msg = argumentOrNull<String>("message") ?: "Hello!"
+        reply("<green>$msg")
+    }
+}
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+public class GreetCommand {
+    public static CommandBuilder build() {
+        return JavaCommand.builder("greet")
+            .permission("myplugin.greet")
+            .string("message", true) // optional = true
+            .player(ctx -> {
+                String msg = ctx.<String>argumentOrNull("message");
+                if (msg == null) msg = "Hello!";
+                ctx.reply("<green>" + msg);
+            });
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+---
 
 ## GUIs
 
-```java
-Gui menu = JavaGui.builder("Main Menu")
-    .size(27)
-    .item(13, item -> item
-        .material(Material.DIAMOND)
-        .name("<aqua>Click Me")
-        .onClick(ctx -> {
-            ctx.reply("<green>Clicked!");
-            ctx.close();
-        })
-    )
-    .build();
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+val settingsMenu = gui("<dark_gray>Settings") {
+    size = 27
+    item(13) {
+        material = Material.COMPARATOR
+        name = "<gray>Toggle Setting"
+        lore("<dark_gray>Click to toggle.")
+        onClick {
+            reply("<yellow>Toggled.")
+            close()
+        }
+    }
+}
 
-menu.openFor(player);
+// Open it inside a command handler:
+player {
+    settingsMenu.openFor(player!!)
+}
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+public class SettingsMenu {
+    public static final Gui INSTANCE = JavaGui.builder("<dark_gray>Settings")
+        .size(27)
+        .item(13, item -> item
+            .material(Material.COMPARATOR)
+            .name("<gray>Toggle Setting")
+            .lore("<dark_gray>Click to toggle.")
+            .onClick(ctx -> {
+                ctx.reply("<yellow>Toggled.");
+                ctx.close();
+            })
+        )
+        .build();
+}
+
+// Open it inside a command player handler:
+.player(ctx -> SettingsMenu.INSTANCE.openFor(ctx.getPlayer()))
+```
+</TabItem>
+</Tabs>
+
+---
+
+## Config
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+@ConfigFile("settings.yml")
+data class Settings(
+    val maxHomes: Int = 5,
+    val prefix: String = "<gray>[<aqua>Plugin<gray>]",
+)
+
+val settings = sculk.config.load<Settings>()
+```
+</TabItem>
+<TabItem label="Java">
+```java
+@ConfigFile("settings.yml")
+public record Settings(int maxHomes, String prefix) {
+    public Settings() { this(5, "<gray>[<aqua>Plugin<gray>]"); }
+}
+
+Settings settings = sculk.getConfig().load(Settings.class);
+```
+</TabItem>
+</Tabs>
+
+---
 
 ## Data — async via CompletableFuture
 
-```java
-JavaRepository<PlayerData, UUID> repo = JavaRepository.wrap(
-    sculk.getData().repository(PlayerData.class, UUID.class)
-);
+In Java, wrap the repository with `JavaRepository` to get `CompletableFuture`-returning methods:
 
-repo.find(player.getUniqueId()).thenAccept(result -> {
-    if (result instanceof SculkResult.Success) {
-        PlayerData data = ((SculkResult.Success<PlayerData>) result).getValue();
-        // handle result on calling thread
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+sculk.scheduler.runAsync {
+    val result = repo.find(player.uniqueId)
+    sculk.scheduler.runSync {
+        if (result is SculkResult.Success) {
+            player.sendMessage("Coins: ${result.value?.coins}")
+        }
     }
-});
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+JavaRepository<PlayerData, UUID> javaRepo = JavaRepository.wrap(repo);
+
+javaRepo.find(player.getUniqueId())
+    .thenAccept(result -> {
+        if (result instanceof SculkResult.Success<PlayerData> ok) {
+            long coins = ok.getValue() != null ? ok.getValue().coins() : 0;
+            sculk.getScheduler().runSync(() ->
+                player.sendMessage("Coins: " + coins)
+            );
+        }
+    });
+```
+</TabItem>
+</Tabs>
+
+---
+
+## Events
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+sculk.events.listen<PlayerJoinEvent> { event ->
+    event.player.sendMessage("<green>Welcome, ${event.player.name}!")
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+sculk.getEvents().listen(PlayerJoinEvent.class, event ->
+    event.getPlayer().sendMessage("<green>Welcome, " + event.getPlayer().getName() + "!")
+);
+```
+</TabItem>
+</Tabs>
+
+All event listeners registered via `sculk.events` (or `sculk.getEvents()`) are automatically unregistered when `sculk.close()` is called — no manual cleanup needed.
+
+---
+
+## Java-specific notes
+
+**`SculkResult<T>` is a sealed interface.** Use `instanceof` pattern matching (Java 16+) to check success or failure:
+
+```java
+if (result instanceof SculkResult.Success<PlayerData> ok) {
+    PlayerData data = ok.getValue();
+} else if (result instanceof SculkResult.Failure fail) {
+    getLogger().warning(fail.getMessage());
+}
 ```
 
-## Notes for Java users
+**Kotlin `Unit` appears as `void`.** Methods that return `Unit` in Kotlin are void in Java — no special handling needed.
 
-- `SculkResult<T>` is a sealed interface — use `instanceof` with pattern matching (Java 16+) or `getClass()` checks.
-- All async operations run on a fork-join pool by default; pass a custom `Executor` to `JavaRepository.wrap(repo, executor)` if needed.
-- Kotlin `Unit` return types appear as `Void` in Java — no action needed.
+**No generics in public APIs.** All `SculkRepository`, `SculkCache`, and builder types use bounded wildcards where needed — no raw-type usage required.

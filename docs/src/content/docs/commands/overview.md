@@ -3,51 +3,103 @@ title: Commands Overview
 description: DSL-first command system with sender routing, typed arguments, and auto tab-completion.
 ---
 
-Sculk Studio's command system is built around a tree of `CommandNode`s. You describe the tree with the `command {}` DSL and register it via `sculk.commands.register()`.
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-## Basic command
+Commands are defined with the `command {}` DSL and registered via `sculk.commands.registerAll()`.
+Each command lives in its own file and returns a `CommandBuilder`.
 
+## Defining a command
+
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
-sculk.commands.register(
-    command("sculk") {
-        permission = "sculk.admin"
-        description = "Main Sculk admin command."
+// commands/AdminCommand.kt
+fun adminCommand() = command("sculk") {
+    description = "Sculk admin commands."
+    permission = "sculk.admin"
 
-        sub("reload") {
-            player {
-                reply("<green>Config reloaded.")
-            }
-        }
-
-        sub("ping") {
-            executes {  // works for both players and console
-                reply("<gray>Pong!")
-            }
+    sub("reload") {
+        player {
+            sculk.config.reload()
+            reply("<green>Config reloaded.")
         }
     }
+
+    sub("ping") {
+        executes {
+            reply("<gray>Pong!")
+        }
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+public class AdminCommand {
+    public static CommandBuilder build(SculkPlatform sculk) {
+        return JavaCommand.builder("sculk")
+            .description("Sculk admin commands.")
+            .permission("sculk.admin")
+            .sub("reload", sub -> sub
+                .player(ctx -> {
+                    sculk.getConfig().reload();
+                    ctx.reply("<green>Config reloaded.");
+                })
+            )
+            .sub("ping", sub -> sub
+                .executes(ctx -> ctx.reply("<gray>Pong!"))
+            );
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+## Registering commands
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+sculk.commands.registerAll(
+    adminCommand(),
+    homeCommand(),
+    shopCommand(),
 )
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+sculk.getCommands().registerAll(
+    AdminCommand.build(sculk),
+    HomeCommand.build(),
+    ShopCommand.build()
+);
+```
+</TabItem>
+</Tabs>
 
 ## Sender-type routing
 
-| Block | Sender | Rejects |
-|---|---|---|
-| `player { }` | Online player | Console (with error) |
-| `console { }` | Server console | Players (with error) |
-| `executes { }` | Any | — |
+| Block | Who runs it | Rejects |
+| --- | --- | --- |
+| `player { }` | Online player | Console (auto error) |
+| `console { }` | Server console | Players (auto error) |
+| `executes { }` | Anyone | — |
 
-Inside a `player { }` block, `player` is non-null.
+`player` is non-null inside a `player { }` block — no null checks needed.
 
 ## Auto tab-completion
 
-Tab-completion is generated automatically from the subcommand tree and registered argument names. No extra code needed.
+Generated automatically from the subcommand tree and registered argument names. No extra code needed.
 
-## Error handling
+## Permission checks
 
-If a player lacks permission, they receive `<red>You don't have permission to use this command.` automatically. If argument parsing fails, the user gets a typed error showing the expected argument name and type.
+Set `permission` on any node. Players without the permission get a clean error message automatically.
+Root-level permissions cascade — a player denied at the root never reaches subcommands.
 
 ## Best practices
 
-- Put top-level permission checks on the root command node.
-- Use `executes { }` for commands that behave identically for all senders.
-- Prefer `sub("name") { }` over deeply nested logic — each subcommand should do one thing.
+- One command per file, returning a `CommandBuilder` from a top-level function.
+- Register everything in `onEnable` with `registerAll`.
+- Use `executes { }` when behaviour is identical for players and console.
+- Keep handlers thin — delegate heavy logic to a service class.

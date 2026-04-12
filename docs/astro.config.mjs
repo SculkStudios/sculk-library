@@ -57,6 +57,13 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Series',
+					items: [
+						{ label: 'Overview', slug: 'series/overview' },
+						{ label: 'Registries', slug: 'series/registries' },
+					],
+				},
+				{
 					label: 'Effects',
 					items: [
 						{ label: 'Particles & Sounds', slug: 'effects/particles-sounds' },

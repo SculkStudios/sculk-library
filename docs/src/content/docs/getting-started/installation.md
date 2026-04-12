@@ -1,11 +1,13 @@
 ---
 title: Installation
-description: Add Sculk Studio to your Minecraft Paper plugin via JitPack.
+description: Add Sculk Studio to your Minecraft Paper plugin project via JitPack.
 ---
 
-Sculk Studio is distributed through [JitPack](https://jitpack.io). Add the repository and the modules you need to your build file.
+Sculk Studio is distributed through [JitPack](https://jitpack.io). You only need `sculk-platform` — it transitively includes all other modules.
 
 ## Gradle (Kotlin DSL)
+
+Add JitPack to your repository list and declare the dependency:
 
 ```kotlin
 // settings.gradle.kts
@@ -19,15 +21,21 @@ dependencyResolutionManagement {
 
 ```kotlin
 // build.gradle.kts
-dependencies {
-    // Always required
-    implementation("com.github.SculkStudios.sculk-studio:sculk-platform:1.0.0")
+plugins {
+    kotlin("jvm") version "2.1.20"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+}
 
-    // Optional modules (transitively included via sculk-platform, but explicit for clarity)
-    implementation("com.github.SculkStudios.sculk-studio:sculk-core:1.0.0")
-    implementation("com.github.SculkStudios.sculk-studio:sculk-config:1.0.0")
-    implementation("com.github.SculkStudios.sculk-studio:sculk-data:1.0.0")
-    implementation("com.github.SculkStudios.sculk-studio:sculk-effects:1.0.0")
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+
+    // Sculk Studio — sculk-platform brings all modules transitively
+    implementation("com.github.SculkStudios.sculk-studio:sculk-platform:1.0.0")
+}
+
+tasks.shadowJar {
+    archiveClassifier = ""
+    relocate("gg.sculk", "your.plugin.name.libs.sculk")
 }
 ```
 
@@ -45,28 +53,65 @@ dependencyResolutionManagement {
 
 ```groovy
 // build.gradle
+plugins {
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
 dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
     implementation 'com.github.SculkStudios.sculk-studio:sculk-platform:1.0.0'
+}
+
+shadowJar {
+    archiveClassifier = ''
+    relocate 'gg.sculk', 'your.plugin.name.libs.sculk'
 }
 ```
 
-## Shading
+## Shading is required
 
-Sculk Studio must be shaded into your plugin jar. Use the Shadow plugin:
+Sculk Studio must be shaded into your plugin jar — it is not a server plugin, it is a library. The `shadowJar` configuration above handles this. Always relocate the `gg.sculk` package to avoid conflicts if multiple plugins on the same server use Sculk Studio.
 
-```kotlin
-plugins {
-    id("com.github.johnrengelman.shadow") version "8.1.1"
-}
+Replace `your.plugin.name` in the relocation path with your own package name (e.g., `com.example.myplugin.libs.sculk`).
 
-tasks.shadowJar {
-    archiveClassifier = ""
-    relocate("gg.sculk", "your.plugin.libs.sculk")
-}
+## plugin.yml / paper-plugin.yml
+
+No special entries are needed in your plugin descriptor for Sculk Studio. It shades into your jar and has no external server dependencies.
+
+```yaml
+# paper-plugin.yml (recommended for Paper 1.19+)
+name: MyPlugin
+version: 1.0.0
+main: com.example.myplugin.MyPlugin
+api-version: '1.21'
 ```
 
 ## Requirements
 
-- **Paper** 1.21.x (1.21.11-R0.1-SNAPSHOT or later)
-- **Java** 21+
-- **Kotlin** 2.x (if writing Kotlin plugins)
+| Requirement | Minimum version |
+| --- | --- |
+| Paper | 1.21.x (1.21.11-R0.1-SNAPSHOT or later) |
+| Java | 21 |
+| Kotlin | 2.x (if writing Kotlin plugins) |
+
+## Verifying the install
+
+After adding the dependency, create a minimal plugin class and confirm it compiles:
+
+```kotlin
+import gg.sculk.platform.SculkPlatform
+import org.bukkit.plugin.java.JavaPlugin
+
+class MyPlugin : JavaPlugin() {
+    lateinit var sculk: SculkPlatform
+
+    override fun onEnable() {
+        sculk = SculkPlatform.create(this) {}
+        logger.info("Sculk Studio loaded.")
+    }
+
+    override fun onDisable(): Unit = sculk.close()
+}
+```
+
+If it compiles and the server logs `Sculk Studio loaded.` on startup, you're ready to go. Head to [Your First Plugin](/getting-started/first-plugin) for the full walkthrough.
