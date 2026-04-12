@@ -80,6 +80,22 @@ public fun <T, R> SculkResult<T>.map(transform: (T) -> R): SculkResult<R> =
     }
 
 /**
+ * Chains an operation that itself returns a [SculkResult], propagating failures short-circuit style.
+ *
+ * ```kotlin
+ * repo.find(uuid)
+ *     .flatMap { data -> if (data != null) SculkResult.success(data) else SculkResult.failure("not found") }
+ *     .onSuccess { data -> player.sendMessage("Hello, ${data.name}") }
+ * ```
+ */
+@SculkStable
+public fun <T, R> SculkResult<T>.flatMap(transform: (T) -> SculkResult<R>): SculkResult<R> =
+    when (this) {
+        is SculkResult.Success -> transform(value)
+        is SculkResult.Failure -> this
+    }
+
+/**
  * Runs [action] with the value if this is a [SculkResult.Success]. Returns this unchanged.
  *
  * ```kotlin

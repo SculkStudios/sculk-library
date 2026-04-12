@@ -27,8 +27,8 @@ sculk-studio/
 ## Getting Started
 
 ```bash
-git clone https://github.com/SculkStudios/sculk-studio.git
-cd sculk-studio
+git clone https://github.com/SculkStudios/sculk-library.git
+cd sculk-library
 ./gradlew build
 ```
 
@@ -82,4 +82,4 @@ Please fill out the PR template completely. PRs without passing CI will not be r
 
 ## Questions
 
-Open a [GitHub Discussion](https://github.com/SculkStudios/sculk-studio/discussions) or join us at [sculk.gg](https://sculk.gg).
+Open a [GitHub Discussion](https://github.com/SculkStudios/sculk-library/discussions) or join us at [sculk.gg](https://sculk.gg).

@@ -16,10 +16,10 @@ export default defineConfig({
 				replacesTitle: true,
 			},
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/SculkStudios/sculk-studio' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/SculkStudios/sculk-library' },
 			],
 			editLink: {
-				baseUrl: 'https://github.com/SculkStudios/sculk-studio/edit/main/docs/',
+				baseUrl: 'https://github.com/SculkStudios/sculk-library/edit/main/docs/',
 			},
 			customCss: ['./src/styles/sculk.css'],
 			sidebar: [

@@ -144,6 +144,23 @@ public class GuiSession
             }
         }
 
+        /**
+         * Jumps directly to the given [page] (0-indexed) and re-renders the pagination slots.
+         *
+         * Clamps to `[0, totalPages - 1]` — out-of-range values are silently clamped.
+         *
+         * ```kotlin
+         * session.setPage(2) // jump to the third page
+         * ```
+         */
+        public fun setPage(page: Int) {
+            val clamped = page.coerceIn(0, (totalPages - 1).coerceAtLeast(0))
+            if (clamped != currentPage) {
+                currentPage = clamped
+                refreshPagination()
+            }
+        }
+
         /** Whether this session has been closed. */
         public val isClosed: Boolean get() = closed
 

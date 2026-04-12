@@ -2,8 +2,8 @@
 
 > A Kotlin-first, Java-compatible, production-grade Minecraft framework.
 
-[![CI](https://github.com/SculkStudios/sculk-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/SculkStudios/sculk-studio/actions/workflows/ci.yml)
-[![JitPack](https://jitpack.io/v/SculkStudios/sculk-studio.svg)](https://jitpack.io/#SculkStudios/sculk-studio)
+[![CI](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml/badge.svg)](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml)
+[![JitPack](https://jitpack.io/v/SculkStudios/sculk-library.svg)](https://jitpack.io/#SculkStudios/sculk-library)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Sculk Studio powers all internal [Sculk Studios](https://sculk.gg) plugins. Clean DSLs, zero boilerplate, elite developer experience.
@@ -29,7 +29,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.SculkStudios:sculk-studio:sculk-platform:1.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:1.0.0")
 }
 ```
 
