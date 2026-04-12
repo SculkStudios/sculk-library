@@ -91,6 +91,47 @@ onClick {
 }
 ```
 
+## Dynamic items
+
+Items whose content differs per player — use `dynamicContent { player -> }`. The block runs when the GUI opens, so the displayed stack is always up to date:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+item(4) {
+    material = Material.PLAYER_HEAD
+    dynamicContent { player ->
+        name = "<aqua>Welcome, <white>${player.name}"
+        lore("<gray>Coins: <gold>${economy.getBalance(player)}")
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+.item(4, item -> item
+    .material(Material.PLAYER_HEAD)
+    .dynamicContent((builder, player) -> {
+        builder.name("<aqua>Welcome, <white>" + player.getName());
+        builder.lore("<gray>Coins: <gold>" + economy.getBalance(player));
+    })
+)
+```
+</TabItem>
+</Tabs>
+
+## Item glow
+
+Add an enchantment shimmer to an item without showing any enchantment text:
+
+```kotlin
+item(22) {
+    material = Material.DIAMOND
+    name = "<aqua>Selected"
+    glow = true   // shimmer with no tooltip
+}
+```
+
 ## Best practices
 
 - Define GUIs as top-level `val`s or `object` constants — created once, reused for every player.

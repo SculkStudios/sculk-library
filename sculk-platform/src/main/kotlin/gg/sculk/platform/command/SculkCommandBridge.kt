@@ -23,6 +23,22 @@ public class SculkCommandBridge(
     public fun register(builder: CommandBuilder): SculkCommandBridge = register(builder.node)
 
     /**
+     * Registers multiple commands at once.
+     *
+     * ```kotlin
+     * sculk.commands.registerAll(
+     *     helloCommand(),
+     *     homeCommand(),
+     *     adminCommand(),
+     * )
+     * ```
+     */
+    public fun registerAll(vararg builders: CommandBuilder): SculkCommandBridge {
+        builders.forEach { register(it) }
+        return this
+    }
+
+    /**
      * Registers a [CommandNode] into the Paper command map.
      */
     public fun register(node: CommandNode): SculkCommandBridge {
@@ -30,6 +46,7 @@ public class SculkCommandBridge(
         val commandMap = plugin.server.commandMap
         commandMap.register(plugin.name.lowercase(), cmd)
         registered += node.name
+        registered += node.aliases
         return this
     }
 

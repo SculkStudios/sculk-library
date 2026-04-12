@@ -11,7 +11,7 @@ Sculk Studio is designed so that using it never makes your plugin slower than ha
 
 The Paper main thread processes game ticks. Blocking it — even for a few milliseconds — causes TPS drops visible to all players. Sculk Studio enforces a hard rule: **no blocking IO on the main thread**.
 
-Every repository call is synchronous-blocking and must run inside `sculk.scheduler.runAsync { }`:
+Every repository call is synchronous-blocking and must run inside `sculk.scheduler.runAsync { }`. For recurring background work, use `runAsyncRepeating`:
 
 <Tabs>
 <TabItem label="Kotlin">
@@ -146,7 +146,8 @@ Results and historical runs are documented in `benchmarks/README.md`.
 
 ## Summary checklist
 
-- Always use `sculk.scheduler.runAsync { }` for repository calls.
+- Always use `sculk.scheduler.runAsync { }` for one-shot repository calls.
+- Use `sculk.scheduler.runAsyncRepeating(delay, period) { }` for recurring background tasks (data flushes, heartbeats). The returned `SculkHandle` cancels the task when closed.
 - Create repositories and caches once at startup — never per-request.
 - Pre-warm `SculkSeries` keys at `onEnable`.
 - Use `SculkCache` for any data that is read more than it is written.

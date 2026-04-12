@@ -16,6 +16,7 @@ public class CommandNode(
 ) {
     public var permission: String? = null
     public var description: String = ""
+    public val aliases: MutableList<String> = mutableListOf()
     public val subcommands: MutableList<CommandNode> = mutableListOf()
     public val arguments: MutableList<ArgumentDefinition> = mutableListOf()
 

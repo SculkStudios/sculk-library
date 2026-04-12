@@ -34,26 +34,36 @@ public class Gui
         public val title: String,
         public val size: Int,
         public val items: Map<Int, GuiItem>,
+        /** Pagination config, non-null when [GuiBuilder.pagination] was called. */
+        public val pagination: PaginationConfig? = null,
     ) {
         /**
          * Opens this GUI for [player], creating a new [GuiSession].
          *
          * The session is automatically registered with the active [gg.sculk.platform.SculkPlatform]
          * and cleaned up when the player closes the inventory or disconnects.
+         *
+         * The returned session can be used to set paginated entries or refresh slots:
+         * ```kotlin
+         * val session = shopMenu.openFor(player)
+         * session.setEntries(shopItems)
+         * ```
          */
         public fun openFor(player: Player): GuiSession {
             val session = GuiSession(player, this)
-            val inventory = buildInventory()
+            val inventory = buildInventory(player)
+            @OptIn(SculkInternal::class)
+            session.openInventory = inventory
             GuiRegistry.register(player, session, inventory)
             player.openInventory(inventory)
             return session
         }
 
         @SculkInternal
-        public fun buildInventory(): Inventory {
+        public fun buildInventory(forPlayer: Player? = null): Inventory {
             val inv = Bukkit.createInventory(null, size, parseMessage(title))
             for ((slot, item) in items) {
-                inv.setItem(slot, item.stack)
+                inv.setItem(slot, item.resolveStack(forPlayer))
             }
             return inv
         }
@@ -102,8 +112,16 @@ public class GuiBuilder
         /**
          * Configures pagination for this GUI.
          *
-         * When pagination is enabled, items added via [PaginationBuilder.entries] are
-         * distributed across multiple pages using the configured [PaginationConfig.slots].
+         * Define which slots hold paginated entries. Navigation is wired up manually
+         * using `onClick { nextPage() }` / `onClick { previousPage() }` on arrow items.
+         *
+         * ```kotlin
+         * pagination {
+         *     slots += (0 until 45).toList()  // top 5 rows
+         * }
+         * item(45) { material = Material.ARROW; name = "<gray>← Previous"; onClick { previousPage() } }
+         * item(53) { material = Material.ARROW; name = "<gray>Next →"; onClick { nextPage() } }
+         * ```
          */
         public fun pagination(block: PaginationBuilder.() -> Unit) {
             paginationConfig = PaginationBuilder().apply(block).build()
@@ -114,7 +132,7 @@ public class GuiBuilder
             require(size % 9 == 0 && size in 9..54) {
                 "GUI size must be a multiple of 9 between 9 and 54, got $size."
             }
-            return Gui(title, size, items.toMap())
+            return Gui(title, size, items.toMap(), paginationConfig)
         }
     }
 
@@ -135,17 +153,19 @@ public fun gui(
 ): Gui = GuiBuilder(title).apply(block).build()
 
 // ---------------------------------------------------------------------------
-// Pagination stub (expanded in sculk-platform once lifecycle is wired)
+// Pagination
 // ---------------------------------------------------------------------------
 
+/** Defines which slots are occupied by paginated entries in a [Gui]. */
 @SculkStable
 public class PaginationConfig(
     public val slots: List<Int>,
 )
 
+/** DSL builder for [PaginationConfig]. */
 @SculkStable
 public class PaginationBuilder {
-    /** The slots that paginated items occupy. */
+    /** The slots that paginated entries occupy. */
     public val slots: MutableList<Int> = mutableListOf()
 
     @SculkInternal

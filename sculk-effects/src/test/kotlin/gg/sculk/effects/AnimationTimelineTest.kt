@@ -40,6 +40,12 @@ private class FakeScheduler : SculkScheduler {
         task: Runnable,
     ): SculkHandle = SculkHandle {}
 
+    override fun runAsyncRepeating(
+        delayTicks: Long,
+        periodTicks: Long,
+        task: Runnable,
+    ): SculkHandle = SculkHandle {}
+
     fun fireAll() = tasks.sortedBy { it.delay }.forEach { it.action.run() }
 }
 

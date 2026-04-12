@@ -40,6 +40,21 @@ public class JavaCommandBuilder private constructor(
         return this
     }
 
+    /**
+     * Sets command aliases.
+     *
+     * ```java
+     * JavaCommandBuilder.create("teleport")
+     *     .aliases("tp", "tele")
+     *     .player(ctx -> { ... })
+     *     .build();
+     * ```
+     */
+    public fun aliases(vararg aliases: String): JavaCommandBuilder {
+        builder.aliases = aliases.toList()
+        return this
+    }
+
     /** Executes [handler] for any sender type. */
     public fun executes(handler: Consumer<CommandContext>): JavaCommandBuilder {
         builder.executes { handler.accept(this) }

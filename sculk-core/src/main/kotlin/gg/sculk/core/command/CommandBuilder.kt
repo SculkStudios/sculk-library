@@ -52,6 +52,23 @@ public class CommandBuilder
                 node.description = value
             }
 
+        /**
+         * Aliases for this command.
+         *
+         * ```kotlin
+         * command("teleport") {
+         *     aliases = listOf("tp", "tele")
+         *     player { /* ... */ }
+         * }
+         * ```
+         */
+        public var aliases: List<String>
+            get() = node.aliases
+            set(value) {
+                node.aliases.clear()
+                node.aliases.addAll(value)
+            }
+
         // -----------------------------------------------------------------------
         // Sender-type executors
         // -----------------------------------------------------------------------

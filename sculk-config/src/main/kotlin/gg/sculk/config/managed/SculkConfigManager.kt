@@ -10,8 +10,8 @@ import kotlin.reflect.KClass
 /**
  * Manages the lifecycle of a single typed config file.
  *
- * Handles loading, default generation, validation, hot reload, and
- * reload callbacks. Used internally by [SculkConfig].
+ * Handles loading, default generation, validation, version migration,
+ * hot reload, and reload callbacks. Used internally by [SculkConfig].
  */
 @SculkInternal
 public class SculkConfigManager<T : Any>(
@@ -61,6 +61,7 @@ public class SculkConfigManager<T : Any>(
     }
 
     private fun loadOrDefault(): T {
+        checkVersion()
         YamlMapper.writeDefaults(file, klass)
         val instance = YamlMapper.load(file, klass)
         val violations = YamlMapper.validate(instance)
@@ -68,5 +69,22 @@ public class SculkConfigManager<T : Any>(
             violations.forEach { logger.warning("[SculkConfig] Validation error in $path: $it") }
         }
         return instance
+    }
+
+    /**
+     * Compares the `config-version` in the file against the class default.
+     *
+     * When a version bump is detected, logs a warning so operators know that
+     * new keys have been added. Existing keys are always preserved by [YamlMapper.writeDefaults].
+     */
+    private fun checkVersion() {
+        val fileVersion = YamlMapper.fileConfigVersion(file) ?: return
+        val classVersion = YamlMapper.defaultConfigVersion(klass) ?: return
+        if (fileVersion < classVersion) {
+            logger.warning(
+                "[SculkConfig] $path is outdated (v$fileVersion → v$classVersion). " +
+                    "New keys will use defaults. Existing keys are preserved.",
+            )
+        }
     }
 }

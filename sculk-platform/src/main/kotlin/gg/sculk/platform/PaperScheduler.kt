@@ -46,4 +46,13 @@ public class PaperScheduler(
         val t = plugin.server.scheduler.runTaskLaterAsynchronously(plugin, task, delayTicks)
         return SculkHandle { t.cancel() }
     }
+
+    override fun runAsyncRepeating(
+        delayTicks: Long,
+        periodTicks: Long,
+        task: Runnable,
+    ): SculkHandle {
+        val t = plugin.server.scheduler.runTaskTimerAsynchronously(plugin, task, delayTicks, periodTicks)
+        return SculkHandle { t.cancel() }
+    }
 }

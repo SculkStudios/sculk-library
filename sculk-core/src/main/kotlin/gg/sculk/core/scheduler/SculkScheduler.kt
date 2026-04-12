@@ -47,4 +47,25 @@ public interface SculkScheduler {
         delayTicks: Long,
         task: Runnable,
     ): SculkHandle
+
+    /**
+     * Runs [task] asynchronously on a repeating schedule, starting after [delayTicks]
+     * and repeating every [periodTicks].
+     *
+     * Never interact with the Paper API from inside the task.
+     * Use for background work: database syncs, HTTP calls, heartbeat tasks.
+     *
+     * ```kotlin
+     * val handle = scheduler.runAsyncRepeating(0L, 20L) {
+     *     database.flushPendingWrites()
+     * }
+     * // Stop later:
+     * handle.close()
+     * ```
+     */
+    public fun runAsyncRepeating(
+        delayTicks: Long,
+        periodTicks: Long,
+        task: Runnable,
+    ): SculkHandle
 }
