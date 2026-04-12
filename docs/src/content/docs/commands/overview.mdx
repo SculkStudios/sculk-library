@@ -37,7 +37,7 @@ fun adminCommand() = command("sculk") {
 ```java
 public class AdminCommand {
     public static CommandBuilder build(SculkPlatform sculk) {
-        return JavaCommand.builder("sculk")
+        return JavaCommandBuilder.create("sculk")
             .description("Sculk admin commands.")
             .permission("sculk.admin")
             .sub("reload", sub -> sub
@@ -105,7 +105,7 @@ fun teleportCommand() = command("teleport") {
 </TabItem>
 <TabItem label="Java">
 ```java
-JavaCommand.builder("teleport")
+JavaCommandBuilder.create("teleport")
     .aliases("tp", "tele")
     .player(ctx -> { /* ... */ });
 ```
@@ -120,6 +120,35 @@ Generated automatically from the subcommand tree and registered argument names. 
 
 Set `permission` on any node. Players without the permission get a clean error message automatically.
 Root-level permissions cascade — a player denied at the root never reaches subcommands.
+
+## Feedback helpers
+
+Inside any executor block, `this` is a `CommandContext` with helpers beyond `reply()`:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+player {
+    reply("<green>Operation complete.")        // chat message
+    actionbar("<gray>Processing…")             // above hotbar
+    title("<aqua>Welcome!", "<gray>to the server")  // full-screen title
+    playSound(Sound.ENTITY_PLAYER_LEVELUP)     // sound at player location
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+.player(ctx -> {
+    ctx.reply("<green>Operation complete.");
+    ctx.actionbar("<gray>Processing…");
+    ctx.title("<aqua>Welcome!", "<gray>to the server");
+    ctx.playSound(Sound.ENTITY_PLAYER_LEVELUP);
+})
+```
+</TabItem>
+</Tabs>
+
+`title` and `actionbar` are no-ops when the sender is console. `playSound` defaults to `volume = 1.0, pitch = 1.0` — pass extra args to override.
 
 ## Best practices
 

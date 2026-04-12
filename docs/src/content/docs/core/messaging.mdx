@@ -1,0 +1,120 @@
+---
+title: Messaging
+description: MiniMessage-powered text helpers for sending messages, titles, action bars, and sounds to any Audience.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Sculk Studio uses [Adventure's MiniMessage](https://docs.advntr.dev/minimessage/format.html) throughout. The `SculkMessenger` extension functions bring the same helpers to any `Audience` — players, console, or custom audiences — outside of a command or GUI handler.
+
+## reply
+
+Sends a MiniMessage-formatted message.
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+player.reply("<green>Hello, <white>${player.name}<green>!")
+console.reply("<gray>[Plugin] <white>Server starting…")
+```
+</TabItem>
+<TabItem label="Java">
+```java
+import static gg.sculk.core.adventure.SculkMessengerKt.reply;
+
+reply(player, "<green>Hello, <white>" + player.getName() + "<green>!");
+```
+</TabItem>
+</Tabs>
+
+## title
+
+Sends a full-screen title with an optional subtitle and custom timing (in ticks).
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+player.title(
+    title    = "<gold><bold>Round Over!",
+    subtitle = "<gray>Winner: <white>$winnerName",
+    fadeIn   = 10,   // 0.5 s
+    stay     = 60,   // 3 s
+    fadeOut  = 20,   // 1 s
+)
+```
+</TabItem>
+<TabItem label="Java">
+```java
+import static gg.sculk.core.adventure.SculkMessengerKt.title;
+
+title(player, "<gold><bold>Round Over!", "<gray>Winner: <white>" + winnerName, 10, 60, 20);
+```
+</TabItem>
+</Tabs>
+
+20 ticks = 1 second. No-op when called on console.
+
+## actionbar
+
+Sends a message above the hotbar. Clears automatically after a few seconds.
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+player.actionbar("<yellow>⚔ Combo x${combo}!")
+```
+</TabItem>
+<TabItem label="Java">
+```java
+import static gg.sculk.core.adventure.SculkMessengerKt.actionbar;
+
+actionbar(player, "<yellow>⚔ Combo x" + combo + "!");
+```
+</TabItem>
+</Tabs>
+
+No-op when called on console.
+
+## playSound
+
+Plays a Bukkit sound at the player's location.
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+player.playSound(Sound.ENTITY_PLAYER_LEVELUP)
+player.playSound(Sound.BLOCK_NOTE_BLOCK_PLING, volume = 0.8f, pitch = 1.5f)
+```
+</TabItem>
+<TabItem label="Java">
+```java
+import static gg.sculk.core.adventure.SculkMessengerKt.playSound;
+
+playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+```
+</TabItem>
+</Tabs>
+
+## parseMessage
+
+Converts a MiniMessage string to an Adventure `Component`. Use this when you need to pass a formatted component directly to a Paper API that doesn't accept a string.
+
+```kotlin
+val component = parseMessage("<red>Error: <white>$message")
+player.sendMessage(component)
+```
+
+## In command and GUI handlers
+
+Inside `CommandContext` and `GuiContext`, these same methods are available directly without importing or qualifying the receiver:
+
+```kotlin
+player {
+    reply("<green>Done.")
+    title("<aqua>Success!")
+    actionbar("<gray>Saved.")
+    playSound(Sound.ENTITY_EXPERIENCE_ORB_PICKUP)
+}
+```
+
+The methods in handler blocks delegate to the same `SculkMessenger` functions — they are not duplicates.

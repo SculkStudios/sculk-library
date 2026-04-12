@@ -42,6 +42,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Events', slug: 'core/events' },
 						{ label: 'Scheduler', slug: 'core/scheduler' },
+						{ label: 'Messaging', slug: 'core/messaging' },
 					],
 				},
 				{

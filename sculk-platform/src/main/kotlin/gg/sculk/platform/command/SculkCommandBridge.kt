@@ -1,7 +1,7 @@
 package gg.sculk.platform.command
 
 import gg.sculk.core.SculkHandle
-import gg.sculk.core.annotation.SculkInternal
+import gg.sculk.core.annotation.SculkStable
 import gg.sculk.core.command.CommandBuilder
 import gg.sculk.core.command.CommandNode
 import org.bukkit.plugin.java.JavaPlugin
@@ -9,7 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin
 /**
  * Registers [CommandNode] trees into Paper's server command map and provides cleanup.
  */
-@SculkInternal
+@SculkStable
 public class SculkCommandBridge(
     private val plugin: JavaPlugin,
 ) : SculkHandle {

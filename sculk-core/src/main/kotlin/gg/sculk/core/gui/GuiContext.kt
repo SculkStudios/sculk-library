@@ -25,7 +25,8 @@ public class GuiContext
         public val clickType: ClickType,
         /** The raw Bukkit inventory click event. */
         public val event: InventoryClickEvent,
-        private val session: GuiSession,
+        /** The active session for this player and GUI. Use to read/write state, refresh slots, or update entries. */
+        public val session: GuiSession,
     ) {
         /** The slot that was clicked. */
         public val slot: Int get() = event.slot
