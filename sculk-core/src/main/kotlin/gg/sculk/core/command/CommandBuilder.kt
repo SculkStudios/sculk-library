@@ -2,10 +2,13 @@ package gg.sculk.core.command
 
 import gg.sculk.core.annotation.SculkInternal
 import gg.sculk.core.annotation.SculkStable
+import gg.sculk.core.command.argument.ArgumentParser
 import gg.sculk.core.command.argument.BooleanParser
 import gg.sculk.core.command.argument.ChoiceParser
 import gg.sculk.core.command.argument.DoubleParser
+import gg.sculk.core.command.argument.GreedyStringParser
 import gg.sculk.core.command.argument.IntParser
+import gg.sculk.core.command.argument.LongParser
 import gg.sculk.core.command.argument.PlayerParser
 import gg.sculk.core.command.argument.StringParser
 import org.bukkit.entity.Player
@@ -170,6 +173,28 @@ public class CommandBuilder
             node.arguments += ArgumentDefinition(name, PlayerParser, optional)
         }
 
+        /** Registers a long-integer argument with [name]. */
+        public fun long(
+            name: String,
+            optional: Boolean = false,
+        ) {
+            node.arguments += ArgumentDefinition(name, LongParser, optional)
+        }
+
+        /**
+         * Registers a greedy string argument that consumes the rest of the input as one string.
+         *
+         * Must be the last argument on this command node.
+         *
+         * ```kotlin
+         * greedy("message")
+         * executes { reply(argument<String>("message")) }
+         * ```
+         */
+        public fun greedy(name: String) {
+            node.arguments += ArgumentDefinition(name, GreedyStringParser, optional = false)
+        }
+
         /** Registers a fixed-choice argument with [name] accepting only [choices]. */
         public fun choice(
             name: String,
@@ -177,6 +202,33 @@ public class CommandBuilder
             optional: Boolean = false,
         ) {
             node.arguments += ArgumentDefinition(name, ChoiceParser(choices.toList()), optional)
+        }
+
+        /**
+         * Registers a custom argument with [name] using [parser].
+         *
+         * ```kotlin
+         * object WorldParser : ArgumentParser<World> {
+         *     override val typeName = "world"
+         *     override fun parse(input: String) = Bukkit.getWorld(input)
+         *     override fun suggest(input: String) = Bukkit.getWorlds().map { it.name }
+         * }
+         *
+         * command("spawn") {
+         *     argument("world", WorldParser)
+         *     player {
+         *         val world = argument<World>("world")
+         *         player!!.teleport(world.spawnLocation)
+         *     }
+         * }
+         * ```
+         */
+        public fun <T : Any> argument(
+            name: String,
+            parser: ArgumentParser<T>,
+            optional: Boolean = false,
+        ) {
+            node.arguments += ArgumentDefinition(name, parser, optional)
         }
     }
 

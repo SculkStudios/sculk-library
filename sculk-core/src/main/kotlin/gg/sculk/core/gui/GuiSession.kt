@@ -146,4 +146,20 @@ public class GuiSession
 
         /** Whether this session has been closed. */
         public val isClosed: Boolean get() = closed
+
+        /**
+         * Total number of pages for the current entry list.
+         * Returns 1 when no pagination is configured or entries are empty.
+         */
+        public val totalPages: Int
+            get() {
+                val slots = gui.pagination?.slots ?: return 1
+                return if (pageEntries.isEmpty()) 1 else (pageEntries.size + slots.size - 1) / slots.size
+            }
+
+        /** True if there is a page after [currentPage]. */
+        public val hasNextPage: Boolean get() = currentPage < totalPages - 1
+
+        /** True if there is a page before [currentPage]. */
+        public val hasPreviousPage: Boolean get() = currentPage > 0
     }

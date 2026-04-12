@@ -3,6 +3,7 @@ package gg.sculk.core.command.java
 import gg.sculk.core.annotation.SculkStable
 import gg.sculk.core.command.CommandBuilder
 import gg.sculk.core.command.CommandContext
+import gg.sculk.core.command.argument.ArgumentParser
 import java.util.function.Consumer
 
 /**
@@ -114,12 +115,33 @@ public class JavaCommandBuilder private constructor(
         return this
     }
 
+    /** Registers a long-integer argument. */
+    public fun long(name: String): JavaCommandBuilder {
+        builder.long(name)
+        return this
+    }
+
+    /** Registers a greedy string argument (consumes the rest of the input). Must be last. */
+    public fun greedy(name: String): JavaCommandBuilder {
+        builder.greedy(name)
+        return this
+    }
+
     /** Registers a fixed-choice argument. */
     public fun choice(
         name: String,
         vararg choices: String,
     ): JavaCommandBuilder {
         builder.choice(name, *choices)
+        return this
+    }
+
+    /** Registers a custom argument using [parser]. */
+    public fun <T : Any> argument(
+        name: String,
+        parser: ArgumentParser<T>,
+    ): JavaCommandBuilder {
+        builder.argument(name, parser)
         return this
     }
 

@@ -38,6 +38,13 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Core',
+					items: [
+						{ label: 'Events', slug: 'core/events' },
+						{ label: 'Scheduler', slug: 'core/scheduler' },
+					],
+				},
+				{
 					label: 'Commands',
 					items: [
 						{ label: 'Overview', slug: 'commands/overview' },
