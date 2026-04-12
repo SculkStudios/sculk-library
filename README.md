@@ -23,13 +23,42 @@ Sculk Studio powers all internal [Sculk Studios](https://sculk.gg) plugins. Clea
 ### Gradle (Kotlin DSL)
 
 ```kotlin
-repositories {
-    maven("https://jitpack.io")
-    maven("https://repo.papermc.io/repository/maven-public/")
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven("https://jitpack.io")
+        maven("https://repo.papermc.io/repository/maven-public/")
+    }
 }
+```
 
+```kotlin
+// build.gradle.kts
 dependencies {
-    implementation("com.github.SculkStudios.sculk-library:sculk-platform:1.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:v1.0.0")
+}
+```
+
+### Gradle (Groovy DSL)
+
+```groovy
+// settings.gradle
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://repo.papermc.io/repository/maven-public/' }
+    }
+}
+```
+
+```groovy
+// build.gradle
+dependencies {
+    implementation 'com.github.SculkStudios.sculk-library:sculk-platform:v1.0.0'
 }
 ```
 
