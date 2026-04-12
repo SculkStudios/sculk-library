@@ -1,0 +1,176 @@
+---
+title: Scheduler
+description: Run tasks on the main thread, async, with delays and repeating intervals — all cancellable via SculkHandle.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+`sculk.scheduler` wraps Paper's task scheduler. Every method returns a `SculkHandle` — call `close()` on it to cancel the task at any point.
+
+## Threading rules
+
+| Context | Paper API safe? | DB calls safe? |
+| --- | --- | --- |
+| Main thread (sync) | Yes | **No** — blocks TPS |
+| Async thread | **No** | Yes |
+
+Never call Paper APIs (entity, inventory, world) from an async task. Never call `SculkRepository` from the main thread.
+
+## One-shot tasks
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+// Run on the main thread next tick
+sculk.scheduler.runSync {
+    player.sendMessage("<green>Hello from next tick!")
+}
+
+// Run async (off the main thread)
+sculk.scheduler.runAsync {
+    val result = repo.find(player.uniqueId)
+    sculk.scheduler.runSync {
+        result.onSuccess { data ->
+            player.sendMessage("Coins: ${data.coins}")
+        }
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+sculk.getScheduler().runAsync(() -> {
+    SculkResult<PlayerData> result = repo.find(player.getUniqueId());
+    sculk.getScheduler().runSync(() ->
+        result.onSuccess(data ->
+            player.sendMessage("Coins: " + data.coins())
+        )
+    );
+});
+```
+</TabItem>
+</Tabs>
+
+## Delayed tasks
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+// Run on main thread after 3 seconds (60 ticks)
+sculk.scheduler.runSyncDelayed(60L) {
+    player.sendMessage("<yellow>3 seconds have passed.")
+}
+
+// Run async after 5 seconds (100 ticks)
+sculk.scheduler.runAsyncDelayed(100L) {
+    repo.save(playerData)
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+sculk.getScheduler().runSyncDelayed(60L, () ->
+    player.sendMessage("<yellow>3 seconds have passed.")
+);
+```
+</TabItem>
+</Tabs>
+
+## Repeating tasks
+
+`runAsyncRepeating` is the correct choice for recurring DB operations (data flushes, heartbeats). The returned `SculkHandle` cancels the task when closed.
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+// Flush dirty player data every 5 minutes (6000 ticks)
+val flushHandle = sculk.scheduler.runAsyncRepeating(
+    delayTicks  = 6000L,
+    periodTicks = 6000L,
+) {
+    dirtyPlayers.forEach { uuid ->
+        cache.find(uuid).onSuccess { data ->
+            if (data != null) repo.save(data)
+        }
+    }
+}
+
+// Cancel when no longer needed
+flushHandle.close()
+```
+</TabItem>
+<TabItem label="Java">
+```java
+SculkHandle flushHandle = sculk.getScheduler().runAsyncRepeating(
+    6000L, 6000L,
+    () -> dirtyPlayers.forEach(uuid -> {
+        cache.find(uuid).onSuccess(data -> {
+            if (data != null) repo.save(data);
+        });
+    })
+);
+
+// Cancel
+flushHandle.close();
+```
+</TabItem>
+</Tabs>
+
+For repeating sync tasks (e.g., visual effects on the main thread):
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+val handle = sculk.scheduler.runSyncRepeating(
+    delayTicks  = 0L,
+    periodTicks = 10L,   // every 0.5 seconds
+) {
+    players.forEach { p ->
+        p.location.world.spawnParticle(Particle.FLAME, p.location, 3)
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+SculkHandle handle = sculk.getScheduler().runSyncRepeating(0L, 10L, () ->
+    players.forEach(p ->
+        p.getLocation().getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 3)
+    )
+);
+```
+</TabItem>
+</Tabs>
+
+## All scheduler methods
+
+| Method | Thread | Fires |
+| --- | --- | --- |
+| `runSync(task)` | Main | Next tick |
+| `runSyncDelayed(delay, task)` | Main | After `delay` ticks |
+| `runSyncRepeating(delay, period, task)` | Main | Every `period` ticks |
+| `runAsync(task)` | Async | Immediately (off main) |
+| `runAsyncDelayed(delay, task)` | Async | After `delay` ticks |
+| `runAsyncRepeating(delay, period, task)` | Async | Every `period` ticks |
+
+20 ticks = 1 second at normal TPS.
+
+## Cancellation
+
+Every method returns a `SculkHandle`. Closing it cancels the task:
+
+```kotlin
+val handle = sculk.scheduler.runSyncRepeating(0L, 20L) { /* ... */ }
+
+// Cancel after 10 seconds
+sculk.scheduler.runSyncDelayed(200L) { handle.close() }
+```
+
+Tasks registered through `sculk.scheduler` are **not** auto-cancelled on `sculk.close()` — cancel them explicitly, or use `sculk.register(handle)` to have them cleaned up automatically:
+
+```kotlin
+sculk.register(
+    sculk.scheduler.runAsyncRepeating(6000L, 6000L) { /* flush */ }
+)
+// Now automatically cancelled when sculk.close() is called
+```

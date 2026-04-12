@@ -82,16 +82,70 @@ public class HomeCommand {
 | --- | --- | --- |
 | `string("name")` | `String` | Single token |
 | `int("amount")` | `Int` | Whole numbers |
+| `long("id")` | `Long` | Large whole numbers |
 | `double("value")` | `Double` | Decimal numbers |
-| `boolean("flag")` | `Boolean` | `true` / `false` |
+| `boolean("flag")` | `Boolean` | `true` / `false` — also accepts `yes`/`no`/`1`/`0` |
 | `player("target")` | `Player` | Online only — tab-completes player names |
 | `choice("mode", "a", "b")` | `String` | Fixed set — tab-completes choices |
+| `greedy("message")` | `String` | Consumes the rest of the input — must be last |
 
-Pass `optional = true` to make an argument optional:
+Pass `optional = true` to make any argument optional:
 
 ```kotlin
 int("amount", optional = true)
 ```
+
+## Custom argument types
+
+Implement `ArgumentParser<T>` and pass it to `argument()`:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+object WorldParser : ArgumentParser<World> {
+    override val typeName = "world"
+    override fun parse(input: String): World? = Bukkit.getWorld(input)
+    override fun suggest(input: String): List<String> =
+        Bukkit.getWorlds().map { it.name }.filter { it.startsWith(input, ignoreCase = true) }
+}
+
+fun spawnCommand() = command("spawn") {
+    argument("world", WorldParser)
+    player {
+        val world = argument<World>("world")
+        player!!.teleport(world.spawnLocation)
+        reply("<green>Teleported to <white>${world.name}<green>.")
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+public class WorldParser implements ArgumentParser<World> {
+    public static final WorldParser INSTANCE = new WorldParser();
+
+    @Override public String getTypeName() { return "world"; }
+
+    @Override public World parse(String input) { return Bukkit.getWorld(input); }
+
+    @Override public List<String> suggest(String input) {
+        return Bukkit.getWorlds().stream()
+            .map(World::getName)
+            .filter(n -> n.startsWith(input))
+            .toList();
+    }
+}
+
+JavaCommand.builder("spawn")
+    .argument("world", WorldParser.INSTANCE)
+    .player(ctx -> {
+        World world = ctx.argument("world");
+        ctx.getPlayer().teleport(world.getSpawnLocation());
+        ctx.reply("<green>Teleported to <white>" + world.getName() + "<green>.");
+    });
+```
+</TabItem>
+</Tabs>
 
 ## Reading arguments
 

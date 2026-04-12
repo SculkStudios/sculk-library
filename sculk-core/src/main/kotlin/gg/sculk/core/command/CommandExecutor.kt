@@ -2,6 +2,7 @@ package gg.sculk.core.command
 
 import gg.sculk.core.adventure.reply
 import gg.sculk.core.annotation.SculkInternal
+import gg.sculk.core.command.argument.GreedyStringParser
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
@@ -74,6 +75,11 @@ public object CommandExecutor {
         if (args.size < required.size) return null
 
         for ((index, arg) in node.arguments.withIndex()) {
+            // Greedy: join all remaining tokens into one string
+            if (arg.parser is GreedyStringParser) {
+                parsed[arg.name] = if (index < args.size) args.drop(index).joinToString(" ") else ""
+                break
+            }
             val raw = args.getOrNull(index)
             if (raw == null) {
                 if (arg.optional) continue else return null

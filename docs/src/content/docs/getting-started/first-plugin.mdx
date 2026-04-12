@@ -8,7 +8,13 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 ## Bootstrap
 
 Create a `JavaPlugin` subclass and initialise `SculkPlatform` in `onEnable`.
-Commands live in their own files and are registered all at once with `registerAll`.
+
+The builder block enables **optional systems** that need platform-level setup:
+- `gui()` — registers inventory click/close routing so GUI click handlers fire
+- `config()` — enables the typed config system (load, reload, callbacks)
+- `data()` — opens the database connection pool (SQLite by default)
+
+**Commands don't need a builder call.** `sculk.commands` is always available — commands register directly into Paper's command map, no extra setup required.
 
 <Tabs>
 <TabItem label="Kotlin">

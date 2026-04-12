@@ -62,3 +62,79 @@ public val SculkResult<*>.isSuccess: Boolean get() = this is SculkResult.Success
 /** Returns true if this is a [SculkResult.Failure]. */
 @SculkStable
 public val SculkResult<*>.isFailure: Boolean get() = this is SculkResult.Failure
+
+/**
+ * Transforms the success value with [transform], leaving failures unchanged.
+ *
+ * ```kotlin
+ * repo.find(uuid)
+ *     .map { it?.coins ?: 0 }
+ *     .onSuccess { coins -> player.sendMessage("Coins: $coins") }
+ * ```
+ */
+@SculkStable
+public fun <T, R> SculkResult<T>.map(transform: (T) -> R): SculkResult<R> =
+    when (this) {
+        is SculkResult.Success -> SculkResult.success(transform(value))
+        is SculkResult.Failure -> this
+    }
+
+/**
+ * Runs [action] with the value if this is a [SculkResult.Success]. Returns this unchanged.
+ *
+ * ```kotlin
+ * repo.save(data).onSuccess { player.sendMessage("<green>Saved!") }
+ * ```
+ */
+@SculkStable
+public fun <T> SculkResult<T>.onSuccess(action: (T) -> Unit): SculkResult<T> {
+    if (this is SculkResult.Success) action(value)
+    return this
+}
+
+/**
+ * Runs [action] with the message and cause if this is a [SculkResult.Failure]. Returns this unchanged.
+ *
+ * ```kotlin
+ * repo.find(uuid).onFailure { msg, _ -> logger.warning(msg) }
+ * ```
+ */
+@SculkStable
+public fun <T> SculkResult<T>.onFailure(action: (message: String, cause: Throwable?) -> Unit): SculkResult<T> {
+    if (this is SculkResult.Failure) action(message, cause)
+    return this
+}
+
+/**
+ * Returns [onSuccess] applied to the value if [SculkResult.Success], or [onFailure] if [SculkResult.Failure].
+ *
+ * ```kotlin
+ * val display = result.fold(
+ *     onSuccess = { data -> "<green>${data.name}" },
+ *     onFailure = { msg, _ -> "<red>Error: $msg" },
+ * )
+ * ```
+ */
+@SculkStable
+public fun <T, R> SculkResult<T>.fold(
+    onSuccess: (T) -> R,
+    onFailure: (message: String, cause: Throwable?) -> R,
+): R =
+    when (this) {
+        is SculkResult.Success -> onSuccess(value)
+        is SculkResult.Failure -> onFailure(message, cause)
+    }
+
+/**
+ * Recovers from a failure by computing a fallback value.
+ *
+ * ```kotlin
+ * val data = repo.find(uuid).recover { _, _ -> PlayerData.default(uuid) }
+ * ```
+ */
+@SculkStable
+public fun <T> SculkResult<T>.recover(onFailure: (message: String, cause: Throwable?) -> T): SculkResult<T> =
+    when (this) {
+        is SculkResult.Success -> this
+        is SculkResult.Failure -> SculkResult.success(onFailure(message, cause))
+    }
