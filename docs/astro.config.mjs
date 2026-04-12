@@ -10,8 +10,7 @@ export default defineConfig({
 			title: 'Sculk Studio',
 			description: 'The Kotlin-first Minecraft plugin framework.',
 			logo: {
-				light: './src/assets/logo-light.svg',
-				dark: './src/assets/logo-dark.svg',
+				src: './logo.svg',
 				replacesTitle: false,
 			},
 			social: [
