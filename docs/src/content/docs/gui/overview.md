@@ -3,64 +3,96 @@ title: GUIs Overview
 description: Chest inventory GUIs with per-player sessions, click routing, and automatic cleanup.
 ---
 
-Sculk Studio GUIs are **immutable definitions**. A `Gui` describes layout and handlers; a `GuiSession` holds per-player mutable state. Sessions are created automatically when you call `openFor(player)` and cleaned up when the player closes the inventory or disconnects.
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+GUIs are **immutable definitions**. Define once, open for any player. Sessions are created automatically on `openFor` and cleaned up when the player closes the inventory or disconnects — no manual cleanup ever needed.
 
 ## Defining a GUI
 
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
-val menu = gui("Main Menu") {
-    size = 27  // must be a multiple of 9, between 9 and 54
+// gui/MainMenu.kt
+val mainMenu = gui("<dark_aqua><bold>Main Menu") {
+    size = 27
 
     item(13) {
-        material = Material.DIAMOND
-        name = "<aqua><bold>Diamonds!"
+        material = Material.NETHER_STAR
+        name = "<gold><bold>Click Me"
         lore(
-            "<gray>Click to collect.",
-            "<dark_gray>Limit: 64 per day.",
+            "<gray>Does something cool.",
+            "<dark_gray>Right-click for more options.",
         )
         onClick {
-            reply("<green>Collected!")
+            reply("<green>Clicked!")
             close()
         }
     }
 }
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+// gui/MainMenu.java
+public class MainMenu {
+    public static final Gui INSTANCE = JavaGui.builder("<dark_aqua><bold>Main Menu")
+        .size(27)
+        .item(13, item -> item
+            .material(Material.NETHER_STAR)
+            .name("<gold><bold>Click Me")
+            .lore("<gray>Does something cool.", "<dark_gray>Right-click for more options.")
+            .onClick(ctx -> {
+                ctx.reply("<green>Clicked!");
+                ctx.close();
+            })
+        )
+        .build();
+}
+```
+</TabItem>
+</Tabs>
 
 ## Opening for a player
 
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
-menu.openFor(player)
+// inside a command handler
+player {
+    mainMenu.openFor(player!!)
+}
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+.player(ctx -> MainMenu.INSTANCE.openFor(ctx.getPlayer()))
+```
+</TabItem>
+</Tabs>
 
 ## Click context
 
-Inside `onClick { }`, `this` is a `GuiContext` which provides:
+Inside `onClick { }`, `this` is a `GuiContext`:
 
-| Member | Type | Description |
-|---|---|---|
-| `player` | `Player` | The player who clicked |
-| `click` | `ClickType` | LEFT, RIGHT, SHIFT_LEFT, etc. |
-| `event` | `InventoryClickEvent` | Raw event (already cancelled) |
-| `reply(msg)` | — | Send a MiniMessage message |
-| `close()` | — | Close the inventory |
-| `open(gui)` | — | Switch to another GUI |
+| Property / method | Description |
+| --- | --- |
+| `player` | The player who clicked |
+| `click` | Click type (`LEFT`, `RIGHT`, `SHIFT_LEFT`, …) |
+| `event` | Raw `InventoryClickEvent` — already cancelled |
+| `reply(msg)` | Send a MiniMessage message to the player |
+| `close()` | Close the inventory |
+| `open(gui)` | Switch to another GUI without reopening manually |
 
 ## Switching GUIs
 
 ```kotlin
 onClick {
-    open(settingsMenu)  // closes current, opens settingsMenu for this player
+    open(settingsMenu)  // seamless switch — no flicker
 }
 ```
 
-## Use cases
-
-- Main menus, settings panels, shop interfaces
-- Confirmation dialogs (click to confirm / click to cancel)
-- Multi-page item browsers (see [Pagination](/gui/pagination/))
-
 ## Best practices
 
-- Define GUIs once at startup as top-level `val`s, not per-player.
-- Keep `onClick` handlers short — heavy logic belongs in a service.
-- Use `close()` or `open(other)` rather than calling `player.closeInventory()` directly.
+- Define GUIs as top-level `val`s or `object` constants — created once, reused for every player.
+- Keep `onClick` handlers short. Heavy logic belongs in a service.
+- Use `open(other)` rather than calling `player.closeInventory()` directly — it preserves session state.

@@ -1,54 +1,92 @@
 ---
 title: Pagination
-description: Distribute items across multiple GUI pages with the pagination DSL.
+description: Distribute items across multiple GUI pages automatically.
 ---
 
-When you have more items than slots, use `pagination { }` to distribute them across pages automatically.
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+When you have more entries than slots, use `pagination { }` to distribute them across pages.
 
 ## Basic pagination
 
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
-val items: List<ItemStack> = getShopItems()
-
-val shopMenu = gui("Shop") {
+val shopMenu = gui("<green><bold>Shop") {
     size = 54
 
     pagination {
-        slots += (0 until 45).toList()  // items fill the top 5 rows
+        slots += (0 until 45).toList()  // top 5 rows hold items
     }
 
-    // Navigation buttons
     item(45) {
         material = Material.ARROW
-        name = "<gray>Previous"
+        name = "<gray>← Previous"
         onClick { previousPage() }
     }
+
     item(53) {
         material = Material.ARROW
-        name = "<gray>Next"
+        name = "<gray>Next →"
         onClick { nextPage() }
     }
 }
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+List<Integer> slots = IntStream.range(0, 45).boxed().toList();
 
-## Supplying page entries
-
-```kotlin
-val session = shopMenu.openFor(player)
-session.setEntries(items)
+Gui shopMenu = JavaGui.builder("<green><bold>Shop")
+    .size(54)
+    .pagination(p -> p.slots(slots))
+    .item(45, item -> item
+        .material(Material.ARROW)
+        .name("<gray>← Previous")
+        .onClick(GuiContext::previousPage)
+    )
+    .item(53, item -> item
+        .material(Material.ARROW)
+        .name("<gray>Next →")
+        .onClick(GuiContext::nextPage)
+    )
+    .build();
 ```
+</TabItem>
+</Tabs>
 
-Entries are automatically distributed across the defined slots. Navigating with `previousPage()` / `nextPage()` re-renders the current page in place.
+## Supplying entries
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+player {
+    val session = shopMenu.openFor(player!!)
+    session.setEntries(getShopItems())
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+.player(ctx -> {
+    GuiSession session = shopMenu.openFor(ctx.getPlayer());
+    session.setEntries(getShopItems());
+})
+```
+</TabItem>
+</Tabs>
+
+Entries are distributed across the defined slots automatically. Navigating with `previousPage()` / `nextPage()` re-renders the current page in-place with no inventory flicker.
 
 ## Dynamic refresh
 
-To refresh a single item slot without reopening the GUI:
+Update a single slot without reopening the inventory:
 
 ```kotlin
 session.refresh(slot)
 ```
 
-To re-render all slots:
+Re-render all slots at once:
 
 ```kotlin
 session.refreshAll()
@@ -57,5 +95,4 @@ session.refreshAll()
 ## Use cases
 
 - Shop browsers, auction houses, player list menus
-- Admin item selectors
 - Any list longer than a single page of slots

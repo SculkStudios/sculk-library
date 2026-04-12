@@ -3,84 +3,148 @@ title: Your First Plugin
 description: Build a minimal Sculk Studio plugin with a command and a GUI.
 ---
 
-This guide walks through building a plugin that registers a command, opens a GUI, and loads a config.
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## Bootstrap
 
-Create a `JavaPlugin` subclass and initialise `SculkPlatform` in `onEnable`:
+Create a `JavaPlugin` subclass and initialise `SculkPlatform` in `onEnable`.
+Commands live in their own files and are registered all at once with `registerAll`.
 
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
 class MyPlugin : JavaPlugin() {
     lateinit var sculk: SculkPlatform
 
     override fun onEnable() {
         sculk = SculkPlatform.create(this) {
-            gui()     // enable GUI lifecycle routing
-            config()  // enable typed config loading
+            gui()
+            config()
         }
 
-        sculk.commands.register(
-            command("greet") {
-                description = "Greet the player."
-                permission = "myplugin.greet"
-                player {
-                    reply("<green>Hello, ${player!!.name}!")
-                }
-            }
+        sculk.commands.registerAll(
+            greetCommand(),
+            homeCommand(),
         )
     }
 
     override fun onDisable(): Unit = sculk.close()
 }
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+public class MyPlugin extends JavaPlugin {
+    private SculkPlatform sculk;
 
-## Adding a GUI
+    @Override
+    public void onEnable() {
+        sculk = JavaSculkPlatform.create(this, cfg -> cfg.gui().config());
 
+        sculk.getCommands().registerAll(
+            GreetCommand.build(),
+            HomeCommand.build()
+        );
+    }
+
+    @Override
+    public void onDisable() {
+        sculk.close();
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+## A command in its own file
+
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
-val menu = gui("Main Menu") {
+// commands/GreetCommand.kt
+fun greetCommand() = command("greet") {
+    description = "Greet the player."
+    permission = "myplugin.greet"
+
+    player {
+        reply("<green>Hey, <white>${player!!.name}<green>!")
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+// commands/GreetCommand.java
+public class GreetCommand {
+    public static CommandBuilder build() {
+        return JavaCommand.builder("greet")
+            .description("Greet the player.")
+            .permission("myplugin.greet")
+            .player(ctx -> ctx.reply(
+                "<green>Hey, <white>" + ctx.getPlayer().getName() + "<green>!"
+            ));
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+## A GUI in its own file
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+// gui/MainMenu.kt
+val mainMenu = gui("<dark_aqua><bold>Main Menu") {
     size = 27
 
     item(13) {
         material = Material.NETHER_STAR
-        name = "<gold><bold>Click me!"
-        lore("<gray>Opens something cool.")
-        onClick {
-            reply("<aqua>You clicked the star!")
-            close()
-        }
+        name = "<gold><bold>Settings"
+        lore("<gray>Click to open settings.")
+        onClick { open(settingsMenu) }
     }
 }
-
-// Open it for a player inside a command
-player {
-    menu.openFor(player!!)
+```
+</TabItem>
+<TabItem label="Java">
+```java
+// gui/MainMenu.java
+public class MainMenu {
+    public static final Gui INSTANCE = JavaGui.builder("<dark_aqua><bold>Main Menu")
+        .size(27)
+        .item(13, item -> item
+            .material(Material.NETHER_STAR)
+            .name("<gold><bold>Settings")
+            .lore("<gray>Click to open settings.")
+            .onClick(ctx -> ctx.open(SettingsMenu.INSTANCE))
+        )
+        .build();
 }
 ```
+</TabItem>
+</Tabs>
 
 ## Loading a config
 
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
 @ConfigFile("settings.yml")
 data class Settings(
-    val prefix: String = "<gray>[<aqua>MyPlugin<gray>]",
+    val prefix: String = "<gray>[<aqua>Plugin<gray>]",
     val maxHomes: Int = 5,
 )
 
 val settings = sculk.config.load<Settings>()
 ```
-
-## Java equivalent
-
+</TabItem>
+<TabItem label="Java">
 ```java
-SculkPlatform sculk = SculkPlatform.create(this, cfg -> cfg.gui().config());
-
-sculk.getCommands().register(
-    Command.builder("greet")
-        .permission("myplugin.greet")
-        .player(ctx -> ctx.reply("<green>Hello, " + ctx.getPlayer().getName() + "!"))
-        .build()
-);
+Settings settings = sculk.getConfig().load(Settings.class);
 ```
+</TabItem>
+</Tabs>
 
 ## Next steps
 

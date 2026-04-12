@@ -1,93 +1,212 @@
 ---
 title: Data Overview
-description: Repository pattern over SQLite and MySQL with async-first operations.
+description: Repository pattern for persistent storage over SQLite and MySQL — async-first, annotation-driven, zero boilerplate.
 ---
 
-`sculk-data` provides a repository pattern for persistent storage. SQLite is the default; MySQL/MariaDB is supported via config.
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+`sculk-data` gives you typed, async-safe persistent storage without writing any SQL. You annotate a data class, create a repository, and call `find`, `save`, and `delete`. SQLite is the default; MySQL/MariaDB is a config switch away.
 
 ## Defining an entity
 
+Annotate a data class with `@Table` and mark each field with `@Column`. The primary key gets `@PrimaryKey`:
+
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
 @Table("player_data")
 data class PlayerData(
     @PrimaryKey @Column("uuid") val uuid: UUID,
-    @Column("coins") val coins: Long,
-    @Column("homes") val homes: Int,
+    @Column("coins") val coins: Long = 0,
+    @Column("homes") val homes: Int = 0,
+    @Column("play_time") val playTime: Long = 0,
 )
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+@Table("player_data")
+public record PlayerData(
+    @PrimaryKey @Column("uuid") UUID uuid,
+    @Column("coins") long coins,
+    @Column("homes") int homes,
+    @Column("play_time") long playTime
+) {
+    public PlayerData(UUID uuid) {
+        this(uuid, 0L, 0, 0L);
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+Sculk reads the annotations once at startup and caches the mapping — there is zero reflection overhead per database call.
 
 ## Creating a repository
 
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
 val repo = sculk.data.repository<PlayerData, UUID>()
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+SculkRepository<PlayerData, UUID> repo =
+    sculk.getData().repository(PlayerData.class, UUID.class);
+```
+</TabItem>
+</Tabs>
+
+The repository creates the database table automatically if it does not exist. Any columns present in the annotation but missing from the table are added with `ALTER TABLE`.
 
 ## Operations
 
-All operations are synchronous and return `SculkResult<T>`:
+All repository methods return `SculkResult<T>` — never throw:
 
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
-// Find by primary key
+// Find by primary key — returns SculkResult<PlayerData?>
 val result = repo.find(player.uniqueId)
 when (result) {
-    is SculkResult.Success -> println("Coins: ${result.value?.coins}")
-    is SculkResult.Failure -> logger.warning(result.message)
+    is SculkResult.Success -> {
+        val data = result.value ?: PlayerData(player.uniqueId)
+        // use data
+    }
+    is SculkResult.Failure -> logger.warning("Find failed: ${result.message}")
 }
 
-// Save (insert or update)
-repo.save(PlayerData(player.uniqueId, coins = 100, homes = 0))
+// Save (insert or update via upsert)
+repo.save(PlayerData(player.uniqueId, coins = 500, homes = 2))
 
-// Delete
+// Delete by primary key
 repo.delete(player.uniqueId)
 
-// Check existence
+// Check if a row exists
 if (repo.exists(player.uniqueId)) { ... }
 
-// Get all rows
-val all = repo.findAll()
+// Load all rows
+val everyone: SculkResult<List<PlayerData>> = repo.findAll()
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+// Find
+SculkResult<PlayerData> result = repo.find(player.getUniqueId());
+if (result instanceof SculkResult.Success<PlayerData> ok) {
+    PlayerData data = ok.getValue() != null
+        ? ok.getValue()
+        : new PlayerData(player.getUniqueId());
+} else if (result instanceof SculkResult.Failure fail) {
+    getLogger().warning("Find failed: " + fail.getMessage());
+}
 
-## Running async
+// Save
+repo.save(new PlayerData(player.getUniqueId(), 500L, 2, 0L));
 
-Always call repository methods off the main thread:
+// Delete
+repo.delete(player.getUniqueId());
 
+// Exists
+boolean exists = repo.exists(player.getUniqueId());
+
+// All rows
+SculkResult<List<PlayerData>> everyone = repo.findAll();
+```
+</TabItem>
+</Tabs>
+
+## Running async — required
+
+Repository calls are synchronous but **blocking** — they wait for the database. Never call them on the main thread. Use `sculk.scheduler` to shift to a background thread and back:
+
+<Tabs>
+<TabItem label="Kotlin">
 ```kotlin
 sculk.scheduler.runAsync {
     val result = repo.find(player.uniqueId)
+
     sculk.scheduler.runSync {
-        // back on main thread — safe to call Paper APIs
-        if (result is SculkResult.Success) {
-            player.sendMessage("Your coins: ${result.value?.coins}")
+        // back on main thread — safe to call Paper APIs here
+        when (result) {
+            is SculkResult.Success -> {
+                val coins = result.value?.coins ?: 0
+                player.sendMessage("<yellow>You have $coins coins.")
+            }
+            is SculkResult.Failure -> {
+                player.sendMessage("<red>Failed to load your data.")
+            }
         }
     }
 }
 ```
+</TabItem>
+<TabItem label="Java">
+```java
+// Java repository wraps results in CompletableFuture automatically
+JavaRepository<PlayerData, UUID> javaRepo = JavaRepository.wrap(repo);
+
+javaRepo.find(player.getUniqueId()).thenAccept(result -> {
+    // runs on a background thread
+    if (result instanceof SculkResult.Success<PlayerData> ok) {
+        long coins = ok.getValue() != null ? ok.getValue().coins() : 0;
+        // schedule back to main thread for Paper API calls
+        sculk.getScheduler().runSync(() ->
+            player.sendMessage("<yellow>You have " + coins + " coins.")
+        );
+    }
+});
+```
+</TabItem>
+</Tabs>
 
 ## Storage configuration
 
-`storage.yml` is auto-generated in the plugin data folder:
+`sculk-data` generates a `storage.yml` in your plugin's data folder on first run:
 
 ```yaml
-type: sqlite
+type: sqlite       # sqlite or mysql
+
 sqlite:
-  file: data.db
+  file: data.db    # relative to plugin data folder
+
 mysql:
   host: localhost
   port: 3306
   database: sculk
   username: root
   password: ""
+  pool-size: 10
 ```
 
-Switch to MySQL by setting `type: mysql`.
+Switch to MySQL by changing `type: mysql` and filling in the connection details. The schema migrations run automatically on startup for both backends.
 
-## Java API
+## Multiple entities
 
+Create one repository per entity type. Each gets its own table:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+val playerRepo  = sculk.data.repository<PlayerData, UUID>()
+val homeRepo    = sculk.data.repository<HomeData, Int>()
+val economyRepo = sculk.data.repository<EconomyData, UUID>()
+```
+</TabItem>
+<TabItem label="Java">
 ```java
-JavaRepository<PlayerData, UUID> repo = JavaRepository.wrap(
-    sculk.getData().repository(PlayerData.class, UUID.class)
-);
-
-CompletableFuture<SculkResult<PlayerData>> future = repo.find(player.getUniqueId());
-future.thenAccept(result -> { ... });
+SculkRepository<PlayerData, UUID>  playerRepo  = sculk.getData().repository(PlayerData.class, UUID.class);
+SculkRepository<HomeData, Integer> homeRepo    = sculk.getData().repository(HomeData.class, Integer.class);
+SculkRepository<EconomyData, UUID> economyRepo = sculk.getData().repository(EconomyData.class, UUID.class);
 ```
+</TabItem>
+</Tabs>
+
+## Best practices
+
+- Create repositories once at startup — don't create new instances per request.
+- Always run repository calls in `sculk.scheduler.runAsync { }` — never on the main thread.
+- Use the cache layer (`sculk.data.cached(...)`) for frequently-read entities like online player data. See [Caching](/data/caching).
+- Handle `SculkResult.Failure` explicitly — log the message so operators can diagnose database issues.
+- Load player data on `PlayerJoinEvent` and cache it; flush to DB on `PlayerQuitEvent`.
