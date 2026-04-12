@@ -2,7 +2,6 @@ package gg.sculk.core.adventure
 
 import gg.sculk.core.annotation.SculkStable
 import net.kyori.adventure.audience.Audience
-import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.title.Title
 import java.time.Duration
@@ -87,7 +86,7 @@ public fun Audience.playSound(
 ) {
     playSound(
         AdventureSound.sound(
-            Key.key(sound.key.toString()),
+            sound.key(),
             AdventureSound.Source.MASTER,
             volume,
             pitch,
