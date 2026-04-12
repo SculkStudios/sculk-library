@@ -203,6 +203,50 @@ SculkRepository<EconomyData, UUID> economyRepo = sculk.getData().repository(Econ
 </TabItem>
 </Tabs>
 
+## Result chaining
+
+`SculkResult` supports functional operators for transforming and handling results without nested `when` blocks:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+// map — transform a successful value
+val coins: SculkResult<Long> = repo.find(player.uniqueId)
+    .map { data -> data?.coins ?: 0L }
+
+// onSuccess / onFailure — side effects, returns the same result for chaining
+repo.find(player.uniqueId)
+    .onSuccess { data -> player.sendMessage("<yellow>Coins: ${data?.coins}") }
+    .onFailure { message, _ -> logger.warning("DB error: $message") }
+
+// fold — collapse to a single value
+val display = repo.find(player.uniqueId).fold(
+    onSuccess = { data -> "<yellow>Coins: ${data?.coins ?: 0}" },
+    onFailure = { message, _ -> "<red>Error: $message" },
+)
+player.reply(display)
+
+// recover — provide a fallback result on failure
+val safe: SculkResult<PlayerData> = repo.find(player.uniqueId)
+    .recover { _, _ -> PlayerData(player.uniqueId) }
+```
+</TabItem>
+<TabItem label="Java">
+```java
+// map
+SculkResult<Long> coins = SculkResultKt.map(
+    repo.find(player.getUniqueId()),
+    data -> data != null ? data.coins() : 0L
+);
+
+// onSuccess / onFailure
+SculkResultKt.onSuccess(repo.find(player.getUniqueId()),
+    data -> player.sendMessage("<yellow>Coins: " + (data != null ? data.coins() : 0))
+);
+```
+</TabItem>
+</Tabs>
+
 ## Best practices
 
 - Create repositories once at startup — don't create new instances per request.

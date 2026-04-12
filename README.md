@@ -82,7 +82,7 @@ public class MyPlugin extends JavaPlugin {
         sculk = JavaSculkPlatform.create(this, cfg -> cfg.gui().config());
 
         sculk.getCommands().register(
-            JavaCommand.builder("hello")
+            JavaCommandBuilder.create("hello")
                 .player(ctx -> ctx.reply("<gradient:aqua:blue>Hello from Sculk Studio!"))
                 .build()
         );

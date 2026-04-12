@@ -77,8 +77,9 @@ Inside `onClick { }`, `this` is a `GuiContext`:
 | Property / method | Description |
 | --- | --- |
 | `player` | The player who clicked |
-| `click` | Click type (`LEFT`, `RIGHT`, `SHIFT_LEFT`, …) |
+| `clickType` | Click type (`LEFT`, `RIGHT`, `SHIFT_LEFT`, …) |
 | `event` | Raw `InventoryClickEvent` — already cancelled |
+| `session` | The active `GuiSession` — access state, refresh slots, update entries |
 | `reply(msg)` | Send a MiniMessage message to the player |
 | `close()` | Close the inventory |
 | `open(gui)` | Switch to another GUI without reopening manually |
@@ -131,6 +132,38 @@ item(22) {
     glow = true   // shimmer with no tooltip
 }
 ```
+
+## Session state
+
+Every open GUI has a `GuiSession` with a `state` bag — an arbitrary key-value store for driving dynamic behaviour within the session.
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+// Opening the GUI — store initial state
+val session = filterMenu.openFor(player)
+session.state["category"] = "weapons"
+session.setEntries(getItemsForCategory("weapons"))
+
+// Inside an onClick handler — read and update state
+onClick {
+    val category = session.state["category"] as? String ?: "all"
+    session.state["category"] = "armour"
+    session.setEntries(getItemsForCategory("armour"))
+    session.refresh(4)   // re-render the category indicator slot
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+GuiSession session = filterMenu.openFor(player);
+session.getState().set("category", "weapons");
+session.setEntries(getItemsForCategory("weapons"));
+```
+</TabItem>
+</Tabs>
+
+State is tied to the `GuiSession` — it is cleared automatically when the player closes the inventory or the session ends. Use `open(otherGui)` to switch menus; the session (and its state) persists across the switch.
 
 ## Best practices
 
