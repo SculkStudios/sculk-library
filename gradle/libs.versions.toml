@@ -1,5 +1,5 @@
 [versions]
-kotlin            = "2.1.21"
+kotlin            = "2.3.20"
 paper             = "1.21.11-R0.1-SNAPSHOT"
 adventure         = "4.26.1"
 minimessage       = "4.17.0"
