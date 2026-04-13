@@ -98,9 +98,12 @@ public class SculkCache<T : Any, ID : Any>(
         if (cached != null) return SculkResult.success(cached)
 
         val found = delegate.find(id)
-        if (found is SculkResult.Success && found.value != null) {
-            cache.put(id, found.value)
-            return SculkResult.success(found.value)
+        if (found is SculkResult.Success) {
+            val value = found.value
+            if (value != null) {
+                cache.put(id, value)
+                return SculkResult.success(value)
+            }
         }
 
         val new = factory()
