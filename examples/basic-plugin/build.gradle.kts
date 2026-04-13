@@ -17,6 +17,8 @@ dependencies {
     implementation(project(":sculk-platform"))
 }
 
+tasks.jar { enabled = false }
+
 tasks.shadowJar {
     archiveClassifier = ""
     archiveFileName = "sculk-example-basic-${project.version}.jar"
