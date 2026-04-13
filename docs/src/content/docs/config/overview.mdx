@@ -178,8 +178,77 @@ player.sendMessage(msg.homeSet().replace("{name}", homeName));
 </TabItem>
 </Tabs>
 
+## Self-documenting configs with @Comment
+
+Annotate any field with `@Comment` to emit comment lines directly above that key in the generated YAML. Server operators can understand every setting without ever reading source code.
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+@ConfigFile("settings/combat.yml")
+data class CombatSettings(
+
+    @Comment("How long the combat tag lasts in milliseconds. 1 second = 1000 ms")
+    val combatTagDuration: Long = 30_000L,
+
+    @Comment("Minimum number of hearts a player can have")
+    val minHearts: Int = 5,
+
+    @Comment("Maximum number of hearts a player can have")
+    val maxHearts: Int = 15,
+
+    @Comment("Name of the WorldGuard region where PvP is always allowed")
+    val pvpRegion: String = "pvp",
+)
+```
+
+Generated `settings/combat.yml`:
+```yaml
+# How long the combat tag lasts in milliseconds. 1 second = 1000 ms
+combat-tag-duration: 30000
+
+# Minimum number of hearts a player can have
+min-hearts: 5
+
+# Maximum number of hearts a player can have
+max-hearts: 15
+
+# Name of the WorldGuard region where PvP is always allowed
+pvp-region: pvp
+```
+</TabItem>
+<TabItem label="Java">
+```java
+@ConfigFile("settings/combat.yml")
+public record CombatSettings(
+    @Comment("How long the combat tag lasts in milliseconds. 1 second = 1000 ms")
+    long combatTagDuration,
+
+    @Comment("Minimum number of hearts a player can have")
+    int minHearts,
+
+    @Comment("Maximum number of hearts a player can have")
+    int maxHearts
+) {
+    public CombatSettings() { this(30_000L, 5, 15); }
+}
+```
+</TabItem>
+</Tabs>
+
+Multi-line comments are supported — separate lines with `\n` in the annotation value:
+
+```kotlin
+@Comment("Kill cooldown in milliseconds.\nPrevents kill-farming the same player repeatedly.\n1 minute = 60000 ms")
+val killCooldown: Long = 60_000L,
+```
+
+`@Comment` can be combined with `@Min`, `@Max`, and `@NotEmpty` on the same field.
+
 ## Best practices
 
 - One `@ConfigFile` per logical group: `settings.yml`, `messages.yml`, `economy.yml`.
+- Use subdirectories to keep configs tidy: `@ConfigFile("settings/combat.yml")`, `@ConfigFile("messages/combat.yml")`.
 - Keep defaults sensible for a fresh server install — operators should never need to touch the file just to get running.
 - Use `@Min`/`@Max` on any numeric field where an out-of-range value would cause a bug.
+- Use `@Comment` on every field — a config file that explains itself is a config file that never gets misconfigured.

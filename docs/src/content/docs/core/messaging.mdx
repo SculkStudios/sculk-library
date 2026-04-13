@@ -95,6 +95,44 @@ playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 </TabItem>
 </Tabs>
 
+## broadcast
+
+Sends a MiniMessage-formatted message to **every player on the server and the console** as a proper Adventure `Component`. No legacy color codes — MiniMessage only.
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+broadcast("<#A3E4A1>✔ <#FFD6A5>│ <#E5E5E5>Server is restarting in <#FF4C4C>60 seconds<#E5E5E5>!")
+```
+</TabItem>
+<TabItem label="Java">
+```java
+import static gg.sculk.core.adventure.SculkMessengerKt.broadcast;
+
+broadcast("<#A3E4A1>✔ <#FFD6A5>│ <#E5E5E5>Server is restarting in <#FF4C4C>60 seconds<#E5E5E5>!");
+```
+</TabItem>
+</Tabs>
+
+## broadcastActionbar
+
+Sends a MiniMessage action bar message to **every online player** simultaneously.
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+broadcastActionbar("<bold><#FF6F6F>⛓ Server event starting in 10 seconds!</#FF6F6F></bold>")
+```
+</TabItem>
+<TabItem label="Java">
+```java
+import static gg.sculk.core.adventure.SculkMessengerKt.broadcastActionbar;
+
+broadcastActionbar("<bold><#FF6F6F>⛓ Server event starting in 10 seconds!</#FF6F6F></bold>");
+```
+</TabItem>
+</Tabs>
+
 ## parseMessage
 
 Converts a MiniMessage string to an Adventure `Component`. Use this when you need to pass a formatted component directly to a Paper API that doesn't accept a string.

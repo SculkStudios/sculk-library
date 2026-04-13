@@ -163,10 +163,110 @@ sculk.getEvents().listen(PlayerQuitEvent.class, event -> {
 </TabItem>
 </Tabs>
 
+## findOrCreate
+
+Gets a cached entity by id, or creates, persists, and caches a new one if none exists. This is the cleanest way to initialise player data on join — no manual exists-check, no double-save:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+sculk.events.listen<PlayerJoinEvent> { event ->
+    val player = event.player
+    sculk.scheduler.runAsync {
+        val result = healthCache.findOrCreate(player.uniqueId) {
+            PlayerHealth(uuid = player.uniqueId, hearts = 10, maxHearts = 10)
+        }
+        // result.value is always non-null here — either loaded or freshly created
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+sculk.getEvents().listen(PlayerJoinEvent.class, event -> {
+    UUID uuid = event.getPlayer().getUniqueId();
+    sculk.getScheduler().runAsync(() ->
+        healthCache.findOrCreate(uuid, () ->
+            new PlayerHealth(uuid, 10, 10)
+        )
+    );
+});
+```
+</TabItem>
+</Tabs>
+
+The factory lambda is **only called if no record exists** in either the cache or the database. The new entity is saved and cached atomically before the result is returned.
+
+## findTopBy
+
+Returns the top `n` entities from the underlying repository sorted by any field. Always hits the database — cache is bypassed so leaderboards are always fresh:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+sculk.scheduler.runAsync {
+    val topShards = shardsCache.findTopBy(10, { it.shards })
+    // topShards is List<PlayerShards>, descending by default
+
+    val bottomHearts = heartsCache.findTopBy(5, { it.hearts }, descending = false)
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+sculk.getScheduler().runAsync(() -> {
+    SculkResult<List<PlayerShards>> top = shardsCache.findTopBy(
+        10,
+        PlayerShards::getShards,
+        true  // descending
+    );
+});
+```
+</TabItem>
+</Tabs>
+
+:::note
+`findTopBy` loads all rows then sorts in memory. For tables with tens of thousands of rows, consider a dedicated SQL query via the raw `DataSource` instead.
+:::
+
+## Batch saves
+
+`saveAll` upserts a list of entities in a single transaction. On failure the entire batch is rolled back — no partial writes:
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+sculk.scheduler.runAsync {
+    val updated = onlinePlayers.map { getUpdatedData(it) }
+    val result = cache.saveAll(updated)
+
+    if (result is SculkResult.Failure) {
+        logger.warning("Batch save failed: ${result.message}")
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+sculk.getScheduler().runAsync(() -> {
+    List<PlayerData> updated = buildUpdatedList();
+    SculkResult<Void> result = cache.saveAll(updated);
+    if (result instanceof SculkResult.Failure<?> f) {
+        logger.warning("Batch save failed: " + f.getMessage());
+    }
+});
+```
+</TabItem>
+</Tabs>
+
+`saveAll` also updates all corresponding cache entries on success, so subsequent reads stay consistent.
+
 ## Best practices
 
 - **One cache per entity type** — create it at startup and share it everywhere.
+- **Use `findOrCreate` on join** — eliminates the exists-check boilerplate and guarantees a valid entity is always in cache.
+- **Use `findTopBy` for leaderboards** — it's always fresh since it bypasses the cache.
+- **Use `saveAll` for bulk shutdown flushes** — one transaction is faster than N individual saves.
 - **Set `maxSize` to a sensible multiple of max-players** — for a 100-player server, 200–500 is plenty for player-scoped data.
 - **Keep `ttl` short for externally-mutable data** — longer (30–60 min) is fine for data only your plugin writes.
 - **Always go through the cache for hot paths** — bypassing it defeats the purpose and can cause stale reads.
-- **Pre-warm on join** — loading on `PlayerJoinEvent` means first in-game access is always a cache hit.
