@@ -121,7 +121,46 @@ item(4) {
 </TabItem>
 </Tabs>
 
-## Item glow
+## Filling and borders
+
+Two helpers cover the most common decoration patterns — filling all empty slots with filler glass, or just the outer ring:
+
+```kotlin
+gui("<dark_aqua>Shop") {
+    size = 54
+
+    // Fill the entire outer border with grey glass
+    border(Material.GRAY_STAINED_GLASS_PANE) { name = "<gray> " }
+
+    // Fill every remaining empty slot with black glass
+    fill(Material.BLACK_STAINED_GLASS_PANE) { name = "<gray> " }
+
+    // Your actual content slots go here — fill/border skip assigned slots
+    item(22) { material = Material.DIAMOND; name = "<aqua>Diamonds!" }
+}
+```
+
+Both methods accept an optional `GuiItemBuilder` block so you can set the name, lore, or click handler on the filler items. `fill()` and `border()` only ever affect **unassigned** slots — they will never overwrite an `item()` you've already defined, regardless of call order.
+
+### Setting multiple slots at once
+
+Use `items(slots)` to apply the same builder to an arbitrary set of slots:
+
+```kotlin
+// Corner accents
+items(listOf(0, 8, 45, 53)) {
+    material = Material.NETHER_STAR
+    name = "<gold>★"
+}
+
+// An entire row
+items(36..44) {
+    material = Material.WHITE_STAINED_GLASS_PANE
+    name = "<gray> "
+}
+```
+
+## Item glow, enchantments, and custom model data
 
 Add an enchantment shimmer to an item without showing any enchantment text:
 
@@ -130,6 +169,28 @@ item(22) {
     material = Material.DIAMOND
     name = "<aqua>Selected"
     glow = true   // shimmer with no tooltip
+}
+```
+
+Apply specific enchantments by Minecraft key — useful for kit display items:
+
+```kotlin
+item(13) {
+    material = Material.DIAMOND_SWORD
+    name = "<#A1D8F5>Fang Kit"
+    enchantment("sharpness", 5)
+    enchantment("unbreaking", 3)
+    enchantment("fire_aspect", 2)
+}
+```
+
+For resource-pack item overrides, set `customModelData`:
+
+```kotlin
+item(4) {
+    material = Material.STICK
+    name = "<gold>Custom Item"
+    customModelData = 1001   // matches CustomModelData tag in your pack
 }
 ```
 
