@@ -41,4 +41,19 @@ public interface SculkRepository<T : Any, ID : Any> {
 
     /** Returns true if an entity with [id] exists. */
     public fun exists(id: ID): SculkResult<Boolean>
+
+    /**
+     * Inserts or updates all [entities] in a single batched database operation.
+     *
+     * Executes inside one transaction — either all succeed or the whole batch is
+     * rolled back and a [SculkResult.Failure] is returned.
+     *
+     * ```kotlin
+     * scheduler.runAsync {
+     *     val result = repo.saveAll(updatedPlayers)
+     *     if (result is SculkResult.Failure) logger.warning(result.message)
+     * }
+     * ```
+     */
+    public fun saveAll(entities: List<T>): SculkResult<Unit>
 }

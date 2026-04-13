@@ -1,5 +1,6 @@
 package gg.sculk.config.yaml
 
+import gg.sculk.config.annotation.Comment
 import gg.sculk.config.annotation.Max
 import gg.sculk.config.annotation.Min
 import gg.sculk.config.annotation.NotEmpty
@@ -75,9 +76,58 @@ public object YamlMapper {
         val defaults = toMap(createDefault(klass))
         val merged = defaults + existing
         file.parentFile?.mkdirs()
-        val writer = StringWriter()
-        yaml.dump(merged, writer)
-        file.writeText(writer.toString())
+
+        val hasComments = klass.primaryConstructor
+            ?.parameters
+            ?.any { it.annotations.any { a -> a is Comment } } == true
+
+        if (hasComments) {
+            file.writeText(buildCommentedYaml(klass, merged))
+        } else {
+            val writer = StringWriter()
+            yaml.dump(merged, writer)
+            file.writeText(writer.toString())
+        }
+    }
+
+    /**
+     * Builds a YAML string that preserves parameter order from the primary constructor
+     * and emits `# comment` lines above any parameter annotated with [@Comment][Comment].
+     *
+     * For each parameter:
+     * - If annotated with [@Comment][Comment], every line of the comment text is written as `# line`
+     * - The key-value pair is serialised using SnakeYAML so all types (nested data classes,
+     *   lists, maps) are handled correctly
+     * - A blank line is inserted after commented entries for readability
+     */
+    private fun <T : Any> buildCommentedYaml(
+        klass: KClass<T>,
+        mergedMap: Map<String, Any?>,
+    ): String {
+        val constructor = klass.primaryConstructor
+            ?: return yaml.dump(mergedMap)
+
+        val sb = StringBuilder()
+        for (param in constructor.parameters) {
+            val key = camelToKebab(param.name!!)
+            val comment = param.annotations.filterIsInstance<Comment>().firstOrNull()?.value
+            val value = mergedMap[key]
+
+            if (comment != null) {
+                comment.lines().forEach { line -> sb.appendLine("# $line") }
+            }
+
+            // Serialise just this key-value pair via SnakeYAML so we handle all types correctly.
+            val entryYaml = buildString {
+                val writer = StringWriter()
+                yaml.dump(mapOf(key to value), writer)
+                // SnakeYAML may prepend "--- \n" — strip it.
+                append(writer.toString().removePrefix("---\n").trimEnd())
+            }
+            sb.appendLine(entryYaml)
+            if (comment != null) sb.appendLine() // blank line after commented blocks for readability
+        }
+        return sb.toString()
     }
 
     /** Validates an [instance] against its field annotations. Returns a list of violation messages. */

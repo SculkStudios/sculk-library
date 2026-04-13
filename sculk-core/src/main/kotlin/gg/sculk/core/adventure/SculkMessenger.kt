@@ -4,6 +4,7 @@ import gg.sculk.core.annotation.SculkStable
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.title.Title
+import org.bukkit.Bukkit
 import java.time.Duration
 import net.kyori.adventure.sound.Sound as AdventureSound
 
@@ -92,4 +93,28 @@ public fun Audience.playSound(
             pitch,
         ),
     )
+}
+
+/**
+ * Broadcasts a MiniMessage-formatted [message] to every player on the server
+ * and to the console.
+ *
+ * Fully Component-based — no legacy color codes, no raw strings reaching the wire.
+ *
+ * ```kotlin
+ * broadcast("<#A3E4A1>✔ <#FFD6A5>│ <#E5E5E5>Server is restarting in 60 seconds!")
+ * ```
+ */
+@SculkStable
+public fun broadcast(message: String): Unit = Bukkit.getServer().broadcast(parseMessage(message))
+
+/**
+ * Sends an action bar [message] to every online player.
+ *
+ * Parsed as MiniMessage.
+ */
+@SculkStable
+public fun broadcastActionbar(message: String) {
+    val component = parseMessage(message)
+    Bukkit.getOnlinePlayers().forEach { it.sendActionBar(component) }
 }

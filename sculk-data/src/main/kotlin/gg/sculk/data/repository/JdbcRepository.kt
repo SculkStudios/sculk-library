@@ -106,6 +106,36 @@ public class JdbcRepository<T : Any, ID : Any>(
             onFailure = { SculkResult.failure("exists failed: ${it.message}", it) },
         )
 
+    override fun saveAll(entities: List<T>): SculkResult<Unit> {
+        if (entities.isEmpty()) return SculkResult.success(Unit)
+        return runCatching {
+            dataSource.connection.use { conn ->
+                val previousAutoCommit = conn.autoCommit
+                conn.autoCommit = false
+                try {
+                    conn.prepareStatement(upsertSql()).use { ps ->
+                        for (entity in entities) {
+                            OrmMapper
+                                .valuesOf(entity, mapping)
+                                .forEachIndexed { i, v -> ps.setObject(i + 1, v) }
+                            ps.addBatch()
+                        }
+                        ps.executeBatch()
+                    }
+                    conn.commit()
+                } catch (e: Exception) {
+                    conn.rollback()
+                    throw e
+                } finally {
+                    conn.autoCommit = previousAutoCommit
+                }
+            }
+        }.fold(
+            onSuccess = { SculkResult.success(Unit) },
+            onFailure = { SculkResult.failure("saveAll failed: ${it.message}", it) },
+        )
+    }
+
     /**
      * Upsert SQL — single parameter set for all columns.
      * Both dialects use delete-then-insert semantics when a primary key conflict occurs.
