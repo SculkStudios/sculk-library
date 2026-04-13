@@ -4,6 +4,7 @@ import gg.sculk.core.adventure.parseMessage
 import gg.sculk.core.annotation.SculkInternal
 import gg.sculk.core.annotation.SculkStable
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 
