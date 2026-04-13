@@ -106,7 +106,9 @@ public fun Audience.playSound(
  * ```
  */
 @SculkStable
-public fun broadcast(message: String): Unit = Bukkit.getServer().broadcast(parseMessage(message))
+public fun broadcast(message: String) {
+    Bukkit.getServer().broadcast(parseMessage(message))
+}
 
 /**
  * Sends an action bar [message] to every online player.
