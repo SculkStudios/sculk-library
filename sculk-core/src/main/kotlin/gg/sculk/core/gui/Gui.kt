@@ -127,6 +127,79 @@ public class GuiBuilder
             paginationConfig = PaginationBuilder().apply(block).build()
         }
 
+        /**
+         * Fills every slot that has not already been assigned an item.
+         *
+         * Useful for background filler or glass panes:
+         * ```kotlin
+         * gui("Menu") {
+         *     size = 27
+         *     fill(Material.BLACK_STAINED_GLASS_PANE) { name = "<gray> " }
+         *     item(13) { material = Material.DIAMOND; name = "<aqua>Click me!" }
+         * }
+         * ```
+         */
+        public fun fill(
+            material: Material,
+            block: GuiItemBuilder.() -> Unit = {},
+        ) {
+            for (slot in 0 until size) {
+                if (slot !in items) {
+                    @OptIn(SculkInternal::class)
+                    items[slot] = GuiItemBuilder(slot).apply { this.material = material }.apply(block).build()
+                }
+            }
+        }
+
+        /**
+         * Fills the outer ring of slots (top row, bottom row, left column, right column)
+         * that have not already been assigned an item.
+         *
+         * ```kotlin
+         * gui("Shop") {
+         *     size = 54
+         *     border(Material.GRAY_STAINED_GLASS_PANE) { name = "<gray> " }
+         * }
+         * ```
+         */
+        public fun border(
+            material: Material,
+            block: GuiItemBuilder.() -> Unit = {},
+        ) {
+            val rows = size / 9
+            for (slot in 0 until size) {
+                val row = slot / 9
+                val col = slot % 9
+                val isBorder = row == 0 || row == rows - 1 || col == 0 || col == 8
+                if (isBorder && slot !in items) {
+                    @OptIn(SculkInternal::class)
+                    items[slot] = GuiItemBuilder(slot).apply { this.material = material }.apply(block).build()
+                }
+            }
+        }
+
+        /**
+         * Assigns the same item definition to every slot in [slots].
+         *
+         * Skips any slot already assigned. Useful for setting an entire row,
+         * a column, or an arbitrary set of decoration slots at once:
+         * ```kotlin
+         * items(listOf(0, 8, 45, 53)) {
+         *     material = Material.NETHER_STAR
+         *     name = "<gold>★"
+         * }
+         * ```
+         */
+        public fun items(
+            slots: Iterable<Int>,
+            block: GuiItemBuilder.() -> Unit,
+        ) {
+            for (slot in slots) {
+                require(slot in 0 until size) { "Slot $slot is out of range for a GUI of size $size." }
+                if (slot !in items) item(slot, block)
+            }
+        }
+
         @SculkInternal
         public fun build(): Gui {
             require(size % 9 == 0 && size in 9..54) {

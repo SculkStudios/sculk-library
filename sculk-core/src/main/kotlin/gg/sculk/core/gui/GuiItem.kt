@@ -9,6 +9,7 @@ import org.bukkit.Registry
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
+import org.bukkit.enchantments.Enchantment
 
 /**
  * An immutable definition of a single slot in a [Gui].
@@ -74,6 +75,21 @@ public class GuiItemBuilder
          */
         public var glow: Boolean = false
 
+        /**
+         * Custom model data value for resource-pack item overrides.
+         *
+         * Set to any positive integer to apply a `CustomModelData` tag:
+         * ```kotlin
+         * item(4) {
+         *     material = Material.STICK
+         *     customModelData = 1001
+         *     name = "<gold>Magic Wand"
+         * }
+         * ```
+         */
+        public var customModelData: Int = 0
+
+        private val enchantments: MutableMap<String, Int> = mutableMapOf()
         private var clickHandler: (GuiContext.() -> Unit)? = null
         private var dynamicBuilder: (GuiItemBuilder.(Player) -> Unit)? = null
 
@@ -108,6 +124,27 @@ public class GuiItemBuilder
             lore.addAll(lines)
         }
 
+        /**
+         * Adds an enchantment by its Minecraft key (e.g. `"sharpness"`, `"unbreaking"`).
+         *
+         * Unsafe levels are allowed — useful for display items. The enchantment is
+         * looked up via the Bukkit [Registry] so it works across MC versions.
+         *
+         * ```kotlin
+         * item(0) {
+         *     material = Material.DIAMOND_SWORD
+         *     enchantment("sharpness", 5)
+         *     enchantment("unbreaking", 3)
+         * }
+         * ```
+         */
+        public fun enchantment(
+            name: String,
+            level: Int,
+        ) {
+            enchantments[name.lowercase()] = level
+        }
+
         @SculkInternal
         public fun build(): GuiItem {
             val stack = ItemStack(material, amount)
@@ -119,6 +156,13 @@ public class GuiItemBuilder
                     val enchantment = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("unbreaking"))
                     if (enchantment != null) meta.addEnchant(enchantment, 1, true)
                     meta.addItemFlags(ItemFlag.HIDE_ENCHANTS)
+                }
+                if (customModelData != 0) {
+                    meta.setCustomModelData(customModelData)
+                }
+                for ((enchName, level) in enchantments) {
+                    val ench = Registry.ENCHANTMENT.get(NamespacedKey.minecraft(enchName))
+                    if (ench != null) meta.addEnchant(ench, level, true)
                 }
                 stack.itemMeta = meta
             }
