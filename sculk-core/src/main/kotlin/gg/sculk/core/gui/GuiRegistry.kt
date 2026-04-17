@@ -25,10 +25,10 @@ public object GuiRegistry {
     private val sessions: ConcurrentHashMap<UUID, Entry> = ConcurrentHashMap()
 
     /** Set by [SculkPlatform] on bootstrap. Used by [Gui.openFor] to dispatch to the entity scheduler on Folia. */
-    internal var plugin: JavaPlugin? = null
+    @Volatile internal var plugin: JavaPlugin? = null
 
     /** True when running on Folia or a Folia fork (e.g. Canvas). Set by [SculkPlatform] on bootstrap. */
-    internal var isFolia: Boolean = false
+    @Volatile internal var isFolia: Boolean = false
 
     /** Called once from [SculkPlatformBuilder.build] to wire up Folia-aware dispatch. */
     @SculkInternal

@@ -93,6 +93,19 @@ public class PaperScheduler(
             runSyncDelayed(delayTicks, task)
         }
 
+    override fun runSyncRepeating(
+        entity: Entity,
+        delayTicks: Long,
+        periodTicks: Long,
+        task: Runnable,
+    ): SculkHandle =
+        if (FoliaDetector.isFolia) {
+            val t = entity.scheduler.runAtFixedRate(plugin, { task.run() }, null, delayTicks, periodTicks)
+            SculkHandle { t?.cancel() }
+        } else {
+            runSyncRepeating(delayTicks, periodTicks, task)
+        }
+
     // -------------------------------------------------------------------------
     // Sync — location region (runs on the thread owning the location's chunk)
     // On Paper falls back to global scheduler — location context is ignored.
@@ -107,6 +120,31 @@ public class PaperScheduler(
             SculkHandle { t.cancel() }
         } else {
             runSync(task)
+        }
+
+    override fun runSyncDelayed(
+        location: Location,
+        delayTicks: Long,
+        task: Runnable,
+    ): SculkHandle =
+        if (FoliaDetector.isFolia) {
+            val t = plugin.server.regionScheduler.runDelayed(plugin, location, { task.run() }, delayTicks)
+            SculkHandle { t.cancel() }
+        } else {
+            runSyncDelayed(delayTicks, task)
+        }
+
+    override fun runSyncRepeating(
+        location: Location,
+        delayTicks: Long,
+        periodTicks: Long,
+        task: Runnable,
+    ): SculkHandle =
+        if (FoliaDetector.isFolia) {
+            val t = plugin.server.regionScheduler.runAtFixedRate(plugin, location, { task.run() }, delayTicks, periodTicks)
+            SculkHandle { t.cancel() }
+        } else {
+            runSyncRepeating(delayTicks, periodTicks, task)
         }
 
     // -------------------------------------------------------------------------
