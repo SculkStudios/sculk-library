@@ -77,9 +77,10 @@ public object YamlMapper {
         val merged = defaults + existing
         file.parentFile?.mkdirs()
 
-        val hasComments = klass.primaryConstructor
-            ?.parameters
-            ?.any { it.annotations.any { a -> a is Comment } } == true
+        val hasComments =
+            klass.primaryConstructor
+                ?.parameters
+                ?.any { it.annotations.any { a -> a is Comment } } == true
 
         if (hasComments) {
             file.writeText(buildCommentedYaml(klass, merged))
@@ -104,13 +105,18 @@ public object YamlMapper {
         klass: KClass<T>,
         mergedMap: Map<String, Any?>,
     ): String {
-        val constructor = klass.primaryConstructor
-            ?: return yaml.dump(mergedMap)
+        val constructor =
+            klass.primaryConstructor
+                ?: return yaml.dump(mergedMap)
 
         val sb = StringBuilder()
         for (param in constructor.parameters) {
             val key = camelToKebab(param.name!!)
-            val comment = param.annotations.filterIsInstance<Comment>().firstOrNull()?.value
+            val comment =
+                param.annotations
+                    .filterIsInstance<Comment>()
+                    .firstOrNull()
+                    ?.value
             val value = mergedMap[key]
 
             if (comment != null) {
@@ -118,12 +124,13 @@ public object YamlMapper {
             }
 
             // Serialise just this key-value pair via SnakeYAML so we handle all types correctly.
-            val entryYaml = buildString {
-                val writer = StringWriter()
-                yaml.dump(mapOf(key to value), writer)
-                // SnakeYAML may prepend "--- \n" — strip it.
-                append(writer.toString().removePrefix("---\n").trimEnd())
-            }
+            val entryYaml =
+                buildString {
+                    val writer = StringWriter()
+                    yaml.dump(mapOf(key to value), writer)
+                    // SnakeYAML may prepend "--- \n" — strip it.
+                    append(writer.toString().removePrefix("---\n").trimEnd())
+                }
             sb.appendLine(entryYaml)
             if (comment != null) sb.appendLine() // blank line after commented blocks for readability
         }
