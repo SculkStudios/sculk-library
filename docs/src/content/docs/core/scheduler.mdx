@@ -142,13 +142,35 @@ SculkHandle handle = sculk.getScheduler().runSyncRepeating(0L, 10L, () ->
 </TabItem>
 </Tabs>
 
+## Entity and location overloads (Folia / Canvas)
+
+On Folia and Canvas, every chunk is owned by a specific region thread. Calling Paper APIs (inventory, entities) from the wrong thread causes errors. Use the entity/location overloads to dispatch to the correct thread automatically:
+
+```kotlin
+sculk.scheduler.runAsync {
+    val result = repo.find(player.uniqueId)
+
+    // runs on the thread owning the player's chunk — safe on both Paper and Folia
+    sculk.scheduler.runSync(player) {
+        player.sendMessage("Coins: ${result.getOrNull()?.coins}")
+    }
+}
+```
+
+On Paper, `runSync(entity)` and `runSync(location)` behave identically to `runSync` — no performance difference, no code change needed when switching between platforms.
+
+See [Folia & Canvas](/advanced/folia) for the full compatibility guide.
+
 ## All scheduler methods
 
 | Method | Thread | Fires |
 | --- | --- | --- |
-| `runSync(task)` | Main | Next tick |
-| `runSyncDelayed(delay, task)` | Main | After `delay` ticks |
-| `runSyncRepeating(delay, period, task)` | Main | Every `period` ticks |
+| `runSync(task)` | Main / global region | Next tick |
+| `runSync(entity, task)` | Entity's region thread | Next tick |
+| `runSync(location, task)` | Location's region thread | Next tick |
+| `runSyncDelayed(delay, task)` | Main / global region | After `delay` ticks |
+| `runSyncDelayed(entity, delay, task)` | Entity's region thread | After `delay` ticks |
+| `runSyncRepeating(delay, period, task)` | Main / global region | Every `period` ticks |
 | `runAsync(task)` | Async | Immediately (off main) |
 | `runAsyncDelayed(delay, task)` | Async | After `delay` ticks |
 | `runAsyncRepeating(delay, period, task)` | Async | Every `period` ticks |

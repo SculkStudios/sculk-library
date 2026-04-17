@@ -93,6 +93,7 @@ export default defineConfig({
 						{ label: 'API Stability', slug: 'advanced/api-stability' },
 						{ label: 'Java Compatibility', slug: 'advanced/java-compat' },
 						{ label: 'Performance', slug: 'advanced/performance' },
+					{ label: 'Folia & Canvas', slug: 'advanced/folia' },
 					],
 				},
 			],

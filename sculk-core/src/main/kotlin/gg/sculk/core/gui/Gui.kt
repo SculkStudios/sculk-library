@@ -56,7 +56,17 @@ public class Gui
             @OptIn(SculkInternal::class)
             session.openInventory = inventory
             GuiRegistry.register(player, session, inventory)
-            player.openInventory(inventory)
+
+            // On Folia/Canvas, player.openInventory() must run on the entity's region thread.
+            // We set session.openInventory and register BEFORE dispatching so that callers can
+            // call session.setEntries() / session.refresh() immediately — those operate on the
+            // in-memory Inventory object and don't need the entity thread.
+            val plugin = GuiRegistry.plugin
+            if (plugin != null && GuiRegistry.isFolia) {
+                player.scheduler.run(plugin, { player.openInventory(inventory) }, null)
+            } else {
+                player.openInventory(inventory)
+            }
             return session
         }
 

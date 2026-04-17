@@ -124,6 +124,11 @@ public class SculkPlatformBuilder(
         val commands = SculkCommandBridge(plugin)
         val extraHandles = mutableListOf<SculkHandle>()
 
+        // Wire Folia-aware GUI dispatch — done unconditionally so Gui.openFor() works
+        // even when the gui() subsystem is not enabled for event routing.
+        @OptIn(gg.sculk.core.annotation.SculkInternal::class)
+        GuiRegistry.init(plugin, FoliaDetector.isFolia)
+
         // Config
         val sculkConfig =
             if (configEnabled) {
