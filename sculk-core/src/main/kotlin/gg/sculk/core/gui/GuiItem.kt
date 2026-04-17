@@ -9,7 +9,6 @@ import org.bukkit.Registry
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
-import org.bukkit.enchantments.Enchantment
 
 /**
  * An immutable definition of a single slot in a [Gui].
