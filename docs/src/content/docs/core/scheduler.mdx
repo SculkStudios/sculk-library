@@ -170,6 +170,9 @@ See [Folia & Canvas](/advanced/folia) for the full compatibility guide.
 | `runSync(location, task)` | Location's region thread | Next tick |
 | `runSyncDelayed(delay, task)` | Main / global region | After `delay` ticks |
 | `runSyncDelayed(entity, delay, task)` | Entity's region thread | After `delay` ticks |
+| `runSyncRepeating(entity, delay, period, task)` | Entity's region thread | Every `period` ticks |
+| `runSyncDelayed(location, delay, task)` | Location's region thread | After `delay` ticks |
+| `runSyncRepeating(location, delay, period, task)` | Location's region thread | Every `period` ticks |
 | `runSyncRepeating(delay, period, task)` | Main / global region | Every `period` ticks |
 | `runAsync(task)` | Async | Immediately (off main) |
 | `runAsyncDelayed(delay, task)` | Async | After `delay` ticks |

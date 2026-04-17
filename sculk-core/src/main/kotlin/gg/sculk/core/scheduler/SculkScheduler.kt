@@ -81,6 +81,18 @@ public interface SculkScheduler {
         task: Runnable,
     ): SculkHandle = runSyncDelayed(delayTicks, task)
 
+    /**
+     * Runs [task] on the thread owning [entity]'s chunk every [periodTicks], starting after [delayTicks].
+     *
+     * On Paper this is identical to [runSyncRepeating].
+     */
+    public fun runSyncRepeating(
+        entity: Entity,
+        delayTicks: Long,
+        periodTicks: Long,
+        task: Runnable,
+    ): SculkHandle = runSyncRepeating(delayTicks, periodTicks, task)
+
     // -------------------------------------------------------------------------
     // Location-region sync — runs on the thread owning the location's chunk
     // On Paper, location context is ignored and falls back to global sync.
@@ -97,6 +109,29 @@ public interface SculkScheduler {
         location: Location,
         task: Runnable,
     ): SculkHandle = runSync(task)
+
+    /**
+     * Runs [task] on the thread owning the chunk at [location] after [delayTicks].
+     *
+     * On Paper this is identical to [runSyncDelayed].
+     */
+    public fun runSyncDelayed(
+        location: Location,
+        delayTicks: Long,
+        task: Runnable,
+    ): SculkHandle = runSyncDelayed(delayTicks, task)
+
+    /**
+     * Runs [task] on the thread owning the chunk at [location] every [periodTicks], starting after [delayTicks].
+     *
+     * On Paper this is identical to [runSyncRepeating].
+     */
+    public fun runSyncRepeating(
+        location: Location,
+        delayTicks: Long,
+        periodTicks: Long,
+        task: Runnable,
+    ): SculkHandle = runSyncRepeating(delayTicks, periodTicks, task)
 
     // -------------------------------------------------------------------------
     // Async — off the main/region thread entirely
