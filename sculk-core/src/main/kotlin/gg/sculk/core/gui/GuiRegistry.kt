@@ -3,6 +3,7 @@ package gg.sculk.core.gui
 import gg.sculk.core.annotation.SculkInternal
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
+import org.bukkit.plugin.java.JavaPlugin
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -22,6 +23,22 @@ public object GuiRegistry {
     )
 
     private val sessions: ConcurrentHashMap<UUID, Entry> = ConcurrentHashMap()
+
+    /** Set by [SculkPlatform] on bootstrap. Used by [Gui.openFor] to dispatch to the entity scheduler on Folia. */
+    internal var plugin: JavaPlugin? = null
+
+    /** True when running on Folia or a Folia fork (e.g. Canvas). Set by [SculkPlatform] on bootstrap. */
+    internal var isFolia: Boolean = false
+
+    /** Called once from [SculkPlatformBuilder.build] to wire up Folia-aware dispatch. */
+    @SculkInternal
+    public fun init(
+        plugin: JavaPlugin,
+        isFolia: Boolean,
+    ) {
+        this.plugin = plugin
+        this.isFolia = isFolia
+    }
 
     /** Registers a [session] + [inventory] pair for [player]. */
     public fun register(

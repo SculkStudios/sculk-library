@@ -5,3 +5,4 @@ description: Sculk Studio basic plugin — vertical slice example
 api-version: '1.21'
 authors:
   - SculkStudios
+folia-supported: true

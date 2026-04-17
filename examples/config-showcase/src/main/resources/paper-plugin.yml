@@ -1,0 +1,5 @@
+name: ConfigShowcase
+version: 1.0.0
+main: gg.sculk.example.ConfigPlugin
+api-version: '1.21'
+folia-supported: true

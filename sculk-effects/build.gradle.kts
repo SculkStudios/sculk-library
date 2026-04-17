@@ -15,4 +15,5 @@ dependencies {
     api(project(":sculk-series"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
+    testRuntimeOnly(libs.paper.api)
 }

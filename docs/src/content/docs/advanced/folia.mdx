@@ -1,0 +1,117 @@
+---
+title: Folia & Canvas
+description: Running Sculk Studio plugins on Folia and Canvas MC — everything handled automatically.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Sculk Studio fully supports [Folia](https://papermc.io/software/folia) and its forks, including [Canvas MC](https://canvasmc.io). All threading complexity is handled internally — you write the same code and Sculk routes it to the correct scheduler at runtime.
+
+## What Folia changes
+
+Folia replaces Paper's single main thread with per-region threads, one per group of nearby chunks. The old `BukkitScheduler` is removed. Four new schedulers take its place:
+
+| Scheduler | Use case |
+| --- | --- |
+| **GlobalRegionScheduler** | Server-wide tasks with no entity/location context — equivalent to the old main thread |
+| **EntityScheduler** | Tasks tied to a specific entity (e.g. opening a player's inventory) |
+| **RegionScheduler** | Tasks tied to a specific world location (e.g. placing blocks) |
+| **AsyncScheduler** | Background tasks off all region threads — database, HTTP, file I/O |
+
+Sculk Studio detects Folia at startup via class presence and routes every scheduler call automatically. **You do not need to change your plugin code to gain Folia support.**
+
+---
+
+## Required: declare Folia support
+
+Folia will refuse to load plugins that don't opt in. Add one line to your `paper-plugin.yml`:
+
+```yaml
+name: MyPlugin
+version: 1.0.0
+main: com.example.MyPlugin
+api-version: '1.21'
+folia-supported: true   # required for Folia and Canvas
+```
+
+Without this flag your plugin will not start on Folia regardless of whether the code is safe.
+
+---
+
+## Scheduler — what changes
+
+### `runSync` → global region thread
+
+`sculk.scheduler.runSync { }` maps to `GlobalRegionScheduler` on Folia. This is the correct choice for tasks that don't touch a specific player or location.
+
+### `runSync(entity)` and `runSync(location)` — new Folia-safe overloads
+
+When your task operates on a specific player or world position, use the entity/location overloads. On Folia these dispatch to the correct region thread. On Paper they behave identically to `runSync`.
+
+<Tabs>
+<TabItem label="Kotlin">
+```kotlin
+// After a DB query, update a player's inventory on their region thread
+sculk.scheduler.runAsync {
+    val result = repo.find(player.uniqueId)
+
+    // runSync(player) — entity scheduler on Folia, global sync on Paper
+    sculk.scheduler.runSync(player) {
+        player.sendMessage("<yellow>Coins: ${result.getOrNull()?.coins}")
+    }
+}
+```
+</TabItem>
+<TabItem label="Java">
+```java
+sculk.getScheduler().runAsync(() -> {
+    SculkResult<PlayerData> result = repo.find(player.getUniqueId());
+
+    sculk.getScheduler().runSync(player, () ->
+        player.sendMessage("<yellow>Coins: " + result.getOrNull().coins())
+    );
+});
+```
+</TabItem>
+</Tabs>
+
+### `runAsync` — unchanged
+
+All async methods work the same on both platforms. Folia's `AsyncScheduler` uses real time internally; Sculk converts ticks automatically (`1 tick = 50 ms`).
+
+---
+
+## GUIs — handled automatically
+
+`Gui.openFor(player)` auto-dispatches `player.openInventory()` to the entity scheduler on Folia. You call it the same way on both platforms:
+
+```kotlin
+player {
+    val session = shopMenu.openFor(player!!)
+    session.setEntries(shopItems())   // safe — operates on in-memory Inventory object
+}
+```
+
+`setEntries()`, `refresh()`, and `refreshAll()` modify the `Inventory` object in memory and are safe to call from any thread. The player sees the populated inventory when `openInventory` fires on the next entity tick.
+
+---
+
+## Canvas MC
+
+Canvas is a Folia fork focused on stability and performance. It uses the **identical scheduler API** as Folia — no extra handling needed. Sculk Studio's Folia detection covers Canvas automatically.
+
+Canvas advantages you can use immediately in your plugins:
+- Full Spark profiler support for region-threaded servers
+- Faster chunk generation (transparent to plugins)
+- Stability fixes for several Folia edge cases
+
+---
+
+## Summary
+
+| What you need to do | What Sculk handles automatically |
+| --- | --- |
+| Add `folia-supported: true` to `paper-plugin.yml` | Folia detection at startup |
+| Use `scheduler.runSync(player)` for player-specific tasks from async | `Gui.openFor()` entity scheduler dispatch |
+| — | Scheduler API routing (BukkitScheduler → correct Folia scheduler) |
+| — | Tick-to-millisecond conversion for async delayed/repeating tasks |
