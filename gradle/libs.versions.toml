@@ -1,7 +1,7 @@
 [versions]
 kotlin            = "2.3.20"
 paper             = "1.21.11-R0.1-SNAPSHOT"
-adventure         = "5.0.1"
+adventure         = "5.1.1"
 minimessage       = "5.0.1"
 hikari            = "7.0.2"
 caffeine          = "3.2.3"
