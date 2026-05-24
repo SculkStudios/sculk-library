@@ -1,6 +1,6 @@
 ---
 title: Commands Overview
-description: DSL-first command system with sender routing, typed arguments, and auto tab-completion.
+description: DSL-first command system with sender routing, typed arguments, and tab-completion from the command tree.
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
@@ -114,12 +114,18 @@ JavaCommandBuilder.create("teleport")
 
 ## Auto tab-completion
 
-Generated automatically from the subcommand tree and registered argument names. No extra code needed.
+Generated from the subcommand tree and registered argument names. Add explicit suggestions on arguments when a command needs dynamic values such as online players, worlds, or config keys.
 
 ## Permission checks
 
 Set `permission` on any node. Players without the permission get a clean error message automatically.
 Root-level permissions cascade — a player denied at the root never reaches subcommands.
+
+Sculk checks node permissions during command dispatch. The Bukkit/Paper command permission is still set for command visibility and registration behavior, but Sculk does not rely on deprecated Bukkit permission-message handling for normal player feedback.
+
+:::note
+Commands currently register through Bukkit's command map. A Brigadier/Paper command API integration is planned, but it is not part of the current command system.
+:::
 
 ## Feedback helpers
 

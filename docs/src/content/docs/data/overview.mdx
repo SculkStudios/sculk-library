@@ -1,11 +1,11 @@
 ---
 title: Data Overview
-description: Repository pattern for persistent storage over SQLite and MySQL — async-first, annotation-driven, zero boilerplate.
+description: Repository pattern for persistent storage over SQLite and MySQL with typed results and explicit scheduling.
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-`sculk-data` gives you typed, async-safe persistent storage without writing any SQL. You annotate a data class, create a repository, and call `find`, `save`, and `delete`. SQLite is the default; MySQL/MariaDB is a config switch away.
+`sculk-data` gives you typed persistent storage without writing routine SQL. You annotate a data class, create a repository, and call `find`, `save`, and `delete`. SQLite is the default; MySQL/MariaDB is a config switch away.
 
 ## Defining an entity
 
@@ -40,7 +40,7 @@ public record PlayerData(
 </TabItem>
 </Tabs>
 
-Sculk reads the annotations once at startup and caches the mapping — there is zero reflection overhead per database call.
+Sculk reads the annotations during mapper setup and caches the mapping, so normal repository calls do not need to rediscover the entity shape each time.
 
 ## Creating a repository
 
@@ -58,7 +58,7 @@ SculkRepository<PlayerData, UUID> repo =
 </TabItem>
 </Tabs>
 
-The repository creates the database table automatically if it does not exist. Any columns present in the annotation but missing from the table are added with `ALTER TABLE`.
+The repository creates the database table automatically if it does not exist. Columns present in the annotation but missing from the table are added with `ALTER TABLE`.
 
 ## Operations
 

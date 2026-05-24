@@ -1,75 +1,75 @@
 ---
 title: Series Overview
-description: Cross-version key lookups for materials, sounds, particles, and more — no hardcoded version checks.
+description: Registry-backed lookup helpers for modern Paper keys.
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-Minecraft renames keys between versions. A sound called `entity.player.levelup` in 1.8 became `entity.player.level_up` in 1.9. A material called `ROSE` became `RED_FLOWER` then `POPPY`. `sculk-series` resolves these transparently without fragile `if (version == ...)` checks scattered through your code.
+`sculk-series` resolves string keys into Paper/Bukkit registry values. It is useful when keys come from config files, messages, command arguments, or data stores.
 
-## How it works
+It is intentionally narrower than XSeries. It does not ship a full historical alias database for every renamed material, sound, potion, or particle. Unknown keys return `null` so your plugin can choose a fallback or disable a feature cleanly.
 
-`SculkSeries` holds a registry for each key type. On first lookup, the key is resolved against the running server version and the result is cached. Every subsequent lookup is a pure cache read — no reflection, no version checks, no overhead.
+## What it supports
+
+- Paper registry-backed lookups for sounds, particles, entity types, enchantments, potion effects, and biomes.
+- Material lookup through Paper/Bukkit material matching.
+- Case-insensitive input where the backing API supports it.
+- `minecraft:` namespace handling for registry keys.
+- Dot/underscore normalization for common config input styles.
+- Cached lookup results through `SculkRegistry`.
 
 ## Basic usage
 
 <Tabs>
 <TabItem label="Kotlin">
 ```kotlin
-val sword    = SculkSeries.material("diamond_sword")   // Material
-val levelUp  = SculkSeries.sound("entity.player.levelup")  // Sound
-val flame    = SculkSeries.particle("flame")           // Particle
-val strength = SculkSeries.enchantment("strength")     // Enchantment
-val zombie   = SculkSeries.entityType("zombie")        // EntityType
-val speed    = SculkSeries.potionEffect("speed")       // PotionEffectType
-val plains   = SculkSeries.biome("plains")             // Biome
+val sword = SculkSeries.material("diamond_sword")
+val levelUp = SculkSeries.sound("minecraft:entity.player.levelup")
+val flame = SculkSeries.particle("flame")
+val sharpness = SculkSeries.enchantment("sharpness")
+val zombie = SculkSeries.entityType("zombie")
+val speed = SculkSeries.potionEffect("speed")
+val plains = SculkSeries.biome("plains")
 ```
 </TabItem>
 <TabItem label="Java">
 ```java
-Material   sword    = SculkSeries.material("diamond_sword");
-Sound      levelUp  = SculkSeries.sound("entity.player.levelup");
-Particle   flame    = SculkSeries.particle("flame");
-Enchantment strength = SculkSeries.enchantment("strength");
-EntityType zombie   = SculkSeries.entityType("zombie");
+Material sword = SculkSeries.material("diamond_sword");
+Sound levelUp = SculkSeries.sound("minecraft:entity.player.levelup");
+Particle flame = SculkSeries.particle("flame");
+Enchantment sharpness = SculkSeries.enchantment("sharpness");
+EntityType zombie = SculkSeries.entityType("zombie");
 PotionEffectType speed = SculkSeries.potionEffect("speed");
-Biome      plains   = SculkSeries.biome("plains");
+Biome plains = SculkSeries.biome("plains");
 ```
 </TabItem>
 </Tabs>
 
-All lookups return `null` if the key is unknown on the running server, so you can safely handle unsupported types without crashing.
+## Null-safe fallback
 
-## Null-safe pattern
+Always handle missing keys. A key can be absent because the server version does not contain it, the user misspelled it, or a config was copied from another plugin.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
-val material = SculkSeries.material("netherite_sword")
-    ?: SculkSeries.material("diamond_sword")!! // fallback for older servers
+val material =
+    SculkSeries.material(config.iconMaterial)
+        ?: run {
+            logger.warning("Unknown material '${config.iconMaterial}', using STONE.")
+            Material.STONE
+        }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-Material material = SculkSeries.material("netherite_sword");
-if (material == null) {
-    material = SculkSeries.material("diamond_sword");
-}
-```
-</TabItem>
-</Tabs>
 
-## Why use this instead of `Material.valueOf()`?
+## When to use it
 
-`Material.valueOf("ROSE")` throws `IllegalArgumentException` on 1.9+ where it was renamed. `SculkSeries.material("rose")` resolves the correct name for the running version and returns `null` instead of throwing.
+Use `SculkSeries` for external input:
 
-This matters especially when:
-- Your plugin supports a range of Paper versions
-- You load material names from config (user input can be any version's name)
-- You're building reusable libraries that run on many servers
+- Materials in config files.
+- Sounds in message files.
+- Particle names in effect definitions.
+- Admin command arguments.
+- Stored registry keys in a database.
 
-## Best practices
+For hardcoded plugin logic, direct Paper constants are often clearer.
 
-- Look up keys once at startup and store the result — cache means it's already fast, but a field is even faster.
-- Always handle the `null` case: if the key truly doesn't exist on the running server, log clearly and disable the feature.
-- Use `sculk-series` for everything external: materials from configs, sounds from messages, particles from effect definitions.
+## XSeries comparison
+
+`sculk-series` is not a drop-in replacement for XSeries today. It focuses on modern Paper registry access and clean nullable lookups. Full historical alias coverage is planned only where it is useful and maintainable.

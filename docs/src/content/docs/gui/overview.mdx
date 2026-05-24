@@ -5,7 +5,7 @@ description: Chest inventory GUIs with per-player sessions, click routing, and a
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-GUIs are **immutable definitions**. Define once, open for any player. Sessions are created automatically on `openFor` and cleaned up when the player closes the inventory or disconnects — no manual cleanup ever needed.
+GUIs are **immutable definitions**. Define once, open for any player. Sessions are created automatically on `openFor` and cleaned up when the player closes the inventory or disconnects through the platform GUI subsystem.
 
 ## Defining a GUI
 
@@ -162,6 +162,12 @@ items(36..44) {
 
 ## Item glow, enchantments, and custom model data
 
+Sculk writes item metadata through Paper 26.1.2-compatible APIs:
+
+- `glow = true` uses Paper's enchantment glint override instead of adding a hidden fake enchantment.
+- `customModelData = 1001` keeps the DSL simple while writing a modern `CustomModelDataComponent` internally.
+- `enchantment("sharpness", 5)` resolves enchantments through Paper registry access.
+
 Add an enchantment shimmer to an item without showing any enchantment text:
 
 ```kotlin
@@ -190,7 +196,7 @@ For resource-pack item overrides, set `customModelData`:
 item(4) {
     material = Material.STICK
     name = "<gold>Custom Item"
-    customModelData = 1001   // matches CustomModelData tag in your pack
+    customModelData = 1001   // writes a single float into the custom model data component
 }
 ```
 
@@ -233,3 +239,4 @@ State is tied to the `GuiSession` — it is cleared automatically when the playe
 - Define GUIs as top-level `val`s or `object` constants — created once, reused for every player.
 - Keep `onClick` handlers short. Heavy logic belongs in a service.
 - Use `open(other)` rather than calling `player.closeInventory()` directly — it preserves session state.
+- Enable `gui()` when creating `SculkPlatform`; without it, click and close routing is not registered.

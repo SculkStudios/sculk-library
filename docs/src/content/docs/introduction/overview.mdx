@@ -1,27 +1,28 @@
 ---
 title: What is Sculk Studio?
-description: A production-grade Kotlin-first framework for building Minecraft Paper plugins — designed by Sculk Studios.
+description: Kotlin-first Paper utilities for modern plugin development.
 ---
 
-Sculk Studio is a **production-grade, Kotlin-first framework** for building Minecraft Paper plugins. It was built by Sculk Studios to power all internal plugins and open-sourced for everyone.
+Sculk Studio is a Kotlin-first library for Paper plugins. It provides focused APIs for command trees, GUI menus, typed configuration, data access, Adventure text, scheduling, events, effects, and Paper lifecycle wiring.
 
-Instead of wrestling with Bukkit boilerplate — manual command parsing, raw `InventoryClickEvent` handling, `getConfig().getString("path.to.value")` everywhere — Sculk Studio gives you clean DSLs, automatic lifecycle management, and typed everything.
+The library keeps Paper visible. It does not try to replace Paper, hide thread-safety rules, or emulate every legacy compatibility library. Instead, it gives you smaller APIs around the work most Paper plugins repeat.
 
-## What it looks like
-
-Here's a full working command with tab-completion, a typed config, and a GUI — the kind of thing that would take hundreds of lines with raw Bukkit:
+## Example
 
 ```kotlin
 @ConfigFile("settings.yml")
-data class Settings(val maxHomes: Int = 5)
+data class Settings(
+    @param:Min(1) val maxHomes: Int = 5,
+)
 
 val homeMenu = gui("<dark_aqua>Your Homes") {
     size = 27
+
     item(13) {
         material = Material.COMPASS
         name = "<aqua>Set Home"
         onClick {
-            reply("<green>Home set!")
+            reply("<green>Home set.")
             close()
         }
     }
@@ -34,8 +35,8 @@ fun homeCommand(sculk: SculkPlatform) = command("home") {
         string("name")
         player {
             val name = argument<String>("name")
-            val settings = sculk.config.load<Settings>()
-            reply("<green>Home '$name' set. Max homes: ${settings.maxHomes}")
+            val settings = sculk.config!!.load<Settings>()
+            reply("<green>Home <white>$name</white> set. Max homes: ${settings.maxHomes}")
         }
     }
 
@@ -47,35 +48,34 @@ fun homeCommand(sculk: SculkPlatform) = command("home") {
 }
 ```
 
-No event listeners. No `onCommand`. No switch statements. No manual tab-completion registration.
+## Design goals
 
-## Core philosophy
+**Kotlin-first.** The main API uses Kotlin DSLs where they improve readability.
 
-**Kotlin-first, Java-friendly.** Every DSL has a paired Java builder. Nothing in the public API is Kotlin-only.
+**Java-usable.** Core systems expose Java builders or Java-friendly entry points where practical.
 
-**Zero boilerplate.** Commands register themselves. Config files write their own defaults. GUI sessions clean up when players disconnect. You define the behaviour; Sculk Studio handles the plumbing.
+**Paper-first.** Sculk Studio targets modern Paper 26.1.2+ and Java 25.
 
-**Paper-first.** Sculk Studio targets Paper 26.1.x and uses its modern APIs directly. There are no Spigot/Bukkit compatibility shims slowing things down.
+**Adventure-first.** Message helpers use Adventure components and MiniMessage, not legacy color-code-first APIs.
 
-**Adventure-only.** MiniMessage is the single text format. No legacy colour codes, no `ChatColor.GREEN`, no mixed string escaping. Every message is a clean MiniMessage string.
+**Explicit thread rules.** Repository calls are synchronous and blocking. Run them off the main thread, then return to the correct Paper thread before touching players, worlds, or inventories.
 
-**Performance-first.** Zero blocking on the main thread. Reflection runs once at startup and is cached. GUI inventory updates are batched per tick. The data layer uses HikariCP connection pooling and Caffeine for in-memory caching.
+**Small modules.** Each module has a focused job and can be reasoned about independently.
 
-**Modular.** Each module (`sculk-core`, `sculk-config`, `sculk-data`, …) is a standalone Gradle artifact. Include only what you need.
-
-## Modules at a glance
+## Modules
 
 | Module | What it does |
 | --- | --- |
-| `sculk-core` | Command DSL, GUI system, Adventure messaging, scheduler contracts |
-| `sculk-config` | Typed YAML configs, hot reload, validation annotations, message files |
-| `sculk-series` | Cross-version key lookup for materials, sounds, particles, entities, and more |
+| `sculk-core` | Command DSL, GUI system, Adventure helpers, scheduler contracts, version parser |
+| `sculk-config` | Typed YAML configs, comments, hot reload, validation annotations |
+| `sculk-series` | Registry-backed key lookup helpers for modern Paper keys |
 | `sculk-effects` | Particle builders, sound builders, animation timelines, effect sequences |
-| `sculk-data` | Repository pattern, SQLite + MySQL, Caffeine-backed in-memory cache |
-| `sculk-platform` | Wires everything into a single Paper plugin bootstrap entry point |
+| `sculk-data` | JDBC repositories, SQLite/MySQL config, Caffeine-backed cache layer |
+| `sculk-platform` | Paper integration for plugin lifecycle, commands, events, scheduler, and GUI cleanup |
 
 ## What Sculk Studio is not
 
-- A replacement for Paper's API — it wraps and extends it, not hides it.
-- A cross-version compatibility shim — `sculk-series` handles key lookups, not API differences.
-- Something you need a framework degree for — if you know Kotlin and Paper, you can read the DSL on first sight.
+- It is not a replacement for Paper's API.
+- It is not a full XSeries clone.
+- It is not a guarantee that blocking calls are safe on the main thread.
+- It is not a standalone server plugin. Shade and relocate it into your plugin jar.

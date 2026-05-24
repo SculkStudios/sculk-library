@@ -15,8 +15,8 @@ import studio.sculk.platform.SculkPlatform
 
 @ConfigFile("settings.yml")
 public data class Settings(
-    @NotEmpty val prefix: String = "<gray>[<aqua>Demo<gray>]",
-    @Min(1) @Max(20) val maxHomes: Int = 5,
+    @param:NotEmpty val prefix: String = "<gray>[<aqua>Demo<gray>]",
+    @param:Min(1) @param:Max(20) val maxHomes: Int = 5,
     val welcomeMessage: String = "<green>Welcome to the server!",
     val allowFlight: Boolean = false,
 )

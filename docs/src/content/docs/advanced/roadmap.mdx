@@ -1,35 +1,43 @@
 ---
 title: Roadmap
-description: Current implementation status and planned release work.
+description: Implementation status, production hardening, and v1.0 direction.
 ---
 
-Sculk Studio is pre-public, so breaking API cleanup can still happen before the first stable release.
+Sculk Studio is still pre-public, so API cleanup can happen before the first stable release.
 
-## Implemented Today
+## Implemented today
 
 - Command DSL and Java command builder.
 - GUI menu DSL, sessions, pagination, and platform cleanup.
 - MiniMessage and Adventure messaging helpers.
-- Typed YAML config loading and validation annotations.
+- Typed YAML config loading, comments, validation annotations, and reload callbacks.
 - JDBC repositories, storage config, ORM mapping, and cache helpers.
-- Registry helpers through `sculk-series`.
+- Registry-backed lookup helpers through `sculk-series`.
 - Particle, sound, timeline, and sequence builders.
 - Paper platform bootstrap, events, scheduler, command registration, and GUI lifecycle.
-- Version parser for legacy `1.x.y` and new `26.x.y` Minecraft versions.
+- Minecraft version parser for legacy `1.x.y` and new `26.x.y` formats.
 
-## Before Public Release
+## Production hardening
 
-- Complete package/domain migration to `studio.sculk`.
-- Harden Paper 26.1.2 support and Java 25 builds.
-- Expand command docs with error handling and suggestions.
-- Add item builder docs only after the standalone item API exists.
-- Add storage examples that show async loading and shutdown saves.
-- Add more tests for platform lifecycle behavior.
+- `studio.sculk` package and `sculk.studio` domain migration.
+- Paper `26.1.2.build.+` and Java 25 build target.
+- Modern Paper registry access.
+- Modern item custom model data component usage.
+- Explicit Kotlin `@param:` validation annotation examples.
+- Docs that distinguish implemented behavior from planned behavior.
 
-## Long Term
+## Before public release
 
-- Dedicated item module.
-- More compatibility mappings.
-- Optional Paper command API or Brigadier integration.
-- More real-world example plugins.
-- Published API docs and Maven metadata.
+- Add more lifecycle tests for GUI registry cleanup.
+- Add command dispatch tests for permission and tab-completion edge cases.
+- Expand storage examples for async load/save and shutdown flushes.
+- Review public API names one more time before declaring stability.
+- Publish API docs or link generated Dokka output when configured.
+
+## v1.0 ideas
+
+- Standalone item builder module.
+- Focused compatibility alias tables for common migration cases.
+- Optional Paper command API / Brigadier integration.
+- Dedicated integration-test server module.
+- More complete real-world example plugins.

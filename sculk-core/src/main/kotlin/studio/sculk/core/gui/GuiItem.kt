@@ -1,11 +1,13 @@
 package studio.sculk.core.gui
 
+import io.papermc.paper.registry.RegistryAccess
+import io.papermc.paper.registry.RegistryKey
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.Registry
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.ItemMeta
 import studio.sculk.core.adventure.parseMessage
 import studio.sculk.core.annotation.SculkInternal
 import studio.sculk.core.annotation.SculkStable
@@ -77,7 +79,11 @@ public class GuiItemBuilder
         /**
          * Custom model data value for resource-pack item overrides.
          *
-         * Set to any positive integer to apply a `CustomModelData` tag:
+         * The DSL remains an [Int] for simple resource-pack model overrides.
+         * Internally, Sculk writes Paper's modern custom model data component,
+         * where the integer is represented as a single float value.
+         *
+         * Set to any positive integer to apply custom model data:
          * ```kotlin
          * item(4) {
          *     material = Material.STICK
@@ -152,19 +158,32 @@ public class GuiItemBuilder
                 if (name.isNotBlank()) meta.displayName(parseMessage(name))
                 if (lore.isNotEmpty()) meta.lore(lore.map { parseMessage(it) })
                 if (glow) {
-                    val enchantment = Registry.ENCHANTMENT.get(NamespacedKey.minecraft("unbreaking"))
-                    if (enchantment != null) meta.addEnchant(enchantment, 1, true)
-                    meta.addItemFlags(ItemFlag.HIDE_ENCHANTS)
+                    meta.setEnchantmentGlintOverride(true)
                 }
                 if (customModelData != 0) {
-                    meta.setCustomModelData(customModelData)
+                    applyCustomModelData(meta, customModelData)
                 }
                 for ((enchName, level) in enchantments) {
-                    val ench = Registry.ENCHANTMENT.get(NamespacedKey.minecraft(enchName))
+                    val ench = enchantmentByKey(enchName)
                     if (ench != null) meta.addEnchant(ench, level, true)
                 }
                 stack.itemMeta = meta
             }
             return GuiItem(slot, stack, clickHandler, dynamicBuilder)
+        }
+
+        private fun enchantmentByKey(key: String): Enchantment? =
+            RegistryAccess
+                .registryAccess()
+                .getRegistry(RegistryKey.ENCHANTMENT)
+                .get(NamespacedKey.minecraft(key.trim().lowercase()))
+
+        private fun applyCustomModelData(
+            meta: ItemMeta,
+            value: Int,
+        ) {
+            val component = meta.customModelDataComponent
+            component.setFloats(listOf(value.toFloat()))
+            meta.setCustomModelDataComponent(component)
         }
     }

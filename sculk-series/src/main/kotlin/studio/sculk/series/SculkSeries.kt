@@ -1,7 +1,10 @@
 package studio.sculk.series
 
+import io.papermc.paper.registry.RegistryAccess
+import io.papermc.paper.registry.RegistryKey
 import org.bukkit.Difficulty
 import org.bukkit.GameMode
+import org.bukkit.Keyed
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Particle
@@ -15,6 +18,7 @@ import studio.sculk.core.annotation.SculkStable
 import studio.sculk.series.registry.MappingResolver
 import studio.sculk.series.registry.SculkRegistry
 import java.util.concurrent.ConcurrentHashMap
+import java.util.stream.Collectors
 
 /**
  * Entry point for all Sculk Studio cross-version registry lookups.
@@ -34,6 +38,8 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @SculkStable
 public object SculkSeries {
+    private val paperRegistries: RegistryAccess by lazy { RegistryAccess.registryAccess() }
+
     private val materialRegistry: SculkRegistry<Material> by lazy {
         SculkRegistry(
             resolver =
@@ -48,41 +54,55 @@ public object SculkSeries {
     }
 
     private val soundRegistry: SculkRegistry<Sound> by lazy {
+        val registry = registry(RegistryKey.SOUND_EVENT)
         SculkRegistry(
             resolver =
                 object : MappingResolver<Sound> {
                     override fun resolve(key: String): Sound? =
-                        runCatching { Sound.valueOf(key.uppercase()) }.getOrNull()
-                            ?: Sound.values().firstOrNull {
-                                it.name().equals(key, ignoreCase = true) ||
-                                    it.name().lowercase().replace('_', '.') == key.lowercase()
-                            }
+                        normalizedLookupKeys(key)
+                            .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> = Sound.values().map { it.name().lowercase() }.toSet()
+                    override fun keys(): Set<String> =
+                        registry
+                            .keyStream()
+                            .map { it.key }
+                            .collect(Collectors.toSet())
                 },
         )
     }
 
     private val particleRegistry: SculkRegistry<Particle> by lazy {
+        val registry = registry(RegistryKey.PARTICLE_TYPE)
         SculkRegistry(
             resolver =
                 object : MappingResolver<Particle> {
-                    override fun resolve(key: String): Particle? = runCatching { Particle.valueOf(key.uppercase()) }.getOrNull()
+                    override fun resolve(key: String): Particle? =
+                        normalizedLookupKeys(key)
+                            .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> = Particle.values().map { it.name.lowercase() }.toSet()
+                    override fun keys(): Set<String> =
+                        registry
+                            .keyStream()
+                            .map { it.key }
+                            .collect(Collectors.toSet())
                 },
         )
     }
 
     private val entityTypeRegistry: SculkRegistry<EntityType> by lazy {
+        val registry = registry(RegistryKey.ENTITY_TYPE)
         SculkRegistry(
             resolver =
                 object : MappingResolver<EntityType> {
                     override fun resolve(key: String): EntityType? =
-                        runCatching { EntityType.valueOf(key.uppercase()) }.getOrNull()
-                            ?: EntityType.values().firstOrNull { it.name.equals(key, ignoreCase = true) }
+                        normalizedLookupKeys(key)
+                            .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> = EntityType.values().map { it.name.lowercase() }.toSet()
+                    override fun keys(): Set<String> =
+                        registry
+                            .keyStream()
+                            .map { it.key }
+                            .collect(Collectors.toSet())
                 },
         )
     }
@@ -91,9 +111,10 @@ public object SculkSeries {
         SculkRegistry(
             resolver =
                 object : MappingResolver<GameMode> {
-                    override fun resolve(key: String): GameMode? = runCatching { GameMode.valueOf(key.uppercase()) }.getOrNull()
+                    override fun resolve(key: String): GameMode? =
+                        GameMode.entries.firstOrNull { it.name.equals(key.trim(), ignoreCase = true) }
 
-                    override fun keys(): Set<String> = GameMode.values().map { it.name.lowercase() }.toSet()
+                    override fun keys(): Set<String> = GameMode.entries.map { it.name.lowercase() }.toSet()
                 },
         )
     }
@@ -102,52 +123,64 @@ public object SculkSeries {
         SculkRegistry(
             resolver =
                 object : MappingResolver<Difficulty> {
-                    override fun resolve(key: String): Difficulty? = runCatching { Difficulty.valueOf(key.uppercase()) }.getOrNull()
+                    override fun resolve(key: String): Difficulty? =
+                        Difficulty.entries.firstOrNull { it.name.equals(key.trim(), ignoreCase = true) }
 
-                    override fun keys(): Set<String> = Difficulty.values().map { it.name.lowercase() }.toSet()
+                    override fun keys(): Set<String> = Difficulty.entries.map { it.name.lowercase() }.toSet()
                 },
         )
     }
 
     private val enchantmentRegistry: SculkRegistry<Enchantment> by lazy {
+        val registry = registry(RegistryKey.ENCHANTMENT)
         SculkRegistry(
             resolver =
                 object : MappingResolver<Enchantment> {
-                    override fun resolve(key: String): Enchantment? {
-                        val nsKey = NamespacedKey.minecraft(key.lowercase())
-                        return Registry.ENCHANTMENT.get(nsKey)
-                            ?: runCatching { Enchantment.getByKey(nsKey) }.getOrNull()
-                    }
+                    override fun resolve(key: String): Enchantment? =
+                        normalizedLookupKeys(key)
+                            .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> = Registry.ENCHANTMENT.map { it.key.key }.toSet()
+                    override fun keys(): Set<String> =
+                        registry
+                            .keyStream()
+                            .map { it.key }
+                            .collect(Collectors.toSet())
                 },
         )
     }
 
     private val potionEffectRegistry: SculkRegistry<PotionEffectType> by lazy {
+        val registry = registry(RegistryKey.MOB_EFFECT)
         SculkRegistry(
             resolver =
                 object : MappingResolver<PotionEffectType> {
-                    override fun resolve(key: String): PotionEffectType? {
-                        val nsKey = NamespacedKey.minecraft(key.lowercase())
-                        return Registry.EFFECT.get(nsKey)
-                            ?: PotionEffectType.values().firstOrNull {
-                                it.key.key.equals(key, ignoreCase = true)
-                            }
-                    }
+                    override fun resolve(key: String): PotionEffectType? =
+                        normalizedLookupKeys(key)
+                            .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> = Registry.EFFECT.map { it.key.key }.toSet()
+                    override fun keys(): Set<String> =
+                        registry
+                            .keyStream()
+                            .map { it.key }
+                            .collect(Collectors.toSet())
                 },
         )
     }
 
     private val biomeRegistry: SculkRegistry<Biome> by lazy {
+        val registry = registry(RegistryKey.BIOME)
         SculkRegistry(
             resolver =
                 object : MappingResolver<Biome> {
-                    override fun resolve(key: String): Biome? = Registry.BIOME.get(NamespacedKey.minecraft(key.lowercase()))
+                    override fun resolve(key: String): Biome? =
+                        normalizedLookupKeys(key)
+                            .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> = Registry.BIOME.map { it.key.key }.toSet()
+                    override fun keys(): Set<String> =
+                        registry
+                            .keyStream()
+                            .map { it.key }
+                            .collect(Collectors.toSet())
                 },
         )
     }
@@ -276,4 +309,33 @@ public object SculkSeries {
     /** Returns all known [PotionEffectType] key names. */
     @SculkStable
     public fun potionEffectKeys(): Set<String> = potionEffectRegistry.keys()
+
+    private fun minecraftKey(input: String): NamespacedKey {
+        val trimmed = input.trim().lowercase()
+        val key =
+            if (trimmed.contains(':')) {
+                trimmed.substringAfter(':')
+            } else {
+                trimmed
+            }
+        return NamespacedKey.minecraft(key)
+    }
+
+    private fun normalizedLookupKeys(input: String): List<NamespacedKey> {
+        val trimmed = input.trim().lowercase()
+        val unqualified = trimmed.substringAfter(':')
+        val candidates =
+            listOf(
+                trimmed,
+                unqualified,
+                unqualified.replace('.', '_'),
+                unqualified.replace('_', '.'),
+            )
+        return candidates
+            .filter { it.isNotBlank() }
+            .distinct()
+            .map(::minecraftKey)
+    }
+
+    private fun <T : Keyed> registry(key: RegistryKey<T>): Registry<T> = paperRegistries.getRegistry(key)
 }

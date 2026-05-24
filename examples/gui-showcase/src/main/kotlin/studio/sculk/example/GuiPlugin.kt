@@ -2,6 +2,7 @@ package studio.sculk.example
 
 import org.bukkit.Material
 import org.bukkit.Sound
+import org.bukkit.attribute.Attribute
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.adventure.playSound
@@ -62,9 +63,10 @@ private val mainMenu: Gui =
             material = Material.PLAYER_HEAD
             name = "<aqua><bold>Profile"
             dynamicContent { player ->
+                val maxHealth = player.getAttribute(Attribute.MAX_HEALTH)?.value ?: player.health
                 name = "<aqua>Profile: <white>${player.name}"
                 lore(
-                    "<gray>Health: <red>${player.health.toInt()} / ${player.maxHealth.toInt()}",
+                    "<gray>Health: <red>${player.health.toInt()} / ${maxHealth.toInt()}",
                     "<gray>Level: <yellow>${player.level}",
                 )
             }
