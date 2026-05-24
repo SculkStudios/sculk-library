@@ -5,7 +5,7 @@ description: Typed YAML configs that write their own defaults, validate themselv
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-The config system maps YAML files to Kotlin data classes. Missing keys are written automatically on first load. Everything is typed — no more `getString("some.key")`.
+The config system maps YAML files to Kotlin data classes. Missing keys are written automatically on first load, and reads stay typed instead of relying on repeated `getString("some.key")` calls.
 
 ## Defining a config
 
@@ -72,8 +72,8 @@ On first run the YAML file is created with all defaults. On subsequent runs any 
 ```kotlin
 @ConfigFile("settings.yml")
 data class Settings(
-    @Min(1) @Max(50) val maxHomes: Int = 5,
-    @NotEmpty val prefix: String = "<gray>[<aqua>Plugin<gray>] ",
+    @param:Min(1) @param:Max(50) val maxHomes: Int = 5,
+    @param:NotEmpty val prefix: String = "<gray>[<aqua>Plugin<gray>] ",
 )
 ```
 </TabItem>
@@ -88,7 +88,9 @@ public record Settings(
 </TabItem>
 </Tabs>
 
-Invalid values log a warning and fall back to the field's default — the plugin never crashes on bad config.
+Sculk validates constructor parameter annotations. In Kotlin, use the explicit `@param:` target for `@Min`, `@Max`, and `@NotEmpty`; Java records do not need a use-site target.
+
+Invalid values are reported and the loaded object keeps the field's default where Sculk can safely do so. Treat validation messages as configuration errors to fix, not as something to ignore permanently.
 
 ## Lists, maps, enums, and UUIDs
 
@@ -243,12 +245,12 @@ Multi-line comments are supported — separate lines with `\n` in the annotation
 val killCooldown: Long = 60_000L,
 ```
 
-`@Comment` can be combined with `@Min`, `@Max`, and `@NotEmpty` on the same field.
+`@Comment` can be combined with `@param:Min`, `@param:Max`, and `@param:NotEmpty` on the same Kotlin property.
 
 ## Best practices
 
 - One `@ConfigFile` per logical group: `settings.yml`, `messages.yml`, `economy.yml`.
 - Use subdirectories to keep configs tidy: `@ConfigFile("settings/combat.yml")`, `@ConfigFile("messages/combat.yml")`.
 - Keep defaults sensible for a fresh server install — operators should never need to touch the file just to get running.
-- Use `@Min`/`@Max` on any numeric field where an out-of-range value would cause a bug.
+- Use `@param:Min`/`@param:Max` on any Kotlin numeric field where an out-of-range value would cause a bug.
 - Use `@Comment` on every field — a config file that explains itself is a config file that never gets misconfigured.

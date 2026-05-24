@@ -1,11 +1,11 @@
 ---
 title: Troubleshooting
-description: Common setup and runtime issues.
+description: Common setup, build, runtime, and deployment issues.
 ---
 
 ## Dependency Not Found
 
-Make sure both JitPack and Paper's Maven repository are configured:
+Use both JitPack and Paper's Maven repository:
 
 ```kotlin
 repositories {
@@ -15,24 +15,100 @@ repositories {
 }
 ```
 
-## Paper API Version
+## Paper Or Java Version Errors
 
-For Paper 26.1.2, use the new dependency format:
+Sculk Studio targets Paper 26.1.2+ and Java 25.
 
 ```kotlin
 compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
 ```
 
-Older Paper versions used `-R0.1-SNAPSHOT`. Do not mix both formats for the same target.
+Example `paper-plugin.yml`:
 
-## Library Not Found At Runtime
+```yaml
+name: MyPlugin
+version: 1.0.0
+main: com.example.myplugin.MyPlugin
+api-version: '26.1.2'
+```
 
-Sculk Studio is a library, not a standalone server plugin. Shade it into your plugin jar and relocate `studio.sculk` to avoid conflicts with other plugins.
+## Library Missing At Runtime
 
-## GUI Session Issues
+Sculk Studio is a library, not a server plugin. Shade it into your plugin jar:
 
-Create GUI support through `SculkPlatform.create(this) { gui() }`. The platform layer owns close listeners and session cleanup.
+```kotlin
+tasks.shadowJar {
+    archiveClassifier = ""
+    relocate("studio.sculk", "your.plugin.libs.sculk")
+}
+```
 
-## Async Work
+If multiple plugins use Sculk Studio without relocation, class conflicts are possible.
 
-Do not call Bukkit or Paper world/player APIs from async tasks unless Paper explicitly documents the call as thread-safe. Use the scheduler to hand back to the main or region thread.
+## Config Validation Does Not Run
+
+In Kotlin config data classes, validation annotations should target constructor parameters:
+
+```kotlin
+@ConfigFile("settings.yml")
+data class Settings(
+    @param:Min(1) @param:Max(20) val maxHomes: Int = 5,
+    @param:NotEmpty val prefix: String = "<gray>[Plugin]",
+)
+```
+
+Java records can use the normal annotation form on record components.
+
+## Registry Lookup Returns Null
+
+`SculkSeries` returns `null` when the key is not present in the running server's registry or cannot be normalized.
+
+Check:
+
+- Spelling.
+- Whether the key exists in Paper 26.1.2.
+- Whether you are using a modern Minecraft key, not an old XSeries alias.
+- Whether a fallback should be configured.
+
+```kotlin
+val material = SculkSeries.material(config.icon) ?: Material.STONE
+```
+
+## GUI Clicks Do Not Fire
+
+Enable the GUI subsystem:
+
+```kotlin
+sculk = SculkPlatform.create(this) {
+    gui()
+}
+```
+
+The platform layer owns inventory click/close listeners and session cleanup.
+
+## Async Access Errors
+
+Do not call Paper player, world, inventory, or entity APIs from async work. Use async for database/file/HTTP work, then return to sync:
+
+```kotlin
+sculk.scheduler.runAsync {
+    val profile = repo.find(player.uniqueId)
+    sculk.scheduler.runSync(player) {
+        player.sendMessage("Loaded profile.")
+    }
+}
+```
+
+## Docs Build Or Deploy Fails
+
+The docs site is built from `docs/`.
+
+```bash
+bun install
+bun run build
+```
+
+Cloudflare Workers deploy uses `bunx wrangler deploy`. Confirm these secrets exist in GitHub Actions:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`

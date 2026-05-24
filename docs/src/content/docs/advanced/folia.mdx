@@ -1,11 +1,11 @@
 ---
 title: Folia & Canvas
-description: Running Sculk Studio plugins on Folia and Canvas MC — everything handled automatically.
+description: Running Sculk Studio plugins on Folia and Canvas MC with explicit scheduler choices.
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-Sculk Studio fully supports [Folia](https://papermc.io/software/folia) and its forks, including [Canvas MC](https://canvasmc.io). All threading complexity is handled internally — you write the same code and Sculk routes it to the correct scheduler at runtime.
+Sculk Studio includes scheduler adapters for [Folia](https://papermc.io/software/folia) and its forks, including [Canvas MC](https://canvasmc.io). You still need to choose the right scheduler context for the work being done: async for IO, entity/location sync for Paper world and player APIs.
 
 ## What Folia changes
 
@@ -18,7 +18,7 @@ Folia replaces Paper's single main thread with per-region threads, one per group
 | **RegionScheduler** | Tasks tied to a specific world location (e.g. placing blocks) |
 | **AsyncScheduler** | Background tasks off all region threads — database, HTTP, file I/O |
 
-Sculk Studio detects Folia at startup via class presence and routes every scheduler call automatically. **You do not need to change your plugin code to gain Folia support.**
+Sculk Studio detects Folia at startup via class presence and routes scheduler calls through the matching backend. Code that touches a player, entity, block, inventory, or world location should use the entity/location overloads so Folia can run it on the owning region thread.
 
 ---
 
@@ -81,7 +81,7 @@ All async methods work the same on both platforms. Folia's `AsyncScheduler` uses
 
 ---
 
-## GUIs — handled automatically
+## GUIs
 
 `Gui.openFor(player)` auto-dispatches `player.openInventory()` to the entity scheduler on Folia. You call it the same way on both platforms:
 
@@ -92,13 +92,13 @@ player {
 }
 ```
 
-`setEntries()`, `refresh()`, and `refreshAll()` modify the `Inventory` object in memory and are safe to call from any thread. The player sees the populated inventory when `openInventory` fires on the next entity tick.
+Prefer mutating GUI sessions from the same scheduler context you use to open the inventory. If the data comes from a database or file, load it with `runAsync`, then return to `runSync(player)` before calling `setEntries()`, `refresh()`, or `refreshAll()`.
 
 ---
 
 ## Canvas MC
 
-Canvas is a Folia fork focused on stability and performance. It uses the **identical scheduler API** as Folia — no extra handling needed. Sculk Studio's Folia detection covers Canvas automatically.
+Canvas is a Folia fork focused on stability and performance. It follows Folia's scheduler model, so the same Sculk entity/location scheduler guidance applies.
 
 Canvas advantages you can use immediately in your plugins:
 - Full Spark profiler support for region-threaded servers
@@ -109,9 +109,9 @@ Canvas advantages you can use immediately in your plugins:
 
 ## Summary
 
-| What you need to do | What Sculk handles automatically |
+| What you need to do | What Sculk handles |
 | --- | --- |
 | Add `folia-supported: true` to `paper-plugin.yml` | Folia detection at startup |
 | Use `scheduler.runSync(player)` for player-specific tasks from async | `Gui.openFor()` entity scheduler dispatch |
-| — | Scheduler API routing (BukkitScheduler → correct Folia scheduler) |
+| Use async tasks for DB/file/HTTP work | Scheduler API routing (BukkitScheduler → Folia scheduler backend) |
 | — | Tick-to-millisecond conversion for async delayed/repeating tasks |

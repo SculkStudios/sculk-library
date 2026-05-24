@@ -1,154 +1,87 @@
 ---
 title: Performance
-description: How Sculk Studio is built for zero overhead on hot paths — main-thread safety, reflection caching, connection pooling, and benchmarks.
+description: Practical performance rules for Sculk Studio plugins.
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-Sculk Studio is designed so that using it never makes your plugin slower than hand-writing the equivalent code. Here's how each layer achieves that.
+Sculk Studio keeps hot paths small, but it does not remove Paper's threading rules. Treat Paper APIs and database APIs deliberately.
 
-## Main-thread rule: never block
+## Main-thread rule
 
-The Paper main thread processes game ticks. Blocking it — even for a few milliseconds — causes TPS drops visible to all players. Sculk Studio enforces a hard rule: **no blocking IO on the main thread**.
+Paper player, world, inventory, and most entity APIs must run on the main thread or the correct Folia region/entity thread. Database, file, HTTP, and expensive CPU work should run off-thread.
 
-Every repository call is synchronous-blocking and must run inside `sculk.scheduler.runAsync { }`. For recurring background work, use `runAsyncRepeating`:
+Repository methods in `sculk-data` are synchronous and blocking. Run them inside async scheduler work, then return to sync before touching Paper APIs.
 
 <Tabs>
 <TabItem label="Kotlin">
 ```kotlin
-// WRONG — blocks the main thread
-val result = repo.find(player.uniqueId) // ← never do this on the main thread
-
-// CORRECT — off the main thread, then back for Paper API calls
 sculk.scheduler.runAsync {
     val result = repo.find(player.uniqueId)
-    sculk.scheduler.runSync {
-        player.sendMessage("Coins: ${(result as? SculkResult.Success)?.value?.coins}")
+
+    sculk.scheduler.runSync(player) {
+        player.sendMessage("Loaded: ${result.isSuccess}")
     }
 }
 ```
 </TabItem>
 <TabItem label="Java">
 ```java
-// CORRECT — CompletableFuture chains off the main thread
 JavaRepository.wrap(repo)
     .find(player.getUniqueId())
-    .thenAccept(result -> {
-        if (result instanceof SculkResult.Success<PlayerData> ok) {
-            sculk.getScheduler().runSync(() ->
-                player.sendMessage("Coins: " + ok.getValue().coins())
-            );
-        }
-    });
+    .thenAccept(result ->
+        sculk.getScheduler().runSync(player, () ->
+            player.sendMessage("Loaded: " + result.isSuccess())
+        )
+    );
 ```
 </TabItem>
 </Tabs>
 
-Violation is a programming error — Sculk Studio will log a warning if a repository method is called on the main thread.
+## Reflection and mapping
 
----
+`sculk-config` and `sculk-data` use reflection for data-class or entity mapping. Create config managers, repositories, and caches once during startup and reuse them. Do not create repositories per command execution or per player tick.
 
-## Reflection: startup only, cached forever
+## Connection pooling
 
-`sculk-data`'s ORM maps entity classes to SQL columns via reflection. This reflection runs **once at startup** when `sculk.data.repository<T, ID>()` is called. The mapping is stored in a `ConcurrentHashMap<Class<*>, TableMetadata>`.
+`sculk-data` uses HikariCP for JDBC connections.
 
-Every subsequent `find`, `save`, or `delete` call uses the cached metadata — zero reflection per operation.
+| Backend | Default behavior |
+| --- | --- |
+| SQLite | Local file database, suitable for small plugins and local development. |
+| MySQL/MariaDB | Network database, useful when multiple services need shared storage. |
 
-The same principle applies to `sculk-config`: field-to-YAML-key mapping is resolved once when `sculk.config.load<T>()` is first called, then cached for all future loads and reloads.
-
----
-
-## Connection pooling with HikariCP
-
-`sculk-data` uses [HikariCP](https://github.com/brettwooldridge/HikariCP) — the fastest JDBC connection pool on the JVM. Connections are validated on borrow and recycled automatically. You never manage connections manually.
-
-Default pool sizes:
-
-| Backend | Pool size | Why |
-| :--- | :--- | :--- |
-| SQLite | 1 | SQLite does not support concurrent writes |
-| MySQL / MariaDB | 10 (configurable) | Handles concurrent async reads/writes |
-
-Adjust MySQL pool size in `storage.yml`:
+Tune MySQL pool size only after measuring contention:
 
 ```yaml
-# storage.yml
 mysql:
-  pool-size: 20   # raise if you have many concurrent async DB calls
+  pool-size: 20
 ```
 
----
+## Cache behavior
 
-## Caffeine cache: non-blocking reads
+`SculkCache` uses Caffeine. Cache hits avoid database access. Cache misses call the wrapped repository on the calling thread, so call cache-backed repository operations from async work too.
 
-`SculkCache` is backed by [Caffeine](https://github.com/ben-manes/caffeine). Cache reads are non-blocking — they do not acquire any lock. Under high read concurrency (many players requesting data simultaneously), the cache scales without contention.
+## GUI updates
 
-Cache misses are the only time a DB call happens — and only once per key per TTL window.
+`session.refresh(slot)` updates one slot in the current inventory. `session.refreshAll()` re-renders static slots and pagination. Keep click handlers short and move database or HTTP work into async scheduler tasks.
 
----
+## Series lookup caching
 
-## GUI updates: no unnecessary packets
+`SculkSeries` normalizes and resolves a key on first use, then caches the result. Pre-warm important config keys during startup if you want missing-key warnings before gameplay.
 
-GUI inventory updates are applied directly to the Bukkit `Inventory` object inside the session. Sculk Studio does not send extra packets or re-render slots that haven't changed. Click handlers run synchronously within the same tick, so there is no re-render loop.
-
-`session.refresh(slot)` updates a single slot. `session.refreshAll()` re-renders every slot once. Neither causes flicker because the client sees a contiguous update in a single tick.
-
----
-
-## sculk-series: first-access caching
-
-`SculkSeries` lookups resolve the key once on first access, then return from a `ConcurrentHashMap`. The worst-case cost is a single name-match scan through Bukkit's registry, which happens once per key per server lifetime.
-
-Pre-warm critical lookups at startup so any missing-key warnings surface immediately rather than mid-game:
-
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 override fun onEnable() {
-    sculk = SculkPlatform.create(this) { ... }
-    SculkSeries.material("diamond_sword")    // pre-warm
+    SculkSeries.material("diamond_sword")
     SculkSeries.sound("entity.player.levelup")
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-@Override
-public void onEnable() {
-    SculkSeries.material("diamond_sword");
-    SculkSeries.sound("entity.player.levelup");
-}
-```
-</TabItem>
-</Tabs>
 
----
+## Checklist
 
-## JMH benchmarks
-
-The `benchmarks/` module contains JMH microbenchmarks for the hottest paths:
-
-| Benchmark | Target |
-| :--- | :--- |
-| Command dispatch (simple subcommand) | < 1 μs |
-| GUI open (session creation) | Zero unnecessary allocations |
-| Cache hit path | Zero DB calls |
-
-Run them locally:
-
-```bash
-./gradlew :benchmarks:jmh
-```
-
-Results and historical runs are documented in `benchmarks/README.md`.
-
----
-
-## Summary checklist
-
-- Always use `sculk.scheduler.runAsync { }` for one-shot repository calls.
-- Use `sculk.scheduler.runAsyncRepeating(delay, period) { }` for recurring background tasks (data flushes, heartbeats). The returned `SculkHandle` cancels the task when closed.
-- Create repositories and caches once at startup — never per-request.
-- Pre-warm `SculkSeries` keys at `onEnable`.
-- Use `SculkCache` for any data that is read more than it is written.
-- Adjust `pool-size` in `storage.yml` if you measure DB contention.
+- Run repository and cache miss work asynchronously.
+- Return to `runSync(player)` or `runSync(location)` before Paper API calls.
+- Reuse repositories and caches.
+- Keep GUI click handlers short.
+- Pre-warm config-driven registry keys at startup.
+- Measure before changing connection pool sizes.

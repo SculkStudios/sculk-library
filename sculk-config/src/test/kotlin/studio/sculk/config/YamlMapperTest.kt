@@ -23,9 +23,9 @@ class YamlMapperTest {
 
     @ConfigFile("validated.yml")
     data class Validated(
-        @Min(1) val minVal: Int = 5,
-        @Max(10) val maxVal: Int = 5,
-        @NotEmpty val name: String = "hello",
+        @param:Min(1) val minVal: Int = 5,
+        @param:Max(10) val maxVal: Int = 5,
+        @param:NotEmpty val name: String = "hello",
     )
 
     @Test
@@ -94,6 +94,14 @@ class YamlMapperTest {
     @Test
     fun `validate catches NotEmpty violation`() {
         val violations = YamlMapper.validate(Validated(name = ""))
+        assertTrue(violations.any { it.contains("name") })
+    }
+
+    @Test
+    fun `validate reads parameter-target annotations`() {
+        val violations = YamlMapper.validate(Validated(minVal = 0, maxVal = 11, name = ""))
+        assertTrue(violations.any { it.contains("minVal") })
+        assertTrue(violations.any { it.contains("maxVal") })
         assertTrue(violations.any { it.contains("name") })
     }
 

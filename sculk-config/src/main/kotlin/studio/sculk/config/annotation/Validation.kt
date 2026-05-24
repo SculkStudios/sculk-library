@@ -11,7 +11,7 @@ import studio.sculk.core.annotation.SculkStable
  * ```kotlin
  * @ConfigFile("settings.yml")
  * data class Settings(
- *     @Min(1) val maxHomes: Int = 5,
+ *     @param:Min(1) val maxHomes: Int = 5,
  * )
  * ```
  */

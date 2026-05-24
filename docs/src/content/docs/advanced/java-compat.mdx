@@ -1,11 +1,11 @@
 ---
 title: Java Compatibility
-description: Full guide to using Sculk Studio from Java plugins — every DSL entry point has a paired Java builder.
+description: Guide to using the Java-friendly Sculk Studio APIs from Java plugins.
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-Sculk Studio is Kotlin-first but Java is a first-class citizen. Every Kotlin DSL entry point has a paired fluent builder in a `studio.sculk.*.java` sub-package. No generics in public APIs, no Kotlin-only return types, no gotchas.
+Sculk Studio is Kotlin-first, but the core platform, command, GUI, config, and data APIs include Java-friendly entry points. Prefer the `Java*` builders shown here when a Kotlin DSL would be awkward from Java.
 
 ## Bootstrap
 

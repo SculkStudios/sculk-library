@@ -23,7 +23,6 @@ public class SculkBukkitCommand(
     ) {
     init {
         permission = node.permission
-        permissionMessage = "<red>You don't have permission to use this command."
         setLabel("$pluginName:${node.name}")
     }
 

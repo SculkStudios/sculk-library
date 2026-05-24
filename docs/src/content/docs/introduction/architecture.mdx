@@ -1,74 +1,65 @@
 ---
 title: Architecture
-description: How Sculk Studio modules fit together, the lifecycle model, and the dependency flow.
+description: How Sculk Studio modules fit together and how lifecycle ownership works.
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## Module dependency flow
 
-```
+```text
 sculk-core
-    ↓
-sculk-config
-    ↓
-sculk-series
-    ↓
-sculk-effects
-    ↓
-sculk-data
-    ↓
-sculk-platform
+  -> sculk-config
+  -> sculk-series
+  -> sculk-effects
+  -> sculk-data
+  -> sculk-platform
 ```
 
-Each module depends only on those above it. There are no cycles. `sculk-platform` is the only module that touches Paper's `JavaPlugin` lifecycle — everything else is pure logic that you can test without a running server.
+`sculk-platform` is the module that owns Paper plugin lifecycle integration. The lower modules expose reusable APIs that are easier to test and reason about without a full server runtime.
 
-## What each module does
+## Module roles
 
-**`sculk-core`** — the foundation. Defines the command DSL, GUI system, Adventure messaging wrapper, and `SculkScheduler`. No Paper plugin lifecycle here — just the logic.
+**`sculk-core`** contains the command DSL, GUI model, Adventure messaging helpers, `SculkResult`, scheduler contracts, and version parsing.
 
-**`sculk-config`** — typed YAML configs. Annotate a data class with `@ConfigFile`, call `sculk.config.load<T>()`, and you have a typed, validated, hot-reloadable config. Defaults are written on first run. Invalid values fall back to defaults rather than crashing.
+**`sculk-config`** maps YAML files to Kotlin data classes. It writes defaults, supports comments, validates annotated constructor parameters, and exposes reload callbacks.
 
-**`sculk-series`** — cross-version key resolution. Minecraft renames materials, sounds, and particles between versions. `SculkSeries` resolves by name against the running server and caches the result. Zero overhead after first access.
+**`sculk-series`** provides registry-backed lookups for modern Paper keys. It normalizes key input and returns `null` for missing values. It is not a complete historical alias database.
 
-**`sculk-effects`** — particle and sound builders. Clean DSLs for spawning particles, playing sounds, and composing multi-step animations via timelines and sequences.
+**`sculk-effects`** wraps particle and sound work in readable builders and provides timelines/sequences for scheduled effects.
 
-**`sculk-data`** — persistent storage. Repository pattern over SQLite (default) and MySQL. Caffeine-backed cache layer. All database calls are async — never blocking the main thread.
+**`sculk-data`** provides JDBC repositories and cache helpers. Repository methods are synchronous and blocking, so call them from async scheduler work.
 
-**`sculk-platform`** — the glue. Registers commands into Paper's command map, routes inventory events to GUI sessions, wires the scheduler to Paper's scheduler, initialises connection pools, and tears everything down cleanly on `onDisable()`.
+**`sculk-platform`** wires the library into a `JavaPlugin`: commands, events, scheduler, config, data, and GUI lifecycle cleanup.
 
-## The lifecycle model
+## Lifecycle model
 
-Everything in Sculk Studio that holds a resource implements `SculkHandle` — a `fun interface` extending `AutoCloseable`. Listener registrations, scheduled tasks, GUI sessions, connection pools — all of them are handles.
+Resources that need cleanup implement `SculkHandle`. Examples include listener registrations, scheduled tasks, platform services, and data pools.
 
-`SculkPlatform` is itself a handle. Calling `sculk.close()` in `onDisable()` tears down every registered resource in reverse-registration order, deterministically, with no leaks.
+`SculkPlatform.close()` closes platform-owned handles, GUI sessions, commands, event listeners, and data resources. Scheduled tasks returned directly from `sculk.scheduler` should be retained and closed by your plugin unless you register them in your own lifecycle owner.
 
 <Tabs>
 <TabItem label="Kotlin">
 ```kotlin
 class MyPlugin : JavaPlugin() {
-    lateinit var sculk: SculkPlatform
+    private lateinit var sculk: SculkPlatform
 
     override fun onEnable() {
         sculk = SculkPlatform.create(this) {
-            gui()       // enables GUI session management
-            config()    // enables hot-reload config system
-            data()      // initialises HikariCP pool + runs migrations
+            gui()
+            config()
+            data()
         }
 
-        // Register commands (not part of the builder — commands are registered via sculk.commands)
         sculk.commands.registerAll(
             homeCommand(sculk),
             adminCommand(sculk),
         )
-
-        // Wire a config reload to a command
-        sculk.config.onReload {
-            logger.info("Config reloaded.")
-        }
     }
 
-    override fun onDisable(): Unit = sculk.close()
+    override fun onDisable() {
+        sculk.close()
+    }
 }
 ```
 </TabItem>
@@ -79,16 +70,8 @@ public class MyPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        sculk = JavaSculkPlatform.create(this, cfg -> cfg
-            .gui()
-            .config()
-            .data()
-        );
-
-        sculk.getCommands().registerAll(
-            HomeCommand.build(sculk),
-            AdminCommand.build(sculk)
-        );
+        sculk = JavaSculkPlatform.create(this, cfg -> cfg.gui().config().data());
+        sculk.getCommands().registerAll(HomeCommand.build(sculk));
     }
 
     @Override
@@ -100,45 +83,28 @@ public class MyPlugin extends JavaPlugin {
 </TabItem>
 </Tabs>
 
-## SculkResult — typed error handling
+## Threading model
 
-Operations that can fail return `SculkResult<T>` instead of throwing. This makes error paths explicit and forces you to handle them:
+- Use sync scheduler methods for Paper player, world, inventory, and event-facing work.
+- Use async scheduler methods for JDBC, file IO, HTTP, and CPU-heavy work.
+- On Folia, use entity/location-aware sync overloads when the work touches a specific entity or location.
+- Repository methods are blocking; the library does not make them automatically safe to call on the main thread.
 
-<Tabs>
-<TabItem label="Kotlin">
+## Error handling
+
+Operations that can fail commonly return `SculkResult<T>` instead of throwing. Handle both success and failure paths explicitly.
+
 ```kotlin
 when (val result = repo.find(player.uniqueId)) {
-    is SculkResult.Success -> {
-        val data = result.value
-        player.sendMessage("Coins: ${data?.coins ?: 0}")
-    }
-    is SculkResult.Failure -> {
-        logger.warning("Load failed: ${result.message}")
-    }
+    is SculkResult.Success -> player.sendMessage("Coins: ${result.value?.coins ?: 0}")
+    is SculkResult.Failure -> logger.warning("Load failed: ${result.message}")
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-SculkResult<PlayerData> result = repo.find(player.getUniqueId());
-if (result instanceof SculkResult.Success<PlayerData> success) {
-    PlayerData data = success.getValue();
-    player.sendMessage("Coins: " + (data != null ? data.getCoins() : 0));
-} else if (result instanceof SculkResult.Failure failure) {
-    getLogger().warning("Load failed: " + failure.getMessage());
-}
-```
-</TabItem>
-</Tabs>
 
 ## API stability markers
 
-Every public symbol carries one of three markers so you know exactly what you can rely on:
-
-| Annotation | Guarantee |
+| Annotation | Meaning |
 | --- | --- |
-| `@SculkStable` | Semver-protected. Breaking changes require a major version bump. Safe to depend on. |
-| `@SculkExperimental` | The API works but its shape may change in a minor release. Opt in with `@OptIn`. |
-| `@SculkInternal` | Framework internals. No semver guarantees. Requires compiler opt-in flag to use. |
-
-See [API Stability](/advanced/api-stability) for details on how to use opt-in annotations.
+| `@SculkStable` | Intended for normal use and protected by the release policy. |
+| `@SculkExperimental` | Available, but the shape may change while feedback is gathered. |
+| `@SculkInternal` | Framework internals with no compatibility guarantee. |

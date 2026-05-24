@@ -1,35 +1,50 @@
 ---
 title: XSeries Migration
-description: How Sculk Studio approaches XSeries-style compatibility.
+description: How Sculk Studio compares to XSeries-style utility APIs.
 ---
 
-Sculk Studio is not a direct port of XSeries. The goal is to keep the useful idea of safe registry lookup while building Kotlin-first APIs on top of modern Paper.
+Sculk Studio is not a copied or drop-in XSeries replacement. The goal is to provide Kotlin-first Paper utilities that fit modern Paper, Adventure, and Java 25.
 
-## Implemented Today
+## Implemented today
 
-`sculk-series` provides registry helpers for common Paper types. Lookups return nullable values instead of throwing when the running server does not expose a key.
+| XSeries idea | Sculk Studio equivalent | Status |
+| --- | --- | --- |
+| `XMaterial` | `SculkSeries.material(key)` | Implemented as modern material lookup. |
+| `XSound` | `SculkSeries.sound(key)` | Implemented with Paper sound registry. |
+| `XParticle` | `SculkSeries.particle(key)` | Implemented with Paper particle registry. |
+| `XEnchantment` | `SculkSeries.enchantment(key)` | Implemented with Paper enchantment registry. |
+| `XPotion` | `SculkSeries.potionEffect(key)` | Implemented with Paper mob effect registry. |
+| `XItemStack` | GUI item builder only | Partial. Standalone item API is planned. |
+| Version helpers | `MinecraftVersion` | Implemented for `1.x.y` and `26.x.y` parsing. |
+
+## Not implemented yet
+
+- Full historical alias tables for every old material/sound/potion name.
+- A standalone item builder with PDC, skulls, serialization, and component metadata.
+- A full compatibility shim for old Bukkit APIs.
+- Reflection-heavy fallback behavior for obsolete server versions.
+
+## Migration examples
+
+Old XSeries-style code:
 
 ```kotlin
-import studio.sculk.series.SculkSeries
-
-val material = SculkSeries.material("diamond_sword")
-val sound = SculkSeries.sound("entity.player.level_up")
+val item = XMaterial.DIAMOND_SWORD.parseItem()
+val sound = XSound.ENTITY_PLAYER_LEVELUP.parseSound()
 ```
 
-## Migration Pattern
-
-Old code often starts from a compatibility enum and then parses into Bukkit types. New Sculk code should prefer Paper types directly, using Series only when a key may vary by version.
+Sculk Studio:
 
 ```kotlin
-val levelUp = SculkSeries.sound("entity.player.level_up")
-if (levelUp != null) {
-    player.playSound(player.location, levelUp, 1.0f, 1.0f)
+val material = SculkSeries.material("diamond_sword") ?: Material.DIAMOND_SWORD
+val item = ItemStack(material)
+
+val sound = SculkSeries.sound("entity.player.levelup")
+if (sound != null) {
+    player.playSound(player.location, sound, 1.0f, 1.0f)
 }
 ```
 
-## Planned
+## Design rule
 
-- More material aliases.
-- More sound and particle mappings.
-- Dedicated docs for registry misses and fallback behavior.
-- No copied compatibility code without license review and attribution.
+Prefer Paper-native APIs first. Add compatibility helpers only where they reduce real plugin code without preserving legacy design problems.

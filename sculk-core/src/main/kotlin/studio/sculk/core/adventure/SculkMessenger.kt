@@ -87,7 +87,7 @@ public fun Audience.playSound(
 ) {
     playSound(
         AdventureSound.sound(
-            sound.key(),
+            sound,
             AdventureSound.Source.MASTER,
             volume,
             pitch,

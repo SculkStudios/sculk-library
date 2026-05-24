@@ -23,7 +23,7 @@ import studio.sculk.core.annotation.SculkStable
 @SculkStable
 @ConfigFile("storage.yml")
 public data class StorageConfig(
-    @NotEmpty val type: String = "sqlite",
+    @param:NotEmpty val type: String = "sqlite",
     val sqlite: SqliteConfig = SqliteConfig(),
     val mysql: MysqlConfig = MysqlConfig(),
 ) {
