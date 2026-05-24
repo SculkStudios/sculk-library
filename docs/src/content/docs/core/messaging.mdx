@@ -20,7 +20,7 @@ console.reply("<gray>[Plugin] <white>Server starting…")
 </TabItem>
 <TabItem label="Java">
 ```java
-import static gg.sculk.core.adventure.SculkMessengerKt.reply;
+import static studio.sculk.core.adventure.SculkMessengerKt.reply;
 
 reply(player, "<green>Hello, <white>" + player.getName() + "<green>!");
 ```
@@ -45,7 +45,7 @@ player.title(
 </TabItem>
 <TabItem label="Java">
 ```java
-import static gg.sculk.core.adventure.SculkMessengerKt.title;
+import static studio.sculk.core.adventure.SculkMessengerKt.title;
 
 title(player, "<gold><bold>Round Over!", "<gray>Winner: <white>" + winnerName, 10, 60, 20);
 ```
@@ -66,7 +66,7 @@ player.actionbar("<yellow>⚔ Combo x${combo}!")
 </TabItem>
 <TabItem label="Java">
 ```java
-import static gg.sculk.core.adventure.SculkMessengerKt.actionbar;
+import static studio.sculk.core.adventure.SculkMessengerKt.actionbar;
 
 actionbar(player, "<yellow>⚔ Combo x" + combo + "!");
 ```
@@ -88,7 +88,7 @@ player.playSound(Sound.BLOCK_NOTE_BLOCK_PLING, volume = 0.8f, pitch = 1.5f)
 </TabItem>
 <TabItem label="Java">
 ```java
-import static gg.sculk.core.adventure.SculkMessengerKt.playSound;
+import static studio.sculk.core.adventure.SculkMessengerKt.playSound;
 
 playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 ```
@@ -107,7 +107,7 @@ broadcast("<#A3E4A1>✔ <#FFD6A5>│ <#E5E5E5>Server is restarting in <#FF4C4C>6
 </TabItem>
 <TabItem label="Java">
 ```java
-import static gg.sculk.core.adventure.SculkMessengerKt.broadcast;
+import static studio.sculk.core.adventure.SculkMessengerKt.broadcast;
 
 broadcast("<#A3E4A1>✔ <#FFD6A5>│ <#E5E5E5>Server is restarting in <#FF4C4C>60 seconds<#E5E5E5>!");
 ```
@@ -126,7 +126,7 @@ broadcastActionbar("<bold><#FF6F6F>⛓ Server event starting in 10 seconds!</#FF
 </TabItem>
 <TabItem label="Java">
 ```java
-import static gg.sculk.core.adventure.SculkMessengerKt.broadcastActionbar;
+import static studio.sculk.core.adventure.SculkMessengerKt.broadcastActionbar;
 
 broadcastActionbar("<bold><#FF6F6F>⛓ Server event starting in 10 seconds!</#FF6F6F></bold>");
 ```

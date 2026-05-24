@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
 }
 
-group = "gg.sculk"
+group = "studio.sculk"
 version = "1.0.0"
 
 subprojects {

@@ -62,7 +62,7 @@ Or suppress for an entire module via your build file:
 // build.gradle.kts
 tasks.withType<KotlinCompile> {
     compilerOptions {
-        freeCompilerArgs.add("-opt-in=gg.sculk.core.annotation.SculkExperimental")
+        freeCompilerArgs.add("-opt-in=studio.sculk.core.annotation.SculkExperimental")
     }
 }
 ```
@@ -93,7 +93,7 @@ The compiler enforces this: `@SculkInternal` is a `RequiresOptIn` at `Level.ERRO
 // build.gradle.kts — only do this if you genuinely need internal access
 tasks.withType<KotlinCompile> {
     compilerOptions {
-        freeCompilerArgs.add("-opt-in=gg.sculk.core.annotation.SculkInternal")
+        freeCompilerArgs.add("-opt-in=studio.sculk.core.annotation.SculkInternal")
     }
 }
 ```
