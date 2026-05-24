@@ -9,7 +9,7 @@ description = "Sculk Studio — basic plugin example (vertical slice)"
 
 tasks.withType<KotlinCompile> {
     compilerOptions {
-        freeCompilerArgs.add("-opt-in=gg.sculk.core.annotation.SculkInternal")
+        freeCompilerArgs.add("-opt-in=studio.sculk.core.annotation.SculkInternal")
     }
 }
 

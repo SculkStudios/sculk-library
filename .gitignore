@@ -2,30 +2,162 @@
 .gradle/
 build/
 **/build/
-
-# IDE
-.idea/
-*.iml
-.vscode/
-*.code-workspace
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Compiled output
-out/
-*.class
-*.jar
 !gradle/wrapper/gradle-wrapper.jar
 
-# Logs
+# Gradle cache / local config
+.gradle-cache/
+gradle-app.setting
+
+# Kotlin / Java
+.kotlin/
+bin/
+**/bin/
+out/
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# Do not ignore Gradle wrapper files
+!gradlew
+!gradlew.bat
+!gradle/wrapper/gradle-wrapper.properties
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Keep shared IntelliJ code style if the project intentionally uses it
+!.idea/codeStyles/
+!.idea/codeStyles/*
+!.idea/inspectionProfiles/
+!.idea/inspectionProfiles/*
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+*.code-workspace
+!.vscode/extensions.json
+!.vscode/settings.example.json
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# Logs / JVM crash output
+logs/
 *.log
+*.log.*
+debug.log
+hs_err_pid*
+replay_pid*
 
-# JMH results
-benchmarks/results/
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+secrets/
+credentials/
+application-secrets.yml
+application-secrets.yaml
 
-# Docs build
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+*.h2.db
+*.mv.db
+*.trace.db
+
+# Minecraft / Paper local test servers
+server/
+test-server/
+run/
+runs/
+paper-server/
+local-server/
+dev-server/
+
+# Minecraft server files
+eula.txt
+banned-ips.json
+banned-players.json
+ops.json
+usercache.json
+whitelist.json
+permissions.yml
+commands.yml
+help.yml
+spigot.yml
+bukkit.yml
+paper-global.yml
+paper-world-defaults.yml
+
+# Minecraft worlds
+world/
+world_nether/
+world_the_end/
+worlds/
+DIM-1/
+DIM1/
+
+# Plugin runtime data
+plugins/
+crash-reports/
+/cache/
+
+# Generated documentation / docs runtime
+.dokka/
+site/
+public/
+dist/
 docs/.astro/
 docs/dist/
 docs/node_modules/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Archives / packaged outputs
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Node tooling if docs site uses Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# Maven local release artifacts
+release/
+staging/
+
+# JMH results
+benchmarks/results/

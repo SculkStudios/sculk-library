@@ -5,7 +5,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
     explicitApi()
 }
 
@@ -46,7 +46,7 @@ publishing {
                     developer {
                         id = "sculkstudios"
                         name = "Sculk Studios"
-                        url = "https://sculk.gg"
+                        url = "https://sculk.studio"
                     }
                 }
                 scm {

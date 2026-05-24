@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Sculk Studio. This document cover
 
 - JDK 21+
 - Gradle (use the wrapper — `./gradlew`)
-- A Paper 1.21.11 server for integration testing
+- A Paper 26.1.2 server for integration testing
 
 ## Project Structure
 
@@ -82,4 +82,4 @@ Please fill out the PR template completely. PRs without passing CI will not be r
 
 ## Questions
 
-Open a [GitHub Discussion](https://github.com/SculkStudios/sculk-library/discussions) or join us at [sculk.gg](https://sculk.gg).
+Open a [GitHub Discussion](https://github.com/SculkStudios/sculk-library/discussions) or join us at [sculk.studio](https://sculk.studio).

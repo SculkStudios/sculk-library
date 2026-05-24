@@ -1,0 +1,38 @@
+---
+title: Troubleshooting
+description: Common setup and runtime issues.
+---
+
+## Dependency Not Found
+
+Make sure both JitPack and Paper's Maven repository are configured:
+
+```kotlin
+repositories {
+    mavenCentral()
+    maven("https://jitpack.io")
+    maven("https://repo.papermc.io/repository/maven-public/")
+}
+```
+
+## Paper API Version
+
+For Paper 26.1.2, use the new dependency format:
+
+```kotlin
+compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+```
+
+Older Paper versions used `-R0.1-SNAPSHOT`. Do not mix both formats for the same target.
+
+## Library Not Found At Runtime
+
+Sculk Studio is a library, not a standalone server plugin. Shade it into your plugin jar and relocate `studio.sculk` to avoid conflicts with other plugins.
+
+## GUI Session Issues
+
+Create GUI support through `SculkPlatform.create(this) { gui() }`. The platform layer owns close listeners and session cleanup.
+
+## Async Work
+
+Do not call Bukkit or Paper world/player APIs from async tasks unless Paper explicitly documents the call as thread-safe. Use the scheduler to hand back to the main or region thread.

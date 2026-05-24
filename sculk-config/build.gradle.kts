@@ -7,7 +7,7 @@ description = "Sculk Studio — typed config, hot reload, message system"
 // Allow framework internals within this module.
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions {
-        freeCompilerArgs.add("-opt-in=gg.sculk.core.annotation.SculkInternal")
+        freeCompilerArgs.add("-opt-in=studio.sculk.core.annotation.SculkInternal")
     }
 }
 

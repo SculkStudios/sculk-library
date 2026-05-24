@@ -1,5 +1,5 @@
 name: CommandsShowcase
 version: 1.0.0
-main: gg.sculk.example.CommandsPlugin
-api-version: '1.21'
+main: studio.sculk.example.CommandsPlugin
+api-version: '26.1.2'
 folia-supported: true

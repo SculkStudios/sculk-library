@@ -58,6 +58,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Every public Kotlin DSL has a paired Java builder in a `*.java` sub-package
 
 ### Requirements
-- Paper 1.21.11+
+- Paper 26.1.2+
 - Java 21+
 - Kotlin 2.x (for Kotlin plugins)

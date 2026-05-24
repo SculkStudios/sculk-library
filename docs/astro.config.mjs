@@ -4,7 +4,7 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://docs.sculk.gg',
+	site: 'https://docs.sculk.studio',
 	integrations: [
 		starlight({
 			title: 'Sculk Studio',
@@ -93,7 +93,11 @@ export default defineConfig({
 						{ label: 'API Stability', slug: 'advanced/api-stability' },
 						{ label: 'Java Compatibility', slug: 'advanced/java-compat' },
 						{ label: 'Performance', slug: 'advanced/performance' },
-					{ label: 'Folia & Canvas', slug: 'advanced/folia' },
+						{ label: 'Folia & Canvas', slug: 'advanced/folia' },
+						{ label: 'API Design', slug: 'advanced/api-design' },
+						{ label: 'XSeries Migration', slug: 'advanced/xseries-migration' },
+						{ label: 'Troubleshooting', slug: 'advanced/troubleshooting' },
+						{ label: 'Roadmap', slug: 'advanced/roadmap' },
 					],
 				},
 			],

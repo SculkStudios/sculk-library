@@ -1,0 +1,30 @@
+---
+title: API Design
+description: Public API principles used across Sculk Studio.
+---
+
+Sculk Studio is Kotlin-first, but its stable APIs should remain understandable from Java. Public APIs should be small, explicit, and close to Paper's own model.
+
+## Principles
+
+- Prefer extension functions and DSL builders when they remove repeated Paper boilerplate.
+- Keep lifecycle ownership visible. Plugin-bound systems should be created through `SculkPlatform`.
+- Use Adventure and MiniMessage for text-facing APIs.
+- Store UUIDs and stable IDs instead of long-lived `Player` references.
+- Keep compatibility helpers focused on modern Paper APIs.
+- Mark unstable APIs with `@SculkExperimental` or `@SculkInternal`.
+
+## Implemented Today
+
+- Command builders in `studio.sculk.core.command`.
+- GUI builders and sessions in `studio.sculk.core.gui`.
+- MiniMessage helpers in `studio.sculk.core.adventure`.
+- Version parsing in `studio.sculk.core.version`.
+- Paper lifecycle integration in `studio.sculk.platform`.
+
+## Planned
+
+- Dedicated item builder outside GUI internals.
+- Richer command error policies and cooldown helpers.
+- More typed registry coverage in `sculk-series`.
+- More examples for production storage and lifecycle patterns.

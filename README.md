@@ -1,26 +1,24 @@
 # Sculk Studio
 
-> A Kotlin-first, Java-compatible, production-grade Minecraft framework.
+> Kotlin-first Paper utilities for building modern Minecraft plugins.
 
 [![CI](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml/badge.svg)](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml)
 [![JitPack](https://jitpack.io/v/SculkStudios/sculk-library.svg)](https://jitpack.io/#SculkStudios/sculk-library)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Sculk Studio powers all internal [Sculk Studios](https://sculk.gg) plugins. Clean DSLs, zero boilerplate, elite developer experience.
+Sculk Studio is the shared Kotlin library used by Sculk Studios plugins. It provides small, composable APIs for commands, GUI menus, typed config, data access, Adventure text, effects, and Paper lifecycle integration.
 
 ## Features
 
-- **Command System** — Subcommand tree, typed arguments, auto tab-complete, auto help
-- **GUI System** — Chest GUIs, per-player sessions, pagination, automatic cleanup
-- **Typed Config** — Data class configs, hot reload, validation, MiniMessage messages
-- **Series** — Registry-based cross-version material, sound & particle mapping
-- **Effects** — Particle builders, sound builders, animation timelines & sequences
-- **Data** — Async SQLite/MySQL via repository pattern + Caffeine cache layer
-- **Platform** — Single-line Paper bootstrap with full lifecycle management
+- **Commands** - Subcommand tree, sender routing, typed arguments, suggestions, and Java builders.
+- **GUI menus** - Chest GUI sessions, click routing, pagination, and platform-managed cleanup.
+- **Typed config** - Data class YAML configs with defaults, validation annotations, and reload support.
+- **Series** - Registry helpers for materials, sounds, particles, enchantments, entities, and effects.
+- **Effects** - Particle builders, sound builders, timelines, and tick-based sequences.
+- **Data** - JDBC repositories, SQLite/MySQL configuration, ORM mapping, and Caffeine-backed caching.
+- **Platform** - Paper bootstrap for commands, events, GUI lifecycle, config, data, and scheduling.
 
-## Quick Start
-
-### Gradle (Kotlin DSL)
+## Installation
 
 ```kotlin
 // settings.gradle.kts
@@ -37,49 +35,33 @@ dependencyResolutionManagement {
 ```kotlin
 // build.gradle.kts
 dependencies {
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
     implementation("com.github.SculkStudios.sculk-library:sculk-platform:v1.0.0")
 }
 ```
 
-### Gradle (Groovy DSL)
-
-```groovy
-// settings.gradle
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenCentral()
-        maven { url 'https://jitpack.io' }
-        maven { url 'https://repo.papermc.io/repository/maven-public/' }
-    }
-}
-```
-
-```groovy
-// build.gradle
-dependencies {
-    implementation 'com.github.SculkStudios.sculk-library:sculk-platform:v1.0.0'
-}
-```
-
-Shadow (shade) Sculk Studio into your plugin jar:
+Shade and relocate the library into your plugin jar:
 
 ```kotlin
 plugins {
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "9.4.1"
 }
 
 tasks.shadowJar {
     archiveClassifier = ""
-    relocate("gg.sculk", "your.plugin.libs.sculk")
+    relocate("studio.sculk", "your.plugin.libs.sculk")
 }
 ```
 
-### Kotlin
+## Quick Start
 
 ```kotlin
+import org.bukkit.plugin.java.JavaPlugin
+import studio.sculk.core.command.command
+import studio.sculk.platform.SculkPlatform
+
 class MyPlugin : JavaPlugin() {
-    lateinit var sculk: SculkPlatform
+    private lateinit var sculk: SculkPlatform
 
     override fun onEnable() {
         sculk = SculkPlatform.create(this) {
@@ -90,19 +72,26 @@ class MyPlugin : JavaPlugin() {
         sculk.commands.register(
             command("hello") {
                 player {
-                    reply("<gradient:aqua:blue>Hello from Sculk Studio!")
+                    reply("<green>Hello, <yellow>${player.name}</yellow>!")
                 }
             }
         )
     }
 
-    override fun onDisable(): Unit = sculk.close()
+    override fun onDisable() {
+        sculk.close()
+    }
 }
 ```
 
-### Java
+## Java Example
 
 ```java
+import org.bukkit.plugin.java.JavaPlugin;
+import studio.sculk.core.command.java.JavaCommandBuilder;
+import studio.sculk.platform.SculkPlatform;
+import studio.sculk.platform.java.JavaSculkPlatform;
+
 public class MyPlugin extends JavaPlugin {
     private SculkPlatform sculk;
 
@@ -112,7 +101,7 @@ public class MyPlugin extends JavaPlugin {
 
         sculk.getCommands().register(
             JavaCommandBuilder.create("hello")
-                .player(ctx -> ctx.reply("<gradient:aqua:blue>Hello from Sculk Studio!"))
+                .player(ctx -> ctx.reply("<green>Hello from Sculk Studio!"))
                 .build()
         );
     }
@@ -128,26 +117,42 @@ public class MyPlugin extends JavaPlugin {
 
 | Module | Description |
 |---|---|
-| `sculk-core` | Commands, GUI, Adventure wrapper, scheduler contracts |
-| `sculk-config` | Typed configs, hot reload, validation, message system |
-| `sculk-series` | Cross-version registry mapping |
-| `sculk-effects` | Particle & sound builders, animation timelines |
-| `sculk-data` | Repository pattern, SQLite/MySQL, Caffeine cache |
-| `sculk-platform` | Paper integration — use this one |
+| `sculk-core` | Commands, GUI, Adventure helpers, version parsing, scheduler contracts |
+| `sculk-config` | Typed configs, hot reload, validation, message config support |
+| `sculk-series` | Registry-based compatibility helpers |
+| `sculk-effects` | Particle and sound builders, animation timelines |
+| `sculk-data` | JDBC repositories, SQLite/MySQL config, cache layer |
+| `sculk-platform` | Paper integration for plugin lifecycle |
+
+## Feature Matrix
+
+| Area | Exists | Quality | Missing | Risk | Priority |
+|---|---:|---|---|---|---|
+| Commands | Yes | Good foundation | Brigadier/Paper command API research, richer errors, cooldowns | Bukkit fallback may age poorly | High |
+| Configs | Yes | Good foundation | Migration helpers, more docs, comment guarantees | Reflection edge cases | High |
+| Data | Yes | Useful but broad | Async safety docs, shutdown examples, SQL hardening | Main-thread misuse by users | High |
+| GUI | Yes | Good foundation | Confirm menus, richer pagination docs, leak tests | Lifecycle leaks if registry cleanup regresses | High |
+| Items | Partial via GUI items | Needs dedicated API | Standalone item builder, PDC helpers, skulls | Docs could overpromise | High |
+| Text | Yes | Good foundation | Template/prefix system, cache strategy | Repeated MiniMessage parsing | Medium |
+| Scheduler | Yes | Good foundation | More Folia tests/docs | Async Paper misuse by users | Medium |
+| Events | Yes | Basic | More examples, unregister docs | Listener lifecycle bugs | Medium |
+| Compatibility | Yes via Series | Early | More registry coverage | New Paper versioning | High |
+| Storage | Yes | Useful | Migration docs, integration examples | JDBC/runtime config mistakes | Medium |
+| Tests | Yes | Decent pure coverage | More lifecycle tests | Platform modules have limited tests | High |
+| Docs | Yes | Promising | More real-world examples, migration guide expansion | Outdated examples | High |
 
 ## Documentation
 
-Full docs at [docs.sculk.gg](https://docs.sculk.gg) — every feature includes Kotlin and Java examples.
+Full docs: [docs.sculk.studio](https://docs.sculk.studio)
 
 ## Requirements
 
-- Paper 1.21.11+
-- Java 21+
+- Paper 26.1.2+
+- Java 25+
+- Kotlin JVM
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).
 
----
-
-Built with care by [Sculk Studios](https://sculk.gg).
+Built by [Sculk Studios](https://sculk.studio).

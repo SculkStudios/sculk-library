@@ -1,0 +1,122 @@
+package studio.sculk.core.adventure
+
+import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.title.Title
+import org.bukkit.Bukkit
+import studio.sculk.core.annotation.SculkStable
+import java.time.Duration
+import net.kyori.adventure.sound.Sound as AdventureSound
+
+private val miniMessage = MiniMessage.miniMessage()
+
+/**
+ * Parses a MiniMessage [text] string into an Adventure Component.
+ *
+ * This is the only supported text format in Sculk Studio. Legacy color codes
+ * are not supported and will be treated as plain text.
+ */
+@SculkStable
+public fun parseMessage(text: String): net.kyori.adventure.text.Component = miniMessage.deserialize(text)
+
+/**
+ * Sends a MiniMessage-formatted [message] to this [Audience].
+ *
+ * Example:
+ * ```kotlin
+ * player.reply("<green>Hello, <bold>${player.name}</bold>!")
+ * ```
+ */
+@SculkStable
+public fun Audience.reply(message: String): Unit = sendMessage(parseMessage(message))
+
+/**
+ * Sends a title and optional subtitle to this [Audience].
+ *
+ * All strings are parsed as MiniMessage.
+ *
+ * @param title The main title text.
+ * @param subtitle The subtitle text. Defaults to empty.
+ * @param fadeIn Fade-in duration in ticks. Defaults to 10.
+ * @param stay Stay duration in ticks. Defaults to 70.
+ * @param fadeOut Fade-out duration in ticks. Defaults to 20.
+ */
+@SculkStable
+public fun Audience.title(
+    title: String,
+    subtitle: String = "",
+    fadeIn: Int = 10,
+    stay: Int = 70,
+    fadeOut: Int = 20,
+) {
+    val times =
+        Title.Times.times(
+            Duration.ofMillis(fadeIn * 50L),
+            Duration.ofMillis(stay * 50L),
+            Duration.ofMillis(fadeOut * 50L),
+        )
+    showTitle(
+        Title.title(
+            parseMessage(title),
+            parseMessage(subtitle),
+            times,
+        ),
+    )
+}
+
+/**
+ * Sends an action bar [message] to this [Audience].
+ *
+ * The message is parsed as MiniMessage.
+ */
+@SculkStable
+public fun Audience.actionbar(message: String): Unit = sendActionBar(parseMessage(message))
+
+/**
+ * Plays a [sound] to this [Audience] at their location.
+ *
+ * @param sound The Bukkit [org.bukkit.Sound] to play.
+ * @param volume The volume. Defaults to 1.0.
+ * @param pitch The pitch. Defaults to 1.0.
+ */
+@SculkStable
+public fun Audience.playSound(
+    sound: org.bukkit.Sound,
+    volume: Float = 1.0f,
+    pitch: Float = 1.0f,
+) {
+    playSound(
+        AdventureSound.sound(
+            sound.key(),
+            AdventureSound.Source.MASTER,
+            volume,
+            pitch,
+        ),
+    )
+}
+
+/**
+ * Broadcasts a MiniMessage-formatted [message] to every player on the server
+ * and to the console.
+ *
+ * Fully Component-based — no legacy color codes, no raw strings reaching the wire.
+ *
+ * ```kotlin
+ * broadcast("<#A3E4A1>✔ <#FFD6A5>│ <#E5E5E5>Server is restarting in 60 seconds!")
+ * ```
+ */
+@SculkStable
+public fun broadcast(message: String) {
+    Bukkit.getServer().broadcast(parseMessage(message))
+}
+
+/**
+ * Sends an action bar [message] to every online player.
+ *
+ * Parsed as MiniMessage.
+ */
+@SculkStable
+public fun broadcastActionbar(message: String) {
+    val component = parseMessage(message)
+    Bukkit.getOnlinePlayers().forEach { it.sendActionBar(component) }
+}

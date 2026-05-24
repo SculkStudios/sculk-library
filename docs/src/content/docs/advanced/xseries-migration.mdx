@@ -1,0 +1,35 @@
+---
+title: XSeries Migration
+description: How Sculk Studio approaches XSeries-style compatibility.
+---
+
+Sculk Studio is not a direct port of XSeries. The goal is to keep the useful idea of safe registry lookup while building Kotlin-first APIs on top of modern Paper.
+
+## Implemented Today
+
+`sculk-series` provides registry helpers for common Paper types. Lookups return nullable values instead of throwing when the running server does not expose a key.
+
+```kotlin
+import studio.sculk.series.SculkSeries
+
+val material = SculkSeries.material("diamond_sword")
+val sound = SculkSeries.sound("entity.player.level_up")
+```
+
+## Migration Pattern
+
+Old code often starts from a compatibility enum and then parses into Bukkit types. New Sculk code should prefer Paper types directly, using Series only when a key may vary by version.
+
+```kotlin
+val levelUp = SculkSeries.sound("entity.player.level_up")
+if (levelUp != null) {
+    player.playSound(player.location, levelUp, 1.0f, 1.0f)
+}
+```
+
+## Planned
+
+- More material aliases.
+- More sound and particle mappings.
+- Dedicated docs for registry misses and fallback behavior.
+- No copied compatibility code without license review and attribution.

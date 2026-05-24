@@ -1,0 +1,61 @@
+package studio.sculk.platform.command
+
+import org.bukkit.plugin.java.JavaPlugin
+import studio.sculk.core.SculkHandle
+import studio.sculk.core.annotation.SculkStable
+import studio.sculk.core.command.CommandBuilder
+import studio.sculk.core.command.CommandNode
+
+/**
+ * Registers [CommandNode] trees into Paper's server command map and provides cleanup.
+ */
+@SculkStable
+public class SculkCommandBridge(
+    private val plugin: JavaPlugin,
+) : SculkHandle {
+    private val registered = mutableListOf<String>()
+
+    /**
+     * Registers a command built with [builder] into the Paper command map.
+     *
+     * Returns the [SculkCommandBridge] for chaining.
+     */
+    public fun register(builder: CommandBuilder): SculkCommandBridge = register(builder.node)
+
+    /**
+     * Registers multiple commands at once.
+     *
+     * ```kotlin
+     * sculk.commands.registerAll(
+     *     helloCommand(),
+     *     homeCommand(),
+     *     adminCommand(),
+     * )
+     * ```
+     */
+    public fun registerAll(vararg builders: CommandBuilder): SculkCommandBridge {
+        builders.forEach { register(it) }
+        return this
+    }
+
+    /**
+     * Registers a [CommandNode] into the Paper command map.
+     */
+    public fun register(node: CommandNode): SculkCommandBridge {
+        val cmd = SculkBukkitCommand(node, plugin.name.lowercase())
+        val commandMap = plugin.server.commandMap
+        commandMap.register(plugin.name.lowercase(), cmd)
+        registered += node.name
+        registered += node.aliases
+        return this
+    }
+
+    /** Unregisters all commands registered through this bridge. */
+    override fun close() {
+        val commandMap = plugin.server.commandMap
+        registered.forEach { name ->
+            commandMap.getCommand(name)?.unregister(commandMap)
+        }
+        registered.clear()
+    }
+}
