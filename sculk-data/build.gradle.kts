@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.caffeine)
     implementation(libs.sqlite.jdbc)
     implementation(libs.mariadb.jdbc)
+    testImplementation(libs.paper.api)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.h2)

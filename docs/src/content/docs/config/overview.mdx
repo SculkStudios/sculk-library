@@ -5,7 +5,7 @@ description: Typed YAML configs that write their own defaults, validate themselv
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-The config system maps YAML files to Kotlin data classes. Missing keys are written automatically on first load, and reads stay typed instead of relying on repeated `getString("some.key")` calls.
+The config system maps YAML files to Kotlin data classes. Absent keys are written automatically on first load, and reads stay typed instead of relying on repeated `getString("some.key")` calls.
 
 ## Defining a config
 

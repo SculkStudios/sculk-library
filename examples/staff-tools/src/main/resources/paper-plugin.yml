@@ -1,0 +1,8 @@
+name: StaffTools
+version: '${version}'
+main: studio.sculk.example.StaffToolsPlugin
+description: Sculk Studio staff tools recipe example
+api-version: '26.1.2'
+authors:
+  - SculkStudios
+folia-supported: true

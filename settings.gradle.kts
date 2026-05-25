@@ -31,6 +31,7 @@ include(
     ":sculk-packets-api",
     ":sculk-packets-packetevents",
     ":sculk-packets-protocollib",
+    ":sculk-content",
 )
 
 // Examples (not published)
@@ -41,6 +42,11 @@ include(
     ":examples:config-showcase",
     ":examples:items-showcase",
     ":examples:packets-showcase",
+    ":examples:economy-plugin",
+    ":examples:player-profiles",
+    ":examples:server-menu",
+    ":examples:staff-tools",
+    ":examples:crate-system",
 )
 
 // Benchmarks (not published)

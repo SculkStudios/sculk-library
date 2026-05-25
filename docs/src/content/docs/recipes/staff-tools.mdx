@@ -1,0 +1,33 @@
+---
+title: Staff Tools
+description: Permission-gated staff mode with command feedback and effects.
+---
+
+This recipe mirrors `examples/staff-tools`.
+
+```kotlin
+sculk.commands.register(
+    command("staff") {
+        permission = "staff.mode"
+        player {
+            val enabled = toggleStaffMode(player!!.uniqueId)
+            val state = if (enabled) "<green>enabled" else "<red>disabled"
+            reply("<gray>Staff mode $state<gray>.")
+
+            sound(Sound.BLOCK_NOTE_BLOCK_PLING) {
+                volume = 0.8f
+                pitch = if (enabled) 1.4f else 0.7f
+            }.playAt(player!!.location)
+        }
+    },
+)
+```
+
+Use this pattern for:
+
+- Staff mode toggles.
+- Freeze/inspect commands.
+- Staff-only menus.
+- Short visual/audio feedback.
+
+Keep moderation actions permission-gated and log important changes.

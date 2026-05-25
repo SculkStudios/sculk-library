@@ -1,0 +1,8 @@
+name: ServerMenu
+version: '${version}'
+main: studio.sculk.example.ServerMenuPlugin
+description: Sculk Studio server menu recipe example
+api-version: '26.1.2'
+authors:
+  - SculkStudios
+folia-supported: true

@@ -62,9 +62,9 @@ sculk.packets
 
 `Auto` prefers PacketEvents, then ProtocolLib. If `required = true`, startup fails with a clear message when no backend is available.
 
-## Current backend status
+## Backend status
 
-`sculk-packets-api` provides the shared contracts and high-level service surface. The ProtocolLib adapter currently supports real low-level listener registration, listener cleanup, and sending `ProtocolLibPacket` containers. The PacketEvents adapter is intentionally isolated as the preferred backend direction and currently provides backend detection plus shared high-level service access while its packet-wrapper listener binding is hardened.
+`sculk-packets-api` provides the shared contracts and high-level service surface. The PacketEvents adapter is the preferred backend for new packet-heavy plugins and supports low-level listener registration, cancellation, changed-packet marking, listener cleanup, and sending `PacketEventsPacket` wrappers. The ProtocolLib adapter remains available for servers that already standardize on ProtocolLib and supports listener registration, cleanup, and sending `ProtocolLibPacket` containers.
 
 ## Current high-level API
 
@@ -78,7 +78,7 @@ packets.clientBlocks.preview(player, targetBlock.location, Material.EMERALD_BLOC
 packets.clientBlocks.reset(player, targetBlock.location)
 ```
 
-The public packet contracts also include holograms, fake entities, nametags, debug sessions, low-level listener registration, and packet sending. Backend-specific packet wrappers remain isolated to adapter modules so the core jar stays small.
+The public packet contracts also include debug sessions, low-level listener registration, and packet sending. Higher-level content descriptors live in `sculk-content`; backend-specific packet wrappers remain isolated to adapter modules so the core jar stays small.
 
 ## Threading
 

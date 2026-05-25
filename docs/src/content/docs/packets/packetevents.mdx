@@ -5,7 +5,7 @@ description: Recommended backend for new packet-heavy Sculk plugins.
 
 PacketEvents is the preferred packet backend for new packet-heavy Sculk plugins. It is designed around packet listeners, priorities, wrapper APIs, and explicit packet mutation behavior.
 
-The Sculk PacketEvents adapter is kept separate from core and is the preferred backend target. The current lightweight adapter detects PacketEvents and exposes shared high-level services; direct PacketEvents wrapper listener binding is being kept inside this adapter so it can mature without adding packet classes to core.
+The Sculk PacketEvents adapter is kept separate from core. It supports backend detection, low-level listener registration, listener cleanup, packet cancellation, changed-packet marking, and sending `PacketEventsPacket` wrappers.
 
 ## Dependency
 
@@ -36,11 +36,26 @@ sculk = SculkPlatform.create(this) {
 
 Use `required = true` only when the plugin cannot run without packet features.
 
+## Low-level listener
+
+```kotlin
+val packets = sculk.packets?.getOrNull() ?: return
+
+packets.listen(PacketDirection.Serverbound, PacketKey.of("use_item"), PacketPriority.Normal) {
+    val source = player ?: return@listen
+    runSync {
+        source.sendMessage("Use item packet received.")
+    }
+}
+```
+
+If you modify a PacketEvents wrapper inside a listener, call `markChanged()` so PacketEvents re-encodes the packet.
+
 ## PacketEvents rules
 
 - Packet callbacks may not be on the main thread.
 - Use `context.runSync { ... }` for Paper API access.
-- When a wrapper is modified, call `context.markChanged()` so the adapter can map that to PacketEvents re-encoding behavior.
+- When a wrapper is modified, call `context.markChanged()` so the adapter maps that to PacketEvents re-encoding behavior.
 - Avoid heavy allocations in hot packet paths.
 - Prefer packet type filters before decoding packet data.
 

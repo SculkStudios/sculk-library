@@ -124,7 +124,7 @@ Root-level permissions cascade — a player denied at the root never reaches sub
 Sculk checks node permissions during command dispatch. The Bukkit/Paper command permission is still set for command visibility and registration behavior, but Sculk does not rely on deprecated Bukkit permission-message handling for normal player feedback.
 
 :::note
-Commands currently register through Bukkit's command map. A Brigadier/Paper command API integration is planned, but it is not part of the current command system.
+Commands currently register through Bukkit's command map. That keeps the DSL small and predictable while Sculk continues to target modern Paper. If you need Brigadier-specific client UX today, use Paper's command API directly for that command and keep Sculk commands for the rest of your plugin.
 :::
 
 ## Feedback helpers
