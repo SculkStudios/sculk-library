@@ -5,6 +5,8 @@ import org.bukkit.entity.Player
 import studio.sculk.core.adventure.reply
 import studio.sculk.core.annotation.SculkInternal
 import studio.sculk.core.command.argument.GreedyStringParser
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Walks the command tree and dispatches execution for a given [CommandNode].
@@ -18,6 +20,7 @@ public object CommandExecutor {
     private const val CONSOLE_ONLY = "<red>This command can only be used from the console."
     private const val UNKNOWN_SUB = "<red>Unknown subcommand. Use <yellow>/{label} help</yellow> for a list."
     private const val BAD_USAGE = "<red>Usage: <yellow>/{usage}"
+    private val cooldowns: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
 
     /**
      * Dispatches execution starting from [root] with the given [sender] and [args].
@@ -51,6 +54,7 @@ public object CommandExecutor {
             sender.reply(BAD_USAGE.replace("{usage}", buildUsage(root, label)))
             return
         }
+        if (!checkCooldown(root, sender)) return
         executeNode(root, ctx, sender, label)
     }
 
@@ -126,6 +130,26 @@ public object CommandExecutor {
             else -> sender.reply(BAD_USAGE.replace("{usage}", buildUsage(node, label)))
         }
     }
+
+    private fun checkCooldown(
+        node: CommandNode,
+        sender: CommandSender,
+    ): Boolean {
+        val cooldown = node.cooldown ?: return true
+        val now = System.currentTimeMillis()
+        val key = "${cooldown.key}:${senderCooldownId(sender)}"
+        val expiresAt = cooldowns[key] ?: 0L
+        if (expiresAt > now) {
+            val seconds = ((expiresAt - now) / 1000L).coerceAtLeast(1L)
+            sender.reply("<red>Please wait <yellow>${seconds}s</yellow> before using this again.")
+            return false
+        }
+        cooldowns[key] = now + cooldown.durationMillis
+        return true
+    }
+
+    private fun senderCooldownId(sender: CommandSender): String =
+        if (sender is Player) sender.uniqueId.toString() else UUID.nameUUIDFromBytes(sender.name.toByteArray()).toString()
 
     private fun sendHelp(
         node: CommandNode,

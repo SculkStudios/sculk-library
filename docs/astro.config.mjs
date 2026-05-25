@@ -60,6 +60,14 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Items',
+					items: [
+						{ label: 'Overview', slug: 'items/overview' },
+						{ label: 'Persistent Data', slug: 'items/persistent-data' },
+						{ label: 'Config Items', slug: 'items/config-items' },
+					],
+				},
+				{
 					label: 'Config',
 					items: [
 						{ label: 'Overview', slug: 'config/overview' },
@@ -88,6 +96,12 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Integrations',
+					items: [
+						{ label: 'Overview', slug: 'integrations/overview' },
+					],
+				},
+				{
 					label: 'Advanced',
 					items: [
 						{ label: 'API Stability', slug: 'advanced/api-stability' },
@@ -97,7 +111,6 @@ export default defineConfig({
 						{ label: 'API Design', slug: 'advanced/api-design' },
 						{ label: 'XSeries Migration', slug: 'advanced/xseries-migration' },
 						{ label: 'Troubleshooting', slug: 'advanced/troubleshooting' },
-						{ label: 'Roadmap', slug: 'advanced/roadmap' },
 					],
 				},
 			],

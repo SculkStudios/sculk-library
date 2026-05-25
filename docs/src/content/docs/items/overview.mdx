@@ -1,0 +1,70 @@
+---
+title: Items
+description: Build modern Paper ItemStacks with a Kotlin-first DSL.
+---
+
+`sculk-items` is the standalone item API for Sculk Studio 2.0. It is used directly in plugins and by GUI builders for shared item metadata behavior.
+
+```kotlin
+val sword = item(Material.DIAMOND_SWORD) {
+    name("<aqua>Starter Sword")
+    lore("<gray>A clean starter weapon.", "", "<yellow>Right-click to inspect.")
+    amount(1)
+    enchant(Enchantment.SHARPNESS, 5)
+    glint()
+    unbreakable()
+    customModelData(1001)
+    pdc("starter_item", true)
+}
+```
+
+String material keys are supported for config-driven workflows:
+
+```kotlin
+val icon = item("nether_star") {
+    name("<aqua>Profile")
+    lore("<gray>Click to view your profile.")
+}
+```
+
+## GUI Integration
+
+GUI items can use the same builder through `stack { }`:
+
+```kotlin
+item(13) {
+    stack {
+        material("nether_star")
+        name("<aqua>Profile")
+        lore("<gray>Click to view your profile.")
+        customModelData(1001)
+    }
+
+    onClick {
+        reply("<green>Opening profile...")
+    }
+}
+```
+
+## Player Heads
+
+```kotlin
+val head = skull {
+    owner(player.uniqueId)
+    name("<aqua>${player.name}")
+    lore("<gray>Built with Sculk skull().")
+}
+```
+
+## Java
+
+```java
+ItemStack sword = JavaItemBuilder.of(Material.DIAMOND_SWORD)
+    .name("<aqua>Starter Sword")
+    .lore("<gray>A clean starter weapon.")
+    .enchant(Enchantment.SHARPNESS, 5)
+    .glint()
+    .customModelData(1001)
+    .pdc("starter_item", true)
+    .build();
+```

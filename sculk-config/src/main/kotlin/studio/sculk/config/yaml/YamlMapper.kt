@@ -39,13 +39,7 @@ public object YamlMapper {
         file: File,
         klass: KClass<T>,
     ): T {
-        val raw: Map<String, Any?> =
-            if (file.exists() && file.length() > 0) {
-                @Suppress("UNCHECKED_CAST")
-                yaml.load(file.readText()) as? Map<String, Any?> ?: emptyMap()
-            } else {
-                emptyMap()
-            }
+        val raw = loadRaw(file)
         return fromMap(raw, klass)
     }
 
@@ -58,6 +52,26 @@ public object YamlMapper {
         val map = toMap(instance)
         val writer = StringWriter()
         yaml.dump(map, writer)
+        file.writeText(writer.toString())
+    }
+
+    /** Reads raw YAML content as a mutable map. */
+    public fun loadRaw(file: File): MutableMap<String, Any?> =
+        if (file.exists() && file.length() > 0) {
+            @Suppress("UNCHECKED_CAST")
+            (yaml.load(file.readText()) as? Map<String, Any?>).orEmpty().toMutableMap()
+        } else {
+            mutableMapOf()
+        }
+
+    /** Writes raw YAML map content. */
+    public fun saveRaw(
+        file: File,
+        values: Map<String, Any?>,
+    ) {
+        file.parentFile?.mkdirs()
+        val writer = StringWriter()
+        yaml.dump(values, writer)
         file.writeText(writer.toString())
     }
 

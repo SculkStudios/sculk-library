@@ -1,9 +1,13 @@
 package studio.sculk.core.command.argument
 
 import org.bukkit.Bukkit
+import org.bukkit.Material
+import org.bukkit.World
 import org.bukkit.entity.Player
 import studio.sculk.core.annotation.SculkInternal
 import studio.sculk.core.annotation.SculkStable
+import java.time.Duration
+import java.util.UUID
 
 /**
  * Contract for parsing a raw string token into a typed value.
@@ -60,6 +64,19 @@ public object LongParser : ArgumentParser<Long> {
 }
 
 @SculkInternal
+public class BoundedLongParser(
+    private val min: Long?,
+    private val max: Long?,
+) : ArgumentParser<Long> {
+    override val typeName: String = "number"
+
+    override fun parse(input: String): Long? =
+        input.toLongOrNull()?.takeIf { value ->
+            (min == null || value >= min) && (max == null || value <= max)
+        }
+}
+
+@SculkInternal
 public object IntParser : ArgumentParser<Int> {
     override val typeName: String = "number"
 
@@ -67,10 +84,36 @@ public object IntParser : ArgumentParser<Int> {
 }
 
 @SculkInternal
+public class BoundedIntParser(
+    private val min: Int?,
+    private val max: Int?,
+) : ArgumentParser<Int> {
+    override val typeName: String = "number"
+
+    override fun parse(input: String): Int? =
+        input.toIntOrNull()?.takeIf { value ->
+            (min == null || value >= min) && (max == null || value <= max)
+        }
+}
+
+@SculkInternal
 public object DoubleParser : ArgumentParser<Double> {
     override val typeName: String = "decimal"
 
     override fun parse(input: String): Double? = input.toDoubleOrNull()
+}
+
+@SculkInternal
+public class BoundedDoubleParser(
+    private val min: Double?,
+    private val max: Double?,
+) : ArgumentParser<Double> {
+    override val typeName: String = "decimal"
+
+    override fun parse(input: String): Double? =
+        input.toDoubleOrNull()?.takeIf { value ->
+            (min == null || value >= min) && (max == null || value <= max)
+        }
 }
 
 @SculkInternal
@@ -98,6 +141,61 @@ public object PlayerParser : ArgumentParser<Player> {
             .getOnlinePlayers()
             .map { it.name }
             .filter { it.startsWith(input, ignoreCase = true) }
+}
+
+@SculkInternal
+public object UuidParser : ArgumentParser<UUID> {
+    override val typeName: String = "uuid"
+
+    override fun parse(input: String): UUID? = runCatching { UUID.fromString(input) }.getOrNull()
+}
+
+@SculkInternal
+public object WorldParser : ArgumentParser<World> {
+    override val typeName: String = "world"
+
+    override fun parse(input: String): World? = Bukkit.getWorld(input)
+
+    override fun suggest(input: String): List<String> =
+        Bukkit.getWorlds().map { it.name }.filter { it.startsWith(input, ignoreCase = true) }
+}
+
+@SculkInternal
+public object MaterialParser : ArgumentParser<Material> {
+    override val typeName: String = "material"
+
+    override fun parse(input: String): Material? =
+        Material.matchMaterial(input.uppercase())
+            ?: Material.matchMaterial(input)
+            ?: Material.matchMaterial(input.replace('-', '_').uppercase())
+
+    override fun suggest(input: String): List<String> =
+        Material.entries
+            .asSequence()
+            .map { it.name.lowercase() }
+            .filter { it.startsWith(input.lowercase()) }
+            .take(50)
+            .toList()
+}
+
+@SculkInternal
+public object DurationParser : ArgumentParser<Duration> {
+    override val typeName: String = "duration"
+
+    override fun parse(input: String): Duration? {
+        val trimmed = input.trim().lowercase()
+        val number = trimmed.dropLast(1).toLongOrNull() ?: return null
+        return when (trimmed.lastOrNull()) {
+            't' -> Duration.ofMillis(number * 50L)
+            's' -> Duration.ofSeconds(number)
+            'm' -> Duration.ofMinutes(number)
+            'h' -> Duration.ofHours(number)
+            'd' -> Duration.ofDays(number)
+            else -> null
+        }
+    }
+
+    override fun suggest(input: String): List<String> = listOf("10s", "1m", "5m", "1h").filter { it.startsWith(input) }
 }
 
 /**

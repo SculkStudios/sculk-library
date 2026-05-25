@@ -38,6 +38,7 @@ public class SculkEventBus(
     public inline fun <reified T : Event> listen(
         priority: EventPriority = EventPriority.NORMAL,
         ignoreCancelled: Boolean = false,
+        noinline filter: (T) -> Boolean = { true },
         crossinline handler: (T) -> Unit,
     ): SculkHandle {
         val listener = object : Listener {}
@@ -45,12 +46,29 @@ public class SculkEventBus(
             T::class.java,
             listener,
             priority,
-            { _, event -> if (event is T) handler(event) },
+            { _, event -> if (event is T && filter(event)) handler(event) },
             plugin,
             ignoreCancelled,
         )
         listeners += listener
         return SculkHandle { HandlerList.unregisterAll(listener) }
+    }
+
+    /** Registers a listener that unregisters itself after the first matching event. */
+    @SculkStable
+    public inline fun <reified T : Event> once(
+        priority: EventPriority = EventPriority.NORMAL,
+        ignoreCancelled: Boolean = false,
+        noinline filter: (T) -> Boolean = { true },
+        crossinline handler: (T) -> Unit,
+    ): SculkHandle {
+        var handle: SculkHandle? = null
+        handle =
+            listen<T>(priority, ignoreCancelled, filter) {
+                handler(it)
+                handle?.close()
+            }
+        return handle
     }
 
     /** Unregisters all listeners registered through this bus. */

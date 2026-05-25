@@ -1,0 +1,35 @@
+---
+title: Persistent Data
+description: Store plugin-owned data on ItemStacks with Paper's PersistentDataContainer.
+---
+
+Use `pdc` for plugin-owned item metadata. Plain keys use the `sculk` namespace, while explicit namespaced keys are preserved.
+
+```kotlin
+val keyItem = item(Material.TRIPWIRE_HOOK) {
+    name("<gold>Crate Key")
+    pdc("crate_key", true)
+    pdc("crate:id", "vote")
+    pdc("uses", 3)
+}
+```
+
+Supported value types:
+
+- `String`
+- `Int`
+- `Long`
+- `Double`
+- `Boolean`
+
+For advanced metadata, use the `meta { }` escape hatch:
+
+```kotlin
+val custom = item(Material.PAPER) {
+    meta {
+        persistentDataContainer.set(myKey, PersistentDataType.STRING, "value")
+    }
+}
+```
+
+Persistent data is for your plugin's own state. Use item display name, lore, enchantments, flags, and custom model data for presentation.

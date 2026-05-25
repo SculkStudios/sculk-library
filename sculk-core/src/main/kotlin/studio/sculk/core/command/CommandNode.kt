@@ -19,6 +19,7 @@ public class CommandNode(
     public val aliases: MutableList<String> = mutableListOf()
     public val subcommands: MutableList<CommandNode> = mutableListOf()
     public val arguments: MutableList<ArgumentDefinition> = mutableListOf()
+    public var cooldown: CooldownDefinition? = null
 
     public var playerExecutor: (CommandContext.() -> Unit)? = null
     public var consoleExecutor: (CommandContext.() -> Unit)? = null
@@ -35,4 +36,10 @@ public data class ArgumentDefinition(
     val name: String,
     val parser: ArgumentParser<*>,
     val optional: Boolean,
+)
+
+@SculkInternal
+public data class CooldownDefinition(
+    val key: String,
+    val durationMillis: Long,
 )

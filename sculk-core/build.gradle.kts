@@ -13,6 +13,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 }
 
 dependencies {
+    api(project(":sculk-items"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
 }

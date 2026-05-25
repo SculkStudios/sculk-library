@@ -5,13 +5,21 @@ import studio.sculk.core.annotation.SculkInternal
 import studio.sculk.core.annotation.SculkStable
 import studio.sculk.core.command.argument.ArgumentParser
 import studio.sculk.core.command.argument.BooleanParser
+import studio.sculk.core.command.argument.BoundedDoubleParser
+import studio.sculk.core.command.argument.BoundedIntParser
+import studio.sculk.core.command.argument.BoundedLongParser
 import studio.sculk.core.command.argument.ChoiceParser
 import studio.sculk.core.command.argument.DoubleParser
+import studio.sculk.core.command.argument.DurationParser
 import studio.sculk.core.command.argument.GreedyStringParser
 import studio.sculk.core.command.argument.IntParser
 import studio.sculk.core.command.argument.LongParser
+import studio.sculk.core.command.argument.MaterialParser
 import studio.sculk.core.command.argument.PlayerParser
 import studio.sculk.core.command.argument.StringParser
+import studio.sculk.core.command.argument.UuidParser
+import studio.sculk.core.command.argument.WorldParser
+import java.time.Duration
 
 /**
  * DSL builder for a [CommandNode].
@@ -105,6 +113,14 @@ public class CommandBuilder
             node.anyExecutor = block
         }
 
+        /** Applies a per-sender cooldown to this command node. */
+        public fun cooldown(
+            key: String,
+            duration: Duration,
+        ) {
+            node.cooldown = CooldownDefinition(key, duration.toMillis())
+        }
+
         // -----------------------------------------------------------------------
         // Subcommands
         // -----------------------------------------------------------------------
@@ -145,16 +161,22 @@ public class CommandBuilder
         public fun int(
             name: String,
             optional: Boolean = false,
+            min: Int? = null,
+            max: Int? = null,
         ) {
-            node.arguments += ArgumentDefinition(name, IntParser, optional)
+            val parser = if (min == null && max == null) IntParser else BoundedIntParser(min, max)
+            node.arguments += ArgumentDefinition(name, parser, optional)
         }
 
         /** Registers a double argument with [name]. */
         public fun double(
             name: String,
             optional: Boolean = false,
+            min: Double? = null,
+            max: Double? = null,
         ) {
-            node.arguments += ArgumentDefinition(name, DoubleParser, optional)
+            val parser = if (min == null && max == null) DoubleParser else BoundedDoubleParser(min, max)
+            node.arguments += ArgumentDefinition(name, parser, optional)
         }
 
         /** Registers a boolean argument with [name]. */
@@ -177,8 +199,51 @@ public class CommandBuilder
         public fun long(
             name: String,
             optional: Boolean = false,
+            min: Long? = null,
+            max: Long? = null,
         ) {
-            node.arguments += ArgumentDefinition(name, LongParser, optional)
+            val parser = if (min == null && max == null) LongParser else BoundedLongParser(min, max)
+            node.arguments += ArgumentDefinition(name, parser, optional)
+        }
+
+        /** Registers a UUID argument with [name]. */
+        public fun uuid(
+            name: String,
+            optional: Boolean = false,
+        ) {
+            node.arguments += ArgumentDefinition(name, UuidParser, optional)
+        }
+
+        /** Registers a world argument with [name]. */
+        public fun world(
+            name: String,
+            optional: Boolean = false,
+        ) {
+            node.arguments += ArgumentDefinition(name, WorldParser, optional)
+        }
+
+        /** Registers a material argument with [name]. */
+        public fun material(
+            name: String,
+            optional: Boolean = false,
+        ) {
+            node.arguments += ArgumentDefinition(name, MaterialParser, optional)
+        }
+
+        /** Registers a duration argument with [name], accepting values like `10s`, `5m`, or `1h`. */
+        public fun duration(
+            name: String,
+            optional: Boolean = false,
+        ) {
+            node.arguments += ArgumentDefinition(name, DurationParser, optional)
+        }
+
+        /** Registers an enum argument with [name]. */
+        public inline fun <reified E : Enum<E>> enum(
+            name: String,
+            optional: Boolean = false,
+        ) {
+            argument(name, ChoiceParser(enumValues<E>().map { it.name.lowercase() }), optional)
         }
 
         /**

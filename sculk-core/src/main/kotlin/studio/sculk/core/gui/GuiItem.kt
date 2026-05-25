@@ -1,16 +1,11 @@
 package studio.sculk.core.gui
 
-import io.papermc.paper.registry.RegistryAccess
-import io.papermc.paper.registry.RegistryKey
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.ItemMeta
-import studio.sculk.core.adventure.parseMessage
 import studio.sculk.core.annotation.SculkInternal
 import studio.sculk.core.annotation.SculkStable
+import studio.sculk.items.ItemBuilder
 
 /**
  * An immutable definition of a single slot in a [Gui].
@@ -97,6 +92,7 @@ public class GuiItemBuilder
         private val enchantments: MutableMap<String, Int> = mutableMapOf()
         private var clickHandler: (GuiContext.() -> Unit)? = null
         private var dynamicBuilder: (GuiItemBuilder.(Player) -> Unit)? = null
+        private var stackBuilder: (ItemBuilder.() -> Unit)? = null
 
         /** Registers a click handler for this item. */
         public fun onClick(block: GuiContext.() -> Unit) {
@@ -130,6 +126,16 @@ public class GuiItemBuilder
         }
 
         /**
+         * Builds this GUI item stack with the shared `sculk-items` builder.
+         *
+         * This is the preferred API for new code because it exposes the same
+         * metadata, PDC, model-data, and enchantment behavior as standalone items.
+         */
+        public fun stack(block: ItemBuilder.() -> Unit) {
+            stackBuilder = block
+        }
+
+        /**
          * Adds an enchantment by its Minecraft key (e.g. `"sharpness"`, `"unbreaking"`).
          *
          * Unsafe levels are allowed — useful for display items. The enchantment is
@@ -152,38 +158,16 @@ public class GuiItemBuilder
 
         @SculkInternal
         public fun build(): GuiItem {
-            val stack = ItemStack(material, amount)
-            val meta = stack.itemMeta
-            if (meta != null) {
-                if (name.isNotBlank()) meta.displayName(parseMessage(name))
-                if (lore.isNotEmpty()) meta.lore(lore.map { parseMessage(it) })
-                if (glow) {
-                    meta.setEnchantmentGlintOverride(true)
+            val stack =
+                studio.sculk.items.item(material) {
+                    amount(amount)
+                    if (name.isNotBlank()) name(name)
+                    if (lore.isNotEmpty()) lore(lore)
+                    if (glow) glint()
+                    if (customModelData != 0) customModelData(customModelData)
+                    for ((enchName, level) in enchantments) enchant(enchName, level)
+                    stackBuilder?.invoke(this)
                 }
-                if (customModelData != 0) {
-                    applyCustomModelData(meta, customModelData)
-                }
-                for ((enchName, level) in enchantments) {
-                    val ench = enchantmentByKey(enchName)
-                    if (ench != null) meta.addEnchant(ench, level, true)
-                }
-                stack.itemMeta = meta
-            }
             return GuiItem(slot, stack, clickHandler, dynamicBuilder)
-        }
-
-        private fun enchantmentByKey(key: String): Enchantment? =
-            RegistryAccess
-                .registryAccess()
-                .getRegistry(RegistryKey.ENCHANTMENT)
-                .get(NamespacedKey.minecraft(key.trim().lowercase()))
-
-        private fun applyCustomModelData(
-            meta: ItemMeta,
-            value: Int,
-        ) {
-            val component = meta.customModelDataComponent
-            component.setFloats(listOf(value.toFloat()))
-            meta.setCustomModelDataComponent(component)
         }
     }

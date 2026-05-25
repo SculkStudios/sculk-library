@@ -14,13 +14,13 @@ Sculk Studio is not a copied or drop-in XSeries replacement. The goal is to prov
 | `XParticle` | `SculkSeries.particle(key)` | Implemented with Paper particle registry. |
 | `XEnchantment` | `SculkSeries.enchantment(key)` | Implemented with Paper enchantment registry. |
 | `XPotion` | `SculkSeries.potionEffect(key)` | Implemented with Paper mob effect registry. |
-| `XItemStack` | GUI item builder only | Partial. Standalone item API is planned. |
+| `XItemStack` | `sculk-items` item builder and `ItemDescriptor` | Implemented for common modern Paper items. |
 | Version helpers | `MinecraftVersion` | Implemented for `1.x.y` and `26.x.y` parsing. |
 
 ## Not implemented yet
 
 - Full historical alias tables for every old material/sound/potion name.
-- A standalone item builder with PDC, skulls, serialization, and component metadata.
+- Full `XItemStack` parity for every advanced metadata type such as books, banners, fireworks, and attribute modifiers.
 - A full compatibility shim for old Bukkit APIs.
 - Reflection-heavy fallback behavior for obsolete server versions.
 
@@ -36,8 +36,10 @@ val sound = XSound.ENTITY_PLAYER_LEVELUP.parseSound()
 Sculk Studio:
 
 ```kotlin
-val material = SculkSeries.material("diamond_sword") ?: Material.DIAMOND_SWORD
-val item = ItemStack(material)
+val item = item("diamond_sword") {
+    name("<aqua>Starter Sword")
+    enchant("sharpness", 5)
+} ?: item(Material.DIAMOND_SWORD)
 
 val sound = SculkSeries.sound("entity.player.levelup")
 if (sound != null) {
