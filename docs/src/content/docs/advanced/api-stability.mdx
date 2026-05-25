@@ -16,7 +16,7 @@ public fun command(name: String, block: CommandBuilder.() -> Unit): CommandBuild
 
 **Semver-protected.** A breaking change to any `@SculkStable` symbol requires a major version bump. All primary DSL entry points — `command {}`, `gui {}`, `sculk.config.load<T>()`, `sculk.data.repository<T, ID>()` — are stable.
 
-If you only use `@SculkStable` symbols, you can upgrade to any `1.x` release without changes to your plugin.
+If you only use `@SculkStable` symbols, patch and minor upgrades inside the same major line should not require plugin changes.
 
 ---
 
@@ -108,7 +108,7 @@ Only use `@SculkInternal` symbols if you are building tooling on top of Sculk St
 
 | Annotation | Guarantee | Opt-in required? |
 | :--- | :--- | :--- |
-| `@SculkStable` | Semver-protected. Safe to depend on across `1.x`. | No |
+| `@SculkStable` | Semver-protected inside the same major line. | No |
 | `@SculkExperimental` | Works, may change in minor releases. | Yes (`@OptIn`) |
 | `@SculkInternal` | No semver. Can break in any release. | Yes (compiler flag, `Level.ERROR`) |
 

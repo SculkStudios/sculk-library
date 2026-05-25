@@ -80,6 +80,35 @@ class CommandExecutionTest {
     }
 
     @Test
+    fun `permission aware help hides inaccessible subcommands`() {
+        val sender = mock<CommandSender>()
+        val messages = mutableListOf<String>()
+        whenever(sender.name).thenReturn("Console")
+        whenever(sender.hasPermission("coins.admin")).thenReturn(false)
+        whenever(sender.sendMessage(org.mockito.kotlin.any<net.kyori.adventure.text.Component>())).thenAnswer {
+            messages += it.arguments[0].toString()
+            Unit
+        }
+        val root =
+            command("coins") {
+                sub("public") {
+                    description = "Visible command"
+                    executes {}
+                }
+                sub("admin") {
+                    permission = "coins.admin"
+                    description = "Hidden command"
+                    executes {}
+                }
+            }.node
+
+        CommandExecutor.dispatch(root, sender, "coins", arrayOf("help"))
+
+        assertEquals(true, messages.any { it.contains("public") })
+        assertEquals(false, messages.any { it.contains("admin") })
+    }
+
+    @Test
     fun `player executor only runs for players`() {
         var executions = 0
         val player = mock<Player>()

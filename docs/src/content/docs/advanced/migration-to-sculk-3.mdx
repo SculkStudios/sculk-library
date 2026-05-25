@@ -1,0 +1,284 @@
+---
+title: Migration to Sculk 3
+description: A practical path for moving an existing Paper plugin onto Sculk Studio 3.0.
+---
+
+Sculk Studio works best when migration is done one subsystem at a time. Keep the existing plugin working, move one feature behind Sculk, test it, then continue.
+
+## Migration order
+
+Use this order for the lowest risk:
+
+1. Add Sculk dependencies, shading, and relocation.
+2. Create one `SculkPlatform` instance in `onEnable`.
+3. Move message sending to MiniMessage helpers.
+4. Move item builders to `sculk-items`.
+5. Move GUI menus to Sculk GUI sessions.
+6. Move typed YAML config classes.
+7. Move commands.
+8. Move data repositories and caches.
+9. Move events and scheduler handoffs.
+10. Add optional integrations or packets only where needed.
+
+## Install Sculk
+
+```kotlin
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:3.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-items:3.0.0")
+}
+
+tasks.shadowJar {
+    archiveClassifier = ""
+    relocate("studio.sculk", "your.plugin.libs.sculk")
+}
+```
+
+Keep packet adapters separate unless the plugin actually needs packets:
+
+```kotlin
+implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:3.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:3.0.0")
+```
+
+## Platform lifecycle
+
+Old plugin entry points usually create managers directly:
+
+```kotlin
+class MyPlugin : JavaPlugin() {
+    lateinit var menus: MenuManager
+    lateinit var configs: ConfigManager
+}
+```
+
+Move shared Sculk ownership into one platform instance:
+
+```kotlin
+class MyPlugin : JavaPlugin() {
+    lateinit var sculk: SculkPlatform
+
+    override fun onEnable() {
+        sculk = SculkPlatform.create(this) {
+            gui()
+            config()
+            data()
+            integrations()
+        }
+    }
+
+    override fun onDisable() {
+        sculk.close()
+    }
+}
+```
+
+`sculk.close()` is the shutdown boundary for Sculk-owned commands, events, GUI sessions, data pools, and enabled packet services.
+
+## Config migration
+
+Move string-key YAML access into typed data classes.
+
+Old style:
+
+```kotlin
+val startingCoins = config.getLong("economy.starting-coins")
+val prefix = config.getString("messages.prefix") ?: "<gray>[Server]"
+```
+
+Sculk style:
+
+```kotlin
+@ConfigFile("economy.yml")
+data class EconomySettings(
+    @param:Min(0)
+    val startingCoins: Long = 100,
+    val messages: EconomyMessages = EconomyMessages(),
+)
+
+data class EconomyMessages(
+    @param:NotEmpty
+    val prefix: String = "<dark_gray>[<aqua>Server</aqua>]</dark_gray>",
+)
+
+val settings = sculk.config.load<EconomySettings>()
+```
+
+Use `@param:` on validation annotations. Sculk reads constructor parameter annotations so validation follows how Kotlin data classes are constructed.
+
+## Item migration
+
+Move custom item helpers into `sculk-items`.
+
+Old style:
+
+```kotlin
+val item = ItemStack(Material.DIAMOND_SWORD)
+val meta = item.itemMeta
+meta.displayName(Component.text("Starter Sword"))
+item.itemMeta = meta
+```
+
+Sculk style:
+
+```kotlin
+val item = item("diamond_sword") {
+    name("<aqua>Starter Sword")
+    lore("<gray>Given to new players.")
+    enchant("sharpness", 2)
+    glint()
+    pdc("starter_item", true)
+}
+```
+
+For config-backed items, use `ItemDescriptor`:
+
+```kotlin
+data class KitDefinition(
+    val icon: ItemDescriptor = ItemDescriptor(
+        material = "diamond_sword",
+        name = "<aqua>Starter Kit",
+    ),
+)
+```
+
+## GUI migration
+
+Move inventory listeners and manual maps into platform-managed GUI sessions.
+
+Old style:
+
+```kotlin
+val openMenus = mutableMapOf<UUID, Inventory>()
+```
+
+Sculk style:
+
+```kotlin
+val menu = gui("<dark_gray>Server Menu", rows = 3) {
+    item(13) {
+        stack {
+            material("nether_star")
+            name("<aqua>Profile")
+        }
+
+        onClick {
+            player.sendMini("<green>Opening profile...")
+        }
+    }
+}
+
+menu.openFor(player)
+```
+
+Enable `gui()` in `SculkPlatform.create`. Sculk handles click routing, drag protection, close cleanup, and quit cleanup.
+
+## Command migration
+
+Move command executors into command trees.
+
+Old style:
+
+```kotlin
+override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<String>): Boolean {
+    if (label.equals("coins", true)) {
+        // parse args manually
+    }
+    return true
+}
+```
+
+Sculk style:
+
+```kotlin
+sculk.commands.register(
+    command("coins") {
+        description = "View and manage coins"
+        permission = "economy.coins"
+
+        player {
+            reply("<gold>You have <yellow>${profile.coins}</yellow> coins.")
+        }
+
+        sub("give") {
+            permission = "economy.admin"
+            player("target")
+            long("amount", min = 1)
+
+            executes {
+                val target = argument<Player>("target")
+                val amount = argument<Long>("amount")
+                reply("<green>Giving <yellow>$amount</yellow> coins to ${target.name}.")
+            }
+        }
+    }
+)
+```
+
+Keep expensive data work off the command thread. Use `sculk.scheduler.runAsync` or repository async facades for database/file IO.
+
+## Data migration
+
+Move persistence behind repositories and cache wrappers.
+
+```kotlin
+@Table("economy_accounts")
+data class EconomyAccount(
+    @PrimaryKey val uuid: UUID,
+    var name: String,
+    var coins: Long,
+)
+
+val repo = sculk.data.repository<EconomyAccount, UUID>()
+val cached = sculk.data.cached(repo, { it.uuid })
+val async = cached.async(sculk.scheduler)
+```
+
+Repository calls are blocking. Use async facades for command/event flows:
+
+```kotlin
+async.find(player.uniqueId).thenAccept { result ->
+    sculk.scheduler.runSync(player) {
+        result.onSuccess { account ->
+            player.sendMini("<gold>Coins: <yellow>${account?.coins ?: 0}</yellow>")
+        }
+    }
+}
+```
+
+Flush dirty or loaded data on disable before closing Sculk-owned resources.
+
+## Events and scheduler
+
+Old listeners can move to lifecycle-owned handles:
+
+```kotlin
+sculk.events.listen<PlayerQuitEvent> { event ->
+    val uuid = event.player.uniqueId
+    sculk.scheduler.runAsync {
+        profiles.saveAndUnload(uuid)
+    }
+}
+```
+
+Thread rule:
+
+- Database/file IO: async.
+- Player/world/inventory/entity API: sync player or sync location handoff.
+- Packet listeners: assume unsafe thread until you hand off.
+
+## Migration acceptance checklist
+
+- Plugin starts with one `SculkPlatform`.
+- `sculk.close()` runs from `onDisable`.
+- Configs are typed data classes.
+- Validation annotations use `@param:`.
+- Menus are opened through Sculk GUI sessions.
+- Items use `sculk-items` or `ItemDescriptor`.
+- Commands use Sculk command trees.
+- Blocking repository calls are off-thread.
+- Player state is stored by UUID, not `Player`.
+- Shadow relocation is configured.
+- Optional integrations are checked with `SculkResult`.

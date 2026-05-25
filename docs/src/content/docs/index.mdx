@@ -66,3 +66,7 @@ The docs include compile-checked recipe plugins that show full workflows instead
 - [Staff tools](/recipes/staff-tools/) - staff mode, freeze, inspect menus, staff chat, effects, logging, and transient state cleanup.
 - [Crate system](/recipes/crate-system/) - config-driven reward tables, key PDC markers, weighted rolls, preview menus, and reward delivery.
 - [Kits plugin](/recipes/kits-plugin/) - config-backed kits, cooldown persistence, preview menus, PDC markers, and safe give/drop behavior.
+
+## Migrating an existing plugin
+
+When you are moving an older plugin onto Sculk, start with the [Migration to Sculk 3](/advanced/migration-to-sculk-3/) guide and keep the [Migration Checklist](/advanced/migration-checklist/) open during testing. The migration path is designed around one subsystem at a time: platform lifecycle, text, items, GUI, config, commands, data, events, and optional integrations.
