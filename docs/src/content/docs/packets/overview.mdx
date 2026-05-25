@@ -1,0 +1,93 @@
+---
+title: Packets
+description: Optional packet APIs for client-side features without making core heavy.
+---
+
+Sculk packet support is deliberately split into small optional modules. `sculk-core` and `sculk-platform` do not bundle PacketEvents or ProtocolLib, and Sculk does not shade either packet library.
+
+Use packets when you need client-side behavior that Paper does not expose directly: temporary client blocks, debug packet sessions, fake entities, holograms, nametags, and visibility tricks. Prefer Paper APIs when they already solve the job.
+
+## Modules
+
+| Module | Purpose |
+| --- | --- |
+| `sculk-packets-api` | Small backend-neutral contracts and high-level packet service APIs. |
+| `sculk-packets-packetevents` | Optional PacketEvents adapter. Recommended for new packet-heavy plugins. |
+| `sculk-packets-protocollib` | Optional ProtocolLib adapter for servers already using ProtocolLib. |
+
+## Install only what you need
+
+PacketEvents path:
+
+```kotlin
+dependencies {
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:v2.0.0")
+}
+```
+
+ProtocolLib path:
+
+```kotlin
+dependencies {
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-protocollib:v2.0.0")
+}
+```
+
+You must also install PacketEvents or ProtocolLib on the server. Sculk only provides adapters.
+
+## Enable packets
+
+```kotlin
+import studio.sculk.packets.PacketBackendMode
+
+sculk = SculkPlatform.create(this) {
+    packets {
+        backend = PacketBackendMode.Auto
+        required = false
+    }
+}
+
+sculk.packets
+    ?.onSuccess { service ->
+        logger.info("Packets enabled with ${service.backend}")
+    }
+    ?.onFailure { message, _ ->
+        logger.warning(message)
+    }
+```
+
+`Auto` prefers PacketEvents, then ProtocolLib. If `required = true`, startup fails with a clear message when no backend is available.
+
+## Current backend status
+
+`sculk-packets-api` provides the shared contracts and high-level service surface. The ProtocolLib adapter currently supports real low-level listener registration, listener cleanup, and sending `ProtocolLibPacket` containers. The PacketEvents adapter is intentionally isolated as the preferred backend direction and currently provides backend detection plus shared high-level service access while its packet-wrapper listener binding is hardened.
+
+## Current high-level API
+
+Client-side blocks are available through the backend-neutral service:
+
+```kotlin
+val packets = sculk.packets?.getOrNull() ?: return
+
+packets.clientBlocks.set(player, targetBlock.location, Material.DIAMOND_BLOCK)
+packets.clientBlocks.preview(player, targetBlock.location, Material.EMERALD_BLOCK, durationTicks = 60)
+packets.clientBlocks.reset(player, targetBlock.location)
+```
+
+The public packet contracts also include holograms, fake entities, nametags, debug sessions, low-level listener registration, and packet sending. Backend-specific packet wrappers remain isolated to adapter modules so the core jar stays small.
+
+## Threading
+
+Packet listeners can run off the main thread depending on the backend and packet type. Do not touch Paper player, world, inventory, or entity APIs directly from a packet callback. Use `context.runSync { ... }` before interacting with Paper state.
+
+## Common mistakes
+
+- Adding both adapters but not installing PacketEvents or ProtocolLib on the server.
+- Shading PacketEvents or ProtocolLib into your plugin. Install the runtime plugin instead.
+- Doing database or file IO inside a packet listener.
+- Modifying a PacketEvents wrapper and forgetting to mark it changed.
+- Using packets for behavior Paper already supports safely.

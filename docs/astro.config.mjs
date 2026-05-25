@@ -102,6 +102,15 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Packets',
+					items: [
+						{ label: 'Overview', slug: 'packets/overview' },
+						{ label: 'PacketEvents', slug: 'packets/packetevents' },
+						{ label: 'ProtocolLib', slug: 'packets/protocollib' },
+						{ label: 'Performance', slug: 'packets/performance' },
+					],
+				},
+				{
 					label: 'Advanced',
 					items: [
 						{ label: 'API Stability', slug: 'advanced/api-stability' },

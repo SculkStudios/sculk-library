@@ -1,0 +1,46 @@
+---
+title: ProtocolLib
+description: Compatibility adapter for servers already built around ProtocolLib.
+---
+
+ProtocolLib remains common across Bukkit and Paper servers. Sculk supports it as a compatibility adapter, but PacketEvents is recommended for new packet-heavy Sculk work.
+
+## Dependency
+
+```kotlin
+dependencies {
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-protocollib:v2.0.0")
+}
+```
+
+Install ProtocolLib on the server. Do not shade ProtocolLib into your plugin.
+
+```yaml
+softdepend:
+  - ProtocolLib
+```
+
+## Backend selection
+
+```kotlin
+sculk = SculkPlatform.create(this) {
+    packets {
+        backend = PacketBackendMode.ProtocolLib
+    }
+}
+```
+
+Use this when your server stack already depends on ProtocolLib or when another plugin integration expects it.
+
+## Compatibility notes
+
+- ProtocolLib is broad and ecosystem-friendly, but it can be heavier than a PacketEvents-first setup.
+- Keep ProtocolLib-specific packet container work inside the adapter module or your plugin integration layer.
+- Missing ProtocolLib returns `SculkResult.Failure` unless packets are marked as required.
+
+## Common mistakes
+
+- Depending on the Sculk ProtocolLib adapter but forgetting to install ProtocolLib on the server.
+- Installing both PacketEvents and ProtocolLib, then expecting ProtocolLib to win in `Auto` mode. `Auto` prefers PacketEvents.
+- Using packets for simple tab list, scoreboard, title, or sound work that Paper already supports.

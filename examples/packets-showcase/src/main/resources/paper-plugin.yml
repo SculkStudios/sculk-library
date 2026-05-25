@@ -1,0 +1,9 @@
+name: SculkPacketsShowcase
+version: 2.0.0
+main: studio.sculk.example.PacketsPlugin
+api-version: '26.1.2'
+author: Sculk Studios
+description: Packet backend showcase for Sculk Studio.
+softdepend:
+  - packetevents
+  - ProtocolLib
