@@ -18,7 +18,7 @@ public class EconomyPlugin : JavaPlugin() {
             SculkPlatform.create(this) {
                 config()
             }
-        settings = sculk.config!!.load()
+        settings = sculk.config.load()
 
         sculk.commands.register(
             command("coins") {

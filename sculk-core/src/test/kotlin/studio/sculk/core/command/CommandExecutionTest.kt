@@ -65,6 +65,21 @@ class CommandExecutionTest {
     }
 
     @Test
+    fun `optional argument rejects invalid provided value`() {
+        var executions = 0
+        val sender = permittedSender()
+        val root =
+            command("limit") {
+                int("amount", optional = true, min = 1, max = 10)
+                executes { executions++ }
+            }.node
+
+        CommandExecutor.dispatch(root, sender, "limit", arrayOf("wrong"))
+
+        assertEquals(0, executions)
+    }
+
+    @Test
     fun `player executor only runs for players`() {
         var executions = 0
         val player = mock<Player>()

@@ -3,6 +3,7 @@ package studio.sculk.platform
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.config.SculkConfig
@@ -19,6 +20,7 @@ import studio.sculk.packets.SculkPacketService
 import studio.sculk.packets.SculkPacketServices
 import studio.sculk.platform.command.SculkCommandBridge
 import studio.sculk.platform.event.SculkEventBus
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * The Sculk Studio platform — the single entry point that wires all modules together.
@@ -53,16 +55,39 @@ public class SculkPlatform internal constructor(
     public val events: SculkEventBus,
     /** Command registration bridge. Use [commands.register] to add commands. */
     public val commands: SculkCommandBridge,
-    /** Config system. Non-null if [SculkPlatformBuilder.config] was called. */
-    public val config: SculkConfig?,
-    /** Data layer. Non-null if [SculkPlatformBuilder.data] was called. */
-    public val data: SculkData?,
-    /** Optional integration adapters. Non-null if [SculkPlatformBuilder.integrations] was called. */
-    public val integrations: SculkIntegrations?,
-    /** Optional packet service result. Non-null if [SculkPlatformBuilder.packets] was called. */
-    public val packets: SculkResult<SculkPacketService>?,
+    private val configService: SculkConfig?,
+    private val dataService: SculkData?,
+    private val integrationService: SculkIntegrations?,
+    private val packetServiceResult: SculkResult<SculkPacketService>?,
     private val handles: List<SculkHandle>,
 ) : SculkHandle {
+    private val closed = AtomicBoolean(false)
+
+    /** Config system. Requires [SculkPlatformBuilder.config] during platform creation. */
+    public val config: SculkConfig
+        get() = configService ?: missingSubsystem("config", "config()")
+
+    /** Data layer. Requires [SculkPlatformBuilder.data] during platform creation. */
+    public val data: SculkData
+        get() = dataService ?: missingSubsystem("data", "data()")
+
+    /** Optional integration adapters. Requires [SculkPlatformBuilder.integrations]. */
+    public val integrations: SculkIntegrations
+        get() = integrationService ?: missingSubsystem("integrations", "integrations()")
+
+    /** Packet service. Requires [SculkPlatformBuilder.packets] and a successful backend. */
+    public val packets: SculkPacketService
+        get() =
+            when (val result = packetServiceResult) {
+                is SculkResult.Success -> result.value
+                is SculkResult.Failure -> throw IllegalStateException(result.message, result.cause)
+                null -> missingSubsystem("packets", "packets { ... }")
+            }
+
+    /** Packet backend result for plugins that can run without packet support. */
+    public val packetsResult: SculkResult<SculkPacketService>?
+        get() = packetServiceResult
+
     /**
      * Tears down all Sculk components in reverse-registration order.
      *
@@ -70,12 +95,18 @@ public class SculkPlatform internal constructor(
      * Safe to call multiple times.
      */
     override fun close() {
+        if (!closed.compareAndSet(false, true)) return
         handles.asReversed().forEach { it.close() }
         GuiRegistry.closeAll()
         commands.close()
         events.close()
-        data?.close()
+        dataService?.close()
     }
+
+    private fun <T> missingSubsystem(
+        name: String,
+        call: String,
+    ): T = throw IllegalStateException("Sculk $name subsystem is not enabled. Call $call in SculkPlatform.create { ... }.")
 
     public companion object {
         /**
@@ -214,6 +245,14 @@ public class SculkPlatformBuilder(
                     GuiRegistry.unregister(player)
                     @OptIn(studio.sculk.core.annotation.SculkInternal::class)
                     session.markClosed()
+                }
+
+            extraHandles +=
+                events.listen<InventoryDragEvent> { event ->
+                    GuiRegistry.sessionForInventory(event.view.topInventory) ?: return@listen
+                    if (event.rawSlots.any { it < event.view.topInventory.size }) {
+                        event.isCancelled = true
+                    }
                 }
 
             extraHandles +=

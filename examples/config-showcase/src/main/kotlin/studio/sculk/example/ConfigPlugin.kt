@@ -35,14 +35,13 @@ public class ConfigPlugin : JavaPlugin() {
                 config()
             }
 
-        // Load config — creates settings.yml with defaults on first run.
-        // sculk.config is non-null because config() was called above.
-        settings = sculk.config!!.load<Settings>()
+        // Load config: creates settings.yml with defaults on first run.
+        settings = sculk.config.load<Settings>()
 
         // Re-read settings whenever /reload is run so handlers see the latest values.
-        sculk.config!!.onReload<Settings> {
-            settings = sculk.config!!.load<Settings>()
-            logger.info("Settings reloaded — maxHomes=${settings.maxHomes}")
+        sculk.config.onReload<Settings> {
+            settings = sculk.config.load<Settings>()
+            logger.info("Settings reloaded: maxHomes=${settings.maxHomes}")
         }
 
         sculk.commands.registerAll(
@@ -72,7 +71,7 @@ public class ConfigPlugin : JavaPlugin() {
             permission = "demo.admin"
             sub("reload") {
                 executes {
-                    sculk.config!!.reloadAll()
+                    sculk.config.reloadAll()
                     reply("${settings.prefix} <green>Config reloaded.")
                 }
             }

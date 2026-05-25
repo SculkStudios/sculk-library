@@ -25,7 +25,11 @@ public class CommandNode(
     public var consoleExecutor: (CommandContext.() -> Unit)? = null
     public var anyExecutor: (CommandContext.() -> Unit)? = null
 
-    public fun findSubcommand(name: String): CommandNode? = subcommands.firstOrNull { it.name.equals(name, ignoreCase = true) }
+    public fun findSubcommand(name: String): CommandNode? =
+        subcommands.firstOrNull { subcommand ->
+            subcommand.name.equals(name, ignoreCase = true) ||
+                subcommand.aliases.any { it.equals(name, ignoreCase = true) }
+        }
 }
 
 /**

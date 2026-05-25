@@ -35,7 +35,7 @@ fun homeCommand(sculk: SculkPlatform) = command("home") {
         string("name")
         player {
             val name = argument<String>("name")
-            val settings = sculk.config!!.load<Settings>()
+            val settings = sculk.config.load<Settings>()
             reply("<green>Home <white>$name</white> set. Max homes: ${settings.maxHomes}")
         }
     }

@@ -11,10 +11,7 @@ public abstract class AbstractPacketService(
     final override val backend: PacketBackend,
     protected val scheduler: SculkScheduler,
 ) : SculkPacketService {
-    final override val holograms: PacketHologramService = PacketHologramService()
-    final override val fakeEntities: FakeEntityService = FakeEntityService()
     final override val clientBlocks: ClientBlockService = ClientBlockService(scheduler)
-    final override val nametags: NametagService = NametagService()
     final override val debug: PacketDebugService = PacketDebugService(this, scheduler)
 
     override fun send(

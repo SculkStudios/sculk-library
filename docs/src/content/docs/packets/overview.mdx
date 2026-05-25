@@ -5,7 +5,7 @@ description: Optional packet APIs for client-side features without making core h
 
 Sculk packet support is deliberately split into small optional modules. `sculk-core` and `sculk-platform` do not bundle PacketEvents or ProtocolLib, and Sculk does not shade either packet library.
 
-Use packets when you need client-side behavior that Paper does not expose directly: temporary client blocks, debug packet sessions, fake entities, holograms, nametags, and visibility tricks. Prefer Paper APIs when they already solve the job.
+Use packets when you need client-side behavior that Paper does not expose directly. Today, Sculk exposes production APIs for low-level listeners, packet sending, debug packet sessions, and temporary client-side block previews. Prefer Paper APIs when they already solve the job.
 
 ## Modules
 
@@ -51,7 +51,7 @@ sculk = SculkPlatform.create(this) {
     }
 }
 
-sculk.packets
+sculk.packetsResult
     ?.onSuccess { service ->
         logger.info("Packets enabled with ${service.backend}")
     }
@@ -71,14 +71,14 @@ sculk.packets
 Client-side blocks are available through the backend-neutral service:
 
 ```kotlin
-val packets = sculk.packets?.getOrNull() ?: return
+val packets = sculk.packets
 
 packets.clientBlocks.set(player, targetBlock.location, Material.DIAMOND_BLOCK)
 packets.clientBlocks.preview(player, targetBlock.location, Material.EMERALD_BLOCK, durationTicks = 60)
 packets.clientBlocks.reset(player, targetBlock.location)
 ```
 
-The public packet contracts also include debug sessions, low-level listener registration, and packet sending. Higher-level content descriptors live in `sculk-content`; backend-specific packet wrappers remain isolated to adapter modules so the core jar stays small.
+The public packet contracts also include debug sessions, low-level listener registration, and packet sending. `sculk-content` currently keeps the higher-level client block facade separate from the packet contracts; backend-specific packet wrappers remain isolated to adapter modules so the core jar stays small.
 
 ## Threading
 

@@ -39,18 +39,20 @@ public class SculkBukkitCommand(
         sender: CommandSender,
         alias: String,
         args: Array<String>,
-    ): List<String> = buildTabCompletions(node, args)
+    ): List<String> = buildTabCompletions(node, sender, args)
 
     private fun buildTabCompletions(
         node: CommandNode,
+        sender: CommandSender,
         args: Array<String>,
     ): List<String> {
         if (args.isEmpty()) return emptyList()
         if (args.size == 1) {
             val subSuggestions =
                 node.subcommands
-                    .filter { it.name.startsWith(args[0], ignoreCase = true) }
-                    .map { it.name }
+                    .filter { it.canUse(sender) }
+                    .flatMap { subcommand -> listOf(subcommand.name) + subcommand.aliases }
+                    .filter { it.startsWith(args[0], ignoreCase = true) }
             val argSuggestions =
                 node.arguments
                     .firstOrNull()
@@ -58,14 +60,16 @@ public class SculkBukkitCommand(
                     ?.suggest(args[0]) ?: emptyList()
             return (subSuggestions + argSuggestions).distinct()
         }
-        // Recurse into matched subcommand
-        val sub = node.subcommands.firstOrNull { it.name.equals(args[0], ignoreCase = true) }
-        if (sub != null) return buildTabCompletions(sub, args.copyOfRange(1, args.size))
-        // No subcommand — completing an argument; args.last() is the partial token
+
+        val sub = node.findSubcommand(args[0])
+        if (sub != null && sub.canUse(sender)) return buildTabCompletions(sub, sender, args.copyOfRange(1, args.size))
+
         val argIdx = args.size - 1
         return node.arguments
             .getOrNull(argIdx)
             ?.parser
             ?.suggest(args.last()) ?: emptyList()
     }
+
+    private fun CommandNode.canUse(sender: CommandSender): Boolean = permission?.let(sender::hasPermission) ?: true
 }

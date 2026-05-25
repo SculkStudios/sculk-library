@@ -39,7 +39,7 @@ Use `required = true` only when the plugin cannot run without packet features.
 ## Low-level listener
 
 ```kotlin
-val packets = sculk.packets?.getOrNull() ?: return
+val packets = sculk.packets
 
 packets.listen(PacketDirection.Serverbound, PacketKey.of("use_item"), PacketPriority.Normal) {
     val source = player ?: return@listen
@@ -64,7 +64,6 @@ If you modify a PacketEvents wrapper inside a listener, call `markChanged()` so 
 PacketEvents is the right default for:
 
 - Packet-heavy cosmetics.
-- Holograms and fake entities.
 - Client block previews.
 - Per-player visibility logic.
 - Debugging or inspecting high-frequency packet flows.
