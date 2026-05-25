@@ -13,10 +13,7 @@ import studio.sculk.core.SculkResult
  */
 public interface SculkPacketService : SculkHandle {
     public val backend: PacketBackend
-    public val holograms: PacketHologramService
-    public val fakeEntities: FakeEntityService
     public val clientBlocks: ClientBlockService
-    public val nametags: NametagService
     public val debug: PacketDebugService
 
     public fun listen(

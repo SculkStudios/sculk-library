@@ -18,7 +18,7 @@ public class PacketsPlugin : JavaPlugin() {
                 }
             }
 
-        val packets = sculk.packets
+        val packets = sculk.packetsResult
         packets?.onSuccess { service ->
             logger.info("Sculk packets enabled with ${service.backend}.")
         }

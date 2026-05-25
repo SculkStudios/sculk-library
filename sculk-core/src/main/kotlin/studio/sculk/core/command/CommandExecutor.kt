@@ -89,7 +89,7 @@ public object CommandExecutor {
                 if (arg.optional) continue else return null
             }
             val value = arg.parser.parse(raw)
-            if (value == null && !arg.optional) return null
+            if (value == null) return null
             parsed[arg.name] = value
         }
 

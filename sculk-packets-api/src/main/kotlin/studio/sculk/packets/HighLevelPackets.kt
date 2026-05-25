@@ -2,7 +2,6 @@ package studio.sculk.packets
 
 import org.bukkit.Location
 import org.bukkit.Material
-import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import studio.sculk.core.SculkHandle
 import studio.sculk.core.SculkResult
@@ -46,95 +45,6 @@ public class ClientBlockService internal constructor(
                 reset(player, location)
             }
         return SculkResult.success(handle)
-    }
-}
-
-public class PacketHologramService internal constructor() {
-    public fun spawn(
-        player: Player,
-        location: Location,
-        block: HologramBuilder.() -> Unit,
-    ): SculkResult<SculkHandle> {
-        HologramBuilder(location).apply(block)
-        return SculkResult.failure(
-            "Packet holograms need backend-specific entity packet wrappers. Use this API contract with a backend implementation.",
-        )
-    }
-}
-
-public class HologramBuilder internal constructor(
-    public val location: Location,
-) {
-    private val mutableLines = mutableListOf<String>()
-    public val lines: List<String> get() = mutableLines.toList()
-
-    public fun line(value: String) {
-        mutableLines += value
-    }
-}
-
-public class FakeEntityService internal constructor() {
-    public fun spawn(
-        player: Player,
-        block: FakeEntityBuilder.() -> Unit,
-    ): SculkResult<SculkHandle> {
-        FakeEntityBuilder().apply(block)
-        return SculkResult.failure(
-            "Fake entities need backend-specific spawn and metadata packets. Use this API contract with a backend implementation.",
-        )
-    }
-}
-
-public class FakeEntityBuilder {
-    public var type: EntityType = EntityType.ARMOR_STAND
-    public var location: Location? = null
-    public var invisible: Boolean = false
-    public var marker: Boolean = false
-    public var name: String? = null
-
-    public fun type(value: EntityType) {
-        type = value
-    }
-
-    public fun location(value: Location) {
-        location = value
-    }
-
-    public fun invisible() {
-        invisible = true
-    }
-
-    public fun marker() {
-        marker = true
-    }
-
-    public fun name(value: String) {
-        name = value
-    }
-}
-
-public class NametagService internal constructor() {
-    public fun update(
-        player: Player,
-        block: NametagBuilder.() -> Unit,
-    ): SculkResult<Unit> {
-        NametagBuilder().apply(block)
-        return SculkResult.failure(
-            "Packet nametags need backend-specific team packets. Use this API contract with a backend implementation.",
-        )
-    }
-}
-
-public class NametagBuilder {
-    public var prefix: String? = null
-    public var suffix: String? = null
-
-    public fun prefix(value: String) {
-        prefix = value
-    }
-
-    public fun suffix(value: String) {
-        suffix = value
     }
 }
 

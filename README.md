@@ -130,7 +130,7 @@ public class MyPlugin extends JavaPlugin {
 | `sculk-packets-api` | Small backend-neutral packet contracts and high-level packet service APIs |
 | `sculk-packets-packetevents` | Optional PacketEvents packet backend adapter |
 | `sculk-packets-protocollib` | Optional ProtocolLib compatibility backend adapter |
-| `sculk-content` | High-level client-side content descriptors over packet services |
+| `sculk-content` | High-level client block helpers over packet services |
 | `sculk-platform` | Paper integration for plugin lifecycle |
 
 ## Stability Notes
@@ -147,7 +147,7 @@ public class MyPlugin extends JavaPlugin {
 | Events | Disposable listeners, once listeners, filters, priority, ignore-cancelled support, and platform lifecycle cleanup. |
 | Series | Modern Paper registry lookups, require helpers, validation reports, and curated aliases. |
 | Integrations | Optional PlaceholderAPI, Vault, and LuckPerms adapters with failure results for missing plugins. |
-| Packets | Optional backend-neutral packet contracts with PacketEvents preferred, ProtocolLib compatibility, and content descriptors. |
+| Packets | Optional backend-neutral packet contracts with PacketEvents preferred, ProtocolLib compatibility, client block previews, and debug sessions. |
 | Docs | Public manual with feature pages and compile-checked real server recipe examples. |
 
 ## Documentation

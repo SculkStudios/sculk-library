@@ -7,6 +7,7 @@ import org.bukkit.event.Listener
 import org.bukkit.plugin.Plugin
 import studio.sculk.core.SculkHandle
 import studio.sculk.core.annotation.SculkStable
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Manages event listener registrations on behalf of a plugin.
@@ -51,7 +52,13 @@ public class SculkEventBus(
             ignoreCancelled,
         )
         listeners += listener
-        return SculkHandle { HandlerList.unregisterAll(listener) }
+        val closed = AtomicBoolean(false)
+        return SculkHandle {
+            if (closed.compareAndSet(false, true)) {
+                HandlerList.unregisterAll(listener)
+                listeners -= listener
+            }
+        }
     }
 
     /** Registers a listener that unregisters itself after the first matching event. */

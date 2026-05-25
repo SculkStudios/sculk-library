@@ -17,7 +17,7 @@ public class CrateSystemPlugin : JavaPlugin() {
                 config()
                 gui()
             }
-        config = sculk.config!!.load()
+        config = sculk.config.load()
 
         sculk.commands.register(
             command("crate") {

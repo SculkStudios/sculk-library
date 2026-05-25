@@ -44,6 +44,18 @@ class CommandBuilderTest {
     }
 
     @Test
+    fun `findSubcommand matches aliases`() {
+        val builder =
+            command("test") {
+                sub("reload") {
+                    aliases = listOf("rl", "refresh")
+                }
+            }
+        assertNotNull(builder.node.findSubcommand("rl"))
+        assertNotNull(builder.node.findSubcommand("REFRESH"))
+    }
+
+    @Test
     fun `player executor is registered`() {
         val builder =
             command("test") {

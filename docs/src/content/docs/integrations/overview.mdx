@@ -16,8 +16,8 @@ sculk = SculkPlatform.create(this) {
 ## PlaceholderAPI
 
 ```kotlin
-val papi = sculk.integrations?.placeholderApi()
-papi?.onSuccess { integration ->
+val papi = sculk.integrations.placeholderApi()
+papi.onSuccess { integration ->
     player.sendMini(integration.parse(player, "<green>Hello %player_name%"))
 }
 ```
@@ -26,8 +26,8 @@ papi?.onSuccess { integration ->
 
 ```kotlin
 sculk.integrations
-    ?.vaultEconomy()
-    ?.onSuccess { economy ->
+    .vaultEconomy()
+    .onSuccess { economy ->
         economy.deposit(player, 100.0)
     }
 ```
@@ -36,8 +36,8 @@ sculk.integrations
 
 ```kotlin
 sculk.integrations
-    ?.luckPerms()
-    ?.onSuccess { luckPerms ->
+    .luckPerms()
+    .onSuccess { luckPerms ->
         val group = luckPerms.primaryGroup(player.uniqueId)
     }
 ```
