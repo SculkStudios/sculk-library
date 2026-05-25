@@ -77,6 +77,19 @@ override fun onEnable() {
 }
 ```
 
+## Packet paths
+
+Packet APIs are optional and split into separate modules. Do not install packet modules unless your plugin uses packet-powered features.
+
+Packet listeners sit on hot networking paths:
+
+- Prefer PacketEvents for new packet-heavy work.
+- Keep ProtocolLib for compatibility with existing server stacks.
+- Do not block packet callbacks.
+- Do not touch Paper APIs directly from packet callbacks; use `context.runSync { ... }`.
+- Use packet filters before decoding data.
+- Keep debug listeners short-lived.
+
 ## Checklist
 
 - Run repository and cache miss work asynchronously.
@@ -84,4 +97,5 @@ override fun onEnable() {
 - Reuse repositories and caches.
 - Keep GUI click handlers short.
 - Pre-warm config-driven registry keys at startup.
+- Install only packet modules your plugin uses.
 - Measure before changing connection pool sizes.

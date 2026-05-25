@@ -15,6 +15,8 @@ ktlint-gradle     = "14.2.0"
 jmh               = "1.37"
 jmh-plugin        = "0.7.3"
 shadow            = "9.4.1"
+packetevents      = "2.12.1"
+protocollib       = "5.4.0"
 
 [libraries]
 # Paper
@@ -39,6 +41,10 @@ snakeyaml         = { module = "org.yaml:snakeyaml",                   version.r
 # Test
 junit-jupiter     = { module = "org.junit.jupiter:junit-jupiter",       version.ref = "junit" }
 mockito-kotlin    = { module = "org.mockito.kotlin:mockito-kotlin",     version.ref = "mockito-kotlin" }
+
+# Packet backends (optional adapters only)
+packetevents-spigot = { module = "com.github.retrooper:packetevents-spigot", version.ref = "packetevents" }
+protocollib         = { module = "net.dmulloy2:ProtocolLib", version.ref = "protocollib" }
 
 # Benchmarks
 jmh-core          = { module = "org.openjdk.jmh:jmh-core",             version.ref = "jmh" }

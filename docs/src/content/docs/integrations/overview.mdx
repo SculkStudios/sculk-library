@@ -43,3 +43,13 @@ sculk.integrations
 ```
 
 Missing plugins return `SculkResult.Failure`; they do not crash plugin startup.
+
+## Packet backends
+
+PacketEvents and ProtocolLib are handled by packet modules, not `sculk-integrations`, because they need their own size and lifecycle policy.
+
+- Use `sculk-packets-packetevents` for new packet-heavy plugins.
+- Use `sculk-packets-protocollib` when a server already depends on ProtocolLib.
+- Install PacketEvents or ProtocolLib on the server; Sculk does not shade them.
+
+See the packet docs for backend setup and thread-safety rules.

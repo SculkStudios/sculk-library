@@ -1,0 +1,57 @@
+---
+title: PacketEvents
+description: Recommended backend for new packet-heavy Sculk plugins.
+---
+
+PacketEvents is the preferred packet backend for new packet-heavy Sculk plugins. It is designed around packet listeners, priorities, wrapper APIs, and explicit packet mutation behavior.
+
+The Sculk PacketEvents adapter is kept separate from core and is the preferred backend target. The current lightweight adapter detects PacketEvents and exposes shared high-level services; direct PacketEvents wrapper listener binding is being kept inside this adapter so it can mature without adding packet classes to core.
+
+## Dependency
+
+```kotlin
+dependencies {
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:v2.0.0")
+}
+```
+
+Install PacketEvents on the server. Do not shade PacketEvents into your plugin.
+
+```yaml
+softdepend:
+  - packetevents
+```
+
+## Backend selection
+
+```kotlin
+sculk = SculkPlatform.create(this) {
+    packets {
+        backend = PacketBackendMode.PacketEvents
+        required = true
+    }
+}
+```
+
+Use `required = true` only when the plugin cannot run without packet features.
+
+## PacketEvents rules
+
+- Packet callbacks may not be on the main thread.
+- Use `context.runSync { ... }` for Paper API access.
+- When a wrapper is modified, call `context.markChanged()` so the adapter can map that to PacketEvents re-encoding behavior.
+- Avoid heavy allocations in hot packet paths.
+- Prefer packet type filters before decoding packet data.
+
+## When to use it
+
+PacketEvents is the right default for:
+
+- Packet-heavy cosmetics.
+- Holograms and fake entities.
+- Client block previews.
+- Per-player visibility logic.
+- Debugging or inspecting high-frequency packet flows.
+
+Use Paper APIs instead when they already provide the behavior with normal server state.

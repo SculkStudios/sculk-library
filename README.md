@@ -17,6 +17,7 @@ Sculk Studio is the shared Kotlin library used by Sculk Studios plugins. It prov
 - **Series** - Registry helpers, require lookups, validation reports, and curated aliases for modern config keys.
 - **Effects** - Particle builders, sound builders, descriptors, timelines, and tick-based sequences.
 - **Data** - JDBC repositories, async facades, player profile helpers, SQLite/MySQL configuration, ORM mapping, and Caffeine-backed caching.
+- **Packets** - Optional PacketEvents-first packet APIs with ProtocolLib compatibility adapters.
 - **Platform** - Paper bootstrap for commands, events, GUI lifecycle, config, data, integrations, and scheduling.
 
 ## Installation
@@ -126,6 +127,9 @@ public class MyPlugin extends JavaPlugin {
 | `sculk-effects` | Particle and sound builders, animation timelines |
 | `sculk-data` | JDBC repositories, SQLite/MySQL config, cache layer |
 | `sculk-integrations` | Optional PlaceholderAPI, Vault, and LuckPerms adapters |
+| `sculk-packets-api` | Small backend-neutral packet contracts and high-level packet service APIs |
+| `sculk-packets-packetevents` | Optional PacketEvents packet backend adapter |
+| `sculk-packets-protocollib` | Optional ProtocolLib compatibility backend adapter |
 | `sculk-platform` | Paper integration for plugin lifecycle |
 
 ## Feature Matrix
@@ -142,6 +146,7 @@ public class MyPlugin extends JavaPlugin {
 | Events | Yes | Strong 2.0 foundation | More lifecycle examples | Listener lifecycle bugs | Medium |
 | Compatibility | Yes via Series | Strong modern Paper coverage | More curated aliases | New Paper versioning | High |
 | Integrations | Yes | Practical optional adapters | More ecosystem adapters | Runtime plugin availability | Medium |
+| Packets | Yes | Optional PacketEvents-first foundation | Deeper backend wrappers for fake entities/holograms | Packet version churn | High |
 | Storage | Yes | Useful | Migration docs, integration examples | JDBC/runtime config mistakes | Medium |
 | Tests | Yes | Decent pure coverage | More lifecycle tests | Platform modules have limited tests | High |
 | Docs | Yes | Public-grade direction | More recipes and API reference pages | Examples must stay compile-aligned | High |

@@ -7,12 +7,16 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.config.SculkConfig
 import studio.sculk.core.SculkHandle
+import studio.sculk.core.SculkResult
 import studio.sculk.core.annotation.SculkStable
 import studio.sculk.core.gui.GuiContext
 import studio.sculk.core.gui.GuiRegistry
 import studio.sculk.core.scheduler.SculkScheduler
 import studio.sculk.data.SculkData
 import studio.sculk.integrations.SculkIntegrations
+import studio.sculk.packets.PacketServiceConfig
+import studio.sculk.packets.SculkPacketService
+import studio.sculk.packets.SculkPacketServices
 import studio.sculk.platform.command.SculkCommandBridge
 import studio.sculk.platform.event.SculkEventBus
 
@@ -55,6 +59,8 @@ public class SculkPlatform internal constructor(
     public val data: SculkData?,
     /** Optional integration adapters. Non-null if [SculkPlatformBuilder.integrations] was called. */
     public val integrations: SculkIntegrations?,
+    /** Optional packet service result. Non-null if [SculkPlatformBuilder.packets] was called. */
+    public val packets: SculkResult<SculkPacketService>?,
     private val handles: List<SculkHandle>,
 ) : SculkHandle {
     /**
@@ -103,6 +109,7 @@ public class SculkPlatformBuilder(
     private var dataEnabled = false
     private var guiEnabled = false
     private var integrationsEnabled = false
+    private var packetConfig: PacketServiceConfig? = null
 
     /** Enables the config system (auto-loads configs from [JavaPlugin.getDataFolder]). */
     @SculkStable
@@ -126,6 +133,12 @@ public class SculkPlatformBuilder(
     @SculkStable
     public fun integrations() {
         integrationsEnabled = true
+    }
+
+    /** Enables optional packet APIs. PacketEvents is preferred when the backend mode is Auto. */
+    @SculkStable
+    public fun packets(block: PacketServiceConfig.() -> Unit = {}) {
+        packetConfig = PacketServiceConfig().apply(block)
     }
 
     internal fun build(): SculkPlatform {
@@ -156,6 +169,19 @@ public class SculkPlatformBuilder(
             }
 
         val sculkIntegrations = if (integrationsEnabled) SculkIntegrations(plugin) else null
+
+        val sculkPackets =
+            packetConfig?.let { config ->
+                SculkPacketServices.create(plugin, scheduler, config).also { result ->
+                    when (result) {
+                        is SculkResult.Success -> extraHandles += result.value
+                        is SculkResult.Failure ->
+                            if (config.required) {
+                                throw IllegalStateException(result.message, result.cause)
+                            }
+                    }
+                }
+            }
 
         // GUI event routing
         if (guiEnabled) {
@@ -196,6 +222,16 @@ public class SculkPlatformBuilder(
                 }
         }
 
-        return SculkPlatform(plugin, scheduler, events, commands, sculkConfig, sculkData, sculkIntegrations, extraHandles)
+        return SculkPlatform(
+            plugin,
+            scheduler,
+            events,
+            commands,
+            sculkConfig,
+            sculkData,
+            sculkIntegrations,
+            sculkPackets,
+            extraHandles,
+        )
     }
 }

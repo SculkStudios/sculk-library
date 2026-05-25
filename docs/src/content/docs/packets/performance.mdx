@@ -1,0 +1,51 @@
+---
+title: Packet Performance
+description: Rules for keeping packet-powered plugins fast and safe.
+---
+
+Packet features sit on hot networking paths. Keep them small, predictable, and lifecycle-owned.
+
+## Rules
+
+- Never block packet listeners.
+- Do not run database, file, or HTTP work inside packet callbacks.
+- Use packet type filters before decoding packet data.
+- Avoid allocations in high-frequency listeners.
+- Use `context.runSync { ... }` before Paper player, world, inventory, or entity APIs.
+- Do not modify packets at monitor priority.
+- Clean up per-player state on quit and plugin disable.
+- Prefer Paper APIs when packet interception is not necessary.
+
+## Size policy
+
+Packet support is split so normal users do not pay for packet tooling:
+
+| Module | Dependency policy |
+| --- | --- |
+| `sculk-core` | No packet dependencies. |
+| `sculk-platform` | Depends only on the small packet API. |
+| `sculk-packets-api` | Backend-neutral contracts only. |
+| `sculk-packets-packetevents` | PacketEvents adapter, compile-only packet dependency. |
+| `sculk-packets-protocollib` | ProtocolLib adapter, compile-only packet dependency. |
+
+There is no `sculk-all` jar. Install only the modules your plugin actually uses.
+
+## Debug sessions
+
+Packet debug sessions should be short-lived:
+
+```kotlin
+packets.debug.session {
+    player(player)
+    incoming("use_entity")
+    outgoing("entity_metadata")
+    duration = 10.seconds
+    onPacket {
+        runSync {
+            player?.sendMessage("Saw packet $type")
+        }
+    }
+}
+```
+
+Use debug tooling while developing or diagnosing a server issue. Do not leave broad monitor listeners running permanently on busy production servers.

@@ -3,7 +3,7 @@ title: Installation
 description: Add Sculk Studio to your Minecraft Paper plugin project via JitPack.
 ---
 
-Sculk Studio is distributed through [JitPack](https://jitpack.io). You only need `sculk-platform`; it transitively includes all other modules.
+Sculk Studio is distributed through [JitPack](https://jitpack.io). Install only the modules your plugin uses. `sculk-platform` wires lifecycle, commands, scheduler, GUI routing, config, data, integrations, and optional packet services, but packet backend adapters stay separate.
 
 ## Gradle (Kotlin DSL)
 
@@ -31,8 +31,8 @@ plugins {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
 
-    // sculk-platform brings all modules transitively.
-    implementation("com.github.SculkStudios.sculk-library:sculk-platform:v1.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-items:v2.0.0")
 }
 
 tasks.shadowJar {
@@ -63,7 +63,8 @@ plugins {
 
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:26.1.2.build.+'
-    implementation 'com.github.SculkStudios.sculk-library:sculk-platform:v1.0.0'
+    implementation 'com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0'
+    implementation 'com.github.SculkStudios.sculk-library:sculk-items:v2.0.0'
 }
 
 shadowJar {
@@ -80,7 +81,7 @@ Replace `your.plugin.name` in the relocation path with your own package name (e.
 
 ## plugin.yml / paper-plugin.yml
 
-No special entries are needed in your plugin descriptor for Sculk Studio. It shades into your jar and has no external server dependencies.
+No special entries are needed in your plugin descriptor for normal Sculk modules. They shade into your jar and have no external server dependencies.
 
 ```yaml
 # paper-plugin.yml
@@ -88,6 +89,36 @@ name: MyPlugin
 version: 1.0.0
 main: com.example.myplugin.MyPlugin
 api-version: '26.1.2'
+```
+
+## Optional packet modules
+
+Packet support is intentionally separate so normal plugins stay small. Sculk does not bundle PacketEvents or ProtocolLib.
+
+PacketEvents path:
+
+```kotlin
+dependencies {
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:v2.0.0")
+}
+```
+
+ProtocolLib path:
+
+```kotlin
+dependencies {
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-protocollib:v2.0.0")
+}
+```
+
+Install PacketEvents or ProtocolLib on the server and add the matching soft dependency if your plugin requires it:
+
+```yaml
+softdepend:
+  - packetevents
+  - ProtocolLib
 ```
 
 ## Requirements
