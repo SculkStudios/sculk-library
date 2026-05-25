@@ -11,12 +11,19 @@ public object SculkPacketServices {
         plugin: JavaPlugin,
         scheduler: SculkScheduler,
         config: PacketServiceConfig = PacketServiceConfig(),
+    ): SculkResult<SculkPacketService> =
+        create(plugin, scheduler, config, ServiceLoader.load(SculkPacketServiceProvider::class.java).toList())
+
+    internal fun create(
+        plugin: JavaPlugin,
+        scheduler: SculkScheduler,
+        config: PacketServiceConfig,
+        providers: List<SculkPacketServiceProvider>,
     ): SculkResult<SculkPacketService> {
         if (config.backend == PacketBackendMode.Disabled) {
             return SculkResult.failure("Packet subsystem is disabled.")
         }
 
-        val providers = ServiceLoader.load(SculkPacketServiceProvider::class.java).toList()
         val ordered = providers.sortedBy { providerOrder(it.backend) }
         val candidates =
             when (config.backend) {

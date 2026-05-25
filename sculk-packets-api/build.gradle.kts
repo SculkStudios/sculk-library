@@ -6,5 +6,7 @@ description = "Sculk Studio - lightweight packet abstraction and high-level pack
 
 dependencies {
     api(project(":sculk-core"))
+    testImplementation(libs.paper.api)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockito.kotlin)
 }

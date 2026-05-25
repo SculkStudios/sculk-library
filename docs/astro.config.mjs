@@ -130,6 +130,8 @@ export default defineConfig({
 						{ label: 'Folia & Canvas', slug: 'advanced/folia' },
 						{ label: 'API Design', slug: 'advanced/api-design' },
 						{ label: 'XSeries Migration', slug: 'advanced/xseries-migration' },
+						{ label: 'Migration to Sculk 3', slug: 'advanced/migration-to-sculk-3' },
+						{ label: 'Migration Checklist', slug: 'advanced/migration-checklist' },
 						{ label: 'Troubleshooting', slug: 'advanced/troubleshooting' },
 					],
 				},

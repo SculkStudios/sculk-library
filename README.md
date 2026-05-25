@@ -38,8 +38,8 @@ dependencyResolutionManagement {
 // build.gradle.kts
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
-    implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-items:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:3.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-items:3.0.0")
 }
 ```
 
@@ -164,6 +164,11 @@ Compile-checked example plugins live in `examples/` and the matching guides live
 ## Documentation
 
 Full docs: [docs.sculk.studio](https://docs.sculk.studio)
+
+For existing plugins, start with the migration guide:
+
+- [Migration to Sculk 3](https://docs.sculk.studio/advanced/migration-to-sculk-3/)
+- [Migration Checklist](https://docs.sculk.studio/advanced/migration-checklist/)
 
 ## Requirements
 

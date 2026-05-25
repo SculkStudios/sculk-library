@@ -1,0 +1,96 @@
+---
+title: Migration Checklist
+description: A subsystem-by-subsystem checklist for moving an existing plugin onto Sculk Studio 3.0.
+---
+
+Use this checklist before tagging a migrated plugin build.
+
+## Build
+
+- [ ] Paper dependency is `26.1.2.build.+`.
+- [ ] Java toolchain is 25.
+- [ ] Sculk modules use the same `3.0.0` version.
+- [ ] `studio.sculk` is shaded and relocated.
+- [ ] No packet adapter is included unless packet features are used.
+- [ ] PacketEvents or ProtocolLib is installed on the server if packet features are required.
+
+## Platform
+
+- [ ] One `SculkPlatform` is created in `onEnable`.
+- [ ] Only enabled subsystems are accessed.
+- [ ] `sculk.close()` is called in `onDisable`.
+- [ ] Long-running services have their own close/flush behavior.
+
+## Config
+
+- [ ] Every runtime YAML file has a typed data class.
+- [ ] Validation annotations use `@param:`.
+- [ ] Reload commands handle `SculkResult.Failure`.
+- [ ] Config migrations are registered before loading.
+- [ ] Config-backed item descriptors are validated during startup.
+
+## Commands
+
+- [ ] Commands are registered through `sculk.commands`.
+- [ ] Permissions are declared on command nodes.
+- [ ] Player-only commands use `player {}`.
+- [ ] Console-safe commands use `executes {}` or `console {}` intentionally.
+- [ ] Numeric arguments define min/max where useful.
+- [ ] Expensive data work is not done directly in command handlers.
+
+## GUI
+
+- [ ] `gui()` is enabled in platform creation.
+- [ ] Menus do not keep long-lived `Player` references.
+- [ ] Click handlers do not block on database/file IO.
+- [ ] Paginated menus handle empty lists.
+- [ ] Confirm menus are used for destructive actions.
+- [ ] GUI state is cleaned up on close/quit.
+
+## Items
+
+- [ ] Custom items use `item {}` or `ItemDescriptor`.
+- [ ] PDC markers use stable namespaced keys.
+- [ ] Config item descriptors reject invalid material/enchantment keys at startup.
+- [ ] Inventory give/drop behavior handles leftovers.
+- [ ] Custom model data uses the Sculk item API instead of deprecated raw metadata calls.
+
+## Data
+
+- [ ] Repository methods are treated as blocking.
+- [ ] Command/event flows use `AsyncRepository` or `sculk.scheduler.runAsync`.
+- [ ] Player data is keyed by UUID.
+- [ ] Cache TTL and max size are set intentionally.
+- [ ] Shutdown flush saves loaded or dirty data.
+- [ ] SQL credentials are not committed.
+
+## Events and scheduler
+
+- [ ] Event listeners are registered through `sculk.events`.
+- [ ] Listener handles are closed when temporary listeners are no longer needed.
+- [ ] Async code hands back to sync context before touching Paper APIs.
+- [ ] Folia-sensitive code uses player/location scheduler overloads.
+
+## Integrations
+
+- [ ] PlaceholderAPI, Vault, and LuckPerms are optional unless your plugin requires them.
+- [ ] Missing integration plugins produce a clear failure path.
+- [ ] Integration calls are not assumed to be present during startup.
+
+## Packets
+
+- [ ] PacketEvents is preferred for new packet-heavy work.
+- [ ] ProtocolLib is used only for compatibility needs.
+- [ ] Low-level packet listeners do not block.
+- [ ] Packet callbacks hand off before touching unsafe Paper APIs.
+- [ ] Packet debug sessions are temporary and closed.
+
+## Final checks
+
+```powershell
+.\gradlew.bat test --no-daemon
+.\gradlew.bat ktlintCheck --no-daemon
+.\gradlew.bat clean build --no-daemon
+```
+
+Then test on a local Paper server with real configs, clean data folders, and at least one restart cycle.
