@@ -37,6 +37,10 @@ public class Gui
         public val items: Map<Int, GuiItem>,
         /** Pagination config, non-null when [GuiBuilder.pagination] was called. */
         public val pagination: PaginationConfig? = null,
+        /** Called after the inventory is opened for a player. */
+        public val openHandler: ((GuiSession) -> Unit)? = null,
+        /** Called when the inventory close event is routed for this session. */
+        public val closeHandler: ((GuiSession) -> Unit)? = null,
     ) {
         /**
          * Opens this GUI for [player], creating a new [GuiSession].
@@ -63,9 +67,17 @@ public class Gui
             // in-memory Inventory object and don't need the entity thread.
             val plugin = GuiRegistry.plugin
             if (plugin != null && GuiRegistry.isFolia) {
-                player.scheduler.run(plugin, { player.openInventory(inventory) }, null)
+                player.scheduler.run(
+                    plugin,
+                    {
+                        player.openInventory(inventory)
+                        openHandler?.invoke(session)
+                    },
+                    null,
+                )
             } else {
                 player.openInventory(inventory)
+                openHandler?.invoke(session)
             }
             return session
         }
@@ -105,6 +117,8 @@ public class GuiBuilder
 
         private val items: MutableMap<Int, GuiItem> = mutableMapOf()
         private var paginationConfig: PaginationConfig? = null
+        private var openHandler: ((GuiSession) -> Unit)? = null
+        private var closeHandler: ((GuiSession) -> Unit)? = null
 
         /**
          * Defines an item at the given [slot].
@@ -136,6 +150,16 @@ public class GuiBuilder
          */
         public fun pagination(block: PaginationBuilder.() -> Unit) {
             paginationConfig = PaginationBuilder().apply(block).build()
+        }
+
+        /** Runs after this GUI is opened for a player. */
+        public fun onOpen(handler: (GuiSession) -> Unit) {
+            openHandler = handler
+        }
+
+        /** Runs when this GUI session is closed through the platform GUI listener. */
+        public fun onClose(handler: (GuiSession) -> Unit) {
+            closeHandler = handler
         }
 
         /**
@@ -216,7 +240,7 @@ public class GuiBuilder
             require(size % 9 == 0 && size in 9..54) {
                 "GUI size must be a multiple of 9 between 9 and 54, got $size."
             }
-            return Gui(title, size, items.toMap(), paginationConfig)
+            return Gui(title, size, items.toMap(), paginationConfig, openHandler, closeHandler)
         }
     }
 
@@ -235,6 +259,48 @@ public fun gui(
     title: String,
     block: GuiBuilder.() -> Unit,
 ): Gui = GuiBuilder(title).apply(block).build()
+
+/** Creates a compact confirmation menu with configurable confirm/cancel buttons. */
+@SculkStable
+public fun confirmMenu(
+    title: String,
+    block: ConfirmMenuBuilder.() -> Unit,
+): Gui = ConfirmMenuBuilder(title).apply(block).build()
+
+/** Builder for [confirmMenu]. */
+@SculkStable
+public class ConfirmMenuBuilder internal constructor(
+    private val title: String,
+) {
+    private var confirmBlock: (GuiItemBuilder.() -> Unit)? = null
+    private var cancelBlock: (GuiItemBuilder.() -> Unit)? = null
+
+    /** Configures the confirm button. */
+    public fun confirm(block: GuiItemBuilder.() -> Unit) {
+        confirmBlock = block
+    }
+
+    /** Configures the cancel button. */
+    public fun cancel(block: GuiItemBuilder.() -> Unit) {
+        cancelBlock = block
+    }
+
+    @SculkInternal
+    public fun build(): Gui =
+        gui(title) {
+            size = 27
+            item(11) {
+                material = Material.LIME_CONCRETE
+                name = "<green>Confirm"
+                confirmBlock?.invoke(this)
+            }
+            item(15) {
+                material = Material.RED_CONCRETE
+                name = "<red>Cancel"
+                cancelBlock?.invoke(this)
+            }
+        }
+}
 
 // ---------------------------------------------------------------------------
 // Pagination

@@ -6,17 +6,18 @@
 [![JitPack](https://jitpack.io/v/SculkStudios/sculk-library.svg)](https://jitpack.io/#SculkStudios/sculk-library)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Sculk Studio is the shared Kotlin library used by Sculk Studios plugins. It provides small, composable APIs for commands, GUI menus, typed config, data access, Adventure text, effects, and Paper lifecycle integration.
+Sculk Studio is the shared Kotlin library used by Sculk Studios plugins. It provides small, composable APIs for commands, GUI menus, item stacks, typed config, data access, Adventure text, effects, optional integrations, and Paper lifecycle integration.
 
 ## Features
 
-- **Commands** - Subcommand tree, sender routing, typed arguments, suggestions, and Java builders.
-- **GUI menus** - Chest GUI sessions, click routing, pagination, and platform-managed cleanup.
-- **Typed config** - Data class YAML configs with defaults, validation annotations, and reload support.
-- **Series** - Registry helpers for materials, sounds, particles, enchantments, entities, and effects.
-- **Effects** - Particle builders, sound builders, timelines, and tick-based sequences.
-- **Data** - JDBC repositories, SQLite/MySQL configuration, ORM mapping, and Caffeine-backed caching.
-- **Platform** - Paper bootstrap for commands, events, GUI lifecycle, config, data, and scheduling.
+- **Commands** - Subcommand tree, sender routing, typed arguments, cooldowns, suggestions, and Java builders.
+- **GUI menus** - Chest GUI sessions, click routing, pagination, confirm menus, and platform-managed cleanup.
+- **Items** - Modern Paper item builders, PDC helpers, skulls, descriptors, custom model data, and Java builders.
+- **Typed config** - Data class YAML configs with defaults, validation annotations, strict load mode, and reload results.
+- **Series** - Registry helpers, require lookups, validation reports, and curated aliases for modern config keys.
+- **Effects** - Particle builders, sound builders, descriptors, timelines, and tick-based sequences.
+- **Data** - JDBC repositories, async facades, player profile helpers, SQLite/MySQL configuration, ORM mapping, and Caffeine-backed caching.
+- **Platform** - Paper bootstrap for commands, events, GUI lifecycle, config, data, integrations, and scheduling.
 
 ## Installation
 
@@ -36,7 +37,8 @@ dependencyResolutionManagement {
 // build.gradle.kts
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
-    implementation("com.github.SculkStudios.sculk-library:sculk-platform:v1.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-items:v2.0.0")
 }
 ```
 
@@ -120,26 +122,29 @@ public class MyPlugin extends JavaPlugin {
 | `sculk-core` | Commands, GUI, Adventure helpers, version parsing, scheduler contracts |
 | `sculk-config` | Typed configs, hot reload, validation, message config support |
 | `sculk-series` | Registry-based compatibility helpers |
+| `sculk-items` | Item builders, PDC helpers, skulls, descriptors, Java item builders |
 | `sculk-effects` | Particle and sound builders, animation timelines |
 | `sculk-data` | JDBC repositories, SQLite/MySQL config, cache layer |
+| `sculk-integrations` | Optional PlaceholderAPI, Vault, and LuckPerms adapters |
 | `sculk-platform` | Paper integration for plugin lifecycle |
 
 ## Feature Matrix
 
 | Area | Exists | Quality | Missing | Risk | Priority |
 |---|---:|---|---|---|---|
-| Commands | Yes | Good foundation | Brigadier/Paper command API research, richer errors, cooldowns | Bukkit fallback may age poorly | High |
-| Configs | Yes | Good foundation | Migration helpers, more docs, comment guarantees | Reflection edge cases | High |
-| Data | Yes | Useful but broad | Async safety docs, shutdown examples, SQL hardening | Main-thread misuse by users | High |
-| GUI | Yes | Good foundation | Confirm menus, richer pagination docs, leak tests | Lifecycle leaks if registry cleanup regresses | High |
-| Items | Partial via GUI items | Needs dedicated API | Standalone item builder, PDC helpers, skulls | Docs could overpromise | High |
-| Text | Yes | Good foundation | Template/prefix system, cache strategy | Repeated MiniMessage parsing | Medium |
-| Scheduler | Yes | Good foundation | More Folia tests/docs | Async Paper misuse by users | Medium |
-| Events | Yes | Basic | More examples, unregister docs | Listener lifecycle bugs | Medium |
-| Compatibility | Yes via Series | Early | More registry coverage | New Paper versioning | High |
+| Commands | Yes | Strong 2.0 foundation | Paper/Brigadier backend research | Bukkit fallback may age poorly | High |
+| Configs | Yes | Strong 2.0 foundation | Full migration DSL, comment guarantees | Reflection edge cases | High |
+| Data | Yes | Strong 2.0 foundation | Migration runner hardening, more examples | Main-thread misuse by users | High |
+| GUI | Yes | Strong 2.0 foundation | More lifecycle tests, richer async examples | Lifecycle leaks if registry cleanup regresses | High |
+| Items | Yes | Complete 2.0 foundation | Advanced metadata parity, books/banners/fireworks | Full XItemStack parity is intentionally scoped | High |
+| Text | Yes | Strong 2.0 foundation | More template docs, prefix registry polish | Repeated dynamic parsing if users bypass templates | Medium |
+| Scheduler | Yes | Strong 2.0 foundation | More fake-scheduler tests | Async Paper misuse by users | Medium |
+| Events | Yes | Strong 2.0 foundation | More lifecycle examples | Listener lifecycle bugs | Medium |
+| Compatibility | Yes via Series | Strong modern Paper coverage | More curated aliases | New Paper versioning | High |
+| Integrations | Yes | Practical optional adapters | More ecosystem adapters | Runtime plugin availability | Medium |
 | Storage | Yes | Useful | Migration docs, integration examples | JDBC/runtime config mistakes | Medium |
 | Tests | Yes | Decent pure coverage | More lifecycle tests | Platform modules have limited tests | High |
-| Docs | Yes | Promising | More real-world examples, migration guide expansion | Outdated examples | High |
+| Docs | Yes | Public-grade direction | More recipes and API reference pages | Examples must stay compile-aligned | High |
 
 ## Documentation
 

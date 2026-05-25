@@ -92,6 +92,31 @@ onClick {
 }
 ```
 
+## Open and close handlers
+
+Use lifecycle handlers for per-session setup or cleanup. The handlers receive the active `GuiSession`.
+
+```kotlin
+val menu = gui("<dark_gray>Profile") {
+    size = 27
+
+    onOpen { session ->
+        session.state["openedAt"] = System.currentTimeMillis()
+    }
+
+    onClose { session ->
+        profileViewTracker.closed(session.player.uniqueId)
+    }
+
+    item(13) {
+        material = Material.PLAYER_HEAD
+        name("<aqua>Your Profile")
+    }
+}
+```
+
+Close handlers run from the platform GUI listener. Keep heavy database or file work off the main thread; schedule it through `sculk.scheduler.runAsync { ... }`.
+
 ## Dynamic items
 
 Items whose content differs per player — use `dynamicContent { player -> }`. The block runs when the GUI opens, so the displayed stack is always up to date:

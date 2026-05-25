@@ -1,0 +1,45 @@
+---
+title: Integrations
+description: Optional adapters for common server plugins.
+---
+
+`sculk-integrations` provides lightweight adapters for common plugins without making them required dependencies.
+
+Enable integrations through the platform:
+
+```kotlin
+sculk = SculkPlatform.create(this) {
+    integrations()
+}
+```
+
+## PlaceholderAPI
+
+```kotlin
+val papi = sculk.integrations?.placeholderApi()
+papi?.onSuccess { integration ->
+    player.sendMini(integration.parse(player, "<green>Hello %player_name%"))
+}
+```
+
+## Vault Economy
+
+```kotlin
+sculk.integrations
+    ?.vaultEconomy()
+    ?.onSuccess { economy ->
+        economy.deposit(player, 100.0)
+    }
+```
+
+## LuckPerms
+
+```kotlin
+sculk.integrations
+    ?.luckPerms()
+    ?.onSuccess { luckPerms ->
+        val group = luckPerms.primaryGroup(player.uniqueId)
+    }
+```
+
+Missing plugins return `SculkResult.Failure`; they do not crash plugin startup.

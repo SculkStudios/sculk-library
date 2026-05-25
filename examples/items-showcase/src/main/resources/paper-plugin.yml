@@ -1,0 +1,5 @@
+name: SculkItemsShowcase
+version: 2.0.0
+main: studio.sculk.example.ItemsPlugin
+api-version: '26.1.2'
+author: Sculk Studios

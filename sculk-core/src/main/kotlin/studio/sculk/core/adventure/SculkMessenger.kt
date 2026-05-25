@@ -6,9 +6,11 @@ import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import studio.sculk.core.annotation.SculkStable
 import java.time.Duration
+import java.util.concurrent.ConcurrentHashMap
 import net.kyori.adventure.sound.Sound as AdventureSound
 
 private val miniMessage = MiniMessage.miniMessage()
+private val parsedTemplateCache: ConcurrentHashMap<String, net.kyori.adventure.text.Component> = ConcurrentHashMap()
 
 /**
  * Parses a MiniMessage [text] string into an Adventure Component.
@@ -18,6 +20,11 @@ private val miniMessage = MiniMessage.miniMessage()
  */
 @SculkStable
 public fun parseMessage(text: String): net.kyori.adventure.text.Component = miniMessage.deserialize(text)
+
+/** Parses and caches a static MiniMessage string. */
+@SculkStable
+public fun cachedMessage(text: String): net.kyori.adventure.text.Component =
+    parsedTemplateCache.computeIfAbsent(text, miniMessage::deserialize)
 
 /**
  * Sends a MiniMessage-formatted [message] to this [Audience].
@@ -119,4 +126,78 @@ public fun broadcast(message: String) {
 public fun broadcastActionbar(message: String) {
     val component = parseMessage(message)
     Bukkit.getOnlinePlayers().forEach { it.sendActionBar(component) }
+}
+
+/** A reusable MiniMessage template with named string placeholders. */
+@SculkStable
+public class MessageTemplate internal constructor(
+    private val source: String,
+    private val defaults: Map<String, String>,
+) {
+    /** Renders this template with [values] layered over default placeholders. */
+    public fun render(values: Map<String, String> = emptyMap()): net.kyori.adventure.text.Component {
+        val merged = defaults + values
+        val rendered =
+            merged.entries.fold(source) { text, (key, value) ->
+                text.replace("<$key>", value)
+            }
+        return parseMessage(rendered)
+    }
+
+    /** Sends this rendered template to [audience]. */
+    public fun sendTo(
+        audience: Audience,
+        values: Map<String, String> = emptyMap(),
+    ) {
+        audience.sendMessage(render(values))
+    }
+}
+
+/** Builder for [MessageTemplate]. */
+@SculkStable
+public class MessageTemplateBuilder internal constructor(
+    private val source: String,
+) {
+    private val placeholders: MutableMap<String, String> = linkedMapOf()
+
+    /** Adds a default placeholder value. */
+    public fun placeholder(
+        key: String,
+        value: String,
+    ) {
+        placeholders[key] = value
+    }
+
+    internal fun build(): MessageTemplate = MessageTemplate(source, placeholders.toMap())
+}
+
+/** Runtime placeholder builder used when sending templates. */
+@SculkStable
+public class MessagePlaceholders internal constructor() {
+    internal val values: MutableMap<String, String> = linkedMapOf()
+
+    /** Adds a runtime placeholder value. */
+    public fun placeholder(
+        key: String,
+        value: String,
+    ) {
+        values[key] = value
+    }
+}
+
+/** Creates a reusable MiniMessage template. */
+@SculkStable
+public fun messageTemplate(
+    source: String,
+    block: MessageTemplateBuilder.() -> Unit = {},
+): MessageTemplate = MessageTemplateBuilder(source).apply(block).build()
+
+/** Sends a [template] to this [Audience] with runtime placeholders. */
+@SculkStable
+public fun Audience.sendTemplate(
+    template: MessageTemplate,
+    block: MessagePlaceholders.() -> Unit = {},
+) {
+    val placeholders = MessagePlaceholders().apply(block)
+    sendMessage(template.render(placeholders.values))
 }

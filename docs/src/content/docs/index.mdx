@@ -4,7 +4,7 @@ description: Kotlin-first Paper utilities for modern Minecraft plugins.
 template: splash
 hero:
   title: '<span style="color:#00e5ff">Sculk Studio</span>'
-  tagline: Kotlin-first Paper utilities for commands, GUI menus, typed config, data, Adventure text, and plugin lifecycle work.
+  tagline: Kotlin-first Paper utilities for commands, GUI menus, items, typed config, data, Adventure text, integrations, and plugin lifecycle work.
   actions:
     - text: Get Started
       link: /getting-started/installation/
@@ -30,6 +30,9 @@ Sculk Studio targets Paper 26.1.2+, Java 25, Adventure, and MiniMessage. It is d
   <Card title="Typed Config" icon="setting">
     Load YAML into Kotlin data classes with defaults, validation, comments, and reload callbacks.
   </Card>
+  <Card title="Items" icon="puzzle">
+    Build modern Paper items with MiniMessage names, lore, PDC, skulls, descriptors, and GUI reuse.
+  </Card>
   <Card title="Data" icon="open-book">
     Use JDBC repositories, SQLite or MySQL configuration, and Caffeine-backed caches.
   </Card>
@@ -44,17 +47,17 @@ Sculk Studio targets Paper 26.1.2+, Java 25, Adventure, and MiniMessage. It is d
 ## What is implemented today
 
 - Command DSL and Java command builder.
-- GUI menu DSL, sessions, pagination, and platform cleanup.
-- MiniMessage and Adventure messaging helpers.
-- Typed YAML config loading, comments, validation annotations, and reload callbacks.
-- JDBC repositories, storage config, ORM mapping, and cache helpers.
-- Registry-backed lookup helpers through `sculk-series`.
-- Particle, sound, timeline, and sequence builders.
-- Paper platform bootstrap, events, scheduler, command registration, and GUI lifecycle.
+- GUI menu DSL, sessions, pagination, confirm menus, and platform cleanup.
+- Item builder APIs with PDC helpers, skulls, and config descriptors.
+- MiniMessage, Adventure messaging helpers, and reusable message templates.
+- Typed YAML config loading, comments, validation annotations, strict mode, and reload results.
+- JDBC repositories, async facades, storage config, ORM mapping, player profile helpers, and cache helpers.
+- Registry-backed lookup helpers, require lookups, validation reports, and curated aliases through `sculk-series`.
+- Particle, sound, descriptor, timeline, and sequence builders.
+- Paper platform bootstrap, events, scheduler, integrations, command registration, and GUI lifecycle.
 
 ## What is planned
 
-- Standalone item builder APIs.
 - Paper command API / Brigadier research.
-- Focused migration helpers for common XSeries-style aliases.
+- More curated migration helpers for common XSeries-style aliases.
 - More integration tests around platform lifecycle behavior.

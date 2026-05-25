@@ -20,9 +20,11 @@ include(
     ":sculk-core",
     ":sculk-config",
     ":sculk-series",
+    ":sculk-items",
     ":sculk-effects",
     ":sculk-data",
     ":sculk-platform",
+    ":sculk-integrations",
 )
 
 // Examples (not published)
@@ -31,6 +33,7 @@ include(
     ":examples:commands-showcase",
     ":examples:gui-showcase",
     ":examples:config-showcase",
+    ":examples:items-showcase",
 )
 
 // Benchmarks (not published)

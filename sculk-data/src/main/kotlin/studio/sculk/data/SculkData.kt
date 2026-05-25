@@ -8,6 +8,7 @@ import studio.sculk.data.cache.SculkCache
 import studio.sculk.data.driver.ConnectionPool
 import studio.sculk.data.driver.StorageConfig
 import studio.sculk.data.repository.JdbcRepository
+import studio.sculk.data.repository.PlayerProfileStore
 import studio.sculk.data.repository.SculkRepository
 import studio.sculk.data.repository.jdbcRepository
 import java.io.File
@@ -68,6 +69,13 @@ public class SculkData private constructor(
         idExtractor: (T) -> ID,
         block: CacheBuilder<T, ID>.() -> Unit = {},
     ): SculkCache<T, ID> = CacheBuilder(delegate, idExtractor).apply(block).build()
+
+    /** Creates a UUID-first player profile workflow around a repository. */
+    @SculkStable
+    public fun <T : Any, ID : Any> playerProfiles(
+        repository: SculkRepository<T, ID>,
+        create: (ID) -> T,
+    ): PlayerProfileStore<T, ID> = PlayerProfileStore(repository, create)
 
     /** Closes the underlying connection pool. Call this from your plugin's `onDisable`. */
     override fun close() {

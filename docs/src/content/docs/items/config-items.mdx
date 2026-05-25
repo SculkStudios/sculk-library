@@ -1,0 +1,44 @@
+---
+title: Config Items
+description: Use ItemDescriptor for config-backed common plugin items.
+---
+
+`ItemDescriptor` is a compact config-friendly representation for common plugin items.
+
+```kotlin
+data class KitConfig(
+    val starterSword: ItemDescriptor = ItemDescriptor(
+        material = "diamond_sword",
+        name = "<aqua>Starter Sword",
+        lore = listOf("<gray>Given to new players."),
+        enchantments = mapOf("sharpness" to 3),
+        glint = true,
+        customModelData = 1001,
+        data = mapOf("kit" to "starter"),
+    ),
+)
+```
+
+Convert descriptors to stacks:
+
+```kotlin
+val stack = settings.starterSword.toItemStack()
+if (stack != null) {
+    player.inventory.addItem(stack)
+}
+```
+
+Descriptor scope in 2.0:
+
+- Material
+- Name
+- Lore
+- Amount
+- Enchantments
+- Flags
+- Glint
+- Custom model data
+- Unbreakable
+- Simple string persistent data
+
+Advanced metadata such as books, banners, fireworks, and full attribute modifiers should use the item builder escape hatch for now.

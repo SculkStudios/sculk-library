@@ -65,6 +65,30 @@ Settings settings = sculk.getConfig().load(Settings.class);
 
 On first run the YAML file is created with all defaults. On subsequent runs any missing keys are added — existing values are never overwritten.
 
+## Versioned migrations
+
+Configs can define a `configVersion` field and register migration steps before loading. Migrations edit the raw YAML map, then Sculk writes any new defaults normally.
+
+```kotlin
+@ConfigFile("settings.yml")
+data class Settings(
+    val configVersion: Int = 2,
+    val spawnWorld: String = "world",
+    val startingCoins: Int = 100,
+)
+
+sculk.config.migrations<Settings> {
+    from(1).to(2) {
+        rename("spawn-world-name", "spawn-world")
+        default("starting-coins", 100)
+    }
+}
+
+val settings = sculk.config.load<Settings>()
+```
+
+Register migrations before `load<Settings>()`. If a config is already loaded, Sculk rejects late migration registration so startup behavior stays predictable.
+
 ## Validation
 
 <Tabs>

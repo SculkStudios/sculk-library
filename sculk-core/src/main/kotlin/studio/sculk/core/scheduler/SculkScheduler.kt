@@ -4,6 +4,7 @@ import org.bukkit.Location
 import org.bukkit.entity.Entity
 import studio.sculk.core.SculkHandle
 import studio.sculk.core.annotation.SculkStable
+import java.util.concurrent.CompletableFuture
 
 /**
  * Abstraction over Paper's scheduler for testability and Folia compatibility.
@@ -169,4 +170,37 @@ public interface SculkScheduler {
         periodTicks: Long,
         task: Runnable,
     ): SculkHandle
+
+    /** Runs [task] async and completes a [CompletableFuture] with its result. */
+    public fun <T> runAsyncResult(task: () -> T): CompletableFuture<T> {
+        val future = CompletableFuture<T>()
+        runAsync {
+            runCatching(task)
+                .onSuccess(future::complete)
+                .onFailure(future::completeExceptionally)
+        }
+        return future
+    }
+
+    /** Runs [async] off-thread, then hands the result back to the sync context for [entity]. */
+    public fun <T> asyncThenSync(
+        entity: Entity,
+        async: () -> T,
+        sync: (T) -> Unit,
+    ): SculkHandle =
+        runAsync {
+            val result = async()
+            runSync(entity) { sync(result) }
+        }
+
+    /** Runs [async] off-thread, then hands the result back to the sync context for [location]. */
+    public fun <T> asyncThenSync(
+        location: Location,
+        async: () -> T,
+        sync: (T) -> Unit,
+    ): SculkHandle =
+        runAsync {
+            val result = async()
+            runSync(location) { sync(result) }
+        }
 }

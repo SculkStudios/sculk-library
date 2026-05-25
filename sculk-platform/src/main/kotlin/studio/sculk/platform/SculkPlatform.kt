@@ -12,6 +12,7 @@ import studio.sculk.core.gui.GuiContext
 import studio.sculk.core.gui.GuiRegistry
 import studio.sculk.core.scheduler.SculkScheduler
 import studio.sculk.data.SculkData
+import studio.sculk.integrations.SculkIntegrations
 import studio.sculk.platform.command.SculkCommandBridge
 import studio.sculk.platform.event.SculkEventBus
 
@@ -52,6 +53,8 @@ public class SculkPlatform internal constructor(
     public val config: SculkConfig?,
     /** Data layer. Non-null if [SculkPlatformBuilder.data] was called. */
     public val data: SculkData?,
+    /** Optional integration adapters. Non-null if [SculkPlatformBuilder.integrations] was called. */
+    public val integrations: SculkIntegrations?,
     private val handles: List<SculkHandle>,
 ) : SculkHandle {
     /**
@@ -99,6 +102,7 @@ public class SculkPlatformBuilder(
     private var configEnabled = false
     private var dataEnabled = false
     private var guiEnabled = false
+    private var integrationsEnabled = false
 
     /** Enables the config system (auto-loads configs from [JavaPlugin.getDataFolder]). */
     @SculkStable
@@ -116,6 +120,12 @@ public class SculkPlatformBuilder(
     @SculkStable
     public fun gui() {
         guiEnabled = true
+    }
+
+    /** Enables optional integration adapters such as PlaceholderAPI, Vault, and LuckPerms. */
+    @SculkStable
+    public fun integrations() {
+        integrationsEnabled = true
     }
 
     internal fun build(): SculkPlatform {
@@ -145,6 +155,8 @@ public class SculkPlatformBuilder(
                 null
             }
 
+        val sculkIntegrations = if (integrationsEnabled) SculkIntegrations(plugin) else null
+
         // GUI event routing
         if (guiEnabled) {
             extraHandles +=
@@ -172,6 +184,7 @@ public class SculkPlatformBuilder(
                     // registered under the player's UUID before the old inventory fires its close event).
                     @OptIn(studio.sculk.core.annotation.SculkInternal::class)
                     val session = GuiRegistry.sessionForInventory(event.inventory) ?: return@listen
+                    session.gui.closeHandler?.invoke(session)
                     GuiRegistry.unregister(player)
                     @OptIn(studio.sculk.core.annotation.SculkInternal::class)
                     session.markClosed()
@@ -183,6 +196,6 @@ public class SculkPlatformBuilder(
                 }
         }
 
-        return SculkPlatform(plugin, scheduler, events, commands, sculkConfig, sculkData, extraHandles)
+        return SculkPlatform(plugin, scheduler, events, commands, sculkConfig, sculkData, sculkIntegrations, extraHandles)
     }
 }

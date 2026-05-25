@@ -1,6 +1,8 @@
 package studio.sculk.config
 
 import studio.sculk.config.managed.SculkConfigManager
+import studio.sculk.config.yaml.YamlMapper
+import studio.sculk.core.SculkResult
 import studio.sculk.core.annotation.SculkInternal
 import studio.sculk.core.annotation.SculkStable
 import java.io.File
@@ -30,6 +32,7 @@ public class SculkConfig
         private val logger: Logger,
     ) {
         private val managers: MutableMap<Class<*>, SculkConfigManager<*>> = mutableMapOf()
+        private val migrationSteps: MutableMap<Class<*>, List<ConfigMigrationStep>> = mutableMapOf()
 
         /**
          * Loads the config for [T], creating defaults on disk if the file doesn't exist.
@@ -38,10 +41,17 @@ public class SculkConfig
          */
         public inline fun <reified T : Any> load(): T = load(T::class.java)
 
+        /** Loads the config with explicit mode metadata for future strict-mode behavior. */
+        public inline fun <reified T : Any> load(mode: ConfigLoadMode): T = load(T::class.java, mode)
+
         /**
          * Registers a [callback] to run after [T]'s config is reloaded.
          */
         public inline fun <reified T : Any> onReload(noinline callback: () -> Unit): Unit = onReload(T::class.java, callback)
+
+        /** Registers versioned migrations for config [T]. Register these before [load]. */
+        public inline fun <reified T : Any> migrations(noinline block: ConfigMigrationBuilder.() -> Unit): Unit =
+            migrations(T::class.java, block)
 
         /**
          * Reloads all registered configs.
@@ -49,6 +59,9 @@ public class SculkConfig
         public fun reloadAll() {
             managers.values.forEach { it.reload() }
         }
+
+        /** Reloads one registered config and returns a structured result. */
+        public inline fun <reified T : Any> reload(): SculkResult<T> = reload(T::class.java)
 
         // ---------------------------------------------------------------------------
         // Non-inline internals (called by the inline functions above)
@@ -59,9 +72,45 @@ public class SculkConfig
         public fun <T : Any> load(javaClass: Class<T>): T {
             val manager =
                 managers.getOrPut(javaClass) {
-                    SculkConfigManager(javaClass.kotlin, dataFolder, logger)
+                    SculkConfigManager(javaClass.kotlin, dataFolder, logger, migrationSteps[javaClass].orEmpty())
                 } as SculkConfigManager<T>
             return manager.value
+        }
+
+        @SculkInternal
+        public fun <T : Any> load(
+            javaClass: Class<T>,
+            mode: ConfigLoadMode,
+        ): T =
+            load(javaClass).also {
+                if (mode == ConfigLoadMode.Strict) {
+                    val violations = YamlMapper.validate(it)
+                    require(violations.isEmpty()) {
+                        "Config ${javaClass.simpleName} failed strict validation: ${violations.joinToString("; ")}"
+                    }
+                }
+            }
+
+        @SculkInternal
+        @Suppress("UNCHECKED_CAST")
+        public fun <T : Any> reload(javaClass: Class<T>): SculkResult<T> {
+            val manager =
+                managers.getOrPut(javaClass) {
+                    SculkConfigManager(javaClass.kotlin, dataFolder, logger, migrationSteps[javaClass].orEmpty())
+                } as SculkConfigManager<T>
+            return manager.reloadResult()
+        }
+
+        @SculkInternal
+        public fun <T : Any> migrations(
+            javaClass: Class<T>,
+            block: ConfigMigrationBuilder.() -> Unit,
+        ) {
+            require(javaClass !in managers) {
+                "Register migrations for ${javaClass.simpleName} before loading the config."
+            }
+            val builder = ConfigMigrationBuilder().apply(block)
+            migrationSteps[javaClass] = builder.steps.sortedBy { it.from }
         }
 
         @SculkInternal
@@ -72,7 +121,7 @@ public class SculkConfig
         ) {
             val manager =
                 managers.getOrPut(javaClass) {
-                    SculkConfigManager(javaClass.kotlin, dataFolder, logger)
+                    SculkConfigManager(javaClass.kotlin, dataFolder, logger, migrationSteps[javaClass].orEmpty())
                 } as SculkConfigManager<T>
             manager.onReload(callback)
         }
@@ -92,3 +141,10 @@ public class SculkConfig
             ): SculkConfig = SculkConfig(dataFolder, logger)
         }
     }
+
+/** Config load behavior. */
+@SculkStable
+public enum class ConfigLoadMode {
+    Lenient,
+    Strict,
+}
