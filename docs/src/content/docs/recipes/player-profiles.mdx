@@ -1,0 +1,31 @@
+---
+title: Player Profiles
+description: Load, cache, save, and display player profiles.
+---
+
+This recipe mirrors `examples/player-profiles`.
+
+Use events for lifecycle and the scheduler for blocking persistence:
+
+```kotlin
+sculk.events.listen<PlayerJoinEvent> { event ->
+    sculk.scheduler.runAsync {
+        val profile = profiles.computeIfAbsent(event.player.uniqueId) {
+            PlayerProfile(it, event.player.name)
+        }
+        sculk.scheduler.runSync(event.player) {
+            event.player.sendMessage("Loaded profile for ${profile.name}.")
+        }
+    }
+}
+
+sculk.events.listen<PlayerQuitEvent> { event ->
+    profiles[event.player.uniqueId]?.lastSeen = System.currentTimeMillis()
+}
+```
+
+Thread rules:
+
+- Load file, SQL, and HTTP data async.
+- Return to `runSync(player)` before sending messages, opening GUIs, or touching inventory/entity APIs.
+- Flush cached profiles on plugin disable.

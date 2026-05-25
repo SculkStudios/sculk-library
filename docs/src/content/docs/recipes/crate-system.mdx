@@ -1,0 +1,49 @@
+---
+title: Crate System
+description: Config-driven rewards with item descriptors and GUI previews.
+---
+
+This recipe mirrors `examples/crate-system`.
+
+Use `ItemDescriptor` in config-friendly reward tables:
+
+```kotlin
+@ConfigFile("crates.yml")
+data class CrateConfig(
+    val rewards: List<ItemDescriptor> = listOf(
+        ItemDescriptor(
+            material = "diamond",
+            name = "<aqua>Diamond Reward",
+            lore = listOf("<gray>A common vote crate reward."),
+            amount = 3,
+            glint = true,
+        ),
+    ),
+)
+```
+
+Preview rewards in a GUI:
+
+```kotlin
+val menu = gui("<dark_gray>Vote Crate") {
+    size = 27
+    config.rewards.take(27).forEachIndexed { index, reward ->
+        item(index) {
+            stack {
+                material(reward.material)
+                reward.name?.let { name(it) }
+                if (reward.lore.isNotEmpty()) lore(reward.lore)
+                amount(reward.amount)
+                if (reward.glint) glint()
+            }
+            onClick { reply("<yellow>This is a preview item.") }
+        }
+    }
+}
+```
+
+Common mistakes:
+
+- Trusting config keys without startup validation.
+- Giving rewards from preview click handlers.
+- Blocking animation/reward persistence on the main thread.

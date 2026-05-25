@@ -130,26 +130,25 @@ public class MyPlugin extends JavaPlugin {
 | `sculk-packets-api` | Small backend-neutral packet contracts and high-level packet service APIs |
 | `sculk-packets-packetevents` | Optional PacketEvents packet backend adapter |
 | `sculk-packets-protocollib` | Optional ProtocolLib compatibility backend adapter |
+| `sculk-content` | High-level client-side content descriptors over packet services |
 | `sculk-platform` | Paper integration for plugin lifecycle |
 
-## Feature Matrix
+## Stability Notes
 
-| Area | Exists | Quality | Missing | Risk | Priority |
-|---|---:|---|---|---|---|
-| Commands | Yes | Strong 2.0 foundation | Paper/Brigadier backend research | Bukkit fallback may age poorly | High |
-| Configs | Yes | Strong 2.0 foundation | Full migration DSL, comment guarantees | Reflection edge cases | High |
-| Data | Yes | Strong 2.0 foundation | Migration runner hardening, more examples | Main-thread misuse by users | High |
-| GUI | Yes | Strong 2.0 foundation | More lifecycle tests, richer async examples | Lifecycle leaks if registry cleanup regresses | High |
-| Items | Yes | Complete 2.0 foundation | Advanced metadata parity, books/banners/fireworks | Full XItemStack parity is intentionally scoped | High |
-| Text | Yes | Strong 2.0 foundation | More template docs, prefix registry polish | Repeated dynamic parsing if users bypass templates | Medium |
-| Scheduler | Yes | Strong 2.0 foundation | More fake-scheduler tests | Async Paper misuse by users | Medium |
-| Events | Yes | Strong 2.0 foundation | More lifecycle examples | Listener lifecycle bugs | Medium |
-| Compatibility | Yes via Series | Strong modern Paper coverage | More curated aliases | New Paper versioning | High |
-| Integrations | Yes | Practical optional adapters | More ecosystem adapters | Runtime plugin availability | Medium |
-| Packets | Yes | Optional PacketEvents-first foundation | Deeper backend wrappers for fake entities/holograms | Packet version churn | High |
-| Storage | Yes | Useful | Migration docs, integration examples | JDBC/runtime config mistakes | Medium |
-| Tests | Yes | Decent pure coverage | More lifecycle tests | Platform modules have limited tests | High |
-| Docs | Yes | Public-grade direction | More recipes and API reference pages | Examples must stay compile-aligned | High |
+| Area | Current status |
+|---|---|
+| Commands | Stable DSL for Bukkit command-map registration, typed arguments, cooldowns, help, permissions, and suggestions. |
+| Configs | Data class YAML configs with defaults, validation, comments, migrations, strict mode, and reload results. |
+| Data | Blocking JDBC repositories plus async facades, player profile helpers, cache layer, SQLite/MySQL configuration, and ORM mapping. |
+| GUI | Chest GUI sessions, click routing, pagination, confirm menus, dynamic items, and platform-managed cleanup. |
+| Items | Standalone item builders, descriptors, PDC helpers, skulls, modern custom model data, glint override, and Java builders. |
+| Text | MiniMessage, Adventure helpers, message templates, titles, action bars, sounds, and broadcasts. |
+| Scheduler | Paper/Folia-aware scheduler contract with sync, async, delayed, repeating, and async-to-sync handoff helpers. |
+| Events | Disposable listeners, once listeners, filters, priority, ignore-cancelled support, and platform lifecycle cleanup. |
+| Series | Modern Paper registry lookups, require helpers, validation reports, and curated aliases. |
+| Integrations | Optional PlaceholderAPI, Vault, and LuckPerms adapters with failure results for missing plugins. |
+| Packets | Optional backend-neutral packet contracts with PacketEvents preferred, ProtocolLib compatibility, and content descriptors. |
+| Docs | Public manual with feature pages and compile-checked real server recipe examples. |
 
 ## Documentation
 

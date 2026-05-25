@@ -111,6 +111,16 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Recipes',
+					items: [
+						{ label: 'Economy Plugin', slug: 'recipes/economy-plugin' },
+						{ label: 'Player Profiles', slug: 'recipes/player-profiles' },
+						{ label: 'Server Menu', slug: 'recipes/server-menu' },
+						{ label: 'Staff Tools', slug: 'recipes/staff-tools' },
+						{ label: 'Crate System', slug: 'recipes/crate-system' },
+					],
+				},
+				{
 					label: 'Advanced',
 					items: [
 						{ label: 'API Stability', slug: 'advanced/api-stability' },

@@ -1,0 +1,40 @@
+---
+title: Server Menu
+description: Build a production-style main menu with reusable item behavior.
+---
+
+This recipe mirrors `examples/server-menu`.
+
+```kotlin
+val serverMenu = gui("<dark_gray>Server Menu") {
+    size = 27
+
+    item(11) {
+        material = Material.ENDER_PEARL
+        name = "<aqua>Warps"
+        lore("<gray>Open the warp selector.")
+        onClick { reply("<yellow>Warp menu would open here.") }
+    }
+
+    item(13) {
+        material = Material.PLAYER_HEAD
+        name = "<green>Profile"
+        lore("<gray>View your profile.")
+        onClick { reply("<green>Profile menu would open here.") }
+    }
+}
+```
+
+Enable GUI routing:
+
+```kotlin
+sculk = SculkPlatform.create(this) {
+    gui()
+}
+```
+
+Common mistakes:
+
+- Forgetting `gui()`, which means click and close routing will not run.
+- Doing blocking data loads directly inside click handlers.
+- Keeping `Player` references in long-lived menu objects instead of UUIDs or per-open session state.
