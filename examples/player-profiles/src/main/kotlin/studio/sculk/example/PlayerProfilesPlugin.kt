@@ -1,56 +1,112 @@
 package studio.sculk.example
 
+import org.bukkit.command.CommandSender
+import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
+import studio.sculk.core.SculkResult
+import studio.sculk.core.adventure.reply
 import studio.sculk.core.command.command
 import studio.sculk.platform.SculkPlatform
+import java.time.Duration
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 public class PlayerProfilesPlugin : JavaPlugin() {
     private lateinit var sculk: SculkPlatform
-    private val profiles = ConcurrentHashMap<UUID, PlayerProfile>()
+    private lateinit var profiles: ProfileService
 
     override fun onEnable() {
         sculk =
             SculkPlatform.create(this) {
+                data()
                 gui()
             }
 
+        val repository = sculk.data.repository<PlayerProfile, UUID>()
+        val cached =
+            sculk.data.cached(repository, PlayerProfile::uuid) {
+                ttl = Duration.ofMinutes(15)
+                maxSize = 10_000
+            }
+        profiles =
+            ProfileService(
+                sculk.data.playerProfiles(cached) { uuid ->
+                    val now = System.currentTimeMillis()
+                    PlayerProfile(uuid, "", now, now, 0, 0, 0, 100)
+                },
+            )
+
         sculk.events.listen<PlayerJoinEvent> { event ->
+            val player = event.player
             sculk.scheduler.runAsync {
-                val profile = profiles.computeIfAbsent(event.player.uniqueId) { PlayerProfile(it, event.player.name) }
-                sculk.scheduler.runSync(event.player) {
-                    event.player.sendMessage("Loaded profile for ${profile.name}.")
+                val result = profiles.loadForJoin(player.uniqueId, player.name)
+                sculk.scheduler.runSync(player) {
+                    when (result) {
+                        is SculkResult.Success -> player.reply("<green>Loaded profile for <yellow>${result.value.name}</yellow>.")
+                        is SculkResult.Failure -> player.reply("<red>Could not load your profile: ${result.message}")
+                    }
                 }
             }
         }
 
         sculk.events.listen<PlayerQuitEvent> { event ->
-            profiles[event.player.uniqueId]?.lastSeen = System.currentTimeMillis()
+            val uuid = event.player.uniqueId
+            sculk.scheduler.runAsync {
+                profiles.saveAndUnload(uuid).logFailure("Failed to save profile $uuid")
+            }
         }
 
-        sculk.commands.register(
-            command("profile") {
-                player {
-                    val profile = profiles.computeIfAbsent(player!!.uniqueId) { PlayerProfile(it, player!!.name) }
-                    reply("<aqua>${profile.name}</aqua> <gray>Kills: <white>${profile.kills}</white>")
-                }
-            },
-        )
+        sculk.commands.register(profileCommand())
     }
 
     override fun onDisable() {
-        profiles.values.forEach { it.lastSeen = System.currentTimeMillis() }
-        sculk.close()
+        if (::profiles.isInitialized) profiles.flushLoaded().logFailure("Failed to flush loaded profiles")
+        if (::sculk.isInitialized) sculk.close()
+    }
+
+    private fun profileCommand() =
+        command("profile") {
+            description = "Open a player profile."
+            player("target", optional = true)
+            executes {
+                val target = argumentOrNull<Player>("target") ?: player
+                if (target == null) {
+                    reply("<red>Console must specify an online player.")
+                    return@executes
+                }
+                openProfile(sender, target)
+            }
+            sub("reload") {
+                permission = "profiles.reload"
+                executes {
+                    reply("<green>Profiles use live repository state; no config reload is required.")
+                }
+            }
+        }
+
+    private fun openProfile(
+        sender: CommandSender,
+        target: Player,
+    ) {
+        sculk.scheduler.runAsync {
+            val result = profiles.profile(target.uniqueId, target.name)
+            sculk.scheduler.runSync(target) {
+                when (result) {
+                    is SculkResult.Success -> {
+                        if (sender is Player) {
+                            ProfileMenus.profile(result.value).openFor(sender)
+                        } else {
+                            sender.reply("<aqua>${result.value.name}</aqua> <gray>joins: <white>${result.value.joins}")
+                        }
+                    }
+                    is SculkResult.Failure -> sender.reply("<red>${result.message}")
+                }
+            }
+        }
+    }
+
+    private fun SculkResult<*>.logFailure(prefix: String) {
+        if (this is SculkResult.Failure) logger.warning("$prefix: $message")
     }
 }
-
-public data class PlayerProfile(
-    val uuid: UUID,
-    val name: String,
-    var kills: Int = 0,
-    var deaths: Int = 0,
-    var lastSeen: Long = System.currentTimeMillis(),
-)

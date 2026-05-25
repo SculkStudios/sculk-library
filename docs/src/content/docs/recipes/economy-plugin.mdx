@@ -1,57 +1,157 @@
 ---
 title: Economy Plugin
-description: A practical coins command workflow with config and permissions.
+description: Persistent coins, payments, admin mutations, leaderboards, config, cache, and async data access.
 ---
 
-This recipe mirrors `examples/economy-plugin`.
+This recipe is backed by [`examples/economy-plugin`](https://github.com/SculkStudios/sculk-library/tree/main/examples/economy-plugin).
 
-Modules:
+## What This Builds
+
+A small production-style coin economy:
+
+- `/coins` balance lookup.
+- `/coins pay <player> <amount>` player payments.
+- Admin give, take, set, reload, and top-balance commands.
+- Typed `economy.yml`.
+- JDBC repository plus Caffeine cache.
+- Async database work and sync command replies.
+- Disable-time flush for known accounts.
+
+## Modules Used
 
 ```kotlin
 implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
 implementation("com.github.SculkStudios.sculk-library:sculk-items:v2.0.0")
 ```
 
+`sculk-platform` brings in commands, config, scheduler, and data.
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `/coins` | View your balance. |
+| `/coins <player>` | View another online player's balance. |
+| `/coins pay <player> <amount>` | Pay another player. |
+| `/coins give <player> <amount>` | Add coins. |
+| `/coins take <player> <amount>` | Remove coins. |
+| `/coins set <player> <amount>` | Set a balance. |
+| `/coins top` | Show the richest cached/database accounts. |
+| `/coins reload` | Reload economy config. |
+
+## Permissions
+
+| Permission | Used By |
+|---|---|
+| `economy.coins` | Base balance command. |
+| `economy.coins.pay` | Player payments. |
+| `economy.admin` | Give, take, and set. |
+| `economy.reload` | Reload. |
+
 ## Config
 
 ```kotlin
 @ConfigFile("economy.yml")
 data class EconomySettings(
+    @param:Min(0)
     val startingCoins: Long = 100,
-    val balanceMessage: String = "<gold>You have <yellow><coins></yellow> coins.",
+    @param:Min(1)
+    val topLimit: Int = 10,
+    val messages: EconomyMessages = EconomyMessages(),
 )
 ```
 
-## Command
+Use `@param:` for validation annotations because Sculk validates constructor parameters.
+
+## Data Model
 
 ```kotlin
-sculk.commands.register(
-    command("coins") {
-        description = "View and manage coins."
-        aliases = listOf("money", "balance")
-
-        player {
-            val balance = balances.computeIfAbsent(player!!.uniqueId) { settings.startingCoins }
-            reply(settings.balanceMessage.replace("<coins>", balance.toString()))
-        }
-
-        sub("give") {
-            permission = "economy.admin"
-            player("target")
-            long("amount", min = 1)
-            executes {
-                val target = argument<Player>("target")
-                val amount = argument<Long>("amount")
-                balances.merge(target.uniqueId, amount, Long::plus)
-                reply("<green>Gave <yellow>$amount</yellow> coins to <aqua>${target.name}</aqua>.")
-            }
-        }
-    },
+@Table("economy_accounts")
+data class EconomyAccount(
+    @PrimaryKey val uuid: UUID,
+    var name: String,
+    var coins: Long,
+    var createdAt: Long,
+    var updatedAt: Long,
 )
 ```
 
-Common mistakes:
+The repository is UUID-first and keeps the latest known player name for display.
 
-- Keep blocking database-backed balance repositories off the main thread.
-- Put admin mutations behind permissions.
-- Keep messages in config once your plugin needs localization.
+## Lifecycle
+
+```kotlin
+sculk = SculkPlatform.create(this) {
+    config()
+    data()
+}
+
+val repository = sculk.data.repository<EconomyAccount, UUID>()
+val cached = sculk.data.cached(repository, EconomyAccount::uuid)
+val service = EconomyService(cached, { settings.startingCoins })
+```
+
+On disable, the example flushes accounts touched during runtime before closing `sculk`.
+
+## Implementation Walkthrough
+
+The command handlers stay thin. They parse arguments, call `EconomyService`, and send formatted results.
+
+```kotlin
+sub("pay") {
+    permission = "economy.coins.pay"
+    player("target")
+    long("amount", min = 1)
+
+    player {
+        val payer = player ?: return@player
+        val target = argument<Player>("target")
+        val amount = argument<Long>("amount")
+
+        sculk.scheduler.runAsync {
+            val result = service.transfer(payer.uniqueId, payer.name, target.uniqueId, target.name, amount)
+
+            sculk.scheduler.runSync(payer) {
+                result.fold(
+                    onSuccess = { reply("<green>Paid <yellow>$amount</yellow> coins to <aqua>${target.name}</aqua>.") },
+                    onFailure = { message, _ -> reply("<red>$message") },
+                )
+            }
+        }
+    }
+}
+```
+
+The service owns business rules: positive amounts, insufficient funds, self-pay rejection, account creation, and saves.
+
+## Threading Rules
+
+- Repository calls are blocking.
+- Run balance lookup, transfer, save, and top-list operations async.
+- Return to `runSync(player)` before sending messages or touching player state.
+- Shutdown flush may block during disable, but do not do routine database work on the main thread.
+
+## Failure Behavior
+
+- Invalid amount is rejected before persistence.
+- Self-pay returns a failure.
+- Insufficient funds returns a failure.
+- Repository failures are sent to the command sender and logged on shutdown.
+
+## Common Mistakes
+
+- Storing balances only in memory.
+- Updating a balance in memory but not saving it after mutation.
+- Running SQL from the command thread.
+- Letting players pay themselves.
+- Building leaderboards from stale memory only.
+
+## Full Example
+
+Source: [`examples/economy-plugin`](https://github.com/SculkStudios/sculk-library/tree/main/examples/economy-plugin)
+
+## Where To Go Next
+
+- Use the [data docs](/data/overview/) for repository details.
+- Use [commands](/commands/overview/) for argument and permission behavior.
+- Use [performance](/advanced/performance/) for async data rules.

@@ -8,6 +8,8 @@ description = "Sculk Studio example - crate preview with item descriptors"
 dependencies {
     implementation(project(":sculk-platform"))
     implementation(project(":sculk-items"))
+    implementation(project(":sculk-effects"))
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.jar { enabled = false }

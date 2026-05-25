@@ -8,6 +8,7 @@ description = "Sculk Studio example - production-style server menu"
 dependencies {
     implementation(project(":sculk-platform"))
     implementation(project(":sculk-items"))
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.jar { enabled = false }

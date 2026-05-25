@@ -1,31 +1,120 @@
 ---
 title: Player Profiles
-description: Load, cache, save, and display player profiles.
+description: Join load, cache, GUI display, quit save, and disable flush for UUID-first player profiles.
 ---
 
-This recipe mirrors `examples/player-profiles`.
+This recipe is backed by [`examples/player-profiles`](https://github.com/SculkStudios/sculk-library/tree/main/examples/player-profiles).
 
-Use events for lifecycle and the scheduler for blocking persistence:
+## What This Builds
+
+A player profile workflow for real plugins:
+
+- Load or create a profile on join.
+- Cache loaded profiles by UUID.
+- Open `/profile` as a GUI.
+- Save and unload on quit.
+- Flush loaded profiles on disable.
+
+## Modules Used
+
+```kotlin
+implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-items:v2.0.0")
+```
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `/profile` | Open your own profile. |
+| `/profile <player>` | Open another online player's profile. |
+| `/profile reload` | Demonstrates a reload command path. |
+
+## Permissions
+
+This example intentionally leaves `/profile` open. Add a permission on the root command if your server needs restricted profile viewing.
+
+## Config
+
+Profiles do not need a separate config in this example. Storage is configured through Sculk Data's `storage.yml`.
+
+## Data Model
+
+```kotlin
+@Table("player_profiles")
+data class PlayerProfile(
+    @PrimaryKey val uuid: UUID,
+    var name: String,
+    var firstSeen: Long,
+    var lastSeen: Long,
+    var joins: Int,
+    var kills: Int,
+    var deaths: Int,
+    var coins: Long,
+)
+```
+
+## Lifecycle
+
+```text
+Player joins
+  -> async getOrCreate profile
+  -> increment joins and lastSeen
+  -> save
+  -> sync handoff to message player
+
+Player quits
+  -> async saveAndUnload
+
+Plugin disables
+  -> flushLoaded
+  -> sculk.close()
+```
+
+## Implementation Walkthrough
 
 ```kotlin
 sculk.events.listen<PlayerJoinEvent> { event ->
+    val player = event.player
     sculk.scheduler.runAsync {
-        val profile = profiles.computeIfAbsent(event.player.uniqueId) {
-            PlayerProfile(it, event.player.name)
-        }
-        sculk.scheduler.runSync(event.player) {
-            event.player.sendMessage("Loaded profile for ${profile.name}.")
+        val result = profiles.loadForJoin(player.uniqueId, player.name)
+        sculk.scheduler.runSync(player) {
+            result.fold(
+                onSuccess = { player.reply("<green>Loaded profile for <yellow>${it.name}</yellow>.") },
+                onFailure = { message, _ -> player.reply("<red>Could not load your profile: $message") },
+            )
         }
     }
 }
-
-sculk.events.listen<PlayerQuitEvent> { event ->
-    profiles[event.player.uniqueId]?.lastSeen = System.currentTimeMillis()
-}
 ```
 
-Thread rules:
+The profile GUI is built from an already loaded profile and contains identity, combat, and coin sections.
 
-- Load file, SQL, and HTTP data async.
-- Return to `runSync(player)` before sending messages, opening GUIs, or touching inventory/entity APIs.
-- Flush cached profiles on plugin disable.
+## Threading Rules
+
+- `loadForJoin`, `saveAndUnload`, and `flushLoaded` call the repository and should run off-thread during normal runtime.
+- Use `runSync(player)` before sending messages or opening the profile GUI.
+- Store UUIDs and data objects, not long-lived `Player` references.
+
+## Failure Behavior
+
+- Load failures are shown to the joining player.
+- Quit-save failures are logged.
+- Disable flush stops at the first failure and logs it.
+
+## Common Mistakes
+
+- Opening a GUI from an async repository callback.
+- Keeping `Player` objects in profile caches.
+- Forgetting to save on quit.
+- Forgetting to flush loaded profiles on plugin disable.
+
+## Full Example
+
+Source: [`examples/player-profiles`](https://github.com/SculkStudios/sculk-library/tree/main/examples/player-profiles)
+
+## Where To Go Next
+
+- [Data caching](/data/caching/)
+- [GUI overview](/gui/overview/)
+- [Scheduler](/core/scheduler/)

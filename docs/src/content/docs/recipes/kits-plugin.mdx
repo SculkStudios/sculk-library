@@ -1,0 +1,133 @@
+---
+title: Kits Plugin
+description: Config-backed kits with persistent cooldowns, item descriptors, preview GUI, permissions, and give/drop behavior.
+---
+
+This recipe is backed by [`examples/kits-plugin`](https://github.com/SculkStudios/sculk-library/tree/main/examples/kits-plugin).
+
+## What This Builds
+
+A kit system for survival, factions, prisons, or network servers:
+
+- `/kit` list menu.
+- `/kit <name>` claim flow.
+- `/kit preview <name>` GUI.
+- `/kit give <player> <name>` admin bypass.
+- Persistent cooldown records.
+- Config-backed item descriptors.
+- PDC markers on kit items.
+- Give to inventory and drop leftovers.
+
+## Modules Used
+
+```kotlin
+implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-items:v2.0.0")
+```
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `/kit` | Open the kit list. |
+| `/kit <name>` | Claim a kit. |
+| `/kit preview <name>` | Preview contents. |
+| `/kit give <player> <name>` | Admin give without cooldown. |
+| `/kit reload` | Reload kit config. |
+
+## Permissions
+
+| Permission | Used By |
+|---|---|
+| `kits.use.<kit>` | Claim a specific kit, unless overridden in config. |
+| `kits.admin` | Admin give. |
+| `kits.reload` | Reload. |
+
+## Config
+
+```kotlin
+@ConfigFile("kits.yml")
+data class KitSettings(
+    val kits: Map<String, KitDefinition> = mapOf(...)
+)
+
+data class KitDefinition(
+    val displayName: String,
+    val permission: String? = null,
+    val cooldownSeconds: Long = 86400,
+    val icon: ItemDescriptor,
+    val items: List<ItemDescriptor>,
+)
+```
+
+## Data Model
+
+```kotlin
+@Table("kit_cooldowns")
+data class KitCooldown(
+    @PrimaryKey val id: String,
+    val uuid: UUID,
+    val kitId: String,
+    var lastClaimedAt: Long,
+)
+```
+
+The primary key is a compact `"$uuid:$kitId"` string so each player can have one cooldown row per kit.
+
+## Lifecycle
+
+- Load config on enable.
+- Create repository and cache for cooldown rows.
+- Validate kit IDs and item lists.
+- Rebuild service/menu factory on reload.
+- Close Sculk on disable.
+
+## Implementation Walkthrough
+
+Claim flow:
+
+1. Resolve the kit.
+2. Check permission.
+3. Check persistent cooldown async.
+4. Sync handoff to give items.
+5. Record the cooldown async after delivery.
+
+Kit items are tagged with PDC:
+
+```kotlin
+descriptor.copy(
+    data = descriptor.data + ("kit_id" to kitId)
+)
+```
+
+## Threading Rules
+
+- Cooldown repository calls are blocking, so run them async.
+- Inventory add/drop must run sync.
+- Config reload is small and sync in this example.
+
+## Failure Behavior
+
+- Unknown kit IDs return a clear message.
+- Missing permissions include the node.
+- Active cooldowns show remaining time.
+- Invalid item descriptors are skipped when converting to stacks.
+- Full inventories drop leftovers naturally.
+
+## Common Mistakes
+
+- Tracking kit cooldowns only in memory.
+- Forgetting per-kit permissions.
+- Giving items from an async thread.
+- Not handling full inventories.
+- Duplicating item config instead of using `ItemDescriptor`.
+
+## Full Example
+
+Source: [`examples/kits-plugin`](https://github.com/SculkStudios/sculk-library/tree/main/examples/kits-plugin)
+
+## Where To Go Next
+
+- [Item descriptors](/items/config-items/)
+- [Data overview](/data/overview/)
+- [GUI overview](/gui/overview/)

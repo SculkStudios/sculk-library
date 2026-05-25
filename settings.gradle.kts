@@ -47,6 +47,7 @@ include(
     ":examples:server-menu",
     ":examples:staff-tools",
     ":examples:crate-system",
+    ":examples:kits-plugin",
 )
 
 // Benchmarks (not published)

@@ -1,33 +1,114 @@
 ---
 title: Staff Tools
-description: Permission-gated staff mode with command feedback and effects.
+description: Staff mode, freeze, inspect menus, staff chat, events, effects, and cleanup.
 ---
 
-This recipe mirrors `examples/staff-tools`.
+This recipe is backed by [`examples/staff-tools`](https://github.com/SculkStudios/sculk-library/tree/main/examples/staff-tools).
+
+## What This Builds
+
+A compact moderation workflow:
+
+- `/staff` toggles staff mode.
+- `/freeze <player> [reason]` freezes or unfreezes a player.
+- `/inspect <player>` opens a read-only info menu.
+- `/staffchat <message>` sends to permitted online staff.
+- Frozen players cannot move between blocks.
+- Staff actions use sound/particle feedback and cleanup on quit.
+
+## Modules Used
 
 ```kotlin
-sculk.commands.register(
-    command("staff") {
-        permission = "staff.mode"
-        player {
-            val enabled = toggleStaffMode(player!!.uniqueId)
-            val state = if (enabled) "<green>enabled" else "<red>disabled"
-            reply("<gray>Staff mode $state<gray>.")
+implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-effects:v2.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-items:v2.0.0")
+```
 
-            sound(Sound.BLOCK_NOTE_BLOCK_PLING) {
-                volume = 0.8f
-                pitch = if (enabled) 1.4f else 0.7f
-            }.playAt(player!!.location)
-        }
-    },
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `/staff` | Toggle staff mode. |
+| `/freeze <player> [reason]` | Freeze or unfreeze a player. |
+| `/inspect <player>` | Open an inspect menu. |
+| `/staffchat <message>` | Send a staff-only message. |
+
+## Permissions
+
+| Permission | Used By |
+|---|---|
+| `staff.mode` | Staff mode toggle. |
+| `staff.freeze` | Freeze command. |
+| `staff.inspect` | Inspect menu. |
+| `staff.chat` | Staff chat. |
+
+## Config
+
+This example keeps messages and state in code. In a production plugin, move messages and staff-mode item descriptors into typed config.
+
+## Data Model
+
+```kotlin
+data class StaffSession(
+    val uuid: UUID,
+    var enabled: Boolean,
+    var vanished: Boolean,
+    var lastToggleAt: Long,
+)
+
+data class FreezeRecord(
+    val target: UUID,
+    val staff: UUID,
+    val reason: String,
+    val createdAt: Long,
 )
 ```
 
-Use this pattern for:
+## Lifecycle
 
-- Staff mode toggles.
-- Freeze/inspect commands.
-- Staff-only menus.
-- Short visual/audio feedback.
+- Staff mode and freeze state are stored by UUID.
+- `PlayerMoveEvent` checks freeze state and cancels meaningful movement.
+- `PlayerQuitEvent` removes transient session state.
+- `sculk.close()` unregisters listeners and commands.
 
-Keep moderation actions permission-gated and log important changes.
+## Implementation Walkthrough
+
+```kotlin
+sculk.events.listen<PlayerMoveEvent> { event ->
+    if (!staff.shouldBlockMovement(event.player.uniqueId)) return@listen
+    if (event.from.blockX != event.to.blockX || event.from.blockZ != event.to.blockZ) {
+        event.isCancelled = true
+    }
+}
+```
+
+The service is pure and testable. The plugin layer handles Bukkit players, events, menus, and effects.
+
+## Threading Rules
+
+- Event handlers run sync and should stay lightweight.
+- Do not perform storage writes inside movement handlers.
+- Log important moderation actions, but keep heavy audit storage async.
+
+## Failure Behavior
+
+- Freeze toggles off if the player is already frozen.
+- Staff chat filters recipients by permission.
+- Quit cleanup removes transient state for the quitting UUID.
+
+## Common Mistakes
+
+- Tracking staff state by player name.
+- Doing database work in `PlayerMoveEvent`.
+- Forgetting to unregister listeners.
+- Mixing vanish or packet behavior into staff mode before packet support is implemented.
+
+## Full Example
+
+Source: [`examples/staff-tools`](https://github.com/SculkStudios/sculk-library/tree/main/examples/staff-tools)
+
+## Where To Go Next
+
+- [Events](/core/events/)
+- [Effects](/effects/particles-sounds/)
+- [GUI overview](/gui/overview/)

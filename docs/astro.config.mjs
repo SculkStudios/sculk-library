@@ -118,6 +118,7 @@ export default defineConfig({
 						{ label: 'Server Menu', slug: 'recipes/server-menu' },
 						{ label: 'Staff Tools', slug: 'recipes/staff-tools' },
 						{ label: 'Crate System', slug: 'recipes/crate-system' },
+						{ label: 'Kits Plugin', slug: 'recipes/kits-plugin' },
 					],
 				},
 				{
