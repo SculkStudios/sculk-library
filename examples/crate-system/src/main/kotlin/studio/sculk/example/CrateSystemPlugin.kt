@@ -1,15 +1,22 @@
 package studio.sculk.example
 
+import org.bukkit.Sound
+import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
-import studio.sculk.config.annotation.ConfigFile
+import studio.sculk.core.SculkResult
+import studio.sculk.core.adventure.broadcast
+import studio.sculk.core.adventure.parseMessage
 import studio.sculk.core.command.command
-import studio.sculk.core.gui.gui
-import studio.sculk.items.ItemDescriptor
+import studio.sculk.effects.sound
+import studio.sculk.items.toItemStack
 import studio.sculk.platform.SculkPlatform
 
 public class CrateSystemPlugin : JavaPlugin() {
     private lateinit var sculk: SculkPlatform
-    private lateinit var config: CrateConfig
+    private lateinit var settings: CrateSettings
+    private lateinit var crates: CrateService
+    private lateinit var menus: CrateMenus
 
     override fun onEnable() {
         sculk =
@@ -17,61 +24,137 @@ public class CrateSystemPlugin : JavaPlugin() {
                 config()
                 gui()
             }
-        config = sculk.config.load()
-
-        sculk.commands.register(
-            command("crate") {
-                sub("preview") {
-                    player {
-                        cratePreview().openFor(player!!)
-                    }
-                }
-            },
-        )
+        reloadCrates()
+        sculk.commands.register(crateCommand())
     }
 
     override fun onDisable() {
-        sculk.close()
+        if (::sculk.isInitialized) sculk.close()
     }
 
-    private fun cratePreview() =
-        gui("<dark_gray>Vote Crate") {
-            size = 27
-            config.rewards.take(27).forEachIndexed { index, reward ->
-                item(index) {
-                    stack {
-                        material(reward.material)
-                        reward.name?.let { name(it) }
-                        if (reward.lore.isNotEmpty()) lore(reward.lore)
-                        amount(reward.amount)
-                        reward.enchantments.forEach { (key, level) -> enchant(key, level) }
-                        if (reward.glint) glint()
-                        reward.customModelData?.let { customModelData(it) }
-                        if (reward.unbreakable) unbreakable()
-                        reward.data.forEach { (key, value) -> pdc(key, value) }
+    private fun reloadCrates() {
+        settings = sculk.config.load()
+        crates = CrateService(settings = { settings })
+        menus = CrateMenus(crates)
+        crates.validate().forEach { logger.warning("[Crates] $it") }
+    }
+
+    private fun crateCommand() =
+        command("crate") {
+            description = "Preview crates, give keys, and open rewards."
+
+            sub("preview") {
+                string("crate")
+                player {
+                    val crateId = argument<String>("crate")
+                    menus.preview(crateId).openFor(player ?: return@player)
+                }
+            }
+
+            sub("open") {
+                string("crate")
+                player {
+                    openCrate(player ?: return@player, argument("crate"))
+                }
+            }
+
+            sub("key") {
+                sub("give") {
+                    permission = "crate.admin"
+                    player("target")
+                    string("crate")
+                    int("amount", min = 1, max = 64)
+                    executes {
+                        val target = argument<Player>("target")
+                        val crateId = argument<String>("crate")
+                        val amount = argument<Int>("amount")
+                        when (val key = crates.keyItem(crateId)) {
+                            is SculkResult.Success -> {
+                                key.value.amount = amount
+                                giveOrDrop(target, key.value)
+                                reply("<green>Gave <yellow>$amount</yellow> keys to <aqua>${target.name}</aqua>.")
+                            }
+                            is SculkResult.Failure -> reply("<red>${key.message}")
+                        }
                     }
-                    onClick { reply("<yellow>This is a preview item.") }
+                }
+            }
+
+            sub("reload") {
+                permission = "crate.admin"
+                executes {
+                    reloadCrates()
+                    reply("<green>Crates reloaded.")
                 }
             }
         }
-}
 
-@ConfigFile("crates.yml")
-public data class CrateConfig(
-    val rewards: List<ItemDescriptor> =
-        listOf(
-            ItemDescriptor(
-                material = "diamond",
-                name = "<aqua>Diamond Reward",
-                lore = listOf("<gray>A common vote crate reward."),
-                amount = 3,
-                glint = true,
-            ),
-            ItemDescriptor(
-                material = "golden_apple",
-                name = "<gold>Golden Apple",
-                lore = listOf("<gray>A useful survival reward."),
-                amount = 2,
-            ),
-        ),
-)
+    private fun openCrate(
+        player: Player,
+        crateId: String,
+    ) {
+        if (!consumeKey(player, crateId)) {
+            player.sendMessage(parseMessage("<red>You need a key for this crate."))
+            return
+        }
+        when (val rolled = crates.roll(crateId)) {
+            is SculkResult.Success -> {
+                val item = rolled.value.item.toItemStack()
+                if (item == null) {
+                    player.sendMessage(
+                        parseMessage("<red>Reward '${rolled.value.id}' has an invalid item."),
+                    )
+                    return
+                }
+                giveOrDrop(player, item)
+                sound(Sound.ENTITY_PLAYER_LEVELUP) {
+                    volume = 0.8f
+                    pitch = 1.2f
+                }.playAt(
+                    player.location,
+                )
+                player.sendMessage(parseMessage("<green>You won <yellow>${rolled.value.id}</yellow>."))
+                if (rolled.value.broadcast) {
+                    broadcast(
+                        "<gold>${player.name}</gold> <gray>won <yellow>${rolled.value.id}</yellow> from a crate.",
+                    )
+                }
+            }
+            is SculkResult.Failure ->
+                player.sendMessage(
+                    parseMessage("<red>${rolled.message}"),
+                )
+        }
+    }
+
+    private fun consumeKey(
+        player: Player,
+        crateId: String,
+    ): Boolean {
+        val inventory = player.inventory
+        for (index in 0 until inventory.size) {
+            val stack = inventory.getItem(index)
+            if (!crates.isCrateKey(stack, crateId)) continue
+            if (stack!!.amount > 1) {
+                stack.amount -= 1
+            } else {
+                inventory.setItem(index, null)
+            }
+            return true
+        }
+        return false
+    }
+
+    private fun giveOrDrop(
+        player: Player,
+        stack: ItemStack,
+    ): List<ItemStack> {
+        val leftovers =
+            player.inventory
+                .addItem(stack)
+                .values
+                .toList()
+        leftovers.forEach { player.world.dropItemNaturally(player.location, it) }
+        return leftovers
+    }
+}

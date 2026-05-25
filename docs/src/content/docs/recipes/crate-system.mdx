@@ -1,49 +1,118 @@
 ---
 title: Crate System
-description: Config-driven rewards with item descriptors and GUI previews.
+description: Config-driven crates with key items, PDC markers, weighted rewards, preview GUI, effects, and reload.
 ---
 
-This recipe mirrors `examples/crate-system`.
+This recipe is backed by [`examples/crate-system`](https://github.com/SculkStudios/sculk-library/tree/main/examples/crate-system).
 
-Use `ItemDescriptor` in config-friendly reward tables:
+## What This Builds
+
+A usable crate workflow:
+
+- Config-defined crates and rewards.
+- Key items marked with persistent data.
+- `/crate preview <crate>` GUI.
+- `/crate key give <player> <crate> <amount>` admin flow.
+- `/crate open <crate>` key consumption and reward roll.
+- Effects and broadcasts for wins.
+
+## Modules Used
+
+```kotlin
+implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-items:v2.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-effects:v2.0.0")
+```
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `/crate preview <crate>` | Show reward preview. |
+| `/crate open <crate>` | Consume a key and roll. |
+| `/crate key give <player> <crate> <amount>` | Give crate keys. |
+| `/crate reload` | Reload crate config. |
+
+## Permissions
+
+| Permission | Used By |
+|---|---|
+| `crate.admin` | Key give and reload. |
+
+## Config
 
 ```kotlin
 @ConfigFile("crates.yml")
-data class CrateConfig(
-    val rewards: List<ItemDescriptor> = listOf(
-        ItemDescriptor(
-            material = "diamond",
-            name = "<aqua>Diamond Reward",
-            lore = listOf("<gray>A common vote crate reward."),
-            amount = 3,
-            glint = true,
-        ),
-    ),
+data class CrateSettings(
+    val crates: Map<String, CrateDefinition> = mapOf(...)
+)
+
+data class CrateDefinition(
+    val displayName: String,
+    val keyItem: ItemDescriptor,
+    val rewards: List<CrateReward>,
 )
 ```
 
-Preview rewards in a GUI:
+Rewards use `ItemDescriptor`, so the same item config can be displayed in GUIs and delivered to players.
+
+## Data Model
+
+The crate recipe is config-driven. It does not store open history. Add a repository later if you want audit logs or pity counters.
+
+## Lifecycle
+
+- Load and validate config on enable.
+- Build `CrateService` from current config.
+- Reload replaces the service and menu factory.
+- Close Sculk on disable.
+
+## Implementation Walkthrough
+
+Key items are marked with PDC:
 
 ```kotlin
-val menu = gui("<dark_gray>Vote Crate") {
-    size = 27
-    config.rewards.take(27).forEachIndexed { index, reward ->
-        item(index) {
-            stack {
-                material(reward.material)
-                reward.name?.let { name(it) }
-                if (reward.lore.isNotEmpty()) lore(reward.lore)
-                amount(reward.amount)
-                if (reward.glint) glint()
-            }
-            onClick { reply("<yellow>This is a preview item.") }
-        }
-    }
-}
+crate.keyItem.copy(
+    data = crate.keyItem.data + ("crate_id" to crateId)
+)
 ```
 
-Common mistakes:
+Opening a crate:
 
-- Trusting config keys without startup validation.
-- Giving rewards from preview click handlers.
-- Blocking animation/reward persistence on the main thread.
+1. Check inventory for a matching key marker.
+2. Consume one key.
+3. Roll a weighted reward.
+4. Convert the reward `ItemDescriptor` to an `ItemStack`.
+5. Add to inventory or drop leftovers.
+6. Play feedback and broadcast rare wins.
+
+## Threading Rules
+
+- Inventory and world drops are sync operations.
+- Config reload is small and sync in this example.
+- If you add persistent crate logs, write them async.
+
+## Failure Behavior
+
+- Unknown crate IDs return a clear failure.
+- Invalid reward weights are reported during validation.
+- Invalid reward items are rejected when opened.
+- Full inventories drop leftovers naturally at the player's location.
+
+## Common Mistakes
+
+- Giving rewards from preview clicks.
+- Trusting config keys without validation.
+- Forgetting to mark keys with PDC.
+- Consuming a key before validating the crate exists.
+- Blocking animation or audit storage on the main thread.
+
+## Full Example
+
+Source: [`examples/crate-system`](https://github.com/SculkStudios/sculk-library/tree/main/examples/crate-system)
+
+## Where To Go Next
+
+- [Items config](/items/config-items/)
+- [Persistent data](/items/persistent-data/)
+- [Effects timelines](/effects/timelines/)

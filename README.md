@@ -133,6 +133,17 @@ public class MyPlugin extends JavaPlugin {
 | `sculk-content` | High-level client block helpers over packet services |
 | `sculk-platform` | Paper integration for plugin lifecycle |
 
+## Recipe Examples
+
+Compile-checked example plugins live in `examples/` and the matching guides live in the docs:
+
+- `economy-plugin`: cached accounts, async persistence, payments, admin balance tools, and top balances.
+- `player-profiles`: join load, quit save, profile cache, GUI display, and shutdown flush.
+- `server-menu`: config-backed menu buttons, pagination, profile pages, and confirm flows.
+- `staff-tools`: staff mode, freeze, inspect menus, staff chat, effects, and transient state cleanup.
+- `crate-system`: key items, PDC markers, weighted rewards, preview menus, and reward delivery.
+- `kits-plugin`: item descriptors, kit cooldown persistence, preview menus, permissions, and safe give/drop handling.
+
 ## Stability Notes
 
 | Area | Current status |

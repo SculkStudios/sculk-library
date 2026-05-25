@@ -1,40 +1,110 @@
 ---
 title: Server Menu
-description: Build a production-style main menu with reusable item behavior.
+description: Config-backed main menu, warps, profile view, online-player pagination, and confirm actions.
 ---
 
-This recipe mirrors `examples/server-menu`.
+This recipe is backed by [`examples/server-menu`](https://github.com/SculkStudios/sculk-library/tree/main/examples/server-menu).
+
+## What This Builds
+
+A practical `/menu` workflow:
+
+- Main menu with config-backed buttons.
+- Warps menu with real teleport actions.
+- Profile card menu.
+- Online players page.
+- Confirmation menu for a local setting action.
+
+## Modules Used
 
 ```kotlin
-val serverMenu = gui("<dark_gray>Server Menu") {
-    size = 27
-
-    item(11) {
-        material = Material.ENDER_PEARL
-        name = "<aqua>Warps"
-        lore("<gray>Open the warp selector.")
-        onClick { reply("<yellow>Warp menu would open here.") }
-    }
-
-    item(13) {
-        material = Material.PLAYER_HEAD
-        name = "<green>Profile"
-        lore("<gray>View your profile.")
-        onClick { reply("<green>Profile menu would open here.") }
-    }
-}
+implementation("com.github.SculkStudios.sculk-library:sculk-platform:v2.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-items:v2.0.0")
 ```
 
-Enable GUI routing:
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `/menu` | Opens the main server menu. |
+
+## Permissions
+
+This example has no permission requirement. Add one to the command root for staff-only or donor-only menus.
+
+## Config
+
+```kotlin
+@ConfigFile("menus.yml")
+data class MenuSettings(
+    val title: String = "<dark_gray>Server Menu",
+    val buttons: MenuButtons = MenuButtons(),
+    val warps: List<WarpDefinition> = listOf(...),
+)
+```
+
+Buttons use `ItemDescriptor`, so server owners can edit material, name, lore, glint, model data, and PDC in config.
+
+## Data Model
+
+This recipe is intentionally config-driven. It does not persist player data.
+
+## Lifecycle
 
 ```kotlin
 sculk = SculkPlatform.create(this) {
+    config()
     gui()
+}
+
+settings = sculk.config.load()
+menus = ServerMenus { settings }
+```
+
+The `gui()` subsystem is required. It routes clicks, drags, close events, and player quit cleanup.
+
+## Implementation Walkthrough
+
+The main menu uses real click actions:
+
+```kotlin
+descriptorItem(10, settings().buttons.warps) {
+    open(warps())
+}
+
+descriptorItem(12, settings().buttons.profile) {
+    open(profile(player))
 }
 ```
 
-Common mistakes:
+The warps menu validates that the world is loaded before teleporting.
 
-- Forgetting `gui()`, which means click and close routing will not run.
-- Doing blocking data loads directly inside click handlers.
-- Keeping `Player` references in long-lived menu objects instead of UUIDs or per-open session state.
+## Threading Rules
+
+- GUI clicks run on the server thread.
+- Do not perform database or HTTP work directly in click handlers.
+- Teleport and inventory work must stay sync.
+- If a menu needs database data, load it async first and open/update the GUI after a sync handoff.
+
+## Failure Behavior
+
+- Missing worlds produce an error message instead of throwing.
+- Empty online player lists render a fallback item.
+- Confirm actions close the session after feedback.
+
+## Common Mistakes
+
+- Forgetting `gui()` in `SculkPlatform.create`.
+- Using placeholder buttons that do not perform real actions.
+- Loading data directly inside click handlers.
+- Reusing one mutable menu state object for every player.
+
+## Full Example
+
+Source: [`examples/server-menu`](https://github.com/SculkStudios/sculk-library/tree/main/examples/server-menu)
+
+## Where To Go Next
+
+- [GUI overview](/gui/overview/)
+- [GUI pagination](/gui/pagination/)
+- [Config items](/items/config-items/)

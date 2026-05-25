@@ -8,6 +8,7 @@ description = "Sculk Studio example - economy command, config, and profile workf
 dependencies {
     implementation(project(":sculk-platform"))
     implementation(project(":sculk-items"))
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.jar { enabled = false }
