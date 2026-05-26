@@ -93,6 +93,7 @@ public class GuiItemBuilder
         private var clickHandler: (GuiContext.() -> Unit)? = null
         private var dynamicBuilder: (GuiItemBuilder.(Player) -> Unit)? = null
         private var stackBuilder: (ItemBuilder.() -> Unit)? = null
+        private var explicitStack: ItemStack? = null
 
         /** Registers a click handler for this item. */
         public fun onClick(block: GuiContext.() -> Unit) {
@@ -136,6 +137,17 @@ public class GuiItemBuilder
         }
 
         /**
+         * Uses a complete [ItemStack] for this GUI item.
+         *
+         * This is useful when another Sculk item builder already produced the
+         * final stack, such as player skulls, config-backed descriptors, or
+         * custom metadata that should not be rebuilt through GUI defaults.
+         */
+        public fun stack(stack: ItemStack) {
+            explicitStack = stack.clone()
+        }
+
+        /**
          * Adds an enchantment by its Minecraft key (e.g. `"sharpness"`, `"unbreaking"`).
          *
          * Unsafe levels are allowed — useful for display items. The enchantment is
@@ -159,15 +171,16 @@ public class GuiItemBuilder
         @SculkInternal
         public fun build(): GuiItem {
             val stack =
-                studio.sculk.items.item(material) {
-                    amount(amount)
-                    if (name.isNotBlank()) name(name)
-                    if (lore.isNotEmpty()) lore(lore)
-                    if (glow) glint()
-                    if (customModelData != 0) customModelData(customModelData)
-                    for ((enchName, level) in enchantments) enchant(enchName, level)
-                    stackBuilder?.invoke(this)
-                }
+                explicitStack?.clone()
+                    ?: studio.sculk.items.item(material) {
+                        amount(amount)
+                        if (name.isNotBlank()) name(name)
+                        if (lore.isNotEmpty()) lore(lore)
+                        if (glow) glint()
+                        if (customModelData != 0) customModelData(customModelData)
+                        for ((enchName, level) in enchantments) enchant(enchName, level)
+                        stackBuilder?.invoke(this)
+                    }
             return GuiItem(slot, stack, clickHandler, dynamicBuilder)
         }
     }
