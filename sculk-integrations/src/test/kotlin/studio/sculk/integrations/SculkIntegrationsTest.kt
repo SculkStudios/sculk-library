@@ -6,9 +6,9 @@ import org.bukkit.plugin.PluginManager
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import studio.sculk.core.SculkResult
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Proxy
 
 class SculkIntegrationsTest {
     @Test
@@ -23,8 +23,13 @@ class SculkIntegrationsTest {
 
     @Test
     fun `disabled integration plugin returns failure`() {
-        val dependency = mock<Plugin>()
-        whenever(dependency.isEnabled).thenReturn(false)
+        val dependency =
+            proxy<Plugin> { method, _ ->
+                when (method.name) {
+                    "isEnabled" -> false
+                    else -> defaultValue(method.returnType)
+                }
+            }
         val integrations = integrationsWithPlugin(dependency)
 
         val result = integrations.luckPerms()
@@ -34,12 +39,48 @@ class SculkIntegrationsTest {
     }
 
     private fun integrationsWithPlugin(dependency: Plugin?): SculkIntegrations {
-        val plugin = mock<Plugin>()
-        val server = mock<Server>()
-        val pluginManager = mock<PluginManager>()
-        whenever(plugin.server).thenReturn(server)
-        whenever(server.pluginManager).thenReturn(pluginManager)
-        whenever(pluginManager.getPlugin(org.mockito.kotlin.any())).thenReturn(dependency)
+        val pluginManager =
+            proxy<PluginManager> { method, _ ->
+                when (method.name) {
+                    "getPlugin" -> dependency
+                    else -> defaultValue(method.returnType)
+                }
+            }
+        val server =
+            proxy<Server> { method, _ ->
+                when (method.name) {
+                    "getPluginManager" -> pluginManager
+                    else -> defaultValue(method.returnType)
+                }
+            }
+        val plugin =
+            proxy<Plugin> { method, _ ->
+                when (method.name) {
+                    "getServer" -> server
+                    else -> defaultValue(method.returnType)
+                }
+            }
         return SculkIntegrations(plugin)
     }
 }
+
+private inline fun <reified T : Any> proxy(noinline handler: (java.lang.reflect.Method, Array<Any?>?) -> Any?): T =
+    Proxy.newProxyInstance(
+        T::class.java.classLoader,
+        arrayOf(T::class.java),
+        InvocationHandler { _, method, args -> handler(method, args) },
+    ) as T
+
+private fun defaultValue(type: Class<*>): Any? =
+    when (type) {
+        java.lang.Boolean.TYPE -> false
+        java.lang.Byte.TYPE -> 0.toByte()
+        java.lang.Short.TYPE -> 0.toShort()
+        java.lang.Integer.TYPE -> 0
+        java.lang.Long.TYPE -> 0L
+        java.lang.Float.TYPE -> 0f
+        java.lang.Double.TYPE -> 0.0
+        java.lang.Character.TYPE -> '\u0000'
+        java.lang.Void.TYPE -> null
+        else -> null
+    }

@@ -56,6 +56,24 @@ val head = skull {
 }
 ```
 
+## Safe Give Or Drop
+
+Use `giveOrDrop` when rewards must never vanish because a player's inventory is full:
+
+```kotlin
+val reward = item("diamond") {
+    name("<aqua>Vote Diamond")
+}
+
+val result = player.giveOrDrop(reward)
+
+if (result.dropped.isNotEmpty()) {
+    player.sendMessage("Some rewards were dropped at your feet.")
+}
+```
+
+Call this from the server thread, or from the player's region thread on Folia-like servers. If the item is part of a database-backed reward flow, load and decide the reward asynchronously, then hand back to sync before touching the inventory.
+
 ## Java
 
 ```java

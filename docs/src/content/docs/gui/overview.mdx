@@ -167,6 +167,29 @@ gui("<dark_aqua>Shop") {
 
 Both methods accept an optional `GuiItemBuilder` block so you can set the name, lore, or click handler on the filler items. `fill()` and `border()` only ever affect **unassigned** slots — they will never overwrite an `item()` you've already defined, regardless of call order.
 
+For premium menu layouts that only decorate the top and bottom rows, use `GuiSlots` and the styled border overload:
+
+```kotlin
+import studio.sculk.core.gui.GuiBorderStyle
+
+gui("<dark_gray>Rewards") {
+    size = 36
+
+    border(
+        material = Material.LIGHT_BLUE_STAINED_GLASS_PANE,
+        style = GuiBorderStyle.Horizontal,
+        skip = setOf(27, 31),
+    ) {
+        name = "<gray> "
+    }
+
+    item(27) { material = Material.ARROW; name = "<gray>Back" }
+    item(31) { material = Material.BARRIER; name = "<gray>Close" }
+}
+```
+
+`GuiSlots.horizontalBorder(27)` returns slots `0..8` and `18..26`; `GuiSlots.horizontalBorder(36)` returns `0..8` and `27..35`. This avoids the common off-by-one mistake where a 3-row menu accidentally tries to write slot `27`.
+
 ### Setting multiple slots at once
 
 Use `items(slots)` to apply the same builder to an arbitrary set of slots:
