@@ -15,7 +15,7 @@ h2                = "2.4.240"
 ktlint-gradle     = "14.2.0"
 jmh               = "1.37"
 jmh-plugin        = "0.7.3"
-shadow            = "9.4.1"
+shadow            = "9.4.2"
 packetevents      = "2.12.1"
 protocollib       = "5.4.0"
 
