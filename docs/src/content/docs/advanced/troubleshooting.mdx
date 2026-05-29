@@ -79,9 +79,7 @@ val material = SculkSeries.material(config.icon) ?: Material.STONE
 Enable the GUI subsystem:
 
 ```kotlin
-sculk = SculkPlatform.create(this) {
-    gui()
-}
+class MyPlugin : SculkPlugin({ gui() })
 ```
 
 The platform layer owns inventory click/close listeners and session cleanup.

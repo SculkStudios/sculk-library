@@ -37,27 +37,19 @@ Resources that need cleanup implement `SculkHandle`. Examples include listener r
 `SculkPlatform.close()` closes platform-owned handles, GUI sessions, commands, event listeners, and data resources. Scheduled tasks returned directly from `sculk.scheduler` should be retained and closed by your plugin unless you register them in your own lifecycle owner.
 
 ```kotlin
-class MyPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
-
-    override fun onEnable() {
-        sculk = SculkPlatform.create(this) {
-            gui()
-            config()
-            data()
-        }
-
+class MyPlugin : SculkPlugin({ gui(); config(); data() }) {
+    override fun setup() {
         sculk.commands.registerAll(
             homeCommand(sculk),
             adminCommand(sculk),
         )
     }
-
-    override fun onDisable() {
-        sculk.close()
-    }
 }
 ```
+
+`SculkPlugin` creates the `SculkPlatform` (exposed as `sculk`) and closes it on disable. Extend
+`JavaPlugin` and call `SculkPlatform.create(this) { … }` yourself only if you need to own the
+enable/disable sequence.
 
 ## Threading model
 

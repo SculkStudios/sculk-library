@@ -3,26 +3,19 @@ package studio.sculk.example
 import org.bukkit.Bukkit
 import org.bukkit.Sound
 import org.bukkit.World
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.adventure.reply
 import studio.sculk.core.command.CommandBuilder
 import studio.sculk.core.command.argument.ArgumentParser
 import studio.sculk.core.command.command
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 
-public class CommandsPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
-
-    override fun onEnable() {
-        sculk = SculkPlatform.create(this) {}
-
+public class CommandsPlugin : SculkPlugin() {
+    override fun setup() {
         sculk.commands.registerAll(
             toolsCommand(),
             worldCommand(),
         )
     }
-
-    override fun onDisable(): Unit = sculk.close()
 }
 
 // ---------------------------------------------------------------------------

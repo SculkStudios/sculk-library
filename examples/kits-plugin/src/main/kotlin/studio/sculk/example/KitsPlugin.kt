@@ -2,32 +2,25 @@ package studio.sculk.example
 
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.SculkResult
 import studio.sculk.core.command.command
 import studio.sculk.items.toItemStack
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 import java.time.Duration
 
-public class KitsPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
+public class KitsPlugin :
+    SculkPlugin({
+        config()
+        data()
+        gui()
+    }) {
     private lateinit var settings: KitSettings
     private lateinit var service: KitService
     private lateinit var menus: KitMenus
 
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                config()
-                data()
-                gui()
-            }
+    override fun setup() {
         reloadKits()
         sculk.commands.register(kitCommand())
-    }
-
-    override fun onDisable() {
-        if (::sculk.isInitialized) sculk.close()
     }
 
     private fun reloadKits() {

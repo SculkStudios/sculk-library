@@ -5,11 +5,11 @@ description: Optional adapters for common server plugins.
 
 `sculk-integrations` provides lightweight adapters for common plugins without making them required dependencies.
 
-Enable integrations through the platform:
+Enable integrations in your plugin's subsystem block:
 
 ```kotlin
-sculk = SculkPlatform.create(this) {
-    integrations()
+class MyPlugin : SculkPlugin({ integrations() }) {
+    override fun setup() { /* sculk.integrations.* */ }
 }
 ```
 

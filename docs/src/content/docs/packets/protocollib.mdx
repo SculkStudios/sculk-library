@@ -25,11 +25,11 @@ softdepend:
 ## Backend selection
 
 ```kotlin
-sculk = SculkPlatform.create(this) {
+class MyPlugin : SculkPlugin({
     packets {
         backend = PacketBackendMode.ProtocolLib
     }
-}
+})
 ```
 
 Use this when your server stack already depends on ProtocolLib or when another plugin integration expects it.

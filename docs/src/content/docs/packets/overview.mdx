@@ -49,20 +49,18 @@ You must also install PacketEvents or ProtocolLib on the server. Sculk only prov
 ```kotlin
 import studio.sculk.packets.PacketBackendMode
 
-sculk = SculkPlatform.create(this) {
+class MyPlugin : SculkPlugin({
     packets {
         backend = PacketBackendMode.Auto
         required = false
     }
+}) {
+    override fun setup() {
+        sculk.packetsResult
+            ?.onSuccess { service -> logger.info("Packets enabled with ${service.backend}") }
+            ?.onFailure { message, _ -> logger.warning(message) }
+    }
 }
-
-sculk.packetsResult
-    ?.onSuccess { service ->
-        logger.info("Packets enabled with ${service.backend}")
-    }
-    ?.onFailure { message, _ ->
-        logger.warning(message)
-    }
 ```
 
 `Auto` prefers PacketEvents, then ProtocolLib. If `required = true`, startup fails with a clear message when no backend is available.

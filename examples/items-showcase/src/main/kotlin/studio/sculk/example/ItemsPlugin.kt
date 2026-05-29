@@ -3,23 +3,15 @@ package studio.sculk.example
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemRarity
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.command.command
 import studio.sculk.items.ItemDescriptor
 import studio.sculk.items.item
 import studio.sculk.items.skull
 import studio.sculk.items.toItemStack
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 
-public class ItemsPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
-
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                gui()
-            }
-
+public class ItemsPlugin : SculkPlugin({ gui() }) {
+    override fun setup() {
         sculk.commands.register(
             command("items") {
                 description = "Sculk item API showcase"
@@ -67,10 +59,6 @@ public class ItemsPlugin : JavaPlugin() {
                 }
             },
         )
-    }
-
-    override fun onDisable() {
-        sculk.close()
     }
 
     private fun starterSword() =
