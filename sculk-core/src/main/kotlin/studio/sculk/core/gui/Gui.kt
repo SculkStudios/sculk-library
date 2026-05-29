@@ -35,6 +35,8 @@ public class Gui
         public val title: String,
         public val size: Int,
         public val items: Map<Int, GuiItem>,
+        /** Non-chest container type (hopper, dispenser, …), or null for a chest of [size] slots. */
+        public val type: org.bukkit.event.inventory.InventoryType? = null,
         /** Pagination config, non-null when [GuiBuilder.pagination] was called. */
         public val pagination: PaginationConfig? = null,
         /** Called after the inventory is opened for a player. */
@@ -79,12 +81,19 @@ public class Gui
                 player.openInventory(inventory)
                 openHandler?.invoke(session)
             }
+            @OptIn(SculkInternal::class)
+            session.startAnimations()
             return session
         }
 
         @SculkInternal
         public fun buildInventory(forPlayer: Player? = null): Inventory {
-            val inv = Bukkit.createInventory(null, size, parseMessage(title))
+            val inv =
+                if (type != null) {
+                    Bukkit.createInventory(null, type, parseMessage(title))
+                } else {
+                    Bukkit.createInventory(null, size, parseMessage(title))
+                }
             for ((slot, item) in items) {
                 inv.setItem(slot, item.resolveStack(forPlayer))
             }
@@ -114,6 +123,16 @@ public class GuiBuilder
     ) {
         /** The number of slots. Must be a multiple of 9 between 9 and 54. Defaults to 27. */
         public var size: Int = 27
+
+        /**
+         * A non-chest container type (e.g. [org.bukkit.event.inventory.InventoryType.HOPPER] or
+         * `DISPENSER`). Setting it adjusts [size] to the type's slot count automatically.
+         */
+        public var type: org.bukkit.event.inventory.InventoryType? = null
+            set(value) {
+                field = value
+                if (value != null) size = value.defaultSize
+            }
 
         private val items: MutableMap<Int, GuiItem> = mutableMapOf()
         private var paginationConfig: PaginationConfig? = null
@@ -237,10 +256,20 @@ public class GuiBuilder
 
         @SculkInternal
         public fun build(): Gui {
-            require(size % 9 == 0 && size in 9..54) {
-                "GUI size must be a multiple of 9 between 9 and 54, got $size."
+            if (type == null) {
+                require(size % 9 == 0 && size in 9..54) {
+                    "GUI size must be a multiple of 9 between 9 and 54, got $size."
+                }
             }
-            return Gui(title, size, items.toMap(), paginationConfig, openHandler, closeHandler)
+            return Gui(
+                title = title,
+                size = size,
+                items = items.toMap(),
+                type = type,
+                pagination = paginationConfig,
+                openHandler = openHandler,
+                closeHandler = closeHandler,
+            )
         }
     }
 

@@ -17,4 +17,5 @@ dependencies {
     testImplementation(libs.paper.api)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.coroutines.test)
 }

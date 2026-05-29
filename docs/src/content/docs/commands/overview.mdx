@@ -3,15 +3,11 @@ title: Commands Overview
 description: DSL-first command system with sender routing, typed arguments, and tab-completion from the command tree.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 Commands are defined with the `command {}` DSL and registered via `sculk.commands.registerAll()`.
 Each command lives in its own file and returns a `CommandBuilder`.
 
 ## Defining a command
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // commands/AdminCommand.kt
 fun adminCommand() = command("sculk") {
@@ -32,33 +28,9 @@ fun adminCommand() = command("sculk") {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-public class AdminCommand {
-    public static CommandBuilder build(SculkPlatform sculk) {
-        return JavaCommandBuilder.create("sculk")
-            .description("Sculk admin commands.")
-            .permission("sculk.admin")
-            .sub("reload", sub -> sub
-                .player(ctx -> {
-                    sculk.getConfig().reload();
-                    ctx.reply("<green>Config reloaded.");
-                })
-            )
-            .sub("ping", sub -> sub
-                .executes(ctx -> ctx.reply("<gray>Pong!"))
-            );
-    }
-}
-```
-</TabItem>
-</Tabs>
 
 ## Registering commands
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 sculk.commands.registerAll(
     adminCommand(),
@@ -66,17 +38,6 @@ sculk.commands.registerAll(
     shopCommand(),
 )
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-sculk.getCommands().registerAll(
-    AdminCommand.build(sculk),
-    HomeCommand.build(),
-    ShopCommand.build()
-);
-```
-</TabItem>
-</Tabs>
 
 ## Sender-type routing
 
@@ -92,8 +53,6 @@ sculk.getCommands().registerAll(
 
 Commands can have aliases — additional names that trigger the same handler:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 fun teleportCommand() = command("teleport") {
     aliases = listOf("tp", "tele")
@@ -102,15 +61,6 @@ fun teleportCommand() = command("teleport") {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-JavaCommandBuilder.create("teleport")
-    .aliases("tp", "tele")
-    .player(ctx -> { /* ... */ });
-```
-</TabItem>
-</Tabs>
 
 ## Auto tab-completion
 
@@ -131,8 +81,6 @@ Commands currently register through Bukkit's command map. That keeps the DSL sma
 
 Inside any executor block, `this` is a `CommandContext` with helpers beyond `reply()`:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 player {
     reply("<green>Operation complete.")        // chat message
@@ -141,18 +89,6 @@ player {
     playSound(Sound.ENTITY_PLAYER_LEVELUP)     // sound at player location
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-.player(ctx -> {
-    ctx.reply("<green>Operation complete.");
-    ctx.actionbar("<gray>Processing…");
-    ctx.title("<aqua>Welcome!", "<gray>to the server");
-    ctx.playSound(Sound.ENTITY_PLAYER_LEVELUP);
-})
-```
-</TabItem>
-</Tabs>
 
 `title` and `actionbar` are no-ops when the sender is console. `playSound` defaults to `volume = 1.0, pitch = 1.0` — pass extra args to override.
 

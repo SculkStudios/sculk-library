@@ -6,7 +6,6 @@ import studio.sculk.core.scheduler.SculkScheduler
 import java.util.ServiceLoader
 
 public object SculkPacketServices {
-    @JvmStatic
     public fun create(
         plugin: JavaPlugin,
         scheduler: SculkScheduler,

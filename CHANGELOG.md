@@ -6,6 +6,44 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [4.0.0] — "Modern Core" — Unreleased
+
+A major, breaking modernisation around Kotlin coroutines and the latest Paper APIs. See the
+[migration guide](https://docs.sculk.studio/advanced/migration-to-sculk-4/).
+
+### Added
+- **Coroutine core**: plugin-scoped `SculkCoroutineScope` (`sculk.scope`) with Folia-aware
+  `main`/`async` dispatchers, `launchMain`/`launchAsync`/`withMain`/`withAsync`, and a
+  `CompletableFuture.await()` bridge.
+- **Brigadier commands**: the `command { }` DSL now compiles to Paper's native Brigadier tree
+  (client-side completion & error highlighting). Suspend executors, per-node `middleware { }`, and a
+  stateful `CooldownStore`.
+- **Data components**: `ItemBuilder` rewritten on the data-component API with `itemName`, `rarity`,
+  `maxStackSize`, `maxDamage`, `food`, typed/nested `pdc`, and a generic `component`/`unsetComponent`
+  escape hatch.
+- **Suspend data layer**: suspend repositories, a type-safe `repo.query { }` DSL, `data.transaction { }`,
+  and a distributed `RedisCache` backend (Lettuce + kotlinx.serialization) behind the unified
+  `SculkCache` interface.
+- **GUI**: coroutine-driven animated slots, per-click-type handlers (`onLeftClick`/`onRightClick`/
+  `onShiftClick`), interactive input slots, non-chest container GUIs, and `session.renderSlot`.
+- **`sculk-text`**: per-player localization with YAML bundles, MiniMessage templates, placeholders,
+  and pluralization (`sculk.text`).
+- **`sculk-tasks`**: coroutine scheduling with cron expressions, repeating/delayed tasks, and
+  debounce/throttle helpers (`sculk.tasks`).
+- **Config**: environment-variable substitution (`${VAR:-default}`) and file-watch auto-reload
+  (`config.watch { }`).
+
+### Changed
+- `SculkRepository` methods are now `suspend`. The old `AsyncRepository` / `CompletableFuture`
+  facade has been removed.
+- Commands must be registered during `onEnable` (Brigadier lifecycle).
+
+### Removed
+- All Java builder classes (`Java*Builder`) and `@JvmStatic`/`@JvmOverloads` shims — Sculk is now
+  Kotlin-first only.
+
+---
+
 ## [1.0.0] — Unreleased
 
 ### Added

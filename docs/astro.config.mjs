@@ -42,6 +42,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Events', slug: 'core/events' },
 						{ label: 'Scheduler', slug: 'core/scheduler' },
+						{ label: 'Coroutines', slug: 'advanced/coroutines' },
 						{ label: 'Messaging', slug: 'core/messaging' },
 					],
 				},
@@ -57,12 +58,14 @@ export default defineConfig({
 					items: [
 						{ label: 'Overview', slug: 'gui/overview' },
 						{ label: 'Pagination', slug: 'gui/pagination' },
+						{ label: 'Animations & Inputs', slug: 'gui/animations' },
 					],
 				},
 				{
 					label: 'Items',
 					items: [
 						{ label: 'Overview', slug: 'items/overview' },
+						{ label: 'Data Components', slug: 'items/components' },
 						{ label: 'Persistent Data', slug: 'items/persistent-data' },
 						{ label: 'Config Items', slug: 'items/config-items' },
 					],
@@ -93,6 +96,19 @@ export default defineConfig({
 					items: [
 						{ label: 'Overview', slug: 'data/overview' },
 						{ label: 'Caching', slug: 'data/caching' },
+						{ label: 'Querying, Transactions & Redis', slug: 'data/query' },
+					],
+				},
+				{
+					label: 'Localization',
+					items: [
+						{ label: 'Overview', slug: 'text/overview' },
+					],
+				},
+				{
+					label: 'Tasks',
+					items: [
+						{ label: 'Tasks & Cron', slug: 'tasks/overview' },
 					],
 				},
 				{
@@ -125,11 +141,11 @@ export default defineConfig({
 					label: 'Advanced',
 					items: [
 						{ label: 'API Stability', slug: 'advanced/api-stability' },
-						{ label: 'Java Compatibility', slug: 'advanced/java-compat' },
 						{ label: 'Performance', slug: 'advanced/performance' },
 						{ label: 'Folia & Canvas', slug: 'advanced/folia' },
 						{ label: 'API Design', slug: 'advanced/api-design' },
 						{ label: 'XSeries Migration', slug: 'advanced/xseries-migration' },
+						{ label: 'Migrating to Sculk 4.0', slug: 'advanced/migration-to-sculk-4' },
 						{ label: 'Migration to Sculk 3', slug: 'advanced/migration-to-sculk-3' },
 						{ label: 'Migration Checklist', slug: 'advanced/migration-checklist' },
 						{ label: 'Troubleshooting', slug: 'advanced/troubleshooting' },

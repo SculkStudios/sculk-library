@@ -11,7 +11,7 @@ public class PlayerProfileStore<T : Any, ID : Any> public constructor(
     private val repository: SculkRepository<T, ID>,
     private val create: (ID) -> T,
 ) {
-    public fun getOrCreate(id: ID): SculkResult<T> =
+    public suspend fun getOrCreate(id: ID): SculkResult<T> =
         when (val result = repository.find(id)) {
             is SculkResult.Success -> {
                 val existing = result.value
@@ -28,5 +28,5 @@ public class PlayerProfileStore<T : Any, ID : Any> public constructor(
             is SculkResult.Failure -> SculkResult.Failure(result.message, result.cause)
         }
 
-    public fun save(profile: T): SculkResult<Unit> = repository.save(profile)
+    public suspend fun save(profile: T): SculkResult<Unit> = repository.save(profile)
 }

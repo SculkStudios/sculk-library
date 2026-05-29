@@ -16,6 +16,8 @@ dependencies {
     jmh(libs.hikari)
     jmh(libs.caffeine)
     jmh(libs.h2)
+    // Used only in benchmark @Setup to build a stub command source.
+    jmh(libs.mockito.kotlin)
 }
 
 jmh {

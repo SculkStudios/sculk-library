@@ -3,16 +3,12 @@ title: Particles & Sounds
 description: Clean builder DSLs for spawning particles and playing sounds — no raw Bukkit API calls needed.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 `sculk-effects` wraps Bukkit's particle and sound APIs in clean, readable builders. Instead of calling `world.spawnParticle(...)` with six positional arguments, you use a DSL that names everything.
 
 ## Particles
 
 Spawn particles at a location with full control over count, spread, and speed:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 particle(Particle.FLAME) {
     location = player.location.add(0.0, 1.0, 0.0)
@@ -22,18 +18,6 @@ particle(Particle.FLAME) {
     spawn()
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-JavaParticleBuilder.of(Particle.FLAME)
-    .location(player.getLocation().add(0, 1, 0))
-    .count(20)
-    .offset(0.5, 0.5, 0.5)
-    .speed(0.1)
-    .spawn();
-```
-</TabItem>
-</Tabs>
 
 ### Particle properties
 
@@ -48,8 +32,6 @@ JavaParticleBuilder.of(Particle.FLAME)
 
 For particles like `FIREWORK` that use `offset` as a direction vector, set `count = 0` and provide the direction:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 particle(Particle.FIREWORK) {
     location = player.location
@@ -59,25 +41,11 @@ particle(Particle.FIREWORK) {
     spawn()
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-JavaParticleBuilder.of(Particle.FIREWORK)
-    .location(player.getLocation())
-    .count(0)
-    .offset(0.0, 1.0, 0.0)
-    .speed(0.5)
-    .spawn();
-```
-</TabItem>
-</Tabs>
 
 ### Player-only particles
 
 Spawn particles visible only to a specific player:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 particle(Particle.HEART) {
     location = player.location.add(0.0, 2.0, 0.0)
@@ -86,17 +54,6 @@ particle(Particle.HEART) {
     spawn()
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-JavaParticleBuilder.of(Particle.HEART)
-    .location(player.getLocation().add(0, 2, 0))
-    .count(5)
-    .receivers(player)
-    .spawn();
-```
-</TabItem>
-</Tabs>
 
 ---
 
@@ -104,8 +61,6 @@ JavaParticleBuilder.of(Particle.HEART)
 
 Play sounds to a player or at a world location:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 sound(Sound.ENTITY_PLAYER_LEVELUP) {
     volume = 1.0f
@@ -113,16 +68,6 @@ sound(Sound.ENTITY_PLAYER_LEVELUP) {
     playTo(player)
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-JavaSoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP)
-    .volume(1.0f)
-    .pitch(1.2f)
-    .playTo(player);
-```
-</TabItem>
-</Tabs>
 
 ### Sound properties
 
@@ -135,8 +80,6 @@ JavaSoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP)
 
 Sounds played at a location are heard by every player within range based on `volume`:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 sound(Sound.BLOCK_ANVIL_LAND) {
     volume = 0.8f
@@ -144,38 +87,17 @@ sound(Sound.BLOCK_ANVIL_LAND) {
     playAt(player.location)
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-JavaSoundBuilder.of(Sound.BLOCK_ANVIL_LAND)
-    .volume(0.8f)
-    .pitch(0.9f)
-    .playAt(player.getLocation());
-```
-</TabItem>
-</Tabs>
 
 ### Custom sounds
 
 Play custom sounds registered in your resource pack:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 sound("myplugin:ui.click") {
     volume = 1.0f
     playTo(player)
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-JavaSoundBuilder.ofKey("myplugin:ui.click")
-    .volume(1.0f)
-    .playTo(player);
-```
-</TabItem>
-</Tabs>
 
 ---
 
@@ -183,8 +105,6 @@ JavaSoundBuilder.ofKey("myplugin:ui.click")
 
 Mix both freely within any handler — command, GUI click, event:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // On a level-up event
 fun onLevelUp(player: Player) {
@@ -200,23 +120,6 @@ fun onLevelUp(player: Player) {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-void onLevelUp(Player player) {
-    JavaParticleBuilder.of(Particle.END_ROD)
-        .location(player.getLocation().add(0, 1, 0))
-        .count(40)
-        .offset(0.4, 0.6, 0.4)
-        .spawn();
-
-    JavaSoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP)
-        .pitch(1.3f)
-        .playTo(player);
-}
-```
-</TabItem>
-</Tabs>
 
 For multi-step animations spread across multiple ticks, see [Timelines & Sequences](/effects/timelines).
 
@@ -224,8 +127,6 @@ For multi-step animations spread across multiple ticks, see [Timelines & Sequenc
 
 If you're loading particle or sound keys from config, use `sculk-series` to resolve them safely:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 val p = SculkSeries.particle(config.particleType) ?: Particle.FLAME
 particle(p) {
@@ -234,15 +135,6 @@ particle(p) {
     spawn()
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-Particle p = SculkSeries.particle(config.getParticleType());
-if (p == null) p = Particle.FLAME;
-JavaParticleBuilder.of(p).location(player.getLocation()).count(10).spawn();
-```
-</TabItem>
-</Tabs>
 
 ## Best practices
 

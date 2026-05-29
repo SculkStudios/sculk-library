@@ -1,0 +1,55 @@
+---
+title: Coroutines
+description: Structured concurrency in Sculk — the plugin-scoped coroutine scope, Folia-aware dispatchers, and thread hopping.
+---
+
+Sculk 4.0 builds its async surface on Kotlin coroutines. The platform owns a single
+`SculkCoroutineScope` (`sculk.scope`) tied to your plugin's lifecycle — when the platform closes,
+every coroutine it launched is cancelled, so background work never leaks.
+
+## The scope
+
+```kotlin
+// Launch off the main thread (default for background work)
+sculk.scope.launchAsync {
+    val profile = repo.find(uuid)            // suspends, runs off-thread
+    withMain { player.sendRichMessage("Loaded ${profile}") }
+}
+
+// Launch on the main / global-region thread
+sculk.scope.launchMain {
+    world.setBlockData(pos, data)
+}
+```
+
+Use `withMain { }` and `withAsync { }` inside a coroutine to hop threads:
+
+```kotlin
+sculk.scope.launchMain {
+    val data = withAsync { repo.find(uuid) }  // off-thread for IO
+    player.sendRichMessage("Coins: ${data}")  // back on main
+}
+```
+
+## Folia awareness
+
+`sculk.scope.dispatchers.main` routes continuations through Sculk's Folia-aware scheduler. On Paper
+this is the main thread; on Folia it is the global region thread. For entity- or location-specific
+work, the scheduler overloads (`sculk.scheduler.runSync(entity) { }`) remain available.
+
+## Structured concurrency
+
+The scope uses a `SupervisorJob`, so one failing coroutine never tears down the others. Children are
+cancelled together on platform shutdown.
+
+## Bridging futures
+
+A handful of Paper APIs still return `CompletableFuture`. Await them with the provided extension:
+
+```kotlin
+import studio.sculk.core.coroutine.await
+
+sculk.scope.launchAsync {
+    val chunk = world.getChunkAtAsync(x, z).await()
+}
+```

@@ -74,15 +74,8 @@ if (result.dropped.isNotEmpty()) {
 
 Call this from the server thread, or from the player's region thread on Folia-like servers. If the item is part of a database-backed reward flow, load and decide the reward asynchronously, then hand back to sync before touching the inventory.
 
-## Java
+## Modern components
 
-```java
-ItemStack sword = JavaItemBuilder.of(Material.DIAMOND_SWORD)
-    .name("<aqua>Starter Sword")
-    .lore("<gray>A clean starter weapon.")
-    .enchant(Enchantment.SHARPNESS, 5)
-    .glint()
-    .customModelData(1001)
-    .pdc("starter_item", true)
-    .build();
-```
+The item builder writes Paper data components, with typed helpers (`food`, `rarity`, `itemName`,
+`maxStackSize`) and a generic `component(type, value)` escape hatch for everything else. See
+[Data components](/items/components/) for the full surface.

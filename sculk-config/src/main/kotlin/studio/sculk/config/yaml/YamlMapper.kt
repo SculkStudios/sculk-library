@@ -257,10 +257,23 @@ public object YamlMapper {
             Double::class -> (value as? Number)?.toDouble() ?: value
             Float::class -> (value as? Number)?.toFloat() ?: value
             Boolean::class -> value
-            String::class -> value.toString()
+            String::class -> substituteEnv(value.toString())
             else -> if (value is Map<*, *>) fromMap(value as Map<String, Any?>, klass) else value
         }
     }
+
+    private val envPattern = Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?}""")
+
+    /**
+     * Substitutes `${VAR}` / `${VAR:-default}` references in config string values with environment
+     * variables. An unset variable with no default is left unchanged so the placeholder is visible.
+     */
+    private fun substituteEnv(value: String): String =
+        envPattern.replace(value) { match ->
+            val name = match.groupValues[1]
+            val default = match.groups[2]?.value
+            System.getenv(name) ?: default ?: match.value
+        }
 
     private fun toMap(instance: Any): Map<String, Any?> {
         val map = mutableMapOf<String, Any?>()

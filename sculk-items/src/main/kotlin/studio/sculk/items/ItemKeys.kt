@@ -11,7 +11,6 @@ import org.bukkit.NamespacedKey
 public object ItemKeys {
     public const val DEFAULT_NAMESPACE: String = "sculk"
 
-    @JvmStatic
     public fun of(key: String): NamespacedKey {
         val trimmed = key.trim().lowercase()
         require(trimmed.isNotBlank()) { "Persistent data key cannot be blank." }

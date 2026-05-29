@@ -21,9 +21,16 @@ public class CommandNode(
     public val arguments: MutableList<ArgumentDefinition> = mutableListOf()
     public var cooldown: CooldownDefinition? = null
 
-    public var playerExecutor: (CommandContext.() -> Unit)? = null
-    public var consoleExecutor: (CommandContext.() -> Unit)? = null
-    public var anyExecutor: (CommandContext.() -> Unit)? = null
+    /**
+     * Pre-execution filters run in order before the executor. Returning `false` aborts
+     * dispatch (the filter is responsible for messaging the sender). Useful for logging,
+     * rate-limiting, or contextual permission checks.
+     */
+    public val middleware: MutableList<suspend (CommandContext) -> Boolean> = mutableListOf()
+
+    public var playerExecutor: (suspend CommandContext.() -> Unit)? = null
+    public var consoleExecutor: (suspend CommandContext.() -> Unit)? = null
+    public var anyExecutor: (suspend CommandContext.() -> Unit)? = null
 
     public fun findSubcommand(name: String): CommandNode? =
         subcommands.firstOrNull { subcommand ->

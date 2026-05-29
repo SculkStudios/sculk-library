@@ -15,6 +15,8 @@ dependencies {
     api(project(":sculk-data"))
     api(project(":sculk-integrations"))
     api(project(":sculk-packets-api"))
+    api(project(":sculk-text"))
+    api(project(":sculk-tasks"))
     implementation(kotlin("reflect"))
     testImplementation(libs.paper.api)
     testImplementation(libs.junit.jupiter)

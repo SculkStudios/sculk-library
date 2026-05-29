@@ -1,0 +1,63 @@
+---
+title: Data components
+description: Sculk's item builder writes modern Paper data components — names, lore, food, tools, and the generic component escape hatch.
+---
+
+Sculk 4.0's `item { }` builder is built entirely on Paper's data-component API (Minecraft 1.20.5+).
+Display properties are written as components, not legacy `ItemMeta`.
+
+## Common properties
+
+```kotlin
+val sword = item(Material.DIAMOND_SWORD) {
+    name("<aqua>Starter Sword")          // custom_name
+    itemName("<gray>Sword")              // item_name
+    lore("<gray>A clean starter weapon.")
+    enchant(Enchantment.SHARPNESS, 5)
+    glint()                              // enchantment_glint_override
+    unbreakable()
+    customModelData(1001)
+    rarity(ItemRarity.EPIC)
+    maxStackSize(1)
+}
+```
+
+## Rich components
+
+Common rich components have typed helpers; everything else uses the generic escape hatch:
+
+```kotlin
+val apple = item(Material.GOLDEN_APPLE) {
+    name("<gold>Healing Apple")
+    food(nutrition = 8, saturation = 6f, canAlwaysEat = true)
+}
+```
+
+### The `component` escape hatch
+
+`component(type, value)` accepts any `DataComponentType` and its value — the modern way to reach
+`FOOD`, `TOOL`, `EQUIPPABLE`, `CONSUMABLE`, `TOOLTIP_DISPLAY`, and any future component. Use
+`unsetComponent(type)` to remove one.
+
+```kotlin
+item(Material.NETHERITE_HELMET) {
+    component(
+        DataComponentTypes.FOOD,
+        FoodProperties.food().nutrition(4).saturation(2f).build(),
+    )
+    unsetComponent(DataComponentTypes.TOOL)
+}
+```
+
+## Persistent data
+
+Typed PDC accessors cover primitives and any `PersistentDataType`, including lists and nested
+containers:
+
+```kotlin
+item(Material.PAPER) {
+    pdc("starter_item", true)
+    pdc("uses", 3)
+    pdc(ItemKeys.of("myplugin:tags"), PersistentDataType.LIST.strings(), listOf("a", "b"))
+}
+```

@@ -60,6 +60,24 @@ public class SculkConfig
             managers.values.forEach { it.reload() }
         }
 
+        /**
+         * Starts watching the data folder and auto-reloads each currently-loaded config when its
+         * file changes on disk. Call this after loading your configs.
+         *
+         * Reloads (and their `onReload` callbacks) are marshalled through [dispatch] — pass
+         * `{ sculk.scheduler.runSync(it) }` so they run on the main thread. Returns a
+         * [studio.sculk.core.SculkHandle]; close it (or the platform) to stop watching.
+         */
+        @SculkStable
+        public fun watch(dispatch: (Runnable) -> Unit = Runnable::run): studio.sculk.core.SculkHandle {
+            val reloaders: Map<String, () -> Unit> =
+                managers.values.associate { manager ->
+                    File(manager.configPath).name to { manager.reload() }
+                }
+            return studio.sculk.config.managed
+                .ConfigWatcher(dataFolder, reloaders, logger, dispatch)
+        }
+
         /** Reloads one registered config and returns a structured result. */
         public inline fun <reified T : Any> reload(): SculkResult<T> = reload(T::class.java)
 
@@ -133,7 +151,6 @@ public class SculkConfig
              * @param dataFolder The plugin's data folder (e.g. `plugin.dataFolder`).
              * @param logger The plugin's logger for validation warnings.
              */
-            @JvmStatic
             @SculkStable
             public fun create(
                 dataFolder: File,

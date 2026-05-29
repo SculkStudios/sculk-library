@@ -108,7 +108,7 @@ public class KitsPlugin : JavaPlugin() {
             return
         }
 
-        sculk.scheduler.runAsync {
+        sculk.scope.launchAsync {
             val status = if (bypassCooldown) SculkResult.success(KitClaimStatus(true, 0)) else service.claimStatus(player.uniqueId, kitId)
             sculk.scheduler.runSync(player) {
                 when (status) {
@@ -149,7 +149,7 @@ public class KitsPlugin : JavaPlugin() {
                             )
                         }
                         if (!bypassCooldown) {
-                            sculk.scheduler.runAsync {
+                            sculk.scope.launchAsync {
                                 service.recordClaim(player.uniqueId, kitId)
                             }
                         }

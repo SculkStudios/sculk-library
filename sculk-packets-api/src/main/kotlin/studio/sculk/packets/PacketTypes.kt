@@ -56,7 +56,6 @@ public data class PacketKey(
     public override fun toString(): String = "$namespace:$value"
 
     public companion object {
-        @JvmStatic
         public fun of(input: String): PacketKey {
             val cleaned =
                 input

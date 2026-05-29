@@ -1,9 +1,7 @@
 ---
 title: Data Overview
-description: Repository pattern for persistent storage over SQLite and MySQL with typed results and explicit scheduling.
+description: Coroutine-based repository pattern for persistent storage over SQLite and MySQL with typed results.
 ---
-
-import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 `sculk-data` gives you typed persistent storage without writing routine SQL. You annotate a data class, create a repository, and call `find`, `save`, and `delete`. SQLite is the default; MySQL/MariaDB is a config switch away.
 
@@ -11,8 +9,6 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 Annotate a data class with `@Table` and mark each field with `@Column`. The primary key gets `@PrimaryKey`:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 @Table("player_data")
 data class PlayerData(
@@ -22,50 +18,22 @@ data class PlayerData(
     @Column("play_time") val playTime: Long = 0,
 )
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-@Table("player_data")
-public record PlayerData(
-    @PrimaryKey @Column("uuid") UUID uuid,
-    @Column("coins") long coins,
-    @Column("homes") int homes,
-    @Column("play_time") long playTime
-) {
-    public PlayerData(UUID uuid) {
-        this(uuid, 0L, 0, 0L);
-    }
-}
-```
-</TabItem>
-</Tabs>
 
 Sculk reads the annotations during mapper setup and caches the mapping, so normal repository calls do not need to rediscover the entity shape each time.
 
 ## Creating a repository
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 val repo = sculk.data.repository<PlayerData, UUID>()
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-SculkRepository<PlayerData, UUID> repo =
-    sculk.getData().repository(PlayerData.class, UUID.class);
-```
-</TabItem>
-</Tabs>
 
 The repository creates the database table automatically if it does not exist. Columns present in the annotation but missing from the table are added with `ALTER TABLE`.
 
 ## Operations
 
-All repository methods return `SculkResult<T>` — never throw:
+All repository methods are **suspend functions** that run their JDBC work off-thread, and return
+`SculkResult<T>` — never throw. Call them from a coroutine (`sculk.scope.launchAsync { ... }`):
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // Find by primary key — returns SculkResult<PlayerData?>
 val result = repo.find(player.uniqueId)
@@ -89,77 +57,28 @@ if (repo.exists(player.uniqueId)) { ... }
 // Load all rows
 val everyone: SculkResult<List<PlayerData>> = repo.findAll()
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-// Find
-SculkResult<PlayerData> result = repo.find(player.getUniqueId());
-if (result instanceof SculkResult.Success<PlayerData> ok) {
-    PlayerData data = ok.getValue() != null
-        ? ok.getValue()
-        : new PlayerData(player.getUniqueId());
-} else if (result instanceof SculkResult.Failure fail) {
-    getLogger().warning("Find failed: " + fail.getMessage());
-}
 
-// Save
-repo.save(new PlayerData(player.getUniqueId(), 500L, 2, 0L));
+## Running in a coroutine
 
-// Delete
-repo.delete(player.getUniqueId());
+Repository methods suspend while the database work runs off-thread, so they never block the main
+thread. Launch them on the platform scope and hop back with `withMain` to touch the Paper API:
 
-// Exists
-boolean exists = repo.exists(player.getUniqueId());
-
-// All rows
-SculkResult<List<PlayerData>> everyone = repo.findAll();
-```
-</TabItem>
-</Tabs>
-
-## Running async — required
-
-Repository calls are synchronous but **blocking** — they wait for the database. Never call them on the main thread. Use `sculk.scheduler` to shift to a background thread and back:
-
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
-sculk.scheduler.runAsync {
-    val result = repo.find(player.uniqueId)
-
-    sculk.scheduler.runSync {
-        // back on main thread — safe to call Paper APIs here
-        when (result) {
-            is SculkResult.Success -> {
-                val coins = result.value?.coins ?: 0
-                player.sendMessage("<yellow>You have $coins coins.")
-            }
-            is SculkResult.Failure -> {
-                player.sendMessage("<red>Failed to load your data.")
-            }
+sculk.scope.launchAsync {
+    when (val result = repo.find(player.uniqueId)) {
+        is SculkResult.Success -> {
+            val coins = result.value?.coins ?: 0
+            withMain { player.sendRichMessage("<yellow>You have $coins coins.") }
+        }
+        is SculkResult.Failure -> {
+            withMain { player.sendRichMessage("<red>Failed to load your data.") }
         }
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-// Java repository wraps results in CompletableFuture automatically
-JavaRepository<PlayerData, UUID> javaRepo = JavaRepository.wrap(repo);
 
-javaRepo.find(player.getUniqueId()).thenAccept(result -> {
-    // runs on a background thread
-    if (result instanceof SculkResult.Success<PlayerData> ok) {
-        long coins = ok.getValue() != null ? ok.getValue().coins() : 0;
-        // schedule back to main thread for Paper API calls
-        sculk.getScheduler().runSync(() ->
-            player.sendMessage("<yellow>You have " + coins + " coins.")
-        );
-    }
-});
-```
-</TabItem>
-</Tabs>
+See [Coroutines](/advanced/coroutines/) for the full scope/dispatcher model, and
+[Querying, transactions & Redis](/data/query/) for the query DSL and distributed cache.
 
 ## Storage configuration
 
@@ -186,29 +105,16 @@ Switch to MySQL by changing `type: mysql` and filling in the connection details.
 
 Create one repository per entity type. Each gets its own table:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 val playerRepo  = sculk.data.repository<PlayerData, UUID>()
 val homeRepo    = sculk.data.repository<HomeData, Int>()
 val economyRepo = sculk.data.repository<EconomyData, UUID>()
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-SculkRepository<PlayerData, UUID>  playerRepo  = sculk.getData().repository(PlayerData.class, UUID.class);
-SculkRepository<HomeData, Integer> homeRepo    = sculk.getData().repository(HomeData.class, Integer.class);
-SculkRepository<EconomyData, UUID> economyRepo = sculk.getData().repository(EconomyData.class, UUID.class);
-```
-</TabItem>
-</Tabs>
 
 ## Result chaining
 
 `SculkResult` supports functional operators for transforming and handling results without nested `when` blocks:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // map — transform a successful value
 val coins: SculkResult<Long> = repo.find(player.uniqueId)
@@ -240,27 +146,11 @@ repo.find(player.uniqueId)
     .onSuccess { data -> player.sendMessage("<green>Welcome back, ${data.name}!") }
     .onFailure { msg, _ -> player.sendMessage("<red>$msg") }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-// map
-SculkResult<Long> coins = SculkResultKt.map(
-    repo.find(player.getUniqueId()),
-    data -> data != null ? data.coins() : 0L
-);
-
-// onSuccess / onFailure
-SculkResultKt.onSuccess(repo.find(player.getUniqueId()),
-    data -> player.sendMessage("<yellow>Coins: " + (data != null ? data.coins() : 0))
-);
-```
-</TabItem>
-</Tabs>
 
 ## Best practices
 
 - Create repositories once at startup — don't create new instances per request.
-- Always run repository calls in `sculk.scheduler.runAsync { }` — never on the main thread.
+- Call repository methods from `sculk.scope.launchAsync { }`; hop back with `withMain { }` for Paper APIs.
 - Use the cache layer (`sculk.data.cached(...)`) for frequently-read entities like online player data. See [Caching](/data/caching).
 - Handle `SculkResult.Failure` explicitly — log the message so operators can diagnose database issues.
 - Load player data on `PlayerJoinEvent` and cache it; flush to DB on `PlayerQuitEvent`.
