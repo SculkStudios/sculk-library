@@ -27,12 +27,12 @@ softdepend:
 ## Backend selection
 
 ```kotlin
-sculk = SculkPlatform.create(this) {
+class MyPlugin : SculkPlugin({
     packets {
         backend = PacketBackendMode.PacketEvents
         required = true
     }
-}
+})
 ```
 
 Use `required = true` only when the plugin cannot run without packet features.

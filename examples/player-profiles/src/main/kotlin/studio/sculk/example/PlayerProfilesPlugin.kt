@@ -4,25 +4,21 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.SculkResult
 import studio.sculk.core.adventure.reply
 import studio.sculk.core.command.command
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 import java.time.Duration
 import java.util.UUID
 
-public class PlayerProfilesPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
+public class PlayerProfilesPlugin :
+    SculkPlugin({
+        data()
+        gui()
+    }) {
     private lateinit var profiles: ProfileService
 
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                data()
-                gui()
-            }
-
+    override fun setup() {
         val repository = sculk.data.repository<PlayerProfile, UUID>()
         val cached =
             sculk.data.cached(repository, PlayerProfile::uuid) {
@@ -60,11 +56,10 @@ public class PlayerProfilesPlugin : JavaPlugin() {
         sculk.commands.register(profileCommand())
     }
 
-    override fun onDisable() {
+    override fun shutdown() {
         if (::profiles.isInitialized) {
             kotlinx.coroutines.runBlocking { profiles.flushLoaded().logFailure("Failed to flush loaded profiles") }
         }
-        if (::sculk.isInitialized) sculk.close()
     }
 
     private fun profileCommand() =

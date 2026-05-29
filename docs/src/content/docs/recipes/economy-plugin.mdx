@@ -80,14 +80,16 @@ The repository is UUID-first and keeps the latest known player name for display.
 ## Lifecycle
 
 ```kotlin
-sculk = SculkPlatform.create(this) {
-    config()
-    data()
-}
+class EconomyPlugin : SculkPlugin({ config(); data() }) {
+    private lateinit var service: EconomyService
 
-val repository = sculk.data.repository<EconomyAccount, UUID>()
-val cached = sculk.data.cached(repository, EconomyAccount::uuid)
-val service = EconomyService(cached, { settings.startingCoins })
+    override fun setup() {
+        val settings = sculk.config.load<EconomySettings>()
+        val repository = sculk.data.repository<EconomyAccount, UUID>()
+        val cached = sculk.data.cached(repository, EconomyAccount::uuid)
+        service = EconomyService(cached, { settings.startingCoins })
+    }
+}
 ```
 
 On disable, the example flushes accounts touched during runtime before closing `sculk`.
