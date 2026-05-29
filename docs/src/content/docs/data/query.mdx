@@ -1,0 +1,74 @@
+---
+title: Querying, transactions & Redis
+description: The type-safe query DSL, database transactions, and the distributed Redis cache backend.
+---
+
+Sculk 4.0's data layer is fully coroutine-based. Repository methods are `suspend` and run their JDBC
+work off-thread; call them from `sculk.scope.launchAsync { }`.
+
+## Query DSL
+
+Beyond primary-key lookups, `repo.query { }` builds type-safe filtered queries that compile to
+parameterized SQL:
+
+```kotlin
+sculk.scope.launchAsync {
+    val rich =
+        repo.query {
+            PlayerData::coins greaterThan 1000
+            PlayerData::name like "Steve%"
+            orderByDescending(PlayerData::coins)
+            limit(10)
+        }
+}
+```
+
+Operators: `eq`, `notEq`, `greaterThan`, `atLeast`, `lessThan`, `atMost`, `like`. Conditions are
+combined with `AND`; property references resolve to column names via the ORM mapping.
+
+## Transactions
+
+Run multiple statements atomically with `data.transaction { }`. Returning normally commits; throwing
+rolls back. The block receives a JDBC `Connection`:
+
+```kotlin
+sculk.scope.launchAsync {
+    val result = sculk.data.transaction { conn ->
+        conn.prepareStatement("UPDATE accounts SET coins = coins - ? WHERE id = ?").use { /* ... */ }
+        conn.prepareStatement("UPDATE accounts SET coins = coins + ? WHERE id = ?").use { /* ... */ }
+    }
+    if (result is SculkResult.Failure) logger.warning(result.message)
+}
+```
+
+## Caching
+
+`data.cached(...)` wraps a repository in an in-process Caffeine cache:
+
+```kotlin
+val cache = sculk.data.cached(repo, PlayerData::uuid) {
+    ttl = Duration.ofMinutes(10)
+    maxSize = 10_000
+}
+```
+
+## Distributed cache (Redis)
+
+For multi-server networks, `data.distributedCache(...)` stores entities in Redis so they are shared
+across servers. Entities must be `@Serializable`, and the plugin must add `io.lettuce:lettuce-core`:
+
+```kotlin
+@Serializable
+data class PlayerData(val uuid: String, val coins: Long)
+
+val cache = sculk.data.distributedCache(
+    delegate = repo,
+    idExtractor = PlayerData::uuid,
+    serializer = PlayerData.serializer(),
+    redisUri = "redis://localhost:6379",
+    keyPrefix = "players",
+)
+```
+
+Both backends implement the same `SculkCache` interface, so swapping local for distributed never
+changes your call sites. If Redis is unreachable, lookups degrade gracefully to the delegate repo.

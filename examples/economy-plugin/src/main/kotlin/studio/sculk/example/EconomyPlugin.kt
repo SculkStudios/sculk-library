@@ -37,7 +37,7 @@ public class EconomyPlugin : JavaPlugin() {
 
     override fun onDisable() {
         if (::service.isInitialized) {
-            service.flushKnown().logFailure("Failed to flush economy accounts")
+            kotlinx.coroutines.runBlocking { service.flushKnown().logFailure("Failed to flush economy accounts") }
         }
         if (::sculk.isInitialized) sculk.close()
     }
@@ -160,7 +160,7 @@ public class EconomyPlugin : JavaPlugin() {
         sender: CommandSender,
         target: Player,
         amount: Long,
-        operation: (UUID, String, Long) -> SculkResult<EconomyAccount>,
+        operation: suspend (UUID, String, Long) -> SculkResult<EconomyAccount>,
         verb: String,
     ) {
         runAsync(sender) { operation(target.uniqueId, target.name, amount) }.sync { result ->
@@ -177,15 +177,15 @@ public class EconomyPlugin : JavaPlugin() {
 
     private fun <T> runAsync(
         sender: CommandSender,
-        block: () -> SculkResult<T>,
+        block: suspend () -> SculkResult<T>,
     ): AsyncReply<T> = AsyncReply(sender, block)
 
     private inner class AsyncReply<T>(
         private val sender: CommandSender,
-        private val block: () -> SculkResult<T>,
+        private val block: suspend () -> SculkResult<T>,
     ) {
         fun sync(consumer: CommandSender.(SculkResult<T>) -> Unit) {
-            sculk.scheduler.runAsync {
+            sculk.scope.launchAsync {
                 val result = block()
                 sculk.scheduler.runSync {
                     sender.consumer(result)

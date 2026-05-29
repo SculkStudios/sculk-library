@@ -3,36 +3,21 @@ title: Messaging
 description: MiniMessage-powered text helpers for sending messages, titles, action bars, and sounds to any Audience.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 Sculk Studio uses [Adventure's MiniMessage](https://docs.advntr.dev/minimessage/format.html) throughout. The `SculkMessenger` extension functions bring the same helpers to any `Audience` — players, console, or custom audiences — outside of a command or GUI handler.
 
 ## reply
 
 Sends a MiniMessage-formatted message.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 player.reply("<green>Hello, <white>${player.name}<green>!")
 console.reply("<gray>[Plugin] <white>Server starting…")
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-import static studio.sculk.core.adventure.SculkMessengerKt.reply;
-
-reply(player, "<green>Hello, <white>" + player.getName() + "<green>!");
-```
-</TabItem>
-</Tabs>
 
 ## title
 
 Sends a full-screen title with an optional subtitle and custom timing (in ticks).
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 player.title(
     title    = "<gold><bold>Round Over!",
@@ -42,15 +27,6 @@ player.title(
     fadeOut  = 20,   // 1 s
 )
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-import static studio.sculk.core.adventure.SculkMessengerKt.title;
-
-title(player, "<gold><bold>Round Over!", "<gray>Winner: <white>" + winnerName, 10, 60, 20);
-```
-</TabItem>
-</Tabs>
 
 20 ticks = 1 second. No-op when called on console.
 
@@ -58,20 +34,9 @@ title(player, "<gold><bold>Round Over!", "<gray>Winner: <white>" + winnerName, 1
 
 Sends a message above the hotbar. Clears automatically after a few seconds.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 player.actionbar("<yellow>⚔ Combo x${combo}!")
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-import static studio.sculk.core.adventure.SculkMessengerKt.actionbar;
-
-actionbar(player, "<yellow>⚔ Combo x" + combo + "!");
-```
-</TabItem>
-</Tabs>
 
 No-op when called on console.
 
@@ -79,59 +44,26 @@ No-op when called on console.
 
 Plays a Bukkit sound at the player's location.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 player.playSound(Sound.ENTITY_PLAYER_LEVELUP)
 player.playSound(Sound.BLOCK_NOTE_BLOCK_PLING, volume = 0.8f, pitch = 1.5f)
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-import static studio.sculk.core.adventure.SculkMessengerKt.playSound;
-
-playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-```
-</TabItem>
-</Tabs>
 
 ## broadcast
 
 Sends a MiniMessage-formatted message to **every player on the server and the console** as a proper Adventure `Component`. No legacy color codes — MiniMessage only.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 broadcast("<#A3E4A1>✔ <#FFD6A5>│ <#E5E5E5>Server is restarting in <#FF4C4C>60 seconds<#E5E5E5>!")
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-import static studio.sculk.core.adventure.SculkMessengerKt.broadcast;
-
-broadcast("<#A3E4A1>✔ <#FFD6A5>│ <#E5E5E5>Server is restarting in <#FF4C4C>60 seconds<#E5E5E5>!");
-```
-</TabItem>
-</Tabs>
 
 ## broadcastActionbar
 
 Sends a MiniMessage action bar message to **every online player** simultaneously.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 broadcastActionbar("<bold><#FF6F6F>⛓ Server event starting in 10 seconds!</#FF6F6F></bold>")
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-import static studio.sculk.core.adventure.SculkMessengerKt.broadcastActionbar;
-
-broadcastActionbar("<bold><#FF6F6F>⛓ Server event starting in 10 seconds!</#FF6F6F></bold>");
-```
-</TabItem>
-</Tabs>
 
 ## parseMessage
 

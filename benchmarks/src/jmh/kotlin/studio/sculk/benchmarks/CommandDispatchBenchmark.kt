@@ -1,10 +1,16 @@
 package studio.sculk.benchmarks
 
+import com.mojang.brigadier.CommandDispatcher
+import io.papermc.paper.command.brigadier.CommandSourceStack
+import org.bukkit.Location
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Entity
 import org.bukkit.permissions.Permission
 import org.bukkit.permissions.PermissionAttachment
 import org.bukkit.permissions.PermissionAttachmentInfo
 import org.bukkit.plugin.Plugin
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode
 import org.openjdk.jmh.annotations.Fork
@@ -16,10 +22,12 @@ import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.Warmup
+import studio.sculk.core.SculkHandle
 import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.command.CommandExecutor
-import studio.sculk.core.command.CommandNode
+import studio.sculk.core.command.brigadier.CommandCompiler
 import studio.sculk.core.command.command
+import studio.sculk.core.coroutine.SculkCoroutineScope
+import studio.sculk.core.scheduler.SculkScheduler
 import java.util.concurrent.TimeUnit
 
 /**
@@ -35,12 +43,12 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @OptIn(SculkInternal::class)
 public open class CommandDispatchBenchmark {
-    private lateinit var root: CommandNode
-    private val sender: CommandSender = NoopSender
+    private lateinit var dispatcher: CommandDispatcher<CommandSourceStack>
+    private lateinit var source: CommandSourceStack
 
     @Setup(Level.Trial)
     public fun setup() {
-        root =
+        val root =
             command("sculk") {
                 sub("ping") {
                     executes { /* no-op */ }
@@ -51,16 +59,65 @@ public open class CommandDispatchBenchmark {
                     executes { /* no-op */ }
                 }
             }.node
+        val compiler = CommandCompiler(SculkCoroutineScope(InlineScheduler()))
+        dispatcher = CommandDispatcher()
+        dispatcher.root.addChild(compiler.compile(root))
+        source = mock<CommandSourceStack>().also { whenever(it.sender).thenReturn(NoopSender) }
     }
 
     @Benchmark
-    public fun dispatchPing(): Unit = CommandExecutor.dispatch(root, sender, "sculk", arrayOf("ping"))
+    public fun dispatchPing(): Unit = run { dispatcher.execute("sculk ping", source) }
 
     @Benchmark
-    public fun dispatchGiveWithArgs(): Unit = CommandExecutor.dispatch(root, sender, "sculk", arrayOf("give", "Steve", "64"))
+    public fun dispatchGiveWithArgs(): Unit = run { dispatcher.execute("sculk give Steve 64", source) }
 
     @Benchmark
-    public fun dispatchUnknownSub(): Unit = CommandExecutor.dispatch(root, sender, "sculk", arrayOf("unknown"))
+    public fun dispatchUnknownSub(): Unit = runCatching { dispatcher.execute("sculk unknown", source) }.let { }
+}
+
+/** Scheduler that runs tasks inline — keeps benchmark dispatch synchronous. */
+private class InlineScheduler : SculkScheduler {
+    override fun runSync(task: Runnable): SculkHandle {
+        task.run()
+        return SculkHandle {}
+    }
+
+    override fun runSyncDelayed(
+        delayTicks: Long,
+        task: Runnable,
+    ): SculkHandle = runSync(task)
+
+    override fun runSyncRepeating(
+        delayTicks: Long,
+        periodTicks: Long,
+        task: Runnable,
+    ): SculkHandle = runSync(task)
+
+    override fun runSync(
+        entity: Entity,
+        task: Runnable,
+    ): SculkHandle = runSync(task)
+
+    override fun runSync(
+        location: Location,
+        task: Runnable,
+    ): SculkHandle = runSync(task)
+
+    override fun runAsync(task: Runnable): SculkHandle {
+        task.run()
+        return SculkHandle {}
+    }
+
+    override fun runAsyncDelayed(
+        delayTicks: Long,
+        task: Runnable,
+    ): SculkHandle = runAsync(task)
+
+    override fun runAsyncRepeating(
+        delayTicks: Long,
+        periodTicks: Long,
+        task: Runnable,
+    ): SculkHandle = runAsync(task)
 }
 
 /** Minimal CommandSender that discards all output — avoids Adventure overhead in benchmarks. */

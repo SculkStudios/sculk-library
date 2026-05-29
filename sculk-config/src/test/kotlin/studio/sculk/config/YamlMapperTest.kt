@@ -28,6 +28,31 @@ class YamlMapperTest {
         @param:NotEmpty val name: String = "hello",
     )
 
+    @ConfigFile("env.yml")
+    data class EnvConfig(
+        val message: String = "hi",
+    )
+
+    @Test
+    fun `env substitution uses default when variable is unset`(
+        @TempDir dir: File,
+    ) {
+        val file = File(dir, "env.yml")
+        file.writeText("message: \"\${SCULK_TEST_UNSET:-fallback}\"\n")
+
+        assertEquals("fallback", YamlMapper.load(file, EnvConfig::class).message)
+    }
+
+    @Test
+    fun `env substitution keeps placeholder when unset and no default`(
+        @TempDir dir: File,
+    ) {
+        val file = File(dir, "env.yml")
+        file.writeText("message: \"\${SCULK_TEST_UNSET}\"\n")
+
+        assertEquals("\${SCULK_TEST_UNSET}", YamlMapper.load(file, EnvConfig::class).message)
+    }
+
     @Test
     fun `load returns defaults when file does not exist`(
         @TempDir dir: File,

@@ -1,5 +1,6 @@
 package studio.sculk.benchmarks
 
+import kotlinx.coroutines.runBlocking
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode
 import org.openjdk.jmh.annotations.Fork
@@ -58,16 +59,16 @@ public open class CacheHitBenchmark {
         sculkData = SculkData.withDataSource(ds, SqlDialect.MYSQL)
 
         val repo = sculkData.repository<BenchPlayer, UUID>()
-        repo.save(BenchPlayer(warmId, score = 9999L))
-
         cachedRepo =
             sculkData.cached(repo, { it.id }) {
                 ttl = Duration.ofHours(1)
                 maxSize = 1000
             }
-
-        // Warm the cache — one DB call, then all subsequent reads hit Caffeine
-        cachedRepo.find(warmId)
+        runBlocking {
+            repo.save(BenchPlayer(warmId, score = 9999L))
+            // Warm the cache — one DB call, then all subsequent reads hit Caffeine
+            cachedRepo.find(warmId)
+        }
     }
 
     @TearDown(Level.Trial)
@@ -75,9 +76,9 @@ public open class CacheHitBenchmark {
 
     /** Should hit Caffeine; zero DB calls. */
     @Benchmark
-    public fun cacheHit(): SculkResult<BenchPlayer?> = cachedRepo.find(warmId)
+    public fun cacheHit(): SculkResult<BenchPlayer?> = runBlocking { cachedRepo.find(warmId) }
 
     /** Should miss cache and fall through to DB. */
     @Benchmark
-    public fun cacheMiss(): SculkResult<BenchPlayer?> = cachedRepo.find(UUID.randomUUID())
+    public fun cacheMiss(): SculkResult<BenchPlayer?> = runBlocking { cachedRepo.find(UUID.randomUUID()) }
 }

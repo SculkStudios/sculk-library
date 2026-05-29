@@ -1,10 +1,12 @@
 package studio.sculk.example
 
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import studio.sculk.core.SculkResult
-import studio.sculk.data.cache.SculkCache
+import studio.sculk.data.cache.CaffeineCache
+import studio.sculk.data.repository.QueryBuilder
 import studio.sculk.data.repository.SculkRepository
 import java.time.Duration
 import java.util.UUID
@@ -15,38 +17,38 @@ class KitServiceTest {
     private val service =
         KitService(
             settings = { KitSettings() },
-            cooldowns = SculkCache(repository, KitCooldown::id, Duration.ofMinutes(5), 100),
+            cooldowns = CaffeineCache(repository, KitCooldown::id, Duration.ofMinutes(5), 100),
             clock = { now },
         )
 
     @Test
-    fun `first claim is allowed`() {
-        val status = service.claimStatus(UUID.randomUUID(), "starter") as SculkResult.Success
-
-        assertTrue(status.value.allowed)
-    }
-
-    @Test
-    fun `claim is blocked during cooldown`() {
-        val uuid = UUID.randomUUID()
-        service.recordClaim(uuid, "starter")
-        now += 1_000
-
-        val status = service.claimStatus(uuid, "starter") as SculkResult.Success
-
-        assertTrue(!status.value.allowed)
-    }
+    fun `first claim is allowed`() =
+        runBlocking {
+            val status = service.claimStatus(UUID.randomUUID(), "starter") as SculkResult.Success
+            assertTrue(status.value.allowed)
+        }
 
     @Test
-    fun `claim is allowed after cooldown expires`() {
-        val uuid = UUID.randomUUID()
-        service.recordClaim(uuid, "starter")
-        now += 86_401_000
+    fun `claim is blocked during cooldown`() =
+        runBlocking {
+            val uuid = UUID.randomUUID()
+            service.recordClaim(uuid, "starter")
+            now += 1_000
 
-        val status = service.claimStatus(uuid, "starter") as SculkResult.Success
+            val status = service.claimStatus(uuid, "starter") as SculkResult.Success
+            assertTrue(!status.value.allowed)
+        }
 
-        assertTrue(status.value.allowed)
-    }
+    @Test
+    fun `claim is allowed after cooldown expires`() =
+        runBlocking {
+            val uuid = UUID.randomUUID()
+            service.recordClaim(uuid, "starter")
+            now += 86_401_000
+
+            val status = service.claimStatus(uuid, "starter") as SculkResult.Success
+            assertTrue(status.value.allowed)
+        }
 
     @Test
     fun `remaining time formats safely`() {
@@ -57,25 +59,28 @@ class KitServiceTest {
     private class MemoryRepository : SculkRepository<KitCooldown, String> {
         private val values = linkedMapOf<String, KitCooldown>()
 
-        override fun find(id: String): SculkResult<KitCooldown?> = SculkResult.success(values[id])
+        override suspend fun find(id: String): SculkResult<KitCooldown?> = SculkResult.success(values[id])
 
-        override fun findAll(): SculkResult<List<KitCooldown>> = SculkResult.success(values.values.toList())
+        override suspend fun findAll(): SculkResult<List<KitCooldown>> = SculkResult.success(values.values.toList())
 
-        override fun save(entity: KitCooldown): SculkResult<Unit> {
+        override suspend fun save(entity: KitCooldown): SculkResult<Unit> {
             values[entity.id] = entity.copy()
             return SculkResult.success(Unit)
         }
 
-        override fun delete(id: String): SculkResult<Unit> {
+        override suspend fun delete(id: String): SculkResult<Unit> {
             values.remove(id)
             return SculkResult.success(Unit)
         }
 
-        override fun exists(id: String): SculkResult<Boolean> = SculkResult.success(id in values)
+        override suspend fun exists(id: String): SculkResult<Boolean> = SculkResult.success(id in values)
 
-        override fun saveAll(entities: List<KitCooldown>): SculkResult<Unit> {
+        override suspend fun saveAll(entities: List<KitCooldown>): SculkResult<Unit> {
             entities.forEach { save(it) }
             return SculkResult.success(Unit)
         }
+
+        override suspend fun query(block: QueryBuilder<KitCooldown>.() -> Unit): SculkResult<List<KitCooldown>> =
+            SculkResult.success(values.values.toList())
     }
 }

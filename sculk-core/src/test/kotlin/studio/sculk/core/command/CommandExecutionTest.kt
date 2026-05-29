@@ -1,50 +1,59 @@
 package studio.sculk.core.command
 
+import com.mojang.brigadier.CommandDispatcher
+import com.mojang.brigadier.exceptions.CommandSyntaxException
+import io.papermc.paper.command.brigadier.CommandSourceStack
+import org.bukkit.Location
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import studio.sculk.core.SculkHandle
 import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.core.command.brigadier.CommandCompiler
+import studio.sculk.core.coroutine.SculkCoroutineScope
+import studio.sculk.core.scheduler.SculkScheduler
 import java.time.Duration
 import java.util.UUID
 
+/**
+ * Drives the compiled Brigadier tree through a real [CommandDispatcher] using an inline scheduler,
+ * so suspend executors run synchronously within the test.
+ */
 @OptIn(SculkInternal::class)
 class CommandExecutionTest {
     @Test
     fun `dispatch executes nested subcommand with parsed argument`() {
         var amount = 0
-        val sender = permittedSender()
         val root =
             command("coins") {
                 sub("give") {
                     int("amount", min = 1, max = 10)
-                    executes {
-                        amount = argument("amount")
-                    }
+                    executes { amount = argument("amount") }
                 }
             }.node
 
-        CommandExecutor.dispatch(root, sender, "coins", arrayOf("give", "7"))
+        execute(root, "coins give 7", permittedSender())
 
         assertEquals(7, amount)
     }
 
     @Test
-    fun `permission denial prevents execution`() {
+    fun `permission requirement prevents execution`() {
         var executed = false
         val sender = mock<CommandSender>()
         whenever(sender.hasPermission("coins.admin")).thenReturn(false)
-        whenever(sender.name).thenReturn("Console")
         val root =
             command("coins") {
                 permission = "coins.admin"
                 executes { executed = true }
             }.node
 
-        CommandExecutor.dispatch(root, sender, "coins", emptyArray())
-
+        assertThrows(CommandSyntaxException::class.java) { execute(root, "coins", sender) }
         assertEquals(false, executed)
     }
 
@@ -57,55 +66,40 @@ class CommandExecutionTest {
                 cooldown("ping", Duration.ofMinutes(1))
                 executes { executions++ }
             }.node
+        val dispatcher = dispatcherFor(root)
+        val source = sourceFor(sender)
 
-        CommandExecutor.dispatch(root, sender, "ping", emptyArray())
-        CommandExecutor.dispatch(root, sender, "ping", emptyArray())
+        dispatcher.execute("ping", source)
+        dispatcher.execute("ping", source)
 
         assertEquals(1, executions)
     }
 
     @Test
-    fun `optional argument rejects invalid provided value`() {
+    fun `invalid argument value rejects execution`() {
         var executions = 0
-        val sender = permittedSender()
         val root =
             command("limit") {
-                int("amount", optional = true, min = 1, max = 10)
+                int("amount", min = 1, max = 10)
                 executes { executions++ }
             }.node
 
-        CommandExecutor.dispatch(root, sender, "limit", arrayOf("wrong"))
-
+        assertThrows(CommandSyntaxException::class.java) { execute(root, "limit wrong", permittedSender()) }
         assertEquals(0, executions)
     }
 
     @Test
-    fun `permission aware help hides inaccessible subcommands`() {
-        val sender = mock<CommandSender>()
-        val messages = mutableListOf<String>()
-        whenever(sender.name).thenReturn("Console")
-        whenever(sender.hasPermission("coins.admin")).thenReturn(false)
-        whenever(sender.sendMessage(org.mockito.kotlin.any<net.kyori.adventure.text.Component>())).thenAnswer {
-            messages += it.arguments[0].toString()
-            Unit
-        }
+    fun `middleware can abort dispatch`() {
+        var executions = 0
         val root =
-            command("coins") {
-                sub("public") {
-                    description = "Visible command"
-                    executes {}
-                }
-                sub("admin") {
-                    permission = "coins.admin"
-                    description = "Hidden command"
-                    executes {}
-                }
+            command("guarded") {
+                middleware { false }
+                executes { executions++ }
             }.node
 
-        CommandExecutor.dispatch(root, sender, "coins", arrayOf("help"))
+        execute(root, "guarded", permittedSender())
 
-        assertEquals(true, messages.any { it.contains("public") })
-        assertEquals(false, messages.any { it.contains("admin") })
+        assertEquals(0, executions)
     }
 
     @Test
@@ -119,14 +113,83 @@ class CommandExecutionTest {
                 player { executions++ }
             }.node
 
-        CommandExecutor.dispatch(root, player, "profile", emptyArray())
+        execute(root, "profile", player)
 
         assertEquals(1, executions)
+    }
+
+    // --- helpers ---------------------------------------------------------------
+
+    private fun execute(
+        root: CommandNode,
+        input: String,
+        sender: CommandSender,
+    ) {
+        dispatcherFor(root).execute(input, sourceFor(sender))
+    }
+
+    private fun dispatcherFor(root: CommandNode): CommandDispatcher<CommandSourceStack> {
+        val compiler = CommandCompiler(SculkCoroutineScope(InlineScheduler()))
+        val dispatcher = CommandDispatcher<CommandSourceStack>()
+        dispatcher.root.addChild(compiler.compile(root))
+        return dispatcher
+    }
+
+    private fun sourceFor(sender: CommandSender): CommandSourceStack {
+        val source = mock<CommandSourceStack>()
+        whenever(source.sender).thenReturn(sender)
+        return source
     }
 
     private fun permittedSender(name: String = "Console"): CommandSender {
         val sender = mock<CommandSender>()
         whenever(sender.name).thenReturn(name)
+        whenever(sender.hasPermission(org.mockito.kotlin.any<String>())).thenReturn(true)
         return sender
+    }
+
+    /** Scheduler that runs tasks inline so coroutine dispatch is synchronous in tests. */
+    private class InlineScheduler : SculkScheduler {
+        override fun runSync(task: Runnable): SculkHandle {
+            task.run()
+            return SculkHandle {}
+        }
+
+        override fun runSyncDelayed(
+            delayTicks: Long,
+            task: Runnable,
+        ): SculkHandle = runSync(task)
+
+        override fun runSyncRepeating(
+            delayTicks: Long,
+            periodTicks: Long,
+            task: Runnable,
+        ): SculkHandle = runSync(task)
+
+        override fun runSync(
+            entity: Entity,
+            task: Runnable,
+        ): SculkHandle = runSync(task)
+
+        override fun runSync(
+            location: Location,
+            task: Runnable,
+        ): SculkHandle = runSync(task)
+
+        override fun runAsync(task: Runnable): SculkHandle {
+            task.run()
+            return SculkHandle {}
+        }
+
+        override fun runAsyncDelayed(
+            delayTicks: Long,
+            task: Runnable,
+        ): SculkHandle = runAsync(task)
+
+        override fun runAsyncRepeating(
+            delayTicks: Long,
+            periodTicks: Long,
+            task: Runnable,
+        ): SculkHandle = runAsync(task)
     }
 }

@@ -7,10 +7,12 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import studio.sculk.core.SculkHandle
 import studio.sculk.core.SculkResult
+import studio.sculk.core.coroutine.SculkCoroutineScope
 import studio.sculk.core.scheduler.SculkScheduler
 import studio.sculk.packets.SculkPacketService
 import studio.sculk.platform.command.SculkCommandBridge
 import studio.sculk.platform.event.SculkEventBus
+import studio.sculk.tasks.SculkTasks
 
 class SculkPlatformCloseTest {
     @Test
@@ -68,10 +70,13 @@ class SculkPlatformCloseTest {
         SculkPlatform(
             plugin = mock<JavaPlugin>(),
             scheduler = mock<SculkScheduler>(),
+            scope = mock<SculkCoroutineScope>(),
             events = mock<SculkEventBus>(),
+            tasks = mock<SculkTasks>(),
             commands = mock<SculkCommandBridge>(),
             configService = null,
             dataService = null,
+            textService = null,
             integrationService = null,
             packetServiceResult = packetResult,
             handles = handles,

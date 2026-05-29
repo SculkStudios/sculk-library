@@ -47,7 +47,6 @@ public class SoundBuilder private constructor(
          * ```
          */
         @SculkStable
-        @JvmStatic
         public fun of(type: Sound): SoundBuilder = SoundBuilder(type, null)
 
         /**
@@ -61,7 +60,6 @@ public class SoundBuilder private constructor(
          * ```
          */
         @SculkStable
-        @JvmStatic
         public fun ofKey(key: String): SoundBuilder = SoundBuilder(null, key)
     }
 

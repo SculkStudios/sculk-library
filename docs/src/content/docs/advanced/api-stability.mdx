@@ -3,8 +3,6 @@ title: API Stability
 description: Understanding @SculkStable, @SculkExperimental, and @SculkInternal — what you can depend on and what may change.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 Every public symbol in Sculk Studio carries one of three stability annotations. This system tells you exactly what you can safely depend on and what might change between releases — no surprises, no guessing.
 
 ## @SculkStable
@@ -31,8 +29,6 @@ The API exists and works, but its shape may change in a **minor** release. Exper
 
 To use them without a compiler warning, opt in at the call site:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // Single function opt-in
 @OptIn(SculkExperimental::class)
@@ -42,22 +38,9 @@ fun myAnimation(player: Player) {
     }.start(sculk.scheduler)
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-// Java — no opt-in annotation needed, but IDE may show a warning
-AnimationTimeline timeline = JavaTimeline.builder()
-    .at(0, () -> ParticleBuilder.of(Particle.FLAME)
-        .location(player.getLocation()).count(10).spawn())
-    .build();
-```
-</TabItem>
-</Tabs>
 
 Or suppress for an entire module via your build file:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // build.gradle.kts
 tasks.withType<KotlinCompile> {
@@ -66,13 +49,6 @@ tasks.withType<KotlinCompile> {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-// No build change needed for Java — opt-in annotations are Kotlin-only
-```
-</TabItem>
-</Tabs>
 
 ---
 
@@ -87,8 +63,6 @@ public class SculkCommandBridge { ... }
 
 The compiler enforces this: `@SculkInternal` is a `RequiresOptIn` at `Level.ERROR`. Your code will not compile if you use an internal symbol without explicitly opting in:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // build.gradle.kts — only do this if you genuinely need internal access
 tasks.withType<KotlinCompile> {
@@ -97,8 +71,6 @@ tasks.withType<KotlinCompile> {
     }
 }
 ```
-</TabItem>
-</Tabs>
 
 Only use `@SculkInternal` symbols if you are building tooling on top of Sculk Studio's internals and you accept that it may break without warning on any release.
 

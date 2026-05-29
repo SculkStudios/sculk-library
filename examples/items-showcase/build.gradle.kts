@@ -14,8 +14,8 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
+    // sculk-platform transitively re-exports the entire DSL (commands, GUI, items, config, data, …).
     implementation(project(":sculk-platform"))
-    implementation(project(":sculk-items"))
 }
 
 tasks.jar { enabled = false }

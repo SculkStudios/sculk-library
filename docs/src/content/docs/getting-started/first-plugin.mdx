@@ -3,69 +3,55 @@ title: Your First Plugin
 description: Build a minimal Sculk Studio plugin with a command and a GUI.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 ## Bootstrap
 
-Create a `JavaPlugin` subclass and initialise `SculkPlatform` in `onEnable`.
+The simplest way to start is to extend `SculkPlugin`. It creates the platform for you, exposes it as
+`sculk`, and closes it on disable — no `onEnable`/`onDisable` boilerplate.
 
-The builder block enables **optional systems** that need platform-level setup:
+The constructor block enables **optional systems** that need platform-level setup:
 - `gui()` — registers inventory click/close routing so GUI click handlers fire
 - `config()` — enables the typed config system (load, reload, callbacks)
 - `data()` — opens the database connection pool (SQLite by default)
+- `text()` — loads localization bundles from `lang/`
 
-**Commands don't need a builder call.** `sculk.commands` is always available — commands register directly into Paper's command map, no extra setup required.
+**Commands, events, the scheduler, and tasks are always available** — no builder call needed.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
-class MyPlugin : JavaPlugin() {
-    lateinit var sculk: SculkPlatform
-
-    override fun onEnable() {
-        sculk = SculkPlatform.create(this) {
-            gui()
-            config()
-        }
-
+class MyPlugin : SculkPlugin({ gui(); config() }) {
+    override fun setup() {
         sculk.commands.registerAll(
             greetCommand(),
             homeCommand(),
         )
     }
 
+    // Optional: flush/save before the platform closes.
+    override fun shutdown() {}
+}
+```
+
+That's the whole bootstrap. Put registration in `setup()` and any teardown in `shutdown()`.
+
+### Full control (manual)
+
+If you need to own the enable/disable sequence yourself, extend `JavaPlugin` and create the platform
+directly:
+
+```kotlin
+class MyPlugin : JavaPlugin() {
+    lateinit var sculk: SculkPlatform
+
+    override fun onEnable() {
+        sculk = SculkPlatform.create(this) { gui(); config() }
+        sculk.commands.registerAll(greetCommand(), homeCommand())
+    }
+
     override fun onDisable(): Unit = sculk.close()
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-public class MyPlugin extends JavaPlugin {
-    private SculkPlatform sculk;
-
-    @Override
-    public void onEnable() {
-        sculk = JavaSculkPlatform.create(this, cfg -> cfg.gui().config());
-
-        sculk.getCommands().registerAll(
-            GreetCommand.build(),
-            HomeCommand.build()
-        );
-    }
-
-    @Override
-    public void onDisable() {
-        sculk.close();
-    }
-}
-```
-</TabItem>
-</Tabs>
 
 ## A command in its own file
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // commands/GreetCommand.kt
 fun greetCommand() = command("greet") {
@@ -77,28 +63,9 @@ fun greetCommand() = command("greet") {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-// commands/GreetCommand.java
-public class GreetCommand {
-    public static CommandBuilder build() {
-        return JavaCommand.builder("greet")
-            .description("Greet the player.")
-            .permission("myplugin.greet")
-            .player(ctx -> ctx.reply(
-                "<green>Hey, <white>" + ctx.getPlayer().getName() + "<green>!"
-            ));
-    }
-}
-```
-</TabItem>
-</Tabs>
 
 ## A GUI in its own file
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // gui/MainMenu.kt
 val mainMenu = gui("<dark_aqua><bold>Main Menu") {
@@ -112,29 +79,9 @@ val mainMenu = gui("<dark_aqua><bold>Main Menu") {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-// gui/MainMenu.java
-public class MainMenu {
-    public static final Gui INSTANCE = JavaGui.builder("<dark_aqua><bold>Main Menu")
-        .size(27)
-        .item(13, item -> item
-            .material(Material.NETHER_STAR)
-            .name("<gold><bold>Settings")
-            .lore("<gray>Click to open settings.")
-            .onClick(ctx -> ctx.open(SettingsMenu.INSTANCE))
-        )
-        .build();
-}
-```
-</TabItem>
-</Tabs>
 
 ## Loading a config
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 @ConfigFile("settings.yml")
 data class Settings(
@@ -144,13 +91,6 @@ data class Settings(
 
 val settings = sculk.config.load<Settings>()
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-Settings settings = sculk.getConfig().load(Settings.class);
-```
-</TabItem>
-</Tabs>
 
 ## Next steps
 

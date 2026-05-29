@@ -19,8 +19,12 @@ tasks.withType<Test> {
     jvmArgs("-XX:+EnableDynamicAgentLoading")
 }
 
-// Gradle 9 requires the JUnit Platform launcher on the test runtime classpath explicitly.
 dependencies {
+    // Coroutines are the foundation of Sculk's async surface — available to every module.
+    // Version is kept in sync with gradle/libs.versions.toml.
+    "api"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+
+    // Gradle 9 requires the JUnit Platform launcher on the test runtime classpath explicitly.
     "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
 }
 

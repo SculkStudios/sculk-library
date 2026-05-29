@@ -3,7 +3,14 @@ title: Installation
 description: Add Sculk Studio to your Minecraft Paper plugin project via JitPack.
 ---
 
-Sculk Studio is distributed through [JitPack](https://jitpack.io). Install only the modules your plugin uses. `sculk-platform` wires lifecycle, commands, scheduler, GUI routing, config, data, integrations, and optional packet services, but packet backend adapters stay separate.
+Sculk Studio is distributed through [JitPack](https://jitpack.io). **One dependency is all you need:**
+`sculk-platform` transitively re-exports the entire DSL — commands, GUI, items, config, data, text,
+tasks, events, and scheduling. You do **not** add `sculk-items`, `sculk-config`, etc. separately.
+
+Worried about jar size? Don't be — `shadowJar { minimize() }` strips every class you don't use, so a
+plugin that only touches commands and GUIs ships a tiny jar even though `sculk-platform` pulls the
+full graph. Heavy optional pieces (MySQL driver, Redis, packet backends) are **not bundled** unless
+you opt in (see below).
 
 ## Gradle (Kotlin DSL)
 
@@ -31,12 +38,13 @@ plugins {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
 
-    implementation("com.github.SculkStudios.sculk-library:sculk-platform:3.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-items:3.0.0")
+    // The only dependency you need — re-exports the whole DSL.
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
 }
 
 tasks.shadowJar {
     archiveClassifier = ""
+    minimize()  // strip unused classes — keeps the shaded jar small
     relocate("studio.sculk", "your.plugin.name.libs.sculk")
 }
 ```
@@ -63,12 +71,12 @@ plugins {
 
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:26.1.2.build.+'
-    implementation 'com.github.SculkStudios.sculk-library:sculk-platform:3.0.0'
-    implementation 'com.github.SculkStudios.sculk-library:sculk-items:3.0.0'
+    implementation 'com.github.SculkStudios.sculk-library:sculk-platform:4.0.0'
 }
 
 shadowJar {
     archiveClassifier = ''
+    minimize()
     relocate 'studio.sculk', 'your.plugin.name.libs.sculk'
 }
 ```
@@ -91,6 +99,39 @@ main: com.example.myplugin.MyPlugin
 api-version: '26.1.2'
 ```
 
+## Jar size & `minimize()`
+
+`sculk-platform` pulls a broad dependency graph, but `shadowJar { minimize() }` removes every class
+your plugin never references, so your output jar only contains what you actually use.
+
+**Caveat:** `minimize()` strips classes that are only loaded by reflection or by name — which
+includes the bundled **SQLite driver**. If your plugin uses the data layer (`data()`), keep the
+driver:
+
+```kotlin
+tasks.shadowJar {
+    minimize {
+        exclude(dependency("org.xerial:sqlite-jdbc:.*")) // loaded by class name at runtime
+    }
+}
+```
+
+If you don't use `data()` at all, plain `minimize()` is fine — the whole data layer is stripped.
+
+## Opt-in heavy dependencies
+
+These are **not bundled** to keep jars small. Add them only when you use the feature:
+
+```kotlin
+dependencies {
+    // MySQL/MariaDB storage (default backend is SQLite, already bundled)
+    runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+
+    // Redis distributed cache (data.distributedCache)
+    implementation("io.lettuce:lettuce-core:6.7.1.RELEASE")
+}
+```
+
 ## Optional packet modules
 
 Packet support is intentionally separate so normal plugins stay small. Sculk does not bundle PacketEvents or ProtocolLib.
@@ -99,8 +140,8 @@ PacketEvents path:
 
 ```kotlin
 dependencies {
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:3.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:3.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:4.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:4.0.0")
 }
 ```
 
@@ -108,8 +149,8 @@ ProtocolLib path:
 
 ```kotlin
 dependencies {
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:3.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-protocollib:3.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:4.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-protocollib:4.0.0")
 }
 ```
 
@@ -134,18 +175,12 @@ softdepend:
 After adding the dependency, create a minimal plugin class and confirm it compiles:
 
 ```kotlin
-import studio.sculk.platform.SculkPlatform
-import org.bukkit.plugin.java.JavaPlugin
+import studio.sculk.platform.SculkPlugin
 
-class MyPlugin : JavaPlugin() {
-    lateinit var sculk: SculkPlatform
-
-    override fun onEnable() {
-        sculk = SculkPlatform.create(this) {}
+class MyPlugin : SculkPlugin() {
+    override fun setup() {
         logger.info("Sculk Studio loaded.")
     }
-
-    override fun onDisable(): Unit = sculk.close()
 }
 ```
 

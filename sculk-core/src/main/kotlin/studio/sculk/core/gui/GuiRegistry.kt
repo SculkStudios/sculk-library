@@ -4,6 +4,7 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.core.coroutine.SculkCoroutineScope
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -30,14 +31,19 @@ public object GuiRegistry {
     /** True when running on Folia or a Folia fork (e.g. Canvas). Set by [SculkPlatform] on bootstrap. */
     @Volatile internal var isFolia: Boolean = false
 
-    /** Called once from [SculkPlatformBuilder.build] to wire up Folia-aware dispatch. */
+    /** The platform coroutine scope, used to drive GUI slot animations. Set by [SculkPlatform]. */
+    @Volatile internal var scope: SculkCoroutineScope? = null
+
+    /** Called once from [SculkPlatformBuilder.build] to wire up Folia-aware dispatch and animations. */
     @SculkInternal
     public fun init(
         plugin: JavaPlugin,
         isFolia: Boolean,
+        scope: SculkCoroutineScope? = null,
     ) {
         this.plugin = plugin
         this.isFolia = isFolia
+        this.scope = scope
     }
 
     /** Registers a [session] + [inventory] pair for [player]. */

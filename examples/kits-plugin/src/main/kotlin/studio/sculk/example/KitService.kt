@@ -1,7 +1,6 @@
 package studio.sculk.example
 
 import studio.sculk.core.SculkResult
-import studio.sculk.core.flatMap
 import studio.sculk.data.cache.SculkCache
 import studio.sculk.items.ItemDescriptor
 import java.util.UUID
@@ -24,23 +23,27 @@ public class KitService(
             }
         }
 
-    public fun claimStatus(
+    public suspend fun claimStatus(
         uuid: UUID,
         kitId: String,
-    ): SculkResult<KitClaimStatus> =
-        kit(kitId).flatMap { kit ->
-            cooldowns.find(cooldownId(uuid, kitId)).mapStatus { cooldown ->
-                if (cooldown == null) {
-                    KitClaimStatus(true, 0)
-                } else {
-                    val expiresAt = cooldown.lastClaimedAt + kit.cooldownSeconds * 1000L
-                    val remaining = (expiresAt - clock()).coerceAtLeast(0)
-                    KitClaimStatus(remaining == 0L, remaining)
-                }
+    ): SculkResult<KitClaimStatus> {
+        val kit =
+            when (val result = kit(kitId)) {
+                is SculkResult.Success -> result.value
+                is SculkResult.Failure -> return result
+            }
+        return cooldowns.find(cooldownId(uuid, kitId)).mapStatus { cooldown ->
+            if (cooldown == null) {
+                KitClaimStatus(true, 0)
+            } else {
+                val expiresAt = cooldown.lastClaimedAt + kit.cooldownSeconds * 1000L
+                val remaining = (expiresAt - clock()).coerceAtLeast(0)
+                KitClaimStatus(remaining == 0L, remaining)
             }
         }
+    }
 
-    public fun recordClaim(
+    public suspend fun recordClaim(
         uuid: UUID,
         kitId: String,
     ): SculkResult<Unit> =
