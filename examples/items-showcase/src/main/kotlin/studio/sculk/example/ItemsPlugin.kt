@@ -2,6 +2,7 @@ package studio.sculk.example
 
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
+import org.bukkit.inventory.ItemRarity
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.command.command
 import studio.sculk.items.ItemDescriptor
@@ -43,6 +44,13 @@ public class ItemsPlugin : JavaPlugin() {
                     }
                 }
 
+                sub("apple") {
+                    player {
+                        player!!.inventory.addItem(healingApple())
+                        reply("<green>Created a component-based healing apple.")
+                    }
+                }
+
                 sub("config") {
                     player {
                         val descriptor =
@@ -73,6 +81,19 @@ public class ItemsPlugin : JavaPlugin() {
             glint()
             unbreakable()
             customModelData(1001)
+            rarity(ItemRarity.EPIC)
+            maxStackSize(1)
             pdc("starter_item", true)
+        }
+
+    // Demonstrates the modern data-component surface: the generic component() escape hatch
+    // reaches any component (here FOOD) that has no dedicated DSL method.
+    private fun healingApple() =
+        item(Material.GOLDEN_APPLE) {
+            name("<gold>Healing Apple")
+            itemName("<gray>Apple")
+            lore("<gray>Restores health on eat.")
+            rarity(ItemRarity.RARE)
+            food(nutrition = 8, saturation = 6f, canAlwaysEat = true)
         }
 }

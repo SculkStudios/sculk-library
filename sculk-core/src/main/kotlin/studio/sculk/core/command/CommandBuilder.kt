@@ -90,7 +90,7 @@ public class CommandBuilder
          * The [CommandContext.player] property is guaranteed non-null inside this block.
          * Console senders are automatically rejected with an error message.
          */
-        public fun player(block: CommandContext.() -> Unit) {
+        public fun player(block: suspend CommandContext.() -> Unit) {
             node.playerExecutor = block
         }
 
@@ -99,7 +99,7 @@ public class CommandBuilder
          *
          * Player senders are automatically rejected with an error message.
          */
-        public fun console(block: CommandContext.() -> Unit) {
+        public fun console(block: suspend CommandContext.() -> Unit) {
             node.consoleExecutor = block
         }
 
@@ -109,7 +109,7 @@ public class CommandBuilder
          * Use when the command behaviour is identical for all senders.
          * Prefer [player] or [console] for sender-specific logic.
          */
-        public fun executes(block: CommandContext.() -> Unit) {
+        public fun executes(block: suspend CommandContext.() -> Unit) {
             node.anyExecutor = block
         }
 
@@ -119,6 +119,25 @@ public class CommandBuilder
             duration: Duration,
         ) {
             node.cooldown = CooldownDefinition(key, duration.toMillis())
+        }
+
+        /**
+         * Adds a pre-execution filter. Filters run in registration order before the
+         * executor; returning `false` aborts dispatch. The filter should message the
+         * sender when it rejects.
+         *
+         * ```kotlin
+         * command("admin") {
+         *     middleware { ctx ->
+         *         logger.info("${ctx.sender.name} ran /admin")
+         *         true
+         *     }
+         *     executes { reply("<green>ok") }
+         * }
+         * ```
+         */
+        public fun middleware(block: suspend (CommandContext) -> Boolean) {
+            node.middleware += block
         }
 
         // -----------------------------------------------------------------------

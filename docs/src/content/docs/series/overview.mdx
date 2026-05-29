@@ -3,8 +3,6 @@ title: Series Overview
 description: Registry-backed lookup helpers for modern Paper keys.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 `sculk-series` resolves string keys into Paper/Bukkit registry values. It is useful when keys come from config files, messages, command arguments, or data stores.
 
 It is intentionally narrower than XSeries. It does not ship a full historical alias database for every renamed material, sound, potion, or particle. Unknown keys return `null` so your plugin can choose a fallback or disable a feature cleanly.
@@ -20,8 +18,6 @@ It is intentionally narrower than XSeries. It does not ship a full historical al
 
 ## Basic usage
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 val sword = SculkSeries.material("diamond_sword")
 val levelUp = SculkSeries.sound("minecraft:entity.player.levelup")
@@ -31,19 +27,6 @@ val zombie = SculkSeries.entityType("zombie")
 val speed = SculkSeries.potionEffect("speed")
 val plains = SculkSeries.biome("plains")
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-Material sword = SculkSeries.material("diamond_sword");
-Sound levelUp = SculkSeries.sound("minecraft:entity.player.levelup");
-Particle flame = SculkSeries.particle("flame");
-Enchantment sharpness = SculkSeries.enchantment("sharpness");
-EntityType zombie = SculkSeries.entityType("zombie");
-PotionEffectType speed = SculkSeries.potionEffect("speed");
-Biome plains = SculkSeries.biome("plains");
-```
-</TabItem>
-</Tabs>
 
 ## Null-safe fallback
 

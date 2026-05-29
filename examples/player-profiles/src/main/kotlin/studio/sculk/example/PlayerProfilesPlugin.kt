@@ -39,7 +39,7 @@ public class PlayerProfilesPlugin : JavaPlugin() {
 
         sculk.events.listen<PlayerJoinEvent> { event ->
             val player = event.player
-            sculk.scheduler.runAsync {
+            sculk.scope.launchAsync {
                 val result = profiles.loadForJoin(player.uniqueId, player.name)
                 sculk.scheduler.runSync(player) {
                     when (result) {
@@ -52,7 +52,7 @@ public class PlayerProfilesPlugin : JavaPlugin() {
 
         sculk.events.listen<PlayerQuitEvent> { event ->
             val uuid = event.player.uniqueId
-            sculk.scheduler.runAsync {
+            sculk.scope.launchAsync {
                 profiles.saveAndUnload(uuid).logFailure("Failed to save profile $uuid")
             }
         }
@@ -61,7 +61,9 @@ public class PlayerProfilesPlugin : JavaPlugin() {
     }
 
     override fun onDisable() {
-        if (::profiles.isInitialized) profiles.flushLoaded().logFailure("Failed to flush loaded profiles")
+        if (::profiles.isInitialized) {
+            kotlinx.coroutines.runBlocking { profiles.flushLoaded().logFailure("Failed to flush loaded profiles") }
+        }
         if (::sculk.isInitialized) sculk.close()
     }
 
@@ -89,7 +91,7 @@ public class PlayerProfilesPlugin : JavaPlugin() {
         sender: CommandSender,
         target: Player,
     ) {
-        sculk.scheduler.runAsync {
+        sculk.scope.launchAsync {
             val result = profiles.profile(target.uniqueId, target.name)
             sculk.scheduler.runSync(target) {
                 when (result) {

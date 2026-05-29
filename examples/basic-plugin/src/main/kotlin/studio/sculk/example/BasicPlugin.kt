@@ -2,21 +2,16 @@ package studio.sculk.example
 
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.command.command
 import studio.sculk.core.gui.gui
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 
-public class BasicPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
-
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                gui()
-                config()
-            }
-
+public class BasicPlugin :
+    SculkPlugin({
+        gui()
+        config()
+    }) {
+    override fun setup() {
         sculk.commands.register(
             command("hello") {
                 description = "Say hello and open a demo GUI."
@@ -29,8 +24,6 @@ public class BasicPlugin : JavaPlugin() {
             },
         )
     }
-
-    override fun onDisable(): Unit = sculk.close()
 }
 
 private fun openDemoGui(player: Player) {

@@ -35,6 +35,9 @@ public class SculkConfigManager<T : Any>
                 "Config class ${klass.simpleName} must be annotated with @ConfigFile."
             }
 
+        /** The configured file path (relative to the data folder) for this config. */
+        public val configPath: String get() = path
+
         private val file: File get() = File(dataFolder, path)
         private var current: T = loadOrDefault()
         private val reloadCallbacks: MutableList<() -> Unit> = mutableListOf()

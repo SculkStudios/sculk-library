@@ -41,7 +41,6 @@ public data class MinecraftVersion(
          *
          * @throws IllegalArgumentException when [value] is not a supported version string.
          */
-        @JvmStatic
         public fun parse(value: String): MinecraftVersion {
             val input = value.trim()
             val match =

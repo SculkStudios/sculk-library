@@ -1,0 +1,54 @@
+---
+title: Localization
+description: Per-player localized messages with YAML bundles, MiniMessage templates, placeholders, and pluralization.
+---
+
+The `sculk-text` module resolves messages in each player's client language. Enable it with `text()`
+and access it via `sculk.text`.
+
+```kotlin
+sculk = SculkPlatform.create(this) {
+    text()
+}
+```
+
+## Message bundles
+
+Bundles live in `<dataFolder>/lang/<language>.yml` as flat `key: "<minimessage>"` entries:
+
+```yaml
+# lang/en.yml
+welcome: "<green>Welcome, <name>!"
+apples:
+  one: "<count> apple"
+  other: "<count> apples"
+```
+
+```yaml
+# lang/es.yml
+welcome: "<green>Bienvenido, <name>!"
+```
+
+## Sending messages
+
+Messages resolve in the player's language, falling back to the default language and finally to the
+key itself. Placeholders use MiniMessage tag style (`<name>`):
+
+```kotlin
+sculk.text.send(player, "welcome", "name" to player.name)
+
+val component = sculk.text.component(player, "welcome", "name" to player.name)
+```
+
+## Pluralization
+
+`plural(player, key, count)` returns a Component, picking `key.one` / `key.other` and substituting
+`<count>`:
+
+```kotlin
+player.sendMessage(sculk.text.plural(player, "apples", count = 3))  // "3 apples"
+```
+
+## Reloading
+
+`sculk.text.reload()` re-reads every bundle from disk — wire it into your reload command.

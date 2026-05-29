@@ -3,8 +3,6 @@ title: Folia & Canvas
 description: Running Sculk Studio plugins on Folia and Canvas MC with explicit scheduler choices.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 Sculk Studio includes scheduler adapters for [Folia](https://papermc.io/software/folia) and its forks, including [Canvas MC](https://canvasmc.io). You still need to choose the right scheduler context for the work being done: async for IO, entity/location sync for Paper world and player APIs.
 
 ## What Folia changes
@@ -48,32 +46,17 @@ Without this flag your plugin will not start on Folia regardless of whether the 
 
 When your task operates on a specific player or world position, use the entity/location overloads. On Folia these dispatch to the correct region thread. On Paper they behave identically to `runSync`.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // After a DB query, update a player's inventory on their region thread
-sculk.scheduler.runAsync {
-    val result = repo.find(player.uniqueId)
+sculk.scope.launchAsync {
+    val result = repo.find(player.uniqueId)   // suspends off-thread
 
     // runSync(player) — entity scheduler on Folia, global sync on Paper
     sculk.scheduler.runSync(player) {
-        player.sendMessage("<yellow>Coins: ${result.getOrNull()?.coins}")
+        player.sendRichMessage("<yellow>Coins: ${result.getOrNull()?.coins}")
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-sculk.getScheduler().runAsync(() -> {
-    SculkResult<PlayerData> result = repo.find(player.getUniqueId());
-
-    sculk.getScheduler().runSync(player, () ->
-        player.sendMessage("<yellow>Coins: " + result.getOrNull().coins())
-    );
-});
-```
-</TabItem>
-</Tabs>
 
 ### `runAsync` — unchanged
 

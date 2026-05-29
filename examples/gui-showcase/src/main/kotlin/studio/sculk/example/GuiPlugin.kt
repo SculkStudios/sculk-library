@@ -34,6 +34,10 @@ public class GuiPlugin : JavaPlugin() {
                     session.setEntries(shopItems())
                 }
             },
+            command("deposit") {
+                description = "Open an interactive deposit box."
+                player { depositBox.openFor(player!!) }
+            },
         )
     }
 
@@ -79,9 +83,44 @@ private val mainMenu: Gui =
             material = Material.BARRIER
             name = "<red><bold>Close"
             lore("<gray>Close this menu.")
-            onClick {
+            onLeftClick {
                 close()
                 player.playSound(Sound.BLOCK_CHEST_CLOSE)
+            }
+            onRightClick { actionbar("<gray>Right-click does nothing here.") }
+        }
+
+        // Animated banner — cycles wool colours every half-second while the menu is open.
+        item(22) {
+            name = "<rainbow>Sculk Studio"
+            animate(intervalTicks = 10) {
+                frame(Material.RED_WOOL)
+                frame(Material.YELLOW_WOOL)
+                frame(Material.GREEN_WOOL)
+                frame(Material.BLUE_WOOL)
+            }
+        }
+    }
+
+// ---------------------------------------------------------------------------
+// Deposit box — a hopper-shaped GUI with interactive input slots
+// ---------------------------------------------------------------------------
+
+private val depositBox: Gui =
+    gui("<gold>Deposit Box") {
+        type = org.bukkit.event.inventory.InventoryType.HOPPER
+        // Lock the two ends as decoration; leave the middle three as interactive input slots.
+        item(0) {
+            material = Material.GRAY_STAINED_GLASS_PANE
+            name = "<gray> "
+        }
+        item(4) {
+            material = Material.GRAY_STAINED_GLASS_PANE
+            name = "<gray> "
+        }
+        for (slot in 1..3) {
+            item(slot) {
+                interactive()
             }
         }
     }

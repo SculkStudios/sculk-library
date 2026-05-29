@@ -3,31 +3,58 @@ package studio.sculk.data.cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import studio.sculk.core.SculkResult
 import studio.sculk.core.annotation.SculkStable
+import studio.sculk.data.repository.QueryBuilder
 import studio.sculk.data.repository.SculkRepository
 import java.time.Duration
 
 /**
- * A [SculkRepository] wrapper that caches lookup results using Caffeine.
+ * A caching [SculkRepository] that fronts a delegate repository.
  *
- * Cache hits bypass the underlying repository entirely. Mutations (save, delete)
- * invalidate the affected entry.
+ * Primary-key lookups are served from the cache; mutations write through to the delegate and update
+ * the cache. Two implementations are provided:
+ * - [CaffeineCache] — in-process, single-server (the default via [studio.sculk.data.SculkData.cached]).
+ * - [studio.sculk.data.cache.RedisCache] — distributed across servers, for networks sharing player data.
  *
- * Example:
- * ```kotlin
- * val cached = sculk.data.cached<PlayerData, UUID> {
- *     ttl     = Duration.ofMinutes(10)
- *     maxSize = 500
- *     loader  { uuid -> repo.find(uuid) }
- * }
- * ```
+ * Both expose the same surface, so swapping backends never changes call sites.
  */
 @SculkStable
-public class SculkCache<T : Any, ID : Any>(
+public interface SculkCache<T : Any, ID : Any> : SculkRepository<T, ID> {
+    /** Returns the cached/stored entity for [id], creating and persisting one via [factory] if absent. */
+    @SculkStable
+    public suspend fun findOrCreate(
+        id: ID,
+        factory: () -> T,
+    ): SculkResult<T>
+
+    /** Returns the top [limit] entities sorted by [selector]. Always reads through to the delegate. */
+    @SculkStable
+    public suspend fun <R : Comparable<R>> findTopBy(
+        limit: Int,
+        selector: (T) -> R,
+        descending: Boolean = true,
+    ): SculkResult<List<T>>
+
+    /** Removes the cached entry for [id] without touching the delegate. */
+    @SculkStable
+    public suspend fun invalidate(id: ID)
+
+    /** Clears all cached entries without touching the delegate. */
+    @SculkStable
+    public suspend fun invalidateAll()
+}
+
+/**
+ * In-process [SculkCache] backed by Caffeine.
+ *
+ * Cache hits bypass the delegate entirely; mutations write through and refresh the cache.
+ */
+@SculkStable
+public class CaffeineCache<T : Any, ID : Any>(
     private val delegate: SculkRepository<T, ID>,
     private val idExtractor: (T) -> ID,
     ttl: Duration,
     maxSize: Long,
-) : SculkRepository<T, ID> {
+) : SculkCache<T, ID> {
     private val cache =
         Caffeine
             .newBuilder()
@@ -35,124 +62,86 @@ public class SculkCache<T : Any, ID : Any>(
             .maximumSize(maxSize)
             .build<ID, T?>()
 
-    override fun find(id: ID): SculkResult<T?> {
-        val cached = cache.getIfPresent(id)
-        if (cached != null) return SculkResult.success(cached)
-        // Null in Caffeine is treated as "absent" — we only cache non-null hits.
+    override suspend fun find(id: ID): SculkResult<T?> {
+        cache.getIfPresent(id)?.let { return SculkResult.success(it) }
         val result = delegate.find(id)
         if (result is SculkResult.Success) {
-            val v = result.value
-            if (v != null) cache.put(id, v)
+            result.value?.let { cache.put(id, it) }
         }
         return result
     }
 
-    override fun findAll(): SculkResult<List<T>> = delegate.findAll()
+    override suspend fun findAll(): SculkResult<List<T>> = delegate.findAll()
 
-    override fun save(entity: T): SculkResult<Unit> {
+    override suspend fun save(entity: T): SculkResult<Unit> {
         val result = delegate.save(entity)
-        if (result is SculkResult.Success) {
-            cache.put(idExtractor(entity), entity)
-        }
+        if (result is SculkResult.Success) cache.put(idExtractor(entity), entity)
         return result
     }
 
-    override fun delete(id: ID): SculkResult<Unit> {
+    override suspend fun delete(id: ID): SculkResult<Unit> {
         val result = delegate.delete(id)
-        if (result is SculkResult.Success) {
-            cache.invalidate(id)
-        }
+        if (result is SculkResult.Success) cache.invalidate(id)
         return result
     }
 
-    override fun exists(id: ID): SculkResult<Boolean> {
+    override suspend fun exists(id: ID): SculkResult<Boolean> {
         if (cache.getIfPresent(id) != null) return SculkResult.success(true)
         return delegate.exists(id)
     }
 
-    override fun saveAll(entities: List<T>): SculkResult<Unit> {
+    override suspend fun saveAll(entities: List<T>): SculkResult<Unit> {
         val result = delegate.saveAll(entities)
-        if (result is SculkResult.Success) {
-            entities.forEach { cache.put(idExtractor(it), it) }
-        }
+        if (result is SculkResult.Success) entities.forEach { cache.put(idExtractor(it), it) }
         return result
     }
 
-    /**
-     * Returns the cached entity for [id], or creates and persists a new one via [factory]
-     * if it doesn't exist in the cache or the database.
-     *
-     * The factory is only called when no record is found — ideal for first-join player data:
-     * ```kotlin
-     * val health = healthCache.findOrCreate(player.uniqueId) {
-     *     PlayerHealth(uuid = player.uniqueId, hearts = 10)
-     * }
-     * ```
-     */
-    @SculkStable
-    public fun findOrCreate(
+    override suspend fun query(block: QueryBuilder<T>.() -> Unit): SculkResult<List<T>> = delegate.query(block)
+
+    override suspend fun findOrCreate(
         id: ID,
         factory: () -> T,
     ): SculkResult<T> {
-        val cached = cache.getIfPresent(id)
-        if (cached != null) return SculkResult.success(cached)
+        cache.getIfPresent(id)?.let { return SculkResult.success(it) }
 
         val found = delegate.find(id)
         if (found is SculkResult.Success) {
-            val value = found.value
-            if (value != null) {
-                cache.put(id, value)
-                return SculkResult.success(value)
+            found.value?.let {
+                cache.put(id, it)
+                return SculkResult.success(it)
             }
         }
 
         val new = factory()
-        val saved = delegate.save(new)
-        return if (saved is SculkResult.Success) {
-            cache.put(id, new)
-            SculkResult.success(new)
-        } else {
-            SculkResult.failure("findOrCreate: failed to persist new entity for id $id")
+        return when (val saved = delegate.save(new)) {
+            is SculkResult.Success -> {
+                cache.put(id, new)
+                SculkResult.success(new)
+            }
+            is SculkResult.Failure -> SculkResult.failure("findOrCreate: failed to persist new entity for id $id", saved.cause)
         }
     }
 
-    /**
-     * Returns the top [limit] entities from the underlying repository, sorted by [selector].
-     *
-     * Always hits the database — bypasses the cache so leaderboards are always fresh.
-     * Sort is done in-memory after [findAll]. For huge tables, consider a dedicated
-     * raw SQL query instead.
-     *
-     * ```kotlin
-     * val topShards = shardsCache.findTopBy(10, { it.shards })
-     * ```
-     */
-    @SculkStable
-    public fun <R : Comparable<R>> findTopBy(
+    override suspend fun <R : Comparable<R>> findTopBy(
         limit: Int,
         selector: (T) -> R,
-        descending: Boolean = true,
-    ): SculkResult<List<T>> {
-        val all = delegate.findAll()
-        if (all is SculkResult.Failure) return SculkResult.failure(all.message, all.cause)
-        val sorted =
-            if (descending) {
-                (all as SculkResult.Success).value.sortedByDescending(selector)
-            } else {
-                (all as SculkResult.Success).value.sortedBy(selector)
+        descending: Boolean,
+    ): SculkResult<List<T>> =
+        when (val all = delegate.findAll()) {
+            is SculkResult.Failure -> SculkResult.failure(all.message, all.cause)
+            is SculkResult.Success -> {
+                val sorted = if (descending) all.value.sortedByDescending(selector) else all.value.sortedBy(selector)
+                SculkResult.success(sorted.take(limit))
             }
-        return SculkResult.success(sorted.take(limit))
-    }
+        }
 
-    /** Removes all entries from the in-memory cache without touching the database. */
-    @SculkStable
-    public fun invalidateAll() {
-        cache.invalidateAll()
-    }
+    override suspend fun invalidate(id: ID): Unit = cache.invalidate(id)
+
+    override suspend fun invalidateAll(): Unit = cache.invalidateAll()
 }
 
 /**
- * DSL builder for [SculkCache].
+ * DSL builder for a [CaffeineCache].
  */
 @SculkStable
 public class CacheBuilder<T : Any, ID : Any>(
@@ -165,5 +154,5 @@ public class CacheBuilder<T : Any, ID : Any>(
     /** Maximum number of entries held in the cache. */
     public var maxSize: Long = 500
 
-    internal fun build(): SculkCache<T, ID> = SculkCache(delegate, idExtractor, ttl, maxSize)
+    internal fun build(): CaffeineCache<T, ID> = CaffeineCache(delegate, idExtractor, ttl, maxSize)
 }

@@ -2,6 +2,7 @@ package studio.sculk.core.gui
 
 import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.event.inventory.ClickType
 import org.bukkit.inventory.ItemStack
 import studio.sculk.core.annotation.SculkInternal
 import studio.sculk.core.annotation.SculkStable
@@ -24,6 +25,13 @@ public class GuiItem
         @SculkInternal public val clickHandler: (GuiContext.() -> Unit)?,
         /** Optional per-player builder that overrides [stack] when the GUI opens. */
         @SculkInternal public val dynamicBuilder: (GuiItemBuilder.(Player) -> Unit)?,
+        @SculkInternal public val leftClickHandler: (GuiContext.() -> Unit)? = null,
+        @SculkInternal public val rightClickHandler: (GuiContext.() -> Unit)? = null,
+        @SculkInternal public val shiftClickHandler: (GuiContext.() -> Unit)? = null,
+        /** When true, the player may freely take from / place into this slot (input slots). */
+        @SculkInternal public val interactive: Boolean = false,
+        /** Optional animation that cycles this slot's stack while the GUI is open. */
+        @SculkInternal public val animation: GuiAnimation? = null,
     ) {
         /**
          * Returns the [ItemStack] to display for [player].
@@ -41,7 +49,29 @@ public class GuiItem
             dynamicBuilder.invoke(itemBuilder, player)
             return itemBuilder.build().stack
         }
+
+        /**
+         * Resolves the most specific click handler for [clickType], falling back to the
+         * general [clickHandler]. Returns null if no handler applies.
+         */
+        @SculkInternal
+        public fun resolveHandler(clickType: ClickType): (GuiContext.() -> Unit)? =
+            when {
+                clickType.isShiftClick && shiftClickHandler != null -> shiftClickHandler
+                clickType.isLeftClick && leftClickHandler != null -> leftClickHandler
+                clickType.isRightClick && rightClickHandler != null -> rightClickHandler
+                else -> clickHandler
+            }
     }
+
+/** A looping animation for a GUI slot — [frames] are shown in order every [intervalTicks] ticks. */
+@SculkStable
+public class GuiAnimation
+    @SculkInternal
+    constructor(
+        public val frames: List<ItemStack>,
+        public val intervalTicks: Long,
+    )
 
 /**
  * DSL builder for a [GuiItem].
@@ -91,13 +121,66 @@ public class GuiItemBuilder
 
         private val enchantments: MutableMap<String, Int> = mutableMapOf()
         private var clickHandler: (GuiContext.() -> Unit)? = null
+        private var leftClickHandler: (GuiContext.() -> Unit)? = null
+        private var rightClickHandler: (GuiContext.() -> Unit)? = null
+        private var shiftClickHandler: (GuiContext.() -> Unit)? = null
+        private var interactive: Boolean = false
+        private var animation: GuiAnimation? = null
         private var dynamicBuilder: (GuiItemBuilder.(Player) -> Unit)? = null
         private var stackBuilder: (ItemBuilder.() -> Unit)? = null
         private var explicitStack: ItemStack? = null
 
-        /** Registers a click handler for this item. */
+        /** Registers a click handler for this item (any click type). */
         public fun onClick(block: GuiContext.() -> Unit) {
             clickHandler = block
+        }
+
+        /** Registers a handler that runs only on left-click. */
+        public fun onLeftClick(block: GuiContext.() -> Unit) {
+            leftClickHandler = block
+        }
+
+        /** Registers a handler that runs only on right-click. */
+        public fun onRightClick(block: GuiContext.() -> Unit) {
+            rightClickHandler = block
+        }
+
+        /** Registers a handler that runs only on shift-click. */
+        public fun onShiftClick(block: GuiContext.() -> Unit) {
+            shiftClickHandler = block
+        }
+
+        /**
+         * Marks this slot as interactive — the player may take from and place into it freely.
+         * Use for input slots (e.g. an item-deposit GUI). Non-interactive slots are click-locked.
+         */
+        public fun interactive(value: Boolean = true) {
+            interactive = value
+        }
+
+        /**
+         * Animates this slot, cycling [frames] every [intervalTicks] ticks while the GUI is open.
+         * The animation is cancelled automatically when the player closes the GUI.
+         *
+         * ```kotlin
+         * item(13) {
+         *     animate(intervalTicks = 10) {
+         *         frame(Material.RED_WOOL)
+         *         frame(Material.YELLOW_WOOL)
+         *         frame(Material.GREEN_WOOL)
+         *     }
+         * }
+         * ```
+         */
+        public fun animate(
+            intervalTicks: Long = 20,
+            block: GuiAnimationBuilder.() -> Unit,
+        ) {
+            require(intervalTicks > 0) { "Animation interval must be positive." }
+            val frames = GuiAnimationBuilder().apply(block).frames
+            require(frames.isNotEmpty()) { "An animation needs at least one frame." }
+            @OptIn(SculkInternal::class)
+            animation = GuiAnimation(frames, intervalTicks)
         }
 
         /**
@@ -172,6 +255,7 @@ public class GuiItemBuilder
         public fun build(): GuiItem {
             val stack =
                 explicitStack?.clone()
+                    ?: animation?.frames?.firstOrNull()?.clone()
                     ?: studio.sculk.items.item(material) {
                         amount(amount)
                         if (name.isNotBlank()) name(name)
@@ -181,6 +265,36 @@ public class GuiItemBuilder
                         for ((enchName, level) in enchantments) enchant(enchName, level)
                         stackBuilder?.invoke(this)
                     }
-            return GuiItem(slot, stack, clickHandler, dynamicBuilder)
+            return GuiItem(
+                slot = slot,
+                stack = stack,
+                clickHandler = clickHandler,
+                dynamicBuilder = dynamicBuilder,
+                leftClickHandler = leftClickHandler,
+                rightClickHandler = rightClickHandler,
+                shiftClickHandler = shiftClickHandler,
+                interactive = interactive,
+                animation = animation,
+            )
         }
     }
+
+/** Collects the frames of a GUI slot [animate] block. */
+@SculkStable
+public class GuiAnimationBuilder {
+    @SculkInternal
+    public val frames: MutableList<ItemStack> = mutableListOf()
+
+    /** Adds a pre-built [ItemStack] frame. */
+    public fun frame(stack: ItemStack) {
+        frames += stack
+    }
+
+    /** Adds a frame built from a [Material] via the Sculk item builder. */
+    public fun frame(
+        material: Material,
+        block: ItemBuilder.() -> Unit = {},
+    ) {
+        frames += studio.sculk.items.item(material, block)
+    }
+}

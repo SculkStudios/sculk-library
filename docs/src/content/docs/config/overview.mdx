@@ -3,16 +3,12 @@ title: Config Overview
 description: Typed YAML configs that write their own defaults, validate themselves, and hot-reload.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 The config system maps YAML files to Kotlin data classes. Absent keys are written automatically on first load, and reads stay typed instead of relying on repeated `getString("some.key")` calls.
 
 ## Defining a config
 
 Annotate a data class with `@ConfigFile`. Field names map to kebab-case YAML keys automatically.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 @ConfigFile("settings.yml")
 data class Settings(
@@ -30,38 +26,12 @@ max-homes: 5
 allow-flight: false
 spawn-world: world
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-@ConfigFile("settings.yml")
-public record Settings(
-    String prefix,
-    int maxHomes,
-    boolean allowFlight,
-    String spawnWorld
-) {
-    public Settings() {
-        this("<gray>[<aqua>Plugin<gray>] ", 5, false, "world");
-    }
-}
-```
-</TabItem>
-</Tabs>
 
 ## Loading
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 val settings = sculk.config.load<Settings>()
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-Settings settings = sculk.getConfig().load(Settings.class);
-```
-</TabItem>
-</Tabs>
 
 On first run the YAML file is created with all defaults. On subsequent runs any missing keys are added — existing values are never overwritten.
 
@@ -91,8 +61,6 @@ Register migrations before `load<Settings>()`. If a config is already loaded, Sc
 
 ## Validation
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 @ConfigFile("settings.yml")
 data class Settings(
@@ -100,17 +68,6 @@ data class Settings(
     @param:NotEmpty val prefix: String = "<gray>[<aqua>Plugin<gray>] ",
 )
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-@ConfigFile("settings.yml")
-public record Settings(
-    @Min(1) @Max(50) int maxHomes,
-    @NotEmpty String prefix
-) { ... }
-```
-</TabItem>
-</Tabs>
 
 Sculk validates constructor parameter annotations. In Kotlin, use the explicit `@param:` target for `@Min`, `@Max`, and `@NotEmpty`; Java records do not need a use-site target.
 
@@ -120,8 +77,6 @@ Invalid values are reported and the loaded object keeps the field's default wher
 
 The config system supports collections, enums, and UUIDs out of the box:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 enum class Difficulty { EASY, NORMAL, HARD }
 
@@ -145,23 +100,6 @@ rewards:
 difficulty: NORMAL
 admin-uuid: null
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-@ConfigFile("settings.yml")
-public record Settings(
-    List<String> allowedWorlds,
-    Map<String, Integer> rewards,
-    Difficulty difficulty,
-    UUID adminUuid
-) {
-    public Settings() {
-        this(List.of("world", "world_nether"), Map.of("daily", 100), Difficulty.NORMAL, null);
-    }
-}
-```
-</TabItem>
-</Tabs>
 
 Enum values are matched case-insensitively — `NORMAL`, `normal`, and `Normal` all resolve to the same constant.
 
@@ -169,8 +107,6 @@ Enum values are matched case-insensitively — `NORMAL`, `normal`, and `Normal` 
 
 Messages are just another config file with string values. Use MiniMessage tags freely.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 @ConfigFile("messages.yml")
 data class Messages(
@@ -184,32 +120,11 @@ val msg = sculk.config.load<Messages>()
 // usage
 player.sendMessage(msg.homeSet.replace("{name}", homeName))
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-@ConfigFile("messages.yml")
-public record Messages(String noPermission, String homeSet, String homeTeleport) {
-    public Messages() {
-        this(
-            "<red>You don't have permission.",
-            "<green>Home <white>{name} <green>set.",
-            "<aqua>Teleporting to <white>{name}<aqua>…"
-        );
-    }
-}
-
-Messages msg = sculk.getConfig().load(Messages.class);
-player.sendMessage(msg.homeSet().replace("{name}", homeName));
-```
-</TabItem>
-</Tabs>
 
 ## Self-documenting configs with @Comment
 
 Annotate any field with `@Comment` to emit comment lines directly above that key in the generated YAML. Server operators can understand every setting without ever reading source code.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 @ConfigFile("settings/combat.yml")
 data class CombatSettings(
@@ -242,25 +157,6 @@ max-hearts: 15
 # Name of the WorldGuard region where PvP is always allowed
 pvp-region: pvp
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-@ConfigFile("settings/combat.yml")
-public record CombatSettings(
-    @Comment("How long the combat tag lasts in milliseconds. 1 second = 1000 ms")
-    long combatTagDuration,
-
-    @Comment("Minimum number of hearts a player can have")
-    int minHearts,
-
-    @Comment("Maximum number of hearts a player can have")
-    int maxHearts
-) {
-    public CombatSettings() { this(30_000L, 5, 15); }
-}
-```
-</TabItem>
-</Tabs>
 
 Multi-line comments are supported — separate lines with `\n` in the annotation value:
 
