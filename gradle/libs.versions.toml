@@ -1,7 +1,7 @@
 [versions]
 kotlin            = "2.3.21"
 coroutines        = "1.10.2"
-serialization     = "1.9.0"
+serialization     = "1.11.0"
 lettuce           = "6.8.2.RELEASE"
 paper             = "26.1.2.build.+"
 adventure         = "5.1.1"
