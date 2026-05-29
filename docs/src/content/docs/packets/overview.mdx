@@ -17,13 +17,16 @@ Use packets when you need client-side behavior that Paper does not expose direct
 
 ## Install only what you need
 
+You already have the packet **API** through `sculk-platform`. To turn packets on, add **one backend
+adapter** — it pulls the packet API in transitively. Pick the one matching the packet library on your
+server:
+
 PacketEvents path:
 
 ```kotlin
 dependencies {
-    implementation("com.github.SculkStudios.sculk-library:sculk-platform:3.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:3.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:3.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:4.0.0")
 }
 ```
 
@@ -31,11 +34,13 @@ ProtocolLib path:
 
 ```kotlin
 dependencies {
-    implementation("com.github.SculkStudios.sculk-library:sculk-platform:3.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:3.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-protocollib:3.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-protocollib:4.0.0")
 }
 ```
+
+The PacketEvents/ProtocolLib libraries themselves are `compileOnly` — install the matching plugin on
+your server (and add a `softdepend`).
 
 You must also install PacketEvents or ProtocolLib on the server. Sculk only provides adapters.
 
@@ -44,20 +49,18 @@ You must also install PacketEvents or ProtocolLib on the server. Sculk only prov
 ```kotlin
 import studio.sculk.packets.PacketBackendMode
 
-sculk = SculkPlatform.create(this) {
+class MyPlugin : SculkPlugin({
     packets {
         backend = PacketBackendMode.Auto
         required = false
     }
+}) {
+    override fun setup() {
+        sculk.packetsResult
+            ?.onSuccess { service -> logger.info("Packets enabled with ${service.backend}") }
+            ?.onFailure { message, _ -> logger.warning(message) }
+    }
 }
-
-sculk.packetsResult
-    ?.onSuccess { service ->
-        logger.info("Packets enabled with ${service.backend}")
-    }
-    ?.onFailure { message, _ ->
-        logger.warning(message)
-    }
 ```
 
 `Auto` prefers PacketEvents, then ProtocolLib. If `required = true`, startup fails with a clear message when no backend is available.

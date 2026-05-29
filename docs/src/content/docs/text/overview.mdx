@@ -7,8 +7,8 @@ The `sculk-text` module resolves messages in each player's client language. Enab
 and access it via `sculk.text`.
 
 ```kotlin
-sculk = SculkPlatform.create(this) {
-    text()
+class MyPlugin : SculkPlugin({ text() }) {
+    override fun setup() { /* sculk.text.* */ }
 }
 ```
 
