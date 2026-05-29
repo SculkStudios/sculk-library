@@ -3,14 +3,10 @@ title: GUIs Overview
 description: Chest inventory GUIs with per-player sessions, click routing, and automatic cleanup.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 GUIs are **immutable definitions**. Define once, open for any player. Sessions are created automatically on `openFor` and cleaned up when the player closes the inventory or disconnects through the platform GUI subsystem.
 
 ## Defining a GUI
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // gui/MainMenu.kt
 val mainMenu = gui("<dark_aqua><bold>Main Menu") {
@@ -30,45 +26,15 @@ val mainMenu = gui("<dark_aqua><bold>Main Menu") {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-// gui/MainMenu.java
-public class MainMenu {
-    public static final Gui INSTANCE = JavaGui.builder("<dark_aqua><bold>Main Menu")
-        .size(27)
-        .item(13, item -> item
-            .material(Material.NETHER_STAR)
-            .name("<gold><bold>Click Me")
-            .lore("<gray>Does something cool.", "<dark_gray>Right-click for more options.")
-            .onClick(ctx -> {
-                ctx.reply("<green>Clicked!");
-                ctx.close();
-            })
-        )
-        .build();
-}
-```
-</TabItem>
-</Tabs>
 
 ## Opening for a player
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // inside a command handler
 player {
     mainMenu.openFor(player!!)
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-.player(ctx -> MainMenu.INSTANCE.openFor(ctx.getPlayer()))
-```
-</TabItem>
-</Tabs>
 
 ## Click context
 
@@ -121,8 +87,6 @@ Close handlers run from the platform GUI listener. Keep heavy database or file w
 
 Items whose content differs per player — use `dynamicContent { player -> }`. The block runs when the GUI opens, so the displayed stack is always up to date:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 item(4) {
     material = Material.PLAYER_HEAD
@@ -132,19 +96,6 @@ item(4) {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-.item(4, item -> item
-    .material(Material.PLAYER_HEAD)
-    .dynamicContent((builder, player) -> {
-        builder.name("<aqua>Welcome, <white>" + player.getName());
-        builder.lore("<gray>Coins: <gold>" + economy.getBalance(player));
-    })
-)
-```
-</TabItem>
-</Tabs>
 
 ## Filling and borders
 
@@ -252,8 +203,6 @@ item(4) {
 
 Every open GUI has a `GuiSession` with a `state` bag — an arbitrary key-value store for driving dynamic behaviour within the session.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // Opening the GUI — store initial state
 val session = filterMenu.openFor(player)
@@ -268,15 +217,6 @@ onClick {
     session.refresh(4)   // re-render the category indicator slot
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-GuiSession session = filterMenu.openFor(player);
-session.getState().set("category", "weapons");
-session.setEntries(getItemsForCategory("weapons"));
-```
-</TabItem>
-</Tabs>
 
 Use `session.state.get<T>("key")` for a safe typed read that returns `null` rather than throwing on a type mismatch. The untyped `session.state["key"]` returns `Any?` and requires a manual cast.
 

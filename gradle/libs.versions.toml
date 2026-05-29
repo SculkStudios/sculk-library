@@ -1,5 +1,8 @@
 [versions]
 kotlin            = "2.3.21"
+coroutines        = "1.10.2"
+serialization     = "1.9.0"
+lettuce           = "6.7.1.RELEASE"
 paper             = "26.1.2.build.+"
 adventure         = "5.1.1"
 minimessage       = "5.1.1"
@@ -20,6 +23,14 @@ packetevents      = "2.12.1"
 protocollib       = "5.4.0"
 
 [libraries]
+# Coroutines
+coroutines-core   = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-test   = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+
+# Serialization & Redis (data layer)
+serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+lettuce           = { module = "io.lettuce:lettuce-core",                version.ref = "lettuce" }
+
 # Paper
 paper-api         = { module = "io.papermc.paper:paper-api",            version.ref = "paper" }
 
@@ -54,6 +65,7 @@ jmh-generator     = { module = "org.openjdk.jmh:jmh-generator-annprocess", versi
 
 [plugins]
 kotlin-jvm        = { id = "org.jetbrains.kotlin.jvm",    version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint            = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
 shadow            = { id = "com.gradleup.shadow",             version.ref = "shadow" }
 jmh               = { id = "me.champeau.jmh",             version.ref = "jmh-plugin" }

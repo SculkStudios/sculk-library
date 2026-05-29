@@ -10,6 +10,7 @@ import studio.sculk.config.SculkConfig
 import studio.sculk.core.SculkHandle
 import studio.sculk.core.SculkResult
 import studio.sculk.core.annotation.SculkStable
+import studio.sculk.core.coroutine.SculkCoroutineScope
 import studio.sculk.core.gui.GuiContext
 import studio.sculk.core.gui.GuiRegistry
 import studio.sculk.core.scheduler.SculkScheduler
@@ -20,6 +21,8 @@ import studio.sculk.packets.SculkPacketService
 import studio.sculk.packets.SculkPacketServices
 import studio.sculk.platform.command.SculkCommandBridge
 import studio.sculk.platform.event.SculkEventBus
+import studio.sculk.tasks.SculkTasks
+import studio.sculk.text.SculkText
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -51,12 +54,17 @@ public class SculkPlatform internal constructor(
     private val plugin: JavaPlugin,
     /** The scheduler for running sync and async tasks. */
     public val scheduler: SculkScheduler,
+    /** Plugin-lifecycle-bound coroutine scope for structured concurrency. */
+    public val scope: SculkCoroutineScope,
     /** The event bus for registering auto-cleaned listeners. */
     public val events: SculkEventBus,
+    /** Coroutine scheduling helpers: repeating tasks, cron, debounce/throttle. */
+    public val tasks: SculkTasks,
     /** Command registration bridge. Use [commands.register] to add commands. */
     public val commands: SculkCommandBridge,
     private val configService: SculkConfig?,
     private val dataService: SculkData?,
+    private val textService: SculkText?,
     private val integrationService: SculkIntegrations?,
     private val packetServiceResult: SculkResult<SculkPacketService>?,
     private val handles: List<SculkHandle>,
@@ -70,6 +78,10 @@ public class SculkPlatform internal constructor(
     /** Data layer. Requires [SculkPlatformBuilder.data] during platform creation. */
     public val data: SculkData
         get() = dataService ?: missingSubsystem("data", "data()")
+
+    /** Localization. Requires [SculkPlatformBuilder.text] during platform creation. */
+    public val text: SculkText
+        get() = textService ?: missingSubsystem("text", "text()")
 
     /** Optional integration adapters. Requires [SculkPlatformBuilder.integrations]. */
     public val integrations: SculkIntegrations
@@ -96,6 +108,8 @@ public class SculkPlatform internal constructor(
      */
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
+        // Cancel running coroutines first so nothing touches subsystems mid-teardown.
+        scope.close()
         handles.asReversed().forEach { it.close() }
         GuiRegistry.closeAll()
         commands.close()
@@ -121,7 +135,6 @@ public class SculkPlatform internal constructor(
          * ```
          */
         @SculkStable
-        @JvmStatic
         public fun create(
             plugin: JavaPlugin,
             block: SculkPlatformBuilder.() -> Unit = {},
@@ -138,6 +151,7 @@ public class SculkPlatformBuilder(
 ) {
     private var configEnabled = false
     private var dataEnabled = false
+    private var textEnabled = false
     private var guiEnabled = false
     private var integrationsEnabled = false
     private var packetConfig: PacketServiceConfig? = null
@@ -152,6 +166,12 @@ public class SculkPlatformBuilder(
     @SculkStable
     public fun data() {
         dataEnabled = true
+    }
+
+    /** Enables localization, loading message bundles from `<dataFolder>/lang`. */
+    @SculkStable
+    public fun text() {
+        textEnabled = true
     }
 
     /** Registers GUI event listeners (inventory click, close, player quit routing). */
@@ -172,16 +192,19 @@ public class SculkPlatformBuilder(
         packetConfig = PacketServiceConfig().apply(block)
     }
 
+    @OptIn(studio.sculk.core.annotation.SculkInternal::class)
     internal fun build(): SculkPlatform {
         val scheduler = PaperScheduler(plugin)
+        val scope = SculkCoroutineScope(scheduler, plugin.name)
         val events = SculkEventBus(plugin)
-        val commands = SculkCommandBridge(plugin)
+        val tasks = SculkTasks(scope)
+        val commands = SculkCommandBridge(plugin, scope)
         val extraHandles = mutableListOf<SculkHandle>()
 
         // Wire Folia-aware GUI dispatch — done unconditionally so Gui.openFor() works
         // even when the gui() subsystem is not enabled for event routing.
         @OptIn(studio.sculk.core.annotation.SculkInternal::class)
-        GuiRegistry.init(plugin, FoliaDetector.isFolia)
+        GuiRegistry.init(plugin, FoliaDetector.isFolia, scope)
 
         // Config
         val sculkConfig =
@@ -198,6 +221,8 @@ public class SculkPlatformBuilder(
             } else {
                 null
             }
+
+        val sculkText = if (textEnabled) SculkText.create(plugin.dataFolder, plugin.logger) else null
 
         val sculkIntegrations = if (integrationsEnabled) SculkIntegrations(plugin) else null
 
@@ -220,9 +245,13 @@ public class SculkPlatformBuilder(
                 events.listen<InventoryClickEvent> { event ->
                     val session = GuiRegistry.sessionForInventory(event.view.topInventory) ?: return@listen
                     val player = event.whoClicked as? Player ?: return@listen
-                    event.isCancelled = true
-                    val item = session.gui.items[event.rawSlot] ?: return@listen
-                    val handler = item.clickHandler ?: return@listen
+                    val item = session.gui.items[event.rawSlot]
+
+                    // Lock the slot unless it is an explicit interactive (input) slot.
+                    if (item == null || !item.interactive) event.isCancelled = true
+                    if (item == null) return@listen
+
+                    val handler = item.resolveHandler(event.click) ?: return@listen
 
                     @OptIn(studio.sculk.core.annotation.SculkInternal::class)
                     val ctx = GuiContext(player, event.click, event, session)
@@ -249,8 +278,11 @@ public class SculkPlatformBuilder(
 
             extraHandles +=
                 events.listen<InventoryDragEvent> { event ->
-                    GuiRegistry.sessionForInventory(event.view.topInventory) ?: return@listen
-                    if (event.rawSlots.any { it < event.view.topInventory.size }) {
+                    val session = GuiRegistry.sessionForInventory(event.view.topInventory) ?: return@listen
+                    val topSize = event.view.topInventory.size
+                    val topSlots = event.rawSlots.filter { it < topSize }
+                    // Allow drags only when every affected top slot is an interactive input slot.
+                    if (topSlots.isNotEmpty() && topSlots.any { session.gui.items[it]?.interactive != true }) {
                         event.isCancelled = true
                     }
                 }
@@ -264,10 +296,13 @@ public class SculkPlatformBuilder(
         return SculkPlatform(
             plugin,
             scheduler,
+            scope,
             events,
+            tasks,
             commands,
             sculkConfig,
             sculkData,
+            sculkText,
             sculkIntegrations,
             sculkPackets,
             extraHandles,

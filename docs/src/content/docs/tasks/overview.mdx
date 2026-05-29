@@ -1,0 +1,58 @@
+---
+title: Tasks & cron
+description: Coroutine-based scheduling — repeating tasks, cron expressions, and debounce/throttle helpers.
+---
+
+The `sculk-tasks` module provides coroutine scheduling on top of the platform scope. It is always
+available via `sculk.tasks` — no toggle needed. Every helper runs its action on the main /
+global-region thread (Folia-correct) and returns a `SculkHandle` for cancellation. All tasks stop
+automatically when the platform closes.
+
+## Repeating & delayed
+
+```kotlin
+val handle = sculk.tasks.repeating(intervalTicks = 20) {   // every second
+    broadcast("<gray>tick")
+}
+// stop later:
+handle.close()
+
+sculk.tasks.delayed(delayTicks = 100) {
+    broadcast("<gray>5 seconds later")
+}
+```
+
+## Cron
+
+`cron(expression)` runs an action on a standard 5-field cron schedule
+(`minute hour day-of-month month day-of-week`). Timing is computed off-thread; the action runs on
+the main thread.
+
+```kotlin
+sculk.tasks.cron("0 3 * * *") {     // 03:00 every day
+    runNightlyBackup()
+}
+sculk.tasks.cron("0,15,30,45 * * * *") {   // every 15 minutes
+    saveAll()
+}
+```
+
+Fields support `*`, lists (`1,2,3`), ranges (`1-5`), and step syntax. Day-of-week is `0-6` with
+`0`/`7` = Sunday.
+
+## Debounce & throttle
+
+`debounce` delays running until calls stop for a window — the last call wins. `throttle` runs
+immediately then rate-limits:
+
+```kotlin
+val saveSoon = sculk.tasks.debounce<UUID>(waitMillis = 2000) { uuid ->
+    profiles.save(uuid)
+}
+// call repeatedly while the player edits; only the last save runs after 2s of quiet
+saveSoon(player.uniqueId)
+
+val announce = sculk.tasks.throttle(intervalMillis = 5000) {
+    broadcast("<gray>throttled announcement")
+}
+```

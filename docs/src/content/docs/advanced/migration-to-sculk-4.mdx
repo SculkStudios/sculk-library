@@ -1,0 +1,105 @@
+---
+title: Migrating to Sculk 4.0
+description: Everything that changed from Sculk 3.x to 4.0 — coroutines, Brigadier commands, data components, the suspend data layer, and the new modules.
+---
+
+Sculk 4.0 is the "Modern Core" release. It is a **major, breaking** version that modernises every
+subsystem around Kotlin coroutines and the latest Paper APIs. This guide walks a 3.x plugin to 4.0.
+
+## At a glance
+
+| Area | 3.x | 4.0 |
+| --- | --- | --- |
+| Async | `CompletableFuture` + scheduler | **Coroutines** (`sculk.scope`, suspend functions) |
+| Commands | custom interpreter | **Brigadier-native** (real client completion) |
+| Items | `ItemMeta` | **Data components** (1.20.5+) |
+| Data | blocking repositories | **suspend** repositories + query DSL + transactions + Redis |
+| Java support | parallel `Java*Builder` classes | **removed** — Kotlin-first only |
+| New modules | — | `sculk-text` (i18n), `sculk-tasks` (cron) |
+
+## New: `SculkPlugin` base class
+
+The recommended entry point is now `SculkPlugin` — extend it and the platform is created, exposed as
+`sculk`, and closed for you. Put registration in `setup()`:
+
+```kotlin
+class MyPlugin : SculkPlugin({ gui(); data() }) {
+    override fun setup() { sculk.commands.register(/* ... */) }
+}
+```
+
+The manual `JavaPlugin` + `SculkPlatform.create(this) { }` form still works if you need full control.
+
+## Java support removed
+
+All `Java*Builder` classes and `@JvmStatic`/`@JvmOverloads` shims are gone. Sculk 4.0 is Kotlin-first.
+Use the DSLs (`command { }`, `gui { }`, `item { }`) directly.
+
+## Coroutines replace CompletableFuture
+
+The platform now exposes a lifecycle-bound `sculk.scope`. Launch background work with
+`launchAsync`/`launchMain` and hop threads with `withMain`/`withAsync`:
+
+```kotlin
+sculk.scope.launchAsync {
+    val profile = repo.find(uuid)          // suspends off-thread
+    withMain { player.sendRichMessage("Loaded") } // back on the main thread
+}
+```
+
+The old `runAsync { }.sync { }` patterns and `AsyncRepository` are removed. See
+[Coroutines](/advanced/coroutines/).
+
+## Commands are Brigadier-native
+
+The `command { }` DSL is unchanged, but it now compiles to Paper's Brigadier tree — you get native
+client-side tab completion and error highlighting for free. Two things changed:
+
+- **Executors are `suspend`.** `player { }`, `console { }`, and `executes { }` blocks can now call
+  suspend functions directly (e.g. `repo.find(...)`). No code change needed for existing blocks.
+- **Register inside `onEnable`.** Commands are registered through the Brigadier lifecycle event;
+  call `sculk.commands.register(...)` during `onEnable` (where you create the platform).
+
+New: per-node `middleware { }` filters and stateful `cooldown(...)`. See [Commands](/commands/overview/).
+
+## Items use data components
+
+`ItemBuilder` writes Paper data components instead of `ItemMeta`. The common DSL is unchanged
+(`name`, `lore`, `enchant`, `glint`, `unbreakable`, `customModelData`), with new methods
+(`itemName`, `rarity`, `maxStackSize`, `maxDamage`, `food { }`) and a generic `component(type, value)`
+escape hatch for any component. See [Data components](/items/components/).
+
+## Data layer is suspend
+
+`SculkRepository` methods are now **suspend** functions and run their JDBC work off-thread:
+
+```kotlin
+// 3.x
+scheduler.runAsync {
+    val result = repo.find(uuid)
+}
+
+// 4.0
+sculk.scope.launchAsync {
+    val result = repo.find(uuid)   // suspends
+}
+```
+
+New capabilities: a type-safe `repo.query { }` DSL, `data.transaction { }`, and a distributed
+`data.distributedCache(...)` Redis backend. `data.cached(...)` still returns an in-process Caffeine
+cache. See [Querying & caching](/data/query/).
+
+## New modules
+
+- **`sculk-text`** — per-player localization. Enable with `text()`; access via `sculk.text`.
+  See [Localization](/text/overview/).
+- **`sculk-tasks`** — coroutine scheduling with cron, debounce, and throttle. Always available via
+  `sculk.tasks`. See [Tasks & cron](/tasks/overview/).
+
+## Checklist
+
+1. Remove any `Java*Builder` usage.
+2. Replace `scheduler.runAsync { repo... }` with `sculk.scope.launchAsync { repo... }`.
+3. Ensure commands register in `onEnable`.
+4. Mark Redis-cached entities `@Serializable`.
+5. Bump the dependency to `4.0.0`.

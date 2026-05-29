@@ -3,8 +3,6 @@ title: Registries Reference
 description: Available SculkSeries lookup methods and expected behavior.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 Each `SculkSeries` method accepts a string key and returns either the resolved Paper value or `null`.
 
 ## Registry reference
@@ -37,19 +35,9 @@ Input is trimmed, lowercased, and normalized through a small set of namespace an
 
 ## Materials
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 val icon = SculkSeries.material(config.iconMaterial) ?: Material.STONE
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-Material icon = SculkSeries.material(config.getIconMaterial());
-if (icon == null) icon = Material.STONE;
-```
-</TabItem>
-</Tabs>
 
 ## Sounds
 
@@ -73,8 +61,6 @@ if (sharpness != null) {
 
 Register your own lookup when the built-in list does not cover a type:
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 SculkSeries.register<MyType> { key ->
     MyType.entries.firstOrNull { it.name.equals(key, ignoreCase = true) }
@@ -82,20 +68,6 @@ SculkSeries.register<MyType> { key ->
 
 val value = SculkSeries.lookup<MyType>("my_key")
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-SculkSeries.register(MyType.class, key ->
-    Arrays.stream(MyType.values())
-        .filter(type -> type.name().equalsIgnoreCase(key))
-        .findFirst()
-        .orElse(null)
-);
-
-MyType value = SculkSeries.lookup(MyType.class, "my_key");
-```
-</TabItem>
-</Tabs>
 
 ## Performance
 

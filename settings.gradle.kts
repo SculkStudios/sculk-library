@@ -32,6 +32,8 @@ include(
     ":sculk-packets-packetevents",
     ":sculk-packets-protocollib",
     ":sculk-content",
+    ":sculk-text",
+    ":sculk-tasks",
 )
 
 // Examples (not published)

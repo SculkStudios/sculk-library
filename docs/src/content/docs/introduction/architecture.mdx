@@ -3,8 +3,6 @@ title: Architecture
 description: How Sculk Studio modules fit together and how lifecycle ownership works.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 ## Module dependency flow
 
 ```text
@@ -38,8 +36,6 @@ Resources that need cleanup implement `SculkHandle`. Examples include listener r
 
 `SculkPlatform.close()` closes platform-owned handles, GUI sessions, commands, event listeners, and data resources. Scheduled tasks returned directly from `sculk.scheduler` should be retained and closed by your plugin unless you register them in your own lifecycle owner.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 class MyPlugin : JavaPlugin() {
     private lateinit var sculk: SculkPlatform
@@ -62,26 +58,6 @@ class MyPlugin : JavaPlugin() {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-public class MyPlugin extends JavaPlugin {
-    private SculkPlatform sculk;
-
-    @Override
-    public void onEnable() {
-        sculk = JavaSculkPlatform.create(this, cfg -> cfg.gui().config().data());
-        sculk.getCommands().registerAll(HomeCommand.build(sculk));
-    }
-
-    @Override
-    public void onDisable() {
-        sculk.close();
-    }
-}
-```
-</TabItem>
-</Tabs>
 
 ## Threading model
 

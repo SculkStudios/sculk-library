@@ -1,5 +1,7 @@
 package studio.sculk.core.gui
 
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
@@ -33,6 +35,7 @@ public class GuiSession
 
         private var closed = false
         private var pendingGuiSwitch: Gui? = null
+        private val animationJobs: MutableList<Job> = mutableListOf()
 
         private val pageEntries: MutableList<ItemStack> = mutableListOf()
 
@@ -72,6 +75,46 @@ public class GuiSession
         }
 
         /**
+         * Renders an explicit [stack] into [slot] without reopening — the primitive behind
+         * live mid-session updates and slot animations.
+         */
+        @SculkStable
+        public fun renderSlot(
+            slot: Int,
+            stack: ItemStack,
+        ) {
+            openInventory?.setItem(slot, stack)
+        }
+
+        /**
+         * Starts any slot animations declared on this GUI's items. Called by [Gui.openFor];
+         * animations are driven by the platform coroutine scope and cancel on close.
+         */
+        @SculkInternal
+        public fun startAnimations() {
+            val scope = GuiRegistry.scope ?: return
+            for ((slot, item) in gui.items) {
+                val animation = item.animation ?: continue
+                val job =
+                    scope.launchMain {
+                        var index = 1
+                        while (!closed) {
+                            delay(animation.intervalTicks * MILLIS_PER_TICK)
+                            if (closed) break
+                            renderSlot(slot, animation.frames[index % animation.frames.size])
+                            index++
+                        }
+                    }
+                animationJobs += job
+            }
+        }
+
+        private fun cancelAnimations() {
+            animationJobs.forEach { it.cancel() }
+            animationJobs.clear()
+        }
+
+        /**
          * Re-renders all static slots and the current pagination page.
          *
          * Use this to reflect bulk changes to the GUI without reopening.
@@ -103,6 +146,7 @@ public class GuiSession
         public fun close() {
             if (!closed) {
                 closed = true
+                cancelAnimations()
                 player.closeInventory()
             }
         }
@@ -168,6 +212,11 @@ public class GuiSession
         @SculkInternal
         public fun markClosed() {
             closed = true
+            cancelAnimations()
+        }
+
+        private companion object {
+            const val MILLIS_PER_TICK = 50L
         }
 
         /**

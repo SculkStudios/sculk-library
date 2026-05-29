@@ -3,40 +3,23 @@ title: Performance
 description: Practical performance rules for Sculk Studio plugins.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 Sculk Studio keeps hot paths small, but it does not remove Paper's threading rules. Treat Paper APIs and database APIs deliberately.
 
 ## Main-thread rule
 
 Paper player, world, inventory, and most entity APIs must run on the main thread or the correct Folia region/entity thread. Database, file, HTTP, and expensive CPU work should run off-thread.
 
-Repository methods in `sculk-data` are synchronous and blocking. Run them inside async scheduler work, then return to sync before touching Paper APIs.
+Repository methods in `sculk-data` are suspend functions that run their JDBC work off-thread. Call them from `sculk.scope.launchAsync { }`, then return to sync before touching Paper APIs.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
-sculk.scheduler.runAsync {
-    val result = repo.find(player.uniqueId)
+sculk.scope.launchAsync {
+    val result = repo.find(player.uniqueId)   // suspends off-thread
 
     sculk.scheduler.runSync(player) {
-        player.sendMessage("Loaded: ${result.isSuccess}")
+        player.sendRichMessage("Loaded: ${result.isSuccess}")
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-JavaRepository.wrap(repo)
-    .find(player.getUniqueId())
-    .thenAccept(result ->
-        sculk.getScheduler().runSync(player, () ->
-            player.sendMessage("Loaded: " + result.isSuccess())
-        )
-    );
-```
-</TabItem>
-</Tabs>
 
 ## Reflection and mapping
 

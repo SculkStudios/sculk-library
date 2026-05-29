@@ -3,8 +3,6 @@ title: Scheduler
 description: Run tasks on the main thread, async, with delays and repeating intervals — all cancellable via SculkHandle.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 `sculk.scheduler` wraps Paper's task scheduler. Every method returns a `SculkHandle` — call `close()` on it to cancel the task at any point.
 
 ## Threading rules
@@ -18,8 +16,6 @@ Never call Paper APIs (entity, inventory, world) from an async task. Never call 
 
 ## One-shot tasks
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // Run on the main thread next tick
 sculk.scheduler.runSync {
@@ -36,25 +32,9 @@ sculk.scheduler.runAsync {
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-sculk.getScheduler().runAsync(() -> {
-    SculkResult<PlayerData> result = repo.find(player.getUniqueId());
-    sculk.getScheduler().runSync(() ->
-        result.onSuccess(data ->
-            player.sendMessage("Coins: " + data.coins())
-        )
-    );
-});
-```
-</TabItem>
-</Tabs>
 
 ## Delayed tasks
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // Run on main thread after 3 seconds (60 ticks)
 sculk.scheduler.runSyncDelayed(60L) {
@@ -66,22 +46,11 @@ sculk.scheduler.runAsyncDelayed(100L) {
     repo.save(playerData)
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-sculk.getScheduler().runSyncDelayed(60L, () ->
-    player.sendMessage("<yellow>3 seconds have passed.")
-);
-```
-</TabItem>
-</Tabs>
 
 ## Repeating tasks
 
 `runAsyncRepeating` is the correct choice for recurring DB operations (data flushes, heartbeats). The returned `SculkHandle` cancels the task when closed.
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 // Flush dirty player data every 5 minutes (6000 ticks)
 val flushHandle = sculk.scheduler.runAsyncRepeating(
@@ -98,28 +67,9 @@ val flushHandle = sculk.scheduler.runAsyncRepeating(
 // Cancel when no longer needed
 flushHandle.close()
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-SculkHandle flushHandle = sculk.getScheduler().runAsyncRepeating(
-    6000L, 6000L,
-    () -> dirtyPlayers.forEach(uuid -> {
-        cache.find(uuid).onSuccess(data -> {
-            if (data != null) repo.save(data);
-        });
-    })
-);
-
-// Cancel
-flushHandle.close();
-```
-</TabItem>
-</Tabs>
 
 For repeating sync tasks (e.g., visual effects on the main thread):
 
-<Tabs>
-<TabItem label="Kotlin">
 ```kotlin
 val handle = sculk.scheduler.runSyncRepeating(
     delayTicks  = 0L,
@@ -130,29 +80,18 @@ val handle = sculk.scheduler.runSyncRepeating(
     }
 }
 ```
-</TabItem>
-<TabItem label="Java">
-```java
-SculkHandle handle = sculk.getScheduler().runSyncRepeating(0L, 10L, () ->
-    players.forEach(p ->
-        p.getLocation().getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 3)
-    )
-);
-```
-</TabItem>
-</Tabs>
 
 ## Entity and location overloads (Folia / Canvas)
 
 On Folia and Canvas, every chunk is owned by a specific region thread. Calling Paper APIs (inventory, entities) from the wrong thread causes errors. Use the entity/location overloads to dispatch to the correct thread automatically:
 
 ```kotlin
-sculk.scheduler.runAsync {
-    val result = repo.find(player.uniqueId)
+sculk.scope.launchAsync {
+    val result = repo.find(player.uniqueId)   // suspends off-thread
 
     // runs on the thread owning the player's chunk — safe on both Paper and Folia
     sculk.scheduler.runSync(player) {
-        player.sendMessage("Coins: ${result.getOrNull()?.coins}")
+        player.sendRichMessage("Coins: ${result.getOrNull()?.coins}")
     }
 }
 ```

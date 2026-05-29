@@ -91,10 +91,10 @@ The platform layer owns inventory click/close listeners and session cleanup.
 Do not call Paper player, world, inventory, or entity APIs from async work. Use async for database/file/HTTP work, then return to sync:
 
 ```kotlin
-sculk.scheduler.runAsync {
-    val profile = repo.find(player.uniqueId)
+sculk.scope.launchAsync {
+    val profile = repo.find(player.uniqueId)   // suspends off-thread
     sculk.scheduler.runSync(player) {
-        player.sendMessage("Loaded profile.")
+        player.sendRichMessage("Loaded profile.")
     }
 }
 ```
