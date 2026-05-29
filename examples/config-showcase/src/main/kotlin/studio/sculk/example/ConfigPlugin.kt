@@ -1,13 +1,12 @@
 package studio.sculk.example
 
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.config.annotation.ConfigFile
 import studio.sculk.config.annotation.Max
 import studio.sculk.config.annotation.Min
 import studio.sculk.config.annotation.NotEmpty
 import studio.sculk.core.command.CommandBuilder
 import studio.sculk.core.command.command
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 
 // ---------------------------------------------------------------------------
 // Typed config definition — annotate constraints on each field
@@ -25,16 +24,10 @@ public data class Settings(
 // Plugin entry point
 // ---------------------------------------------------------------------------
 
-public class ConfigPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
+public class ConfigPlugin : SculkPlugin({ config() }) {
     private lateinit var settings: Settings
 
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                config()
-            }
-
+    override fun setup() {
         // Load config: creates settings.yml with defaults on first run.
         settings = sculk.config.load<Settings>()
 
@@ -49,8 +42,6 @@ public class ConfigPlugin : JavaPlugin() {
             reloadCommand(),
         )
     }
-
-    override fun onDisable(): Unit = sculk.close()
 
     // /info — shows current config values to the player
     private fun infoCommand(): CommandBuilder =

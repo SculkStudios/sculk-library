@@ -11,8 +11,9 @@ The Sculk PacketEvents adapter is kept separate from core. It supports backend d
 
 ```kotlin
 dependencies {
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:3.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:3.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
+    // The backend adapter pulls the packet API in transitively.
+    implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:4.0.0")
 }
 ```
 
@@ -26,12 +27,12 @@ softdepend:
 ## Backend selection
 
 ```kotlin
-sculk = SculkPlatform.create(this) {
+class MyPlugin : SculkPlugin({
     packets {
         backend = PacketBackendMode.PacketEvents
         required = true
     }
-}
+})
 ```
 
 Use `required = true` only when the plugin cannot run without packet features.

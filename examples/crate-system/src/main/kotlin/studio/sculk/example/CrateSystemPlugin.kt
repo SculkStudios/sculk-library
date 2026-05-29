@@ -3,33 +3,26 @@ package studio.sculk.example
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.SculkResult
 import studio.sculk.core.adventure.broadcast
 import studio.sculk.core.adventure.parseMessage
 import studio.sculk.core.command.command
 import studio.sculk.effects.sound
 import studio.sculk.items.toItemStack
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 
-public class CrateSystemPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
+public class CrateSystemPlugin :
+    SculkPlugin({
+        config()
+        gui()
+    }) {
     private lateinit var settings: CrateSettings
     private lateinit var crates: CrateService
     private lateinit var menus: CrateMenus
 
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                config()
-                gui()
-            }
+    override fun setup() {
         reloadCrates()
         sculk.commands.register(crateCommand())
-    }
-
-    override fun onDisable() {
-        if (::sculk.isInitialized) sculk.close()
     }
 
     private fun reloadCrates() {

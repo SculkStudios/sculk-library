@@ -6,24 +6,17 @@ import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.adventure.parseMessage
 import studio.sculk.core.adventure.reply
 import studio.sculk.core.command.command
 import studio.sculk.effects.particle
 import studio.sculk.effects.sound
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 
-public class StaffToolsPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
+public class StaffToolsPlugin : SculkPlugin({ gui() }) {
     private val staff = StaffToolsService()
 
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                gui()
-            }
-
+    override fun setup() {
         sculk.events.listen<PlayerMoveEvent> { event ->
             if (!staff.shouldBlockMovement(event.player.uniqueId)) return@listen
             val from = event.from
@@ -39,10 +32,6 @@ public class StaffToolsPlugin : JavaPlugin() {
         }
 
         sculk.commands.registerAll(staffCommand(), freezeCommand(), inspectCommand(), staffChatCommand())
-    }
-
-    override fun onDisable() {
-        if (::sculk.isInitialized) sculk.close()
     }
 
     private fun staffCommand() =

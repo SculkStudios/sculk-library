@@ -1,21 +1,17 @@
 package studio.sculk.example
 
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.command.command
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 
-public class ServerMenuPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
+public class ServerMenuPlugin :
+    SculkPlugin({
+        config()
+        gui()
+    }) {
     private lateinit var settings: MenuSettings
     private lateinit var menus: ServerMenus
 
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                config()
-                gui()
-            }
-
+    override fun setup() {
         settings = sculk.config.load()
         menus = ServerMenus { settings }
 
@@ -27,9 +23,5 @@ public class ServerMenuPlugin : JavaPlugin() {
                 }
             },
         )
-    }
-
-    override fun onDisable() {
-        if (::sculk.isInitialized) sculk.close()
     }
 }

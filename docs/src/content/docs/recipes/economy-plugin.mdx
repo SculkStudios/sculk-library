@@ -20,11 +20,10 @@ A small production-style coin economy:
 ## Modules Used
 
 ```kotlin
-implementation("com.github.SculkStudios.sculk-library:sculk-platform:3.0.0")
-implementation("com.github.SculkStudios.sculk-library:sculk-items:3.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
 ```
 
-`sculk-platform` brings in commands, config, scheduler, and data.
+`sculk-platform` is the only dependency — it re-exports the whole DSL (commands, config, scheduler, data, items, …).
 
 ## Commands
 
@@ -81,14 +80,16 @@ The repository is UUID-first and keeps the latest known player name for display.
 ## Lifecycle
 
 ```kotlin
-sculk = SculkPlatform.create(this) {
-    config()
-    data()
-}
+class EconomyPlugin : SculkPlugin({ config(); data() }) {
+    private lateinit var service: EconomyService
 
-val repository = sculk.data.repository<EconomyAccount, UUID>()
-val cached = sculk.data.cached(repository, EconomyAccount::uuid)
-val service = EconomyService(cached, { settings.startingCoins })
+    override fun setup() {
+        val settings = sculk.config.load<EconomySettings>()
+        val repository = sculk.data.repository<EconomyAccount, UUID>()
+        val cached = sculk.data.cached(repository, EconomyAccount::uuid)
+        service = EconomyService(cached, { settings.startingCoins })
+    }
+}
 ```
 
 On disable, the example flushes accounts touched during runtime before closing `sculk`.

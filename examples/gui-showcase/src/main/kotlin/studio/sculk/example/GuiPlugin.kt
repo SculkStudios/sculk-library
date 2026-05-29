@@ -4,22 +4,14 @@ import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.attribute.Attribute
 import org.bukkit.inventory.ItemStack
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.adventure.playSound
 import studio.sculk.core.command.command
 import studio.sculk.core.gui.Gui
 import studio.sculk.core.gui.gui
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 
-public class GuiPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
-
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                gui()
-            }
-
+public class GuiPlugin : SculkPlugin({ gui() }) {
+    override fun setup() {
         sculk.commands.registerAll(
             command("menu") {
                 description = "Open the main menu."
@@ -40,8 +32,6 @@ public class GuiPlugin : JavaPlugin() {
             },
         )
     }
-
-    override fun onDisable(): Unit = sculk.close()
 }
 
 // ---------------------------------------------------------------------------

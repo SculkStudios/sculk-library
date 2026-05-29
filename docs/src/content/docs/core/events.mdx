@@ -65,7 +65,7 @@ If you want a listener to outlive the Sculk instance (rare), register it directl
 
 ## Best practices
 
-- Register all listeners in `onEnable`, after `SculkPlatform.create()`.
+- Register all listeners in `setup()` (when extending `SculkPlugin`).
 - Prefer `ignoreCancelled = true` for any listener that should skip already-cancelled events.
 - Use `MONITOR` priority only to observe final state, never to modify it.
 - Keep handlers thin — delegate business logic to a service class.

@@ -2,27 +2,23 @@ package studio.sculk.example
 
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.core.SculkResult
 import studio.sculk.core.adventure.reply
 import studio.sculk.core.command.command
 import studio.sculk.data.cache.SculkCache
-import studio.sculk.platform.SculkPlatform
+import studio.sculk.platform.SculkPlugin
 import java.time.Duration
 import java.util.UUID
 
-public class EconomyPlugin : JavaPlugin() {
-    private lateinit var sculk: SculkPlatform
+public class EconomyPlugin :
+    SculkPlugin({
+        config()
+        data()
+    }) {
     private lateinit var settings: EconomySettings
     private lateinit var service: EconomyService
 
-    override fun onEnable() {
-        sculk =
-            SculkPlatform.create(this) {
-                config()
-                data()
-            }
-
+    override fun setup() {
         settings = sculk.config.load()
         val repository = sculk.data.repository<EconomyAccount, UUID>()
         val cached: SculkCache<EconomyAccount, UUID> =
@@ -35,11 +31,10 @@ public class EconomyPlugin : JavaPlugin() {
         sculk.commands.register(economyCommand())
     }
 
-    override fun onDisable() {
+    override fun shutdown() {
         if (::service.isInitialized) {
             kotlinx.coroutines.runBlocking { service.flushKnown().logFailure("Failed to flush economy accounts") }
         }
-        if (::sculk.isInitialized) sculk.close()
     }
 
     private fun economyCommand() =

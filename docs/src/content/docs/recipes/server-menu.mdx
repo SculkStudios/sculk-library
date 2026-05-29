@@ -18,9 +18,10 @@ A practical `/menu` workflow:
 ## Modules Used
 
 ```kotlin
-implementation("com.github.SculkStudios.sculk-library:sculk-platform:3.0.0")
-implementation("com.github.SculkStudios.sculk-library:sculk-items:3.0.0")
+implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
 ```
+
+`sculk-platform` is the only dependency — it re-exports items and the rest of the DSL.
 
 ## Commands
 
@@ -52,13 +53,14 @@ This recipe is intentionally config-driven. It does not persist player data.
 ## Lifecycle
 
 ```kotlin
-sculk = SculkPlatform.create(this) {
-    config()
-    gui()
-}
+class ServerMenuPlugin : SculkPlugin({ config(); gui() }) {
+    private lateinit var menus: ServerMenus
 
-settings = sculk.config.load()
-menus = ServerMenus { settings }
+    override fun setup() {
+        val settings = sculk.config.load<MenuSettings>()
+        menus = ServerMenus { settings }
+    }
+}
 ```
 
 The `gui()` subsystem is required. It routes clicks, drags, close events, and player quit cleanup.
@@ -94,7 +96,7 @@ The warps menu validates that the world is loaded before teleporting.
 
 ## Common Mistakes
 
-- Forgetting `gui()` in `SculkPlatform.create`.
+- Forgetting `gui()` in the `SculkPlugin { }` subsystem block.
 - Using placeholder buttons that do not perform real actions.
 - Loading data directly inside click handlers.
 - Reusing one mutable menu state object for every player.
