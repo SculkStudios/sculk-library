@@ -134,13 +134,14 @@ dependencies {
 
 ## Optional packet modules
 
-Packet support is intentionally separate so normal plugins stay small. Sculk does not bundle PacketEvents or ProtocolLib.
+Packet support is intentionally separate so normal plugins stay small. The packet **API** already
+comes with `sculk-platform`; to enable packets, add **one backend adapter** (it pulls the API in
+transitively). Sculk does not bundle PacketEvents or ProtocolLib themselves.
 
 PacketEvents path:
 
 ```kotlin
 dependencies {
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:4.0.0")
     implementation("com.github.SculkStudios.sculk-library:sculk-packets-packetevents:4.0.0")
 }
 ```
@@ -149,7 +150,6 @@ ProtocolLib path:
 
 ```kotlin
 dependencies {
-    implementation("com.github.SculkStudios.sculk-library:sculk-packets-api:4.0.0")
     implementation("com.github.SculkStudios.sculk-library:sculk-packets-protocollib:4.0.0")
 }
 ```
