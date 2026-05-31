@@ -2,8 +2,8 @@ package studio.sculk.example
 
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import studio.sculk.core.SculkResult
-import studio.sculk.core.command.command
+import studio.sculk.SculkResult
+import studio.sculk.command.command
 import studio.sculk.items.toItemStack
 import studio.sculk.platform.SculkPlugin
 import java.time.Duration
@@ -86,7 +86,7 @@ public class KitsPlugin :
         val kitResult = service.kit(kitId)
         if (kitResult is SculkResult.Failure) {
             player.sendMessage(
-                studio.sculk.core.adventure
+                studio.sculk.adventure
                     .parseMessage("<red>${kitResult.message}"),
             )
             return
@@ -95,7 +95,7 @@ public class KitsPlugin :
         val permission = service.permissionFor(kitId, kit)
         if (!bypassCooldown && !player.hasPermission(permission)) {
             player.sendMessage(
-                studio.sculk.core.adventure
+                studio.sculk.adventure
                     .parseMessage("<red>You need <yellow>$permission</yellow>."),
             )
             return
@@ -107,13 +107,13 @@ public class KitsPlugin :
                 when (status) {
                     is SculkResult.Failure ->
                         player.sendMessage(
-                            studio.sculk.core.adventure
+                            studio.sculk.adventure
                                 .parseMessage("<red>${status.message}"),
                         )
                     is SculkResult.Success -> {
                         if (!status.value.allowed) {
                             player.sendMessage(
-                                studio.sculk.core.adventure.parseMessage(
+                                studio.sculk.adventure.parseMessage(
                                     "<red>You can claim this kit in <yellow>${service.formatRemaining(
                                         status.value.remainingMillis,
                                     )}</yellow>.",
@@ -124,7 +124,7 @@ public class KitsPlugin :
                         val descriptors = service.kitItems(kitId)
                         if (descriptors is SculkResult.Failure) {
                             player.sendMessage(
-                                studio.sculk.core.adventure
+                                studio.sculk.adventure
                                     .parseMessage("<red>${descriptors.message}"),
                             )
                             return@runSync
@@ -132,12 +132,12 @@ public class KitsPlugin :
                         val stacks = (descriptors as SculkResult.Success).value.mapNotNull { it.toItemStack() }
                         val leftovers = stacks.flatMap { giveOrDrop(player, it) }
                         player.sendMessage(
-                            studio.sculk.core.adventure
+                            studio.sculk.adventure
                                 .parseMessage("<green>Claimed ${kit.displayName}<green>."),
                         )
                         if (leftovers.isNotEmpty()) {
                             player.sendMessage(
-                                studio.sculk.core.adventure
+                                studio.sculk.adventure
                                     .parseMessage("<yellow>Your inventory was full, so leftovers were dropped."),
                             )
                         }

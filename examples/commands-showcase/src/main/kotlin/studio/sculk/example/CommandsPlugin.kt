@@ -3,10 +3,10 @@ package studio.sculk.example
 import org.bukkit.Bukkit
 import org.bukkit.Sound
 import org.bukkit.World
-import studio.sculk.core.adventure.reply
-import studio.sculk.core.command.CommandBuilder
-import studio.sculk.core.command.argument.ArgumentParser
-import studio.sculk.core.command.command
+import studio.sculk.adventure.reply
+import studio.sculk.command.CommandBuilder
+import studio.sculk.command.argument.ArgumentParser
+import studio.sculk.command.command
 import studio.sculk.platform.SculkPlugin
 
 public class CommandsPlugin : SculkPlugin() {

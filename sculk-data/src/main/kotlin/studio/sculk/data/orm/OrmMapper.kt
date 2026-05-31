@@ -1,6 +1,6 @@
 package studio.sculk.data.orm
 
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.annotation.SculkInternal
 import java.sql.ResultSet
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap

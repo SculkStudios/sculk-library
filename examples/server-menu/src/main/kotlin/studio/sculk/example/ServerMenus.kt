@@ -5,9 +5,9 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import studio.sculk.core.gui.Gui
-import studio.sculk.core.gui.confirmMenu
-import studio.sculk.core.gui.gui
+import studio.sculk.gui.Gui
+import studio.sculk.gui.confirmMenu
+import studio.sculk.gui.gui
 import studio.sculk.items.ItemDescriptor
 import studio.sculk.items.item
 
@@ -132,10 +132,10 @@ public class ServerMenus(
             }
         }
 
-    private fun studio.sculk.core.gui.GuiBuilder.descriptorItem(
+    private fun studio.sculk.gui.GuiBuilder.descriptorItem(
         slot: Int,
         descriptor: ItemDescriptor,
-        click: studio.sculk.core.gui.GuiContext.() -> Unit,
+        click: studio.sculk.gui.GuiContext.() -> Unit,
     ) {
         item(slot) {
             stack {

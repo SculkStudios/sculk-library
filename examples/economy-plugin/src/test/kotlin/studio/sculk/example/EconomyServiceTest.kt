@@ -4,7 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import studio.sculk.core.SculkResult
+import studio.sculk.SculkResult
 import studio.sculk.data.cache.CaffeineCache
 import studio.sculk.data.repository.QueryBuilder
 import studio.sculk.data.repository.SculkRepository

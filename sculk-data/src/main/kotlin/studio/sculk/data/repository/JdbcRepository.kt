@@ -2,8 +2,8 @@ package studio.sculk.data.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.data.driver.SqlDialect
 import studio.sculk.data.orm.OrmMapper
 import studio.sculk.data.orm.OrmMapping

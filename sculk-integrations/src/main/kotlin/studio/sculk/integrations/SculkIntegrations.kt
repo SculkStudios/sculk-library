@@ -4,9 +4,9 @@ import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import studio.sculk.core.SculkResult
-import studio.sculk.core.flatMap
-import studio.sculk.core.map
+import studio.sculk.SculkResult
+import studio.sculk.flatMap
+import studio.sculk.map
 import java.util.UUID
 
 /** Optional adapters for common server plugins. */

@@ -1,10 +1,10 @@
 package studio.sculk.config
 
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.annotation.SculkStable
 import studio.sculk.config.managed.SculkConfigManager
 import studio.sculk.config.yaml.YamlMapper
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.annotation.SculkStable
 import java.io.File
 import java.util.logging.Logger
 
@@ -66,10 +66,10 @@ public class SculkConfig
          *
          * Reloads (and their `onReload` callbacks) are marshalled through [dispatch] — pass
          * `{ sculk.scheduler.runSync(it) }` so they run on the main thread. Returns a
-         * [studio.sculk.core.SculkHandle]; close it (or the platform) to stop watching.
+         * [studio.sculk.SculkHandle]; close it (or the platform) to stop watching.
          */
         @SculkStable
-        public fun watch(dispatch: (Runnable) -> Unit = Runnable::run): studio.sculk.core.SculkHandle {
+        public fun watch(dispatch: (Runnable) -> Unit = Runnable::run): studio.sculk.SculkHandle {
             val reloaders: Map<String, () -> Unit> =
                 managers.values.associate { manager ->
                     File(manager.configPath).name to { manager.reload() }

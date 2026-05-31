@@ -1,8 +1,8 @@
 package studio.sculk.example
 
 import org.bukkit.Material
-import studio.sculk.core.gui.Gui
-import studio.sculk.core.gui.gui
+import studio.sculk.gui.Gui
+import studio.sculk.gui.gui
 
 public class CrateMenus(
     private val service: CrateService,
@@ -14,7 +14,7 @@ public class CrateMenus(
                 name = " "
             }
             val crate = service.crate(crateId)
-            if (crate is studio.sculk.core.SculkResult.Success) {
+            if (crate is studio.sculk.SculkResult.Success) {
                 val chanceLore = service.chanceLore(crate.value)
                 crate.value.rewards.take(45).forEachIndexed { index, reward ->
                     item(index) {

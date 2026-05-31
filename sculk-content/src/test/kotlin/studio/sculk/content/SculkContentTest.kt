@@ -7,9 +7,8 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
 import studio.sculk.packets.AbstractPacketService
 import studio.sculk.packets.PacketBackend
 import studio.sculk.packets.PacketContext
@@ -17,6 +16,7 @@ import studio.sculk.packets.PacketDirection
 import studio.sculk.packets.PacketKey
 import studio.sculk.packets.PacketPriority
 import studio.sculk.packets.SculkPacket
+import studio.sculk.scheduler.SculkScheduler
 
 class SculkContentTest {
     @Test

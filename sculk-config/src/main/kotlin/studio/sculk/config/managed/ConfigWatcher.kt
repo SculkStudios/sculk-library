@@ -1,7 +1,7 @@
 package studio.sculk.config.managed
 
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkInternal
 import java.io.File
 import java.nio.file.ClosedWatchServiceException
 import java.nio.file.FileSystems

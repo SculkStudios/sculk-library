@@ -1,6 +1,6 @@
 package studio.sculk.example
 
-import studio.sculk.core.command.command
+import studio.sculk.command.command
 import studio.sculk.platform.SculkPlugin
 
 public class ServerMenuPlugin :

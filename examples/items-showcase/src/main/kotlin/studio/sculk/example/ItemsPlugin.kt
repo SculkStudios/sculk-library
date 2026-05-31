@@ -3,7 +3,7 @@ package studio.sculk.example
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemRarity
-import studio.sculk.core.command.command
+import studio.sculk.command.command
 import studio.sculk.items.ItemDescriptor
 import studio.sculk.items.item
 import studio.sculk.items.skull

@@ -1,8 +1,8 @@
 package studio.sculk.packets
 
 import org.bukkit.entity.Player
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.scheduler.SculkScheduler
 
 /**
  * Context passed to low-level packet listeners.

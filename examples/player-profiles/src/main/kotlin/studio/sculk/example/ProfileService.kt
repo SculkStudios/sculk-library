@@ -1,6 +1,6 @@
 package studio.sculk.example
 
-import studio.sculk.core.SculkResult
+import studio.sculk.SculkResult
 import studio.sculk.data.repository.PlayerProfileStore
 import java.util.Collections
 import java.util.UUID

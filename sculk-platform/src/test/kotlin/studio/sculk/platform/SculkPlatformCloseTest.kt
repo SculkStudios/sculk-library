@@ -5,13 +5,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
-import studio.sculk.core.coroutine.SculkCoroutineScope
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
+import studio.sculk.coroutine.SculkCoroutineScope
+import studio.sculk.event.SculkEventBus
 import studio.sculk.packets.SculkPacketService
 import studio.sculk.platform.command.SculkCommandBridge
-import studio.sculk.platform.event.SculkEventBus
+import studio.sculk.scheduler.SculkScheduler
 import studio.sculk.tasks.SculkTasks
 
 class SculkPlatformCloseTest {

@@ -8,10 +8,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.scheduler.SculkScheduler
 
 @OptIn(SculkInternal::class)
 class SculkPacketServicesTest {

@@ -1,8 +1,8 @@
 package studio.sculk.packets
 
 import org.bukkit.entity.Player
-import studio.sculk.core.SculkResult
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkResult
+import studio.sculk.scheduler.SculkScheduler
 
 /**
  * Base implementation shared by lightweight backend adapters.

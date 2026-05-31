@@ -1,7 +1,7 @@
 package studio.sculk.effects
 
 import org.bukkit.Location
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 import studio.sculk.series.SculkSeries
 
 /** Config-friendly particle effect description. */

@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.data.driver.SqlDialect
 import studio.sculk.data.orm.PrimaryKey
 import studio.sculk.data.orm.Table

@@ -2,14 +2,14 @@ package studio.sculk.platform.command
 
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.plugin.java.JavaPlugin
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.annotation.SculkStable
-import studio.sculk.core.command.CommandBuilder
-import studio.sculk.core.command.CommandNode
-import studio.sculk.core.command.CooldownStore
-import studio.sculk.core.command.brigadier.CommandCompiler
-import studio.sculk.core.coroutine.SculkCoroutineScope
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.annotation.SculkStable
+import studio.sculk.command.CommandBuilder
+import studio.sculk.command.CommandNode
+import studio.sculk.command.CooldownStore
+import studio.sculk.command.brigadier.CommandCompiler
+import studio.sculk.coroutine.SculkCoroutineScope
 
 /**
  * Registers Sculk [CommandNode] trees into Paper's native Brigadier command system.

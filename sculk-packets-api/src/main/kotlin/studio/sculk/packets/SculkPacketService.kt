@@ -2,8 +2,8 @@ package studio.sculk.packets
 
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
 
 /**
  * Backend-neutral packet service.
@@ -36,6 +36,6 @@ public interface SculkPacketServiceProvider {
 
     public fun create(
         plugin: JavaPlugin,
-        scheduler: studio.sculk.core.scheduler.SculkScheduler,
+        scheduler: studio.sculk.scheduler.SculkScheduler,
     ): SculkPacketService
 }

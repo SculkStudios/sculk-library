@@ -1,6 +1,6 @@
 package studio.sculk.data.orm
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Marks a data class as a database entity and optionally overrides the table name.

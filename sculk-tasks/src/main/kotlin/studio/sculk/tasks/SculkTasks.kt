@@ -3,10 +3,10 @@ package studio.sculk.tasks
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.annotation.SculkStable
-import studio.sculk.core.coroutine.SculkCoroutineScope
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.annotation.SculkStable
+import studio.sculk.coroutine.SculkCoroutineScope
 import java.time.ZoneId
 import java.time.ZonedDateTime
 

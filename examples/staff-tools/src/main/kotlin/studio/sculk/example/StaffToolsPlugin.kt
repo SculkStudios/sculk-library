@@ -6,9 +6,9 @@ import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import studio.sculk.core.adventure.parseMessage
-import studio.sculk.core.adventure.reply
-import studio.sculk.core.command.command
+import studio.sculk.adventure.parseMessage
+import studio.sculk.adventure.reply
+import studio.sculk.command.command
 import studio.sculk.effects.particle
 import studio.sculk.effects.sound
 import studio.sculk.platform.SculkPlugin

@@ -6,7 +6,7 @@ import org.bukkit.plugin.PluginManager
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import studio.sculk.core.SculkResult
+import studio.sculk.SculkResult
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 

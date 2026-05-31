@@ -1,11 +1,11 @@
 package studio.sculk.config.managed
 
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.config.ConfigDocument
 import studio.sculk.config.ConfigMigrationStep
 import studio.sculk.config.annotation.ConfigFile
 import studio.sculk.config.yaml.YamlMapper
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkInternal
 import java.io.File
 import java.util.logging.Logger
 import kotlin.reflect.KClass

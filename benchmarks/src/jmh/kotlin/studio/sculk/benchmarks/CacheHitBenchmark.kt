@@ -13,8 +13,8 @@ import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
 import org.openjdk.jmh.annotations.Warmup
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.data.SculkData
 import studio.sculk.data.driver.SqlDialect
 import studio.sculk.data.orm.Column

@@ -1,14 +1,14 @@
 package studio.sculk.example
 
 import org.bukkit.Material
-import studio.sculk.core.SculkResult
-import studio.sculk.core.gui.Gui
-import studio.sculk.core.gui.gui
+import studio.sculk.SculkResult
+import studio.sculk.gui.Gui
+import studio.sculk.gui.gui
 
 public class KitMenus(
     private val settings: () -> KitSettings,
     private val service: KitService,
-    private val claim: (String, studio.sculk.core.gui.GuiContext) -> Unit,
+    private val claim: (String, studio.sculk.gui.GuiContext) -> Unit,
 ) {
     public fun list(): Gui =
         gui("<dark_gray>Kits") {

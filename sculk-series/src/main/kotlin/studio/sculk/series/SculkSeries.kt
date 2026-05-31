@@ -14,7 +14,7 @@ import org.bukkit.block.Biome
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
 import org.bukkit.potion.PotionEffectType
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 import studio.sculk.series.registry.MappingResolver
 import studio.sculk.series.registry.SculkRegistry
 import java.util.concurrent.ConcurrentHashMap

@@ -3,9 +3,9 @@ package studio.sculk.text
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
+import studio.sculk.adventure.parseMessage
+import studio.sculk.annotation.SculkStable
 import studio.sculk.config.yaml.YamlMapper
-import studio.sculk.core.adventure.parseMessage
-import studio.sculk.core.annotation.SculkStable
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap

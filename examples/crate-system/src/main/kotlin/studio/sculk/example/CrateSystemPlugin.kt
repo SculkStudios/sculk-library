@@ -3,10 +3,10 @@ package studio.sculk.example
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import studio.sculk.core.SculkResult
-import studio.sculk.core.adventure.broadcast
-import studio.sculk.core.adventure.parseMessage
-import studio.sculk.core.command.command
+import studio.sculk.SculkResult
+import studio.sculk.adventure.broadcast
+import studio.sculk.adventure.parseMessage
+import studio.sculk.command.command
 import studio.sculk.effects.sound
 import studio.sculk.items.toItemStack
 import studio.sculk.platform.SculkPlugin

@@ -63,7 +63,7 @@ Extend `SculkPlugin` — it creates the platform, exposes it as `sculk`, and clo
 No lifecycle boilerplate:
 
 ```kotlin
-import studio.sculk.core.command.command
+import studio.sculk.command.command
 import studio.sculk.platform.SculkPlugin
 
 class MyPlugin : SculkPlugin({ gui(); config() }) {
