@@ -28,8 +28,13 @@ public object YamlMapper {
         val opts =
             DumperOptions().apply {
                 defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-                isPrettyFlow = true
+                // isPrettyFlow=false keeps empty collections compact (`[]` / `{}`) instead of
+                // splitting them across lines; a huge width + no split-lines stops long message
+                // strings from wrapping. Together these keep generated configs clean and editable.
+                isPrettyFlow = false
                 indent = 2
+                width = Int.MAX_VALUE
+                splitLines = false
             }
         Yaml(opts)
     }
@@ -275,16 +280,34 @@ public object YamlMapper {
             System.getenv(name) ?: default ?: match.value
         }
 
-    private fun toMap(instance: Any): Map<String, Any?> {
-        val map = mutableMapOf<String, Any?>()
+    /**
+     * Serialises [instance] to a YAML-ready map.
+     *
+     * When [omitDefaults] is true (used for NESTED data classes), null values and empty
+     * collections are dropped so generated files stay lean — e.g. an item with only a material and
+     * name no longer prints `lore: []`, `enchantments: {}`, `item: null`, … On reload, absent keys
+     * simply fall back to the constructor default, so this is round-trip safe. Top-level config
+     * sections are always kept (omitDefaults=false) so every option stays discoverable.
+     */
+    private fun toMap(
+        instance: Any,
+        omitDefaults: Boolean = false,
+    ): Map<String, Any?> {
+        val map = LinkedHashMap<String, Any?>()
         val klass = instance::class
         for (param in klass.primaryConstructor?.parameters ?: emptyList()) {
             val member = klass.members.firstOrNull { it.name == param.name } ?: continue
             val value = member.call(instance)
+            if (omitDefaults && isOmittable(value)) continue
             map[camelToKebab(param.name!!)] = toYamlValue(value)
         }
         return map
     }
+
+    private fun isOmittable(value: Any?): Boolean =
+        value == null ||
+            (value is Collection<*> && value.isEmpty()) ||
+            (value is Map<*, *> && value.isEmpty())
 
     private fun toYamlValue(value: Any?): Any? =
         when (value) {
@@ -296,7 +319,7 @@ public object YamlMapper {
                     .mapValues { (_, v) -> toYamlValue(v) }
             is Enum<*> -> value.name
             is UUID -> value.toString()
-            else -> if (value::class.isData) toMap(value) else value
+            else -> if (value::class.isData) toMap(value, omitDefaults = true) else value
         }
 
     private fun <T : Any> createDefault(klass: KClass<T>): T {
