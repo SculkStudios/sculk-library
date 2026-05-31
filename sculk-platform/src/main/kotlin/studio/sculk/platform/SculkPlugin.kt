@@ -1,7 +1,7 @@
 package studio.sculk.platform
 
 import org.bukkit.plugin.java.JavaPlugin
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * A `JavaPlugin` base class that removes all Sculk lifecycle boilerplate.

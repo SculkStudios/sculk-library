@@ -2,11 +2,11 @@ package studio.sculk.config.yaml
 
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.config.annotation.Comment
 import studio.sculk.config.annotation.Max
 import studio.sculk.config.annotation.Min
 import studio.sculk.config.annotation.NotEmpty
-import studio.sculk.core.annotation.SculkInternal
 import java.io.File
 import java.io.StringWriter
 import java.util.UUID

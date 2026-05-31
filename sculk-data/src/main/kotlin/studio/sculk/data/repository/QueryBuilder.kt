@@ -1,7 +1,7 @@
 package studio.sculk.data.repository
 
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.annotation.SculkStable
 import kotlin.reflect.KProperty1
 
 /**

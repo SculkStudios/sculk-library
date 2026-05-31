@@ -2,9 +2,9 @@ package studio.sculk.example
 
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import studio.sculk.core.SculkResult
-import studio.sculk.core.adventure.reply
-import studio.sculk.core.command.command
+import studio.sculk.SculkResult
+import studio.sculk.adventure.reply
+import studio.sculk.command.command
 import studio.sculk.data.cache.SculkCache
 import studio.sculk.platform.SculkPlugin
 import java.time.Duration

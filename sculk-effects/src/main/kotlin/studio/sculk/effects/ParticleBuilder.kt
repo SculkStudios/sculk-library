@@ -4,7 +4,7 @@ import org.bukkit.Location
 import org.bukkit.Particle
 import org.bukkit.World
 import org.bukkit.entity.Player
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Builds and spawns a particle effect at a given [location].

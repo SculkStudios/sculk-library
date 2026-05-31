@@ -3,9 +3,9 @@ package studio.sculk.packets
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
+import studio.sculk.scheduler.SculkScheduler
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 

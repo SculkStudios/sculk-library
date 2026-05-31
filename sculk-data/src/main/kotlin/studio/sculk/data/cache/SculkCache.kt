@@ -1,8 +1,8 @@
 package studio.sculk.data.cache
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
 import studio.sculk.data.repository.QueryBuilder
 import studio.sculk.data.repository.SculkRepository
 import java.time.Duration

@@ -1,8 +1,8 @@
 package studio.sculk.data.driver
 
+import studio.sculk.annotation.SculkStable
 import studio.sculk.config.annotation.ConfigFile
 import studio.sculk.config.annotation.NotEmpty
-import studio.sculk.core.annotation.SculkStable
 
 /**
  * Auto-generated `storage.yml` configuration.

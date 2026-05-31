@@ -1,6 +1,6 @@
 package studio.sculk.config.annotation
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Validates that a numeric config value is at least [value].

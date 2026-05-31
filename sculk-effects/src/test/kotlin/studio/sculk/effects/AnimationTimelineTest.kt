@@ -2,8 +2,8 @@ package studio.sculk.effects
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.scheduler.SculkScheduler
 
 /** Captures scheduled tasks so tests can fire them manually. */
 private class FakeScheduler : SculkScheduler {

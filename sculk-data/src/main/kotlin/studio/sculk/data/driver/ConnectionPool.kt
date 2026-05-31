@@ -2,7 +2,7 @@ package studio.sculk.data.driver
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.annotation.SculkInternal
 import java.io.File
 
 /**

@@ -1,11 +1,11 @@
 package studio.sculk.example
 
+import studio.sculk.command.CommandBuilder
+import studio.sculk.command.command
 import studio.sculk.config.annotation.ConfigFile
 import studio.sculk.config.annotation.Max
 import studio.sculk.config.annotation.Min
 import studio.sculk.config.annotation.NotEmpty
-import studio.sculk.core.command.CommandBuilder
-import studio.sculk.core.command.command
 import studio.sculk.platform.SculkPlugin
 
 // ---------------------------------------------------------------------------

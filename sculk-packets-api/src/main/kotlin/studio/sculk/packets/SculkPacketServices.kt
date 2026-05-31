@@ -1,8 +1,8 @@
 package studio.sculk.packets
 
 import org.bukkit.plugin.java.JavaPlugin
-import studio.sculk.core.SculkResult
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkResult
+import studio.sculk.scheduler.SculkScheduler
 import java.util.ServiceLoader
 
 public object SculkPacketServices {

@@ -1,6 +1,6 @@
 package studio.sculk.series.registry
 
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.annotation.SculkInternal
 import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 

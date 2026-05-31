@@ -2,8 +2,8 @@ package studio.sculk.example
 
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import studio.sculk.core.gui.Gui
-import studio.sculk.core.gui.gui
+import studio.sculk.gui.Gui
+import studio.sculk.gui.gui
 
 public object StaffMenus {
     public fun inspect(target: Player): Gui =

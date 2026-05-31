@@ -1,6 +1,6 @@
 package studio.sculk.config.annotation
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Marks a data class as a Sculk Studio configuration file.

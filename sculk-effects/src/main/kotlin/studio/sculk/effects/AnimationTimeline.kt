@@ -1,8 +1,8 @@
 package studio.sculk.effects
 
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.annotation.SculkStable
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkStable
+import studio.sculk.scheduler.SculkScheduler
 import java.util.concurrent.atomic.AtomicInteger
 
 /**

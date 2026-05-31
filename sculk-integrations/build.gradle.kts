@@ -5,7 +5,7 @@ plugins {
 description = "Sculk Studio - optional adapters for common Minecraft plugin integrations"
 
 dependencies {
-    api(project(":sculk-core"))
+    api(project(":sculk-common"))
     testImplementation(libs.paper.api)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)

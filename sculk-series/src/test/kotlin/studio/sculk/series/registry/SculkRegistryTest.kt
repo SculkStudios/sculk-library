@@ -3,7 +3,7 @@ package studio.sculk.series.registry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.annotation.SculkInternal
 
 @OptIn(SculkInternal::class)
 class SculkRegistryTest {

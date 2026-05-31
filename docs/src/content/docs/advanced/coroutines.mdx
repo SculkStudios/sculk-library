@@ -47,7 +47,7 @@ cancelled together on platform shutdown.
 A handful of Paper APIs still return `CompletableFuture`. Await them with the provided extension:
 
 ```kotlin
-import studio.sculk.core.coroutine.await
+import studio.sculk.coroutine.await
 
 sculk.scope.launchAsync {
     val chunk = world.getChunkAtAsync(x, z).await()

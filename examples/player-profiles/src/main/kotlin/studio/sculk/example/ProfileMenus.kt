@@ -1,8 +1,8 @@
 package studio.sculk.example
 
 import org.bukkit.Material
-import studio.sculk.core.gui.Gui
-import studio.sculk.core.gui.gui
+import studio.sculk.gui.Gui
+import studio.sculk.gui.gui
 
 public object ProfileMenus {
     public fun profile(profile: PlayerProfile): Gui =

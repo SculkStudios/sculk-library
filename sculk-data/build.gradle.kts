@@ -8,12 +8,13 @@ description = "Sculk Studio — async database abstraction, caching layer, ORM s
 // Allow framework internals within this module.
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.core.annotation.SculkInternal")
+        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
     }
 }
 
 dependencies {
-    api(project(":sculk-effects"))
+    api(project(":sculk-common"))
+    api(project(":sculk-config"))
     implementation(kotlin("reflect"))
     implementation(libs.hikari)
     implementation(libs.caffeine)

@@ -9,7 +9,7 @@ description = "Sculk Studio - item API showcase"
 
 tasks.withType<KotlinCompile> {
     compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.core.annotation.SculkInternal")
+        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
     }
 }
 

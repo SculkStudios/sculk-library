@@ -4,9 +4,9 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import studio.sculk.core.SculkResult
-import studio.sculk.core.adventure.reply
-import studio.sculk.core.command.command
+import studio.sculk.SculkResult
+import studio.sculk.adventure.reply
+import studio.sculk.command.command
 import studio.sculk.platform.SculkPlugin
 import java.time.Duration
 import java.util.UUID

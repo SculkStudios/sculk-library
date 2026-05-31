@@ -1,6 +1,6 @@
 package studio.sculk.config
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /** Mutable YAML document passed to config migrations. */
 @SculkStable

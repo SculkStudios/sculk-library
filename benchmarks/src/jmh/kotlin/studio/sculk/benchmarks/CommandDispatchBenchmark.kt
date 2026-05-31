@@ -22,12 +22,12 @@ import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.Warmup
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.command.brigadier.CommandCompiler
-import studio.sculk.core.command.command
-import studio.sculk.core.coroutine.SculkCoroutineScope
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.command.brigadier.CommandCompiler
+import studio.sculk.command.command
+import studio.sculk.coroutine.SculkCoroutineScope
+import studio.sculk.scheduler.SculkScheduler
 import java.util.concurrent.TimeUnit
 
 /**

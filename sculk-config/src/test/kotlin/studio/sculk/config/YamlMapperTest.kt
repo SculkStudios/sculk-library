@@ -4,12 +4,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.config.annotation.ConfigFile
 import studio.sculk.config.annotation.Max
 import studio.sculk.config.annotation.Min
 import studio.sculk.config.annotation.NotEmpty
 import studio.sculk.config.yaml.YamlMapper
-import studio.sculk.core.annotation.SculkInternal
 import java.io.File
 
 @OptIn(SculkInternal::class)

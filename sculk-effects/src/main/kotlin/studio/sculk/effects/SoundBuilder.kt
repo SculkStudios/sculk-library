@@ -3,7 +3,7 @@ package studio.sculk.effects
 import org.bukkit.Location
 import org.bukkit.Sound
 import org.bukkit.entity.Player
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Builds and plays a sound effect.

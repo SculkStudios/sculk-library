@@ -12,9 +12,8 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon
 import com.github.retrooper.packetevents.wrapper.PacketWrapper
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
 import studio.sculk.packets.AbstractPacketService
 import studio.sculk.packets.PacketBackend
 import studio.sculk.packets.PacketContext
@@ -24,6 +23,7 @@ import studio.sculk.packets.PacketPriority
 import studio.sculk.packets.SculkPacket
 import studio.sculk.packets.SculkPacketService
 import studio.sculk.packets.SculkPacketServiceProvider
+import studio.sculk.scheduler.SculkScheduler
 
 public class PacketEventsPacket(
     public val wrapper: PacketWrapper<*>,

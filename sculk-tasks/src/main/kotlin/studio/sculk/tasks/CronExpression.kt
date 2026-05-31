@@ -1,6 +1,6 @@
 package studio.sculk.tasks
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 

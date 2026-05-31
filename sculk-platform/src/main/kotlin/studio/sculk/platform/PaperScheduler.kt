@@ -3,9 +3,9 @@ package studio.sculk.platform
 import org.bukkit.Location
 import org.bukkit.entity.Entity
 import org.bukkit.plugin.Plugin
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.scheduler.SculkScheduler
 import java.util.concurrent.TimeUnit
 
 private const val MILLIS_PER_TICK = 50L

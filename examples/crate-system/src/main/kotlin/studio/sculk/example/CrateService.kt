@@ -2,12 +2,12 @@ package studio.sculk.example
 
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
-import studio.sculk.core.SculkResult
-import studio.sculk.core.flatMap
-import studio.sculk.core.map
+import studio.sculk.SculkResult
+import studio.sculk.flatMap
 import studio.sculk.items.ItemDescriptor
 import studio.sculk.items.ItemKeys
 import studio.sculk.items.toItemStack
+import studio.sculk.map
 import kotlin.random.Random
 
 public class CrateService(
