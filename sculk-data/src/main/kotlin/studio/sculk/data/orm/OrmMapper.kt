@@ -137,8 +137,12 @@ public object OrmMapper {
     private fun coerceFromSql(
         value: Any?,
         type: KClass<*>,
-    ): Any? =
-        when (type) {
+    ): Any? {
+        if (type.java.isEnum) {
+            val name = value?.toString() ?: return null
+            return type.java.enumConstants.firstOrNull { (it as Enum<*>).name == name }
+        }
+        return when (type) {
             UUID::class -> value?.let { UUID.fromString(it.toString()) }
             Int::class -> (value as? Number)?.toInt()
             Long::class -> (value as? Number)?.toLong()
@@ -153,6 +157,7 @@ public object OrmMapper {
             String::class -> value?.toString()
             else -> value
         }
+    }
 
     /** Converts a Kotlin value to its SQL-compatible representation. */
     public fun coerceToSqlPublic(value: Any?): Any? = coerceToSql(value)
@@ -161,6 +166,7 @@ public object OrmMapper {
         when (value) {
             is UUID -> value.toString()
             is Boolean -> if (value) 1 else 0
+            is Enum<*> -> value.name
             else -> value
         }
 
