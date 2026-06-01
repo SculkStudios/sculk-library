@@ -20,6 +20,7 @@ dependencyResolutionManagement {
 rootProject.name = "sculk-studio"
 
 include(
+    ":sculk-bom",
     ":sculk-common",
     ":sculk-adventure",
     ":sculk-commands",
