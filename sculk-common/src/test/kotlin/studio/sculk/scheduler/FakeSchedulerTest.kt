@@ -32,47 +32,27 @@ class FakeSchedulerTest {
             return SculkHandle {}
         }
 
-        override fun runSyncDelayed(
-            delayTicks: Long,
-            task: Runnable,
-        ): SculkHandle {
+        override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle {
             task.run()
             return SculkHandle {}
         }
 
-        override fun runSyncRepeating(
-            delayTicks: Long,
-            periodTicks: Long,
-            task: Runnable,
-        ): SculkHandle {
+        override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle {
             task.run()
             return SculkHandle {}
         }
 
-        override fun runSync(
-            entity: Entity,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
 
-        override fun runSync(
-            location: Location,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
 
         override fun runAsync(task: Runnable): SculkHandle {
             task.run()
             return SculkHandle {}
         }
 
-        override fun runAsyncDelayed(
-            delayTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runAsync(task)
+        override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runAsync(task)
 
-        override fun runAsyncRepeating(
-            delayTicks: Long,
-            periodTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runAsync(task)
+        override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runAsync(task)
     }
 }

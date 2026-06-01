@@ -32,21 +32,15 @@ public class ProtocolLibPacketServiceProvider : SculkPacketServiceProvider {
 
     override fun isAvailable(): Boolean = classExists("com.comphenix.protocol.ProtocolLibrary")
 
-    override fun create(
-        plugin: JavaPlugin,
-        scheduler: SculkScheduler,
-    ): SculkPacketService = ProtocolLibPacketService(plugin, scheduler)
+    override fun create(plugin: JavaPlugin, scheduler: SculkScheduler): SculkPacketService = ProtocolLibPacketService(plugin, scheduler)
 
-    private fun classExists(name: String): Boolean =
-        runCatching {
-            Class.forName(name, false, javaClass.classLoader)
-        }.isSuccess
+    private fun classExists(name: String): Boolean = runCatching {
+        Class.forName(name, false, javaClass.classLoader)
+    }.isSuccess
 }
 
-private class ProtocolLibPacketService(
-    private val plugin: JavaPlugin,
-    scheduler: SculkScheduler,
-) : AbstractPacketService(PacketBackend.ProtocolLib, scheduler) {
+private class ProtocolLibPacketService(private val plugin: JavaPlugin, scheduler: SculkScheduler) :
+    AbstractPacketService(PacketBackend.ProtocolLib, scheduler) {
     private val handles = mutableListOf<SculkHandle>()
 
     override fun listen(
@@ -83,10 +77,7 @@ private class ProtocolLibPacketService(
         return SculkResult.success(handle)
     }
 
-    override fun send(
-        player: Player,
-        packet: SculkPacket,
-    ): SculkResult<Unit> {
+    override fun send(player: Player, packet: SculkPacket): SculkResult<Unit> {
         if (packet !is ProtocolLibPacket) {
             return SculkResult.failure("ProtocolLib sending requires ProtocolLibPacket.")
         }
@@ -103,23 +94,16 @@ private class ProtocolLibPacketService(
         handles.clear()
     }
 
-    private fun PacketEvent.toContext(
-        direction: PacketDirection,
-        type: PacketKey,
-    ): PacketContext =
-        PacketContext(
-            player = player,
-            direction = direction,
-            type = type,
-            scheduler = scheduler,
-            cancelAction = { isCancelled = true },
-            markChangedAction = {},
-        )
+    private fun PacketEvent.toContext(direction: PacketDirection, type: PacketKey): PacketContext = PacketContext(
+        player = player,
+        direction = direction,
+        type = type,
+        scheduler = scheduler,
+        cancelAction = { isCancelled = true },
+        markChangedAction = {},
+    )
 
-    private fun resolvePacketType(
-        direction: PacketDirection,
-        key: PacketKey,
-    ): PacketType? {
+    private fun resolvePacketType(direction: PacketDirection, key: PacketKey): PacketType? {
         val sender =
             when (direction) {
                 PacketDirection.Clientbound -> PacketType.Sender.SERVER
@@ -143,13 +127,12 @@ private class ProtocolLibPacketService(
         }
     }
 
-    private fun PacketPriority.toProtocolLib(): ListenerPriority =
-        when (this) {
-            PacketPriority.Lowest -> ListenerPriority.LOWEST
-            PacketPriority.Low -> ListenerPriority.LOW
-            PacketPriority.Normal -> ListenerPriority.NORMAL
-            PacketPriority.High -> ListenerPriority.HIGH
-            PacketPriority.Highest -> ListenerPriority.HIGHEST
-            PacketPriority.Monitor -> ListenerPriority.MONITOR
-        }
+    private fun PacketPriority.toProtocolLib(): ListenerPriority = when (this) {
+        PacketPriority.Lowest -> ListenerPriority.LOWEST
+        PacketPriority.Low -> ListenerPriority.LOW
+        PacketPriority.Normal -> ListenerPriority.NORMAL
+        PacketPriority.High -> ListenerPriority.HIGH
+        PacketPriority.Highest -> ListenerPriority.HIGHEST
+        PacketPriority.Monitor -> ListenerPriority.MONITOR
+    }
 }

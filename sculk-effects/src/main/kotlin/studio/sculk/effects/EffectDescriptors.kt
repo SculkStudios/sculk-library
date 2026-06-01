@@ -28,11 +28,7 @@ public data class ParticleEffectDescriptor(
 
 /** Config-friendly sound effect description. */
 @SculkStable
-public data class SoundEffectDescriptor(
-    public val sound: String,
-    public val volume: Float = 1.0f,
-    public val pitch: Float = 1.0f,
-) {
+public data class SoundEffectDescriptor(public val sound: String, public val volume: Float = 1.0f, public val pitch: Float = 1.0f) {
     /** Plays this sound at [location]. Unknown sounds fail with a clear exception. */
     public fun playAt(location: Location) {
         sound(SculkSeries.requireSound(sound)) {

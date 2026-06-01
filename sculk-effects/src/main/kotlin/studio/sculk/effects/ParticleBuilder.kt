@@ -32,9 +32,7 @@ import studio.sculk.annotation.SculkStable
  * ```
  */
 @SculkStable
-public class ParticleBuilder(
-    public val type: Particle,
-) {
+public class ParticleBuilder(public val type: Particle) {
     /** Location to spawn the particle at. Must be set before calling [spawn]. */
     public var location: Location? = null
 
@@ -57,11 +55,7 @@ public class ParticleBuilder(
 
     /** Sets all three offsets at once. */
     @SculkStable
-    public fun offset(
-        x: Double,
-        y: Double,
-        z: Double,
-    ) {
+    public fun offset(x: Double, y: Double, z: Double) {
         offsetX = x
         offsetY = y
         offsetZ = z
@@ -118,7 +112,4 @@ public class ParticleBuilder(
  * builder and call it later (e.g. inside a timeline step).
  */
 @SculkStable
-public fun particle(
-    type: Particle,
-    block: ParticleBuilder.() -> Unit,
-): ParticleBuilder = ParticleBuilder(type).apply(block)
+public fun particle(type: Particle, block: ParticleBuilder.() -> Unit): ParticleBuilder = ParticleBuilder(type).apply(block)

@@ -41,6 +41,4 @@ import studio.sculk.annotation.SculkStable
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-public annotation class Comment(
-    val value: String,
-)
+public annotation class Comment(val value: String)

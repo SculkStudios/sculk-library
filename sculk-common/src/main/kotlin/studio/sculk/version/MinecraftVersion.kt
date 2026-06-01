@@ -13,24 +13,22 @@ public data class MinecraftVersion(
     public val patch: Int = 0,
     public val qualifier: String? = null,
 ) : Comparable<MinecraftVersion> {
-    override fun compareTo(other: MinecraftVersion): Int =
-        compareValuesBy(
-            this,
-            other,
-            MinecraftVersion::major,
-            MinecraftVersion::minor,
-            MinecraftVersion::patch,
-        )
+    override fun compareTo(other: MinecraftVersion): Int = compareValuesBy(
+        this,
+        other,
+        MinecraftVersion::major,
+        MinecraftVersion::minor,
+        MinecraftVersion::patch,
+    )
 
-    override fun toString(): String =
-        buildString {
-            append(major)
-                .append('.')
-                .append(minor)
-                .append('.')
-                .append(patch)
-            if (qualifier != null) append('.').append(qualifier)
-        }
+    override fun toString(): String = buildString {
+        append(major)
+            .append('.')
+            .append(minor)
+            .append('.')
+            .append(patch)
+        if (qualifier != null) append('.').append(qualifier)
+    }
 
     public companion object {
         private val versionPattern = Regex("""^v?(\d+)\.(\d+)(?:\.(\d+))?(?:\.(.+))?$""")

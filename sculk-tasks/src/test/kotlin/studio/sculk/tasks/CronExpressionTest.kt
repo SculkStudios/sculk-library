@@ -7,13 +7,8 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 class CronExpressionTest {
-    private fun at(
-        year: Int,
-        month: Int,
-        day: Int,
-        hour: Int,
-        minute: Int,
-    ) = ZonedDateTime.of(year, month, day, hour, minute, 0, 0, ZoneOffset.UTC)
+    private fun at(year: Int, month: Int, day: Int, hour: Int, minute: Int) =
+        ZonedDateTime.of(year, month, day, hour, minute, 0, 0, ZoneOffset.UTC)
 
     @Test
     fun `daily at 3am finds next occurrence`() {

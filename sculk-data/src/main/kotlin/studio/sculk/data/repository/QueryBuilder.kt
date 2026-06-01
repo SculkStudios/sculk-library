@@ -91,9 +91,5 @@ public class QueryBuilder<T : Any> {
 
     /** A single parsed query condition. The [property] is a Kotlin property name, not a column name. */
     @SculkInternal
-    public data class Condition(
-        val property: String,
-        val operator: String,
-        val value: Any?,
-    )
+    public data class Condition(val property: String, val operator: String, val value: Any?)
 }

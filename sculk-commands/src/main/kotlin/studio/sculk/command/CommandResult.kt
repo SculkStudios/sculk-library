@@ -7,7 +7,5 @@ import studio.sculk.annotation.SculkStable
 public sealed interface CommandResult {
     public data object Success : CommandResult
 
-    public data class Failure(
-        public val message: String,
-    ) : CommandResult
+    public data class Failure(public val message: String) : CommandResult
 }

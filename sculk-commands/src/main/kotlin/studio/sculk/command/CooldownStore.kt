@@ -19,11 +19,7 @@ public class CooldownStore {
      * Returns `null` when the cooldown was free (and is now armed), or the remaining
      * milliseconds when it is still active.
      */
-    public fun tryAcquire(
-        key: String,
-        durationMillis: Long,
-        now: Long = System.currentTimeMillis(),
-    ): Long? {
+    public fun tryAcquire(key: String, durationMillis: Long, now: Long = System.currentTimeMillis()): Long? {
         var remaining: Long? = null
         expiries.compute(key) { _, existing ->
             if (existing != null && existing > now) {

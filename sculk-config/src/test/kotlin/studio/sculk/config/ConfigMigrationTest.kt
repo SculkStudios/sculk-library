@@ -9,16 +9,10 @@ import java.util.logging.Logger
 
 class ConfigMigrationTest {
     @ConfigFile("settings.yml")
-    data class VersionedSettings(
-        val configVersion: Int = 2,
-        val spawnWorld: String = "world",
-        val startingCoins: Int = 100,
-    )
+    data class VersionedSettings(val configVersion: Int = 2, val spawnWorld: String = "world", val startingCoins: Int = 100)
 
     @Test
-    fun `registered migrations run before typed config load`(
-        @TempDir dir: File,
-    ) {
+    fun `registered migrations run before typed config load`(@TempDir dir: File) {
         File(dir, "settings.yml").writeText(
             """
             config-version: 1

@@ -117,10 +117,8 @@ public class SculkPlatform internal constructor(
         dataService?.close()
     }
 
-    private fun <T> missingSubsystem(
-        name: String,
-        call: String,
-    ): T = throw IllegalStateException("Sculk $name subsystem is not enabled. Call $call in SculkPlatform.create { ... }.")
+    private fun <T> missingSubsystem(name: String, call: String): T =
+        throw IllegalStateException("Sculk $name subsystem is not enabled. Call $call in SculkPlatform.create { ... }.")
 
     public companion object {
         /**
@@ -135,10 +133,8 @@ public class SculkPlatform internal constructor(
          * ```
          */
         @SculkStable
-        public fun create(
-            plugin: JavaPlugin,
-            block: SculkPlatformBuilder.() -> Unit = {},
-        ): SculkPlatform = SculkPlatformBuilder(plugin).apply(block).build()
+        public fun create(plugin: JavaPlugin, block: SculkPlatformBuilder.() -> Unit = {}): SculkPlatform =
+            SculkPlatformBuilder(plugin).apply(block).build()
     }
 }
 
@@ -146,9 +142,7 @@ public class SculkPlatform internal constructor(
  * DSL builder for [SculkPlatform].
  */
 @SculkStable
-public class SculkPlatformBuilder(
-    private val plugin: JavaPlugin,
-) {
+public class SculkPlatformBuilder(private val plugin: JavaPlugin) {
     private var configEnabled = false
     private var dataEnabled = false
     private var textEnabled = false

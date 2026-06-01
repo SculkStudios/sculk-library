@@ -28,10 +28,7 @@ import com.mojang.brigadier.context.CommandContext as BrigadierContext
  * can do non-blocking IO (`withAsync { ... }`) without freezing the server.
  */
 @SculkInternal
-public class CommandCompiler(
-    private val scope: SculkCoroutineScope,
-    private val cooldowns: CooldownStore = CooldownStore(),
-) {
+public class CommandCompiler(private val scope: SculkCoroutineScope, private val cooldowns: CooldownStore = CooldownStore()) {
     /** Compiles [node] and its full subtree into a registrable Brigadier node. */
     public fun compile(node: CommandNode): LiteralCommandNode<CommandSourceStack> = buildLiteral(node).build()
 
@@ -72,16 +69,12 @@ public class CommandCompiler(
         return argument
     }
 
-    private fun makeCommand(node: CommandNode): Command<CommandSourceStack> =
-        Command { ctx ->
-            dispatch(node, ctx)
-            Command.SINGLE_SUCCESS
-        }
+    private fun makeCommand(node: CommandNode): Command<CommandSourceStack> = Command { ctx ->
+        dispatch(node, ctx)
+        Command.SINGLE_SUCCESS
+    }
 
-    private fun dispatch(
-        node: CommandNode,
-        ctx: BrigadierContext<CommandSourceStack>,
-    ) {
+    private fun dispatch(node: CommandNode, ctx: BrigadierContext<CommandSourceStack>) {
         val sender = ctx.source.sender
         val parsed = LinkedHashMap<String, Any?>()
         for (definition in node.arguments) {
@@ -125,11 +118,7 @@ public class CommandCompiler(
         }
     }
 
-    private suspend fun runExecutor(
-        node: CommandNode,
-        context: CommandContext,
-        sender: CommandSender,
-    ) {
+    private suspend fun runExecutor(node: CommandNode, context: CommandContext, sender: CommandSender) {
         when {
             node.anyExecutor != null -> node.anyExecutor!!.invoke(context)
             node.playerExecutor != null -> {

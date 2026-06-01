@@ -1,8 +1,11 @@
 package studio.sculk.packets
 
+import studio.sculk.annotation.SculkStable
+
 /**
  * Packet backend selected for a running Sculk packet service.
  */
+@SculkStable
 public enum class PacketBackend {
     PacketEvents,
     ProtocolLib,
@@ -11,6 +14,7 @@ public enum class PacketBackend {
 /**
  * Backend selection policy for platform startup.
  */
+@SculkStable
 public enum class PacketBackendMode {
     Auto,
     PacketEvents,
@@ -21,6 +25,7 @@ public enum class PacketBackendMode {
 /**
  * Packet flow direction from the server's point of view.
  */
+@SculkStable
 public enum class PacketDirection {
     Clientbound,
     Serverbound,
@@ -29,6 +34,7 @@ public enum class PacketDirection {
 /**
  * Backend-neutral packet listener priority.
  */
+@SculkStable
 public enum class PacketPriority {
     Lowest,
     Low,
@@ -44,10 +50,8 @@ public enum class PacketPriority {
  * Sculk uses lowercase namespaced keys for public packet APIs so docs and configs do not need
  * backend-specific enum names.
  */
-public data class PacketKey(
-    public val namespace: String = "minecraft",
-    public val value: String,
-) {
+@SculkStable
+public data class PacketKey(public val namespace: String = "minecraft", public val value: String) {
     init {
         require(namespace.isNotBlank()) { "Packet namespace cannot be blank." }
         require(value.isNotBlank()) { "Packet value cannot be blank." }
@@ -76,6 +80,7 @@ public data class PacketKey(
 /**
  * Marker for backend-specific packets that can be sent through [SculkPacketService].
  */
+@SculkStable
 public interface SculkPacket {
     public val direction: PacketDirection
     public val type: PacketKey

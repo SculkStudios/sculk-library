@@ -40,19 +40,13 @@ public object YamlMapper {
     }
 
     /** Reads [file] and maps it to an instance of [klass]. Missing keys use constructor defaults. */
-    public fun <T : Any> load(
-        file: File,
-        klass: KClass<T>,
-    ): T {
+    public fun <T : Any> load(file: File, klass: KClass<T>): T {
         val raw = loadRaw(file)
         return fromMap(raw, klass)
     }
 
     /** Writes [instance] to [file] as YAML, creating parent directories if needed. */
-    public fun <T : Any> save(
-        file: File,
-        instance: T,
-    ) {
+    public fun <T : Any> save(file: File, instance: T) {
         file.parentFile?.mkdirs()
         val map = toMap(instance)
         val writer = StringWriter()
@@ -61,19 +55,15 @@ public object YamlMapper {
     }
 
     /** Reads raw YAML content as a mutable map. */
-    public fun loadRaw(file: File): MutableMap<String, Any?> =
-        if (file.exists() && file.length() > 0) {
-            @Suppress("UNCHECKED_CAST")
-            (yaml.load(file.readText()) as? Map<String, Any?>).orEmpty().toMutableMap()
-        } else {
-            mutableMapOf()
-        }
+    public fun loadRaw(file: File): MutableMap<String, Any?> = if (file.exists() && file.length() > 0) {
+        @Suppress("UNCHECKED_CAST")
+        (yaml.load(file.readText()) as? Map<String, Any?>).orEmpty().toMutableMap()
+    } else {
+        mutableMapOf()
+    }
 
     /** Writes raw YAML map content. */
-    public fun saveRaw(
-        file: File,
-        values: Map<String, Any?>,
-    ) {
+    public fun saveRaw(file: File, values: Map<String, Any?>) {
         file.parentFile?.mkdirs()
         val writer = StringWriter()
         yaml.dump(values, writer)
@@ -81,10 +71,7 @@ public object YamlMapper {
     }
 
     /** Writes defaults for [klass] to [file] only for keys not already present. */
-    public fun <T : Any> writeDefaults(
-        file: File,
-        klass: KClass<T>,
-    ) {
+    public fun <T : Any> writeDefaults(file: File, klass: KClass<T>) {
         val existing: Map<String, Any?> =
             if (file.exists() && file.length() > 0) {
                 @Suppress("UNCHECKED_CAST")
@@ -120,10 +107,7 @@ public object YamlMapper {
      *   lists, maps) are handled correctly
      * - A blank line is inserted after commented entries for readability
      */
-    private fun <T : Any> buildCommentedYaml(
-        klass: KClass<T>,
-        mergedMap: Map<String, Any?>,
-    ): String {
+    private fun <T : Any> buildCommentedYaml(klass: KClass<T>, mergedMap: Map<String, Any?>): String {
         val constructor =
             klass.primaryConstructor
                 ?: return yaml.dump(mergedMap)
@@ -201,10 +185,7 @@ public object YamlMapper {
     // Internals
     // ---------------------------------------------------------------------------
 
-    private fun <T : Any> fromMap(
-        map: Map<String, Any?>,
-        klass: KClass<T>,
-    ): T {
+    private fun <T : Any> fromMap(map: Map<String, Any?>, klass: KClass<T>): T {
         val constructor =
             requireNotNull(klass.primaryConstructor) {
                 "Config class ${klass.simpleName} must have a primary constructor."
@@ -222,10 +203,7 @@ public object YamlMapper {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun coerce(
-        value: Any?,
-        type: KType,
-    ): Any? {
+    private fun coerce(value: Any?, type: KType): Any? {
         if (value == null) return null
 
         // List<T>
@@ -273,12 +251,11 @@ public object YamlMapper {
      * Substitutes `${VAR}` / `${VAR:-default}` references in config string values with environment
      * variables. An unset variable with no default is left unchanged so the placeholder is visible.
      */
-    private fun substituteEnv(value: String): String =
-        envPattern.replace(value) { match ->
-            val name = match.groupValues[1]
-            val default = match.groups[2]?.value
-            System.getenv(name) ?: default ?: match.value
-        }
+    private fun substituteEnv(value: String): String = envPattern.replace(value) { match ->
+        val name = match.groupValues[1]
+        val default = match.groups[2]?.value
+        System.getenv(name) ?: default ?: match.value
+    }
 
     /**
      * Serialises [instance] to a YAML-ready map.
@@ -289,10 +266,7 @@ public object YamlMapper {
      * simply fall back to the constructor default, so this is round-trip safe. Top-level config
      * sections are always kept (omitDefaults=false) so every option stays discoverable.
      */
-    private fun toMap(
-        instance: Any,
-        omitDefaults: Boolean = false,
-    ): Map<String, Any?> {
+    private fun toMap(instance: Any, omitDefaults: Boolean = false): Map<String, Any?> {
         val map = LinkedHashMap<String, Any?>()
         val klass = instance::class
         for (param in klass.primaryConstructor?.parameters ?: emptyList()) {
@@ -304,34 +278,28 @@ public object YamlMapper {
         return map
     }
 
-    private fun isOmittable(value: Any?): Boolean =
-        value == null ||
-            (value is Collection<*> && value.isEmpty()) ||
-            (value is Map<*, *> && value.isEmpty())
+    private fun isOmittable(value: Any?): Boolean = value == null ||
+        (value is Collection<*> && value.isEmpty()) ||
+        (value is Map<*, *> && value.isEmpty())
 
-    private fun toYamlValue(value: Any?): Any? =
-        when (value) {
-            null -> null
-            is List<*> -> value.map { toYamlValue(it) }
-            is Map<*, *> ->
-                value
-                    .mapKeys { it.key.toString() }
-                    .mapValues { (_, v) -> toYamlValue(v) }
-            is Enum<*> -> value.name
-            is UUID -> value.toString()
-            else -> if (value::class.isData) toMap(value, omitDefaults = true) else value
-        }
+    private fun toYamlValue(value: Any?): Any? = when (value) {
+        null -> null
+        is List<*> -> value.map { toYamlValue(it) }
+        is Map<*, *> ->
+            value
+                .mapKeys { it.key.toString() }
+                .mapValues { (_, v) -> toYamlValue(v) }
+        is Enum<*> -> value.name
+        is UUID -> value.toString()
+        else -> if (value::class.isData) toMap(value, omitDefaults = true) else value
+    }
 
     private fun <T : Any> createDefault(klass: KClass<T>): T {
         val constructor = requireNotNull(klass.primaryConstructor)
         return constructor.callBy(emptyMap())
     }
 
-    private fun validateParam(
-        param: KParameter,
-        value: Any?,
-        violations: MutableList<String>,
-    ) {
+    private fun validateParam(param: KParameter, value: Any?, violations: MutableList<String>) {
         val annotations = param.annotations
         for (annotation in annotations) {
             when (annotation) {

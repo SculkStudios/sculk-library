@@ -14,9 +14,7 @@ import studio.sculk.annotation.SculkStable
 @SculkStable
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-public annotation class Table(
-    val name: String = "",
-)
+public annotation class Table(val name: String = "")
 
 /**
  * Marks a constructor parameter as the primary key for its entity.
@@ -34,6 +32,4 @@ public annotation class PrimaryKey
 @SculkStable
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-public annotation class Column(
-    val name: String,
-)
+public annotation class Column(val name: String)

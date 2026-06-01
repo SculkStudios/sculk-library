@@ -42,279 +42,224 @@ import java.time.Duration
  */
 @SculkStable
 public class CommandBuilder
+@SculkInternal
+constructor(name: String) {
     @SculkInternal
-    constructor(
-        name: String,
-    ) {
-        @SculkInternal
-        public val node: CommandNode = CommandNode(name)
+    public val node: CommandNode = CommandNode(name)
 
-        /** The permission required to run this command or subcommand. */
-        public var permission: String?
-            get() = node.permission
-            set(value) {
-                node.permission = value
-            }
-
-        /** A short description shown in auto-generated help. */
-        public var description: String
-            get() = node.description
-            set(value) {
-                node.description = value
-            }
-
-        /**
-         * Aliases for this command.
-         *
-         * ```kotlin
-         * command("teleport") {
-         *     aliases = listOf("tp", "tele")
-         *     player { /* ... */ }
-         * }
-         * ```
-         */
-        public var aliases: List<String>
-            get() = node.aliases
-            set(value) {
-                node.aliases.clear()
-                node.aliases.addAll(value)
-            }
-
-        // -----------------------------------------------------------------------
-        // Sender-type executors
-        // -----------------------------------------------------------------------
-
-        /**
-         * Executes when the command is run by a [Player].
-         *
-         * The [CommandContext.player] property is guaranteed non-null inside this block.
-         * Console senders are automatically rejected with an error message.
-         */
-        public fun player(block: suspend CommandContext.() -> Unit) {
-            node.playerExecutor = block
+    /** The permission required to run this command or subcommand. */
+    public var permission: String?
+        get() = node.permission
+        set(value) {
+            node.permission = value
         }
 
-        /**
-         * Executes when the command is run from the server console.
-         *
-         * Player senders are automatically rejected with an error message.
-         */
-        public fun console(block: suspend CommandContext.() -> Unit) {
-            node.consoleExecutor = block
+    /** A short description shown in auto-generated help. */
+    public var description: String
+        get() = node.description
+        set(value) {
+            node.description = value
         }
 
-        /**
-         * Executes regardless of sender type (player or console).
-         *
-         * Use when the command behaviour is identical for all senders.
-         * Prefer [player] or [console] for sender-specific logic.
-         */
-        public fun executes(block: suspend CommandContext.() -> Unit) {
-            node.anyExecutor = block
+    /**
+     * Aliases for this command.
+     *
+     * ```kotlin
+     * command("teleport") {
+     *     aliases = listOf("tp", "tele")
+     *     player { /* ... */ }
+     * }
+     * ```
+     */
+    public var aliases: List<String>
+        get() = node.aliases
+        set(value) {
+            node.aliases.clear()
+            node.aliases.addAll(value)
         }
 
-        /** Applies a per-sender cooldown to this command node. */
-        public fun cooldown(
-            key: String,
-            duration: Duration,
-        ) {
-            node.cooldown = CooldownDefinition(key, duration.toMillis())
-        }
+    // -----------------------------------------------------------------------
+    // Sender-type executors
+    // -----------------------------------------------------------------------
 
-        /**
-         * Adds a pre-execution filter. Filters run in registration order before the
-         * executor; returning `false` aborts dispatch. The filter should message the
-         * sender when it rejects.
-         *
-         * ```kotlin
-         * command("admin") {
-         *     middleware { ctx ->
-         *         logger.info("${ctx.sender.name} ran /admin")
-         *         true
-         *     }
-         *     executes { reply("<green>ok") }
-         * }
-         * ```
-         */
-        public fun middleware(block: suspend (CommandContext) -> Boolean) {
-            node.middleware += block
-        }
-
-        // -----------------------------------------------------------------------
-        // Subcommands
-        // -----------------------------------------------------------------------
-
-        /**
-         * Registers a subcommand with [name].
-         *
-         * ```kotlin
-         * sub("give") {
-         *     player {
-         *         val target = argument<Player>("target")
-         *         reply("Gave something to ${target.name}")
-         *     }
-         * }
-         * ```
-         */
-        public fun sub(
-            name: String,
-            block: CommandBuilder.() -> Unit,
-        ) {
-            val child = CommandBuilder(name).apply(block)
-            node.subcommands += child.node
-        }
-
-        // -----------------------------------------------------------------------
-        // Arguments
-        // -----------------------------------------------------------------------
-
-        /** Registers a required string argument with [name]. */
-        public fun string(
-            name: String,
-            optional: Boolean = false,
-        ) {
-            node.arguments += ArgumentDefinition(name, StringParser, optional)
-        }
-
-        /** Registers an integer argument with [name]. */
-        public fun int(
-            name: String,
-            optional: Boolean = false,
-            min: Int? = null,
-            max: Int? = null,
-        ) {
-            val parser = if (min == null && max == null) IntParser else BoundedIntParser(min, max)
-            node.arguments += ArgumentDefinition(name, parser, optional)
-        }
-
-        /** Registers a double argument with [name]. */
-        public fun double(
-            name: String,
-            optional: Boolean = false,
-            min: Double? = null,
-            max: Double? = null,
-        ) {
-            val parser = if (min == null && max == null) DoubleParser else BoundedDoubleParser(min, max)
-            node.arguments += ArgumentDefinition(name, parser, optional)
-        }
-
-        /** Registers a boolean argument with [name]. */
-        public fun boolean(
-            name: String,
-            optional: Boolean = false,
-        ) {
-            node.arguments += ArgumentDefinition(name, BooleanParser, optional)
-        }
-
-        /** Registers an online-player argument with [name]. */
-        public fun player(
-            name: String,
-            optional: Boolean = false,
-        ) {
-            node.arguments += ArgumentDefinition(name, PlayerParser, optional)
-        }
-
-        /** Registers a long-integer argument with [name]. */
-        public fun long(
-            name: String,
-            optional: Boolean = false,
-            min: Long? = null,
-            max: Long? = null,
-        ) {
-            val parser = if (min == null && max == null) LongParser else BoundedLongParser(min, max)
-            node.arguments += ArgumentDefinition(name, parser, optional)
-        }
-
-        /** Registers a UUID argument with [name]. */
-        public fun uuid(
-            name: String,
-            optional: Boolean = false,
-        ) {
-            node.arguments += ArgumentDefinition(name, UuidParser, optional)
-        }
-
-        /** Registers a world argument with [name]. */
-        public fun world(
-            name: String,
-            optional: Boolean = false,
-        ) {
-            node.arguments += ArgumentDefinition(name, WorldParser, optional)
-        }
-
-        /** Registers a material argument with [name]. */
-        public fun material(
-            name: String,
-            optional: Boolean = false,
-        ) {
-            node.arguments += ArgumentDefinition(name, MaterialParser, optional)
-        }
-
-        /** Registers a duration argument with [name], accepting values like `10s`, `5m`, or `1h`. */
-        public fun duration(
-            name: String,
-            optional: Boolean = false,
-        ) {
-            node.arguments += ArgumentDefinition(name, DurationParser, optional)
-        }
-
-        /** Registers an enum argument with [name]. */
-        public inline fun <reified E : Enum<E>> enum(
-            name: String,
-            optional: Boolean = false,
-        ) {
-            argument(name, ChoiceParser(enumValues<E>().map { it.name.lowercase() }), optional)
-        }
-
-        /**
-         * Registers a greedy string argument that consumes the rest of the input as one string.
-         *
-         * Must be the last argument on this command node.
-         *
-         * ```kotlin
-         * greedy("message")
-         * executes { reply(argument<String>("message")) }
-         * ```
-         */
-        public fun greedy(name: String) {
-            node.arguments += ArgumentDefinition(name, GreedyStringParser, optional = false)
-        }
-
-        /** Registers a fixed-choice argument with [name] accepting only [choices]. */
-        public fun choice(
-            name: String,
-            vararg choices: String,
-            optional: Boolean = false,
-        ) {
-            node.arguments += ArgumentDefinition(name, ChoiceParser(choices.toList()), optional)
-        }
-
-        /**
-         * Registers a custom argument with [name] using [parser].
-         *
-         * ```kotlin
-         * object WorldParser : ArgumentParser<World> {
-         *     override val typeName = "world"
-         *     override fun parse(input: String) = Bukkit.getWorld(input)
-         *     override fun suggest(input: String) = Bukkit.getWorlds().map { it.name }
-         * }
-         *
-         * command("spawn") {
-         *     argument("world", WorldParser)
-         *     player {
-         *         val world = argument<World>("world")
-         *         player!!.teleport(world.spawnLocation)
-         *     }
-         * }
-         * ```
-         */
-        public fun <T : Any> argument(
-            name: String,
-            parser: ArgumentParser<T>,
-            optional: Boolean = false,
-        ) {
-            node.arguments += ArgumentDefinition(name, parser, optional)
-        }
+    /**
+     * Executes when the command is run by a [Player].
+     *
+     * The [CommandContext.player] property is guaranteed non-null inside this block.
+     * Console senders are automatically rejected with an error message.
+     */
+    public fun player(block: suspend CommandContext.() -> Unit) {
+        node.playerExecutor = block
     }
+
+    /**
+     * Executes when the command is run from the server console.
+     *
+     * Player senders are automatically rejected with an error message.
+     */
+    public fun console(block: suspend CommandContext.() -> Unit) {
+        node.consoleExecutor = block
+    }
+
+    /**
+     * Executes regardless of sender type (player or console).
+     *
+     * Use when the command behaviour is identical for all senders.
+     * Prefer [player] or [console] for sender-specific logic.
+     */
+    public fun executes(block: suspend CommandContext.() -> Unit) {
+        node.anyExecutor = block
+    }
+
+    /** Applies a per-sender cooldown to this command node. */
+    public fun cooldown(key: String, duration: Duration) {
+        node.cooldown = CooldownDefinition(key, duration.toMillis())
+    }
+
+    /**
+     * Adds a pre-execution filter. Filters run in registration order before the
+     * executor; returning `false` aborts dispatch. The filter should message the
+     * sender when it rejects.
+     *
+     * ```kotlin
+     * command("admin") {
+     *     middleware { ctx ->
+     *         logger.info("${ctx.sender.name} ran /admin")
+     *         true
+     *     }
+     *     executes { reply("<green>ok") }
+     * }
+     * ```
+     */
+    public fun middleware(block: suspend (CommandContext) -> Boolean) {
+        node.middleware += block
+    }
+
+    // -----------------------------------------------------------------------
+    // Subcommands
+    // -----------------------------------------------------------------------
+
+    /**
+     * Registers a subcommand with [name].
+     *
+     * ```kotlin
+     * sub("give") {
+     *     player {
+     *         val target = argument<Player>("target")
+     *         reply("Gave something to ${target.name}")
+     *     }
+     * }
+     * ```
+     */
+    public fun sub(name: String, block: CommandBuilder.() -> Unit) {
+        val child = CommandBuilder(name).apply(block)
+        node.subcommands += child.node
+    }
+
+    // -----------------------------------------------------------------------
+    // Arguments
+    // -----------------------------------------------------------------------
+
+    /** Registers a required string argument with [name]. */
+    public fun string(name: String, optional: Boolean = false) {
+        node.arguments += ArgumentDefinition(name, StringParser, optional)
+    }
+
+    /** Registers an integer argument with [name]. */
+    public fun int(name: String, optional: Boolean = false, min: Int? = null, max: Int? = null) {
+        val parser = if (min == null && max == null) IntParser else BoundedIntParser(min, max)
+        node.arguments += ArgumentDefinition(name, parser, optional)
+    }
+
+    /** Registers a double argument with [name]. */
+    public fun double(name: String, optional: Boolean = false, min: Double? = null, max: Double? = null) {
+        val parser = if (min == null && max == null) DoubleParser else BoundedDoubleParser(min, max)
+        node.arguments += ArgumentDefinition(name, parser, optional)
+    }
+
+    /** Registers a boolean argument with [name]. */
+    public fun boolean(name: String, optional: Boolean = false) {
+        node.arguments += ArgumentDefinition(name, BooleanParser, optional)
+    }
+
+    /** Registers an online-player argument with [name]. */
+    public fun player(name: String, optional: Boolean = false) {
+        node.arguments += ArgumentDefinition(name, PlayerParser, optional)
+    }
+
+    /** Registers a long-integer argument with [name]. */
+    public fun long(name: String, optional: Boolean = false, min: Long? = null, max: Long? = null) {
+        val parser = if (min == null && max == null) LongParser else BoundedLongParser(min, max)
+        node.arguments += ArgumentDefinition(name, parser, optional)
+    }
+
+    /** Registers a UUID argument with [name]. */
+    public fun uuid(name: String, optional: Boolean = false) {
+        node.arguments += ArgumentDefinition(name, UuidParser, optional)
+    }
+
+    /** Registers a world argument with [name]. */
+    public fun world(name: String, optional: Boolean = false) {
+        node.arguments += ArgumentDefinition(name, WorldParser, optional)
+    }
+
+    /** Registers a material argument with [name]. */
+    public fun material(name: String, optional: Boolean = false) {
+        node.arguments += ArgumentDefinition(name, MaterialParser, optional)
+    }
+
+    /** Registers a duration argument with [name], accepting values like `10s`, `5m`, or `1h`. */
+    public fun duration(name: String, optional: Boolean = false) {
+        node.arguments += ArgumentDefinition(name, DurationParser, optional)
+    }
+
+    /** Registers an enum argument with [name]. */
+    public inline fun <reified E : Enum<E>> enum(name: String, optional: Boolean = false) {
+        argument(name, ChoiceParser(enumValues<E>().map { it.name.lowercase() }), optional)
+    }
+
+    /**
+     * Registers a greedy string argument that consumes the rest of the input as one string.
+     *
+     * Must be the last argument on this command node.
+     *
+     * ```kotlin
+     * greedy("message")
+     * executes { reply(argument<String>("message")) }
+     * ```
+     */
+    public fun greedy(name: String) {
+        node.arguments += ArgumentDefinition(name, GreedyStringParser, optional = false)
+    }
+
+    /** Registers a fixed-choice argument with [name] accepting only [choices]. */
+    public fun choice(name: String, vararg choices: String, optional: Boolean = false) {
+        node.arguments += ArgumentDefinition(name, ChoiceParser(choices.toList()), optional)
+    }
+
+    /**
+     * Registers a custom argument with [name] using [parser].
+     *
+     * ```kotlin
+     * object WorldParser : ArgumentParser<World> {
+     *     override val typeName = "world"
+     *     override fun parse(input: String) = Bukkit.getWorld(input)
+     *     override fun suggest(input: String) = Bukkit.getWorlds().map { it.name }
+     * }
+     *
+     * command("spawn") {
+     *     argument("world", WorldParser)
+     *     player {
+     *         val world = argument<World>("world")
+     *         player!!.teleport(world.spawnLocation)
+     *     }
+     * }
+     * ```
+     */
+    public fun <T : Any> argument(name: String, parser: ArgumentParser<T>, optional: Boolean = false) {
+        node.arguments += ArgumentDefinition(name, parser, optional)
+    }
+}
 
 /**
  * Creates and returns a [CommandBuilder] with [name].
@@ -331,7 +276,4 @@ public class CommandBuilder
  * ```
  */
 @SculkStable
-public fun command(
-    name: String,
-    block: CommandBuilder.() -> Unit,
-): CommandBuilder = CommandBuilder(name).apply(block)
+public fun command(name: String, block: CommandBuilder.() -> Unit): CommandBuilder = CommandBuilder(name).apply(block)

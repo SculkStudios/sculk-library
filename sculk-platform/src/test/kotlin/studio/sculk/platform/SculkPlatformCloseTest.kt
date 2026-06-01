@@ -21,11 +21,11 @@ class SculkPlatformCloseTest {
         val platform =
             platform(
                 handles =
-                    listOf(
-                        SculkHandle { closed += 1 },
-                        SculkHandle { closed += 2 },
-                        SculkHandle { closed += 3 },
-                    ),
+                listOf(
+                    SculkHandle { closed += 1 },
+                    SculkHandle { closed += 2 },
+                    SculkHandle { closed += 3 },
+                ),
             )
 
         platform.close()
@@ -63,10 +63,7 @@ class SculkPlatformCloseTest {
         assertEquals(failure, platform.packetsResult)
     }
 
-    private fun platform(
-        handles: List<SculkHandle> = emptyList(),
-        packetResult: SculkResult<SculkPacketService>? = null,
-    ): SculkPlatform =
+    private fun platform(handles: List<SculkHandle> = emptyList(), packetResult: SculkResult<SculkPacketService>? = null): SculkPlatform =
         SculkPlatform(
             plugin = mock<JavaPlugin>(),
             scheduler = mock<SculkScheduler>(),

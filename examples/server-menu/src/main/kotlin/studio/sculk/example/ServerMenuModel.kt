@@ -11,10 +11,8 @@ public object ServerMenuModel {
             "settings" to 16,
         )
 
-    public fun pageCount(
-        entries: Int,
-        pageSize: Int,
-    ): Int = ceil(entries.coerceAtLeast(0).toDouble() / pageSize.coerceAtLeast(1).toDouble()).toInt().coerceAtLeast(1)
+    public fun pageCount(entries: Int, pageSize: Int): Int =
+        ceil(entries.coerceAtLeast(0).toDouble() / pageSize.coerceAtLeast(1).toDouble()).toInt().coerceAtLeast(1)
 
     public fun hasPlayers(count: Int): Boolean = count > 0
 }

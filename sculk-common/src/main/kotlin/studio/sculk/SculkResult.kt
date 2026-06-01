@@ -22,28 +22,20 @@ public sealed interface SculkResult<out T> {
      * A successful result carrying a [value].
      */
     @SculkStable
-    public data class Success<T>(
-        public val value: T,
-    ) : SculkResult<T>
+    public data class Success<T>(public val value: T) : SculkResult<T>
 
     /**
      * A failed result carrying a [message] and an optional [cause].
      */
     @SculkStable
-    public data class Failure(
-        public val message: String,
-        public val cause: Throwable? = null,
-    ) : SculkResult<Nothing>
+    public data class Failure(public val message: String, public val cause: Throwable? = null) : SculkResult<Nothing>
 
     public companion object {
         /** Wraps [value] in a [Success]. */
         public fun <T> success(value: T): SculkResult<T> = Success(value)
 
         /** Wraps [message] and optional [cause] in a [Failure]. */
-        public fun failure(
-            message: String,
-            cause: Throwable? = null,
-        ): SculkResult<Nothing> = Failure(message, cause)
+        public fun failure(message: String, cause: Throwable? = null): SculkResult<Nothing> = Failure(message, cause)
     }
 }
 
@@ -73,11 +65,10 @@ public val SculkResult<*>.isFailure: Boolean get() = this is SculkResult.Failure
  * ```
  */
 @SculkStable
-public fun <T, R> SculkResult<T>.map(transform: (T) -> R): SculkResult<R> =
-    when (this) {
-        is SculkResult.Success -> SculkResult.success(transform(value))
-        is SculkResult.Failure -> this
-    }
+public fun <T, R> SculkResult<T>.map(transform: (T) -> R): SculkResult<R> = when (this) {
+    is SculkResult.Success -> SculkResult.success(transform(value))
+    is SculkResult.Failure -> this
+}
 
 /**
  * Chains an operation that itself returns a [SculkResult], propagating failures short-circuit style.
@@ -89,11 +80,10 @@ public fun <T, R> SculkResult<T>.map(transform: (T) -> R): SculkResult<R> =
  * ```
  */
 @SculkStable
-public fun <T, R> SculkResult<T>.flatMap(transform: (T) -> SculkResult<R>): SculkResult<R> =
-    when (this) {
-        is SculkResult.Success -> transform(value)
-        is SculkResult.Failure -> this
-    }
+public fun <T, R> SculkResult<T>.flatMap(transform: (T) -> SculkResult<R>): SculkResult<R> = when (this) {
+    is SculkResult.Success -> transform(value)
+    is SculkResult.Failure -> this
+}
 
 /**
  * Runs [action] with the value if this is a [SculkResult.Success]. Returns this unchanged.
@@ -132,14 +122,10 @@ public fun <T> SculkResult<T>.onFailure(action: (message: String, cause: Throwab
  * ```
  */
 @SculkStable
-public fun <T, R> SculkResult<T>.fold(
-    onSuccess: (T) -> R,
-    onFailure: (message: String, cause: Throwable?) -> R,
-): R =
-    when (this) {
-        is SculkResult.Success -> onSuccess(value)
-        is SculkResult.Failure -> onFailure(message, cause)
-    }
+public fun <T, R> SculkResult<T>.fold(onSuccess: (T) -> R, onFailure: (message: String, cause: Throwable?) -> R): R = when (this) {
+    is SculkResult.Success -> onSuccess(value)
+    is SculkResult.Failure -> onFailure(message, cause)
+}
 
 /**
  * Recovers from a failure by computing a fallback value.
@@ -149,8 +135,7 @@ public fun <T, R> SculkResult<T>.fold(
  * ```
  */
 @SculkStable
-public fun <T> SculkResult<T>.recover(onFailure: (message: String, cause: Throwable?) -> T): SculkResult<T> =
-    when (this) {
-        is SculkResult.Success -> this
-        is SculkResult.Failure -> SculkResult.success(onFailure(message, cause))
-    }
+public fun <T> SculkResult<T>.recover(onFailure: (message: String, cause: Throwable?) -> T): SculkResult<T> = when (this) {
+    is SculkResult.Success -> this
+    is SculkResult.Failure -> SculkResult.success(onFailure(message, cause))
+}

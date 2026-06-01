@@ -64,23 +64,21 @@ class SculkIntegrationsTest {
     }
 }
 
-private inline fun <reified T : Any> proxy(noinline handler: (java.lang.reflect.Method, Array<Any?>?) -> Any?): T =
-    Proxy.newProxyInstance(
-        T::class.java.classLoader,
-        arrayOf(T::class.java),
-        InvocationHandler { _, method, args -> handler(method, args) },
-    ) as T
+private inline fun <reified T : Any> proxy(noinline handler: (java.lang.reflect.Method, Array<Any?>?) -> Any?): T = Proxy.newProxyInstance(
+    T::class.java.classLoader,
+    arrayOf(T::class.java),
+    InvocationHandler { _, method, args -> handler(method, args) },
+) as T
 
-private fun defaultValue(type: Class<*>): Any? =
-    when (type) {
-        java.lang.Boolean.TYPE -> false
-        java.lang.Byte.TYPE -> 0.toByte()
-        java.lang.Short.TYPE -> 0.toShort()
-        java.lang.Integer.TYPE -> 0
-        java.lang.Long.TYPE -> 0L
-        java.lang.Float.TYPE -> 0f
-        java.lang.Double.TYPE -> 0.0
-        java.lang.Character.TYPE -> '\u0000'
-        java.lang.Void.TYPE -> null
-        else -> null
-    }
+private fun defaultValue(type: Class<*>): Any? = when (type) {
+    java.lang.Boolean.TYPE -> false
+    java.lang.Byte.TYPE -> 0.toByte()
+    java.lang.Short.TYPE -> 0.toShort()
+    java.lang.Integer.TYPE -> 0
+    java.lang.Long.TYPE -> 0L
+    java.lang.Float.TYPE -> 0f
+    java.lang.Double.TYPE -> 0.0
+    java.lang.Character.TYPE -> '\u0000'
+    java.lang.Void.TYPE -> null
+    else -> null
+}

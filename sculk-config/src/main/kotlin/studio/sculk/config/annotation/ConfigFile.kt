@@ -20,6 +20,4 @@ import studio.sculk.annotation.SculkStable
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-public annotation class ConfigFile(
-    val path: String,
-)
+public annotation class ConfigFile(val path: String)

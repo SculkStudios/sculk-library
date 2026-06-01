@@ -17,10 +17,7 @@ public object ConnectionPool {
      *
      * [dataFolder] is used to resolve the SQLite file path relative to the plugin's data directory.
      */
-    public fun create(
-        config: StorageConfig,
-        dataFolder: File,
-    ): HikariDataSource {
+    public fun create(config: StorageConfig, dataFolder: File): HikariDataSource {
         val hikari = HikariConfig()
         when (config.dialect()) {
             SqlDialect.SQLITE -> {

@@ -23,10 +23,10 @@ class SculkPacketServicesTest {
                 scheduler = ImmediateScheduler(),
                 config = PacketServiceConfig(),
                 providers =
-                    listOf(
-                        TestProvider(PacketBackend.ProtocolLib, available = true),
-                        TestProvider(PacketBackend.PacketEvents, available = true),
-                    ),
+                listOf(
+                    TestProvider(PacketBackend.ProtocolLib, available = true),
+                    TestProvider(PacketBackend.PacketEvents, available = true),
+                ),
             )
 
         assertTrue(result is SculkResult.Success)
@@ -43,10 +43,10 @@ class SculkPacketServicesTest {
                 scheduler = ImmediateScheduler(),
                 config = config,
                 providers =
-                    listOf(
-                        TestProvider(PacketBackend.PacketEvents, available = true),
-                        TestProvider(PacketBackend.ProtocolLib, available = true),
-                    ),
+                listOf(
+                    TestProvider(PacketBackend.PacketEvents, available = true),
+                    TestProvider(PacketBackend.ProtocolLib, available = true),
+                ),
             )
 
         assertTrue(result is SculkResult.Success)
@@ -83,22 +83,13 @@ class SculkPacketServicesTest {
         assertEquals("Packet subsystem is disabled.", (result as SculkResult.Failure).message)
     }
 
-    private class TestProvider(
-        override val backend: PacketBackend,
-        private val available: Boolean,
-    ) : SculkPacketServiceProvider {
+    private class TestProvider(override val backend: PacketBackend, private val available: Boolean) : SculkPacketServiceProvider {
         override fun isAvailable(): Boolean = available
 
-        override fun create(
-            plugin: JavaPlugin,
-            scheduler: SculkScheduler,
-        ): SculkPacketService = TestPacketService(backend, scheduler)
+        override fun create(plugin: JavaPlugin, scheduler: SculkScheduler): SculkPacketService = TestPacketService(backend, scheduler)
     }
 
-    private class TestPacketService(
-        backend: PacketBackend,
-        scheduler: SculkScheduler,
-    ) : AbstractPacketService(backend, scheduler) {
+    private class TestPacketService(backend: PacketBackend, scheduler: SculkScheduler) : AbstractPacketService(backend, scheduler) {
         override fun listen(
             direction: PacketDirection,
             type: PacketKey,
@@ -106,10 +97,7 @@ class SculkPacketServicesTest {
             handler: PacketContext.() -> Unit,
         ): SculkResult<SculkHandle> = SculkResult.success(SculkHandle {})
 
-        override fun send(
-            player: Player,
-            packet: SculkPacket,
-        ): SculkResult<Unit> = SculkResult.success(Unit)
+        override fun send(player: Player, packet: SculkPacket): SculkResult<Unit> = SculkResult.success(Unit)
     }
 
     private class ImmediateScheduler : SculkScheduler {
@@ -118,38 +106,18 @@ class SculkPacketServicesTest {
             return SculkHandle {}
         }
 
-        override fun runSyncDelayed(
-            delayTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runSync(task)
 
-        override fun runSyncRepeating(
-            delayTicks: Long,
-            periodTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runSync(task)
 
-        override fun runSync(
-            entity: Entity,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
 
-        override fun runSync(
-            location: Location,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
 
         override fun runAsync(task: Runnable): SculkHandle = runSync(task)
 
-        override fun runAsyncDelayed(
-            delayTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runAsync(task)
+        override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runAsync(task)
 
-        override fun runAsyncRepeating(
-            delayTicks: Long,
-            periodTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runAsync(task)
+        override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runAsync(task)
     }
 }

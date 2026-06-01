@@ -32,60 +32,56 @@ public class CrateSystemPlugin :
         crates.validate().forEach { logger.warning("[Crates] $it") }
     }
 
-    private fun crateCommand() =
-        command("crate") {
-            description = "Preview crates, give keys, and open rewards."
+    private fun crateCommand() = command("crate") {
+        description = "Preview crates, give keys, and open rewards."
 
-            sub("preview") {
-                string("crate")
-                player {
-                    val crateId = argument<String>("crate")
-                    menus.preview(crateId).openFor(player ?: return@player)
-                }
+        sub("preview") {
+            string("crate")
+            player {
+                val crateId = argument<String>("crate")
+                menus.preview(crateId).openFor(player ?: return@player)
             }
+        }
 
-            sub("open") {
-                string("crate")
-                player {
-                    openCrate(player ?: return@player, argument("crate"))
-                }
+        sub("open") {
+            string("crate")
+            player {
+                openCrate(player ?: return@player, argument("crate"))
             }
+        }
 
-            sub("key") {
-                sub("give") {
-                    permission = "crate.admin"
-                    player("target")
-                    string("crate")
-                    int("amount", min = 1, max = 64)
-                    executes {
-                        val target = argument<Player>("target")
-                        val crateId = argument<String>("crate")
-                        val amount = argument<Int>("amount")
-                        when (val key = crates.keyItem(crateId)) {
-                            is SculkResult.Success -> {
-                                key.value.amount = amount
-                                giveOrDrop(target, key.value)
-                                reply("<green>Gave <yellow>$amount</yellow> keys to <aqua>${target.name}</aqua>.")
-                            }
-                            is SculkResult.Failure -> reply("<red>${key.message}")
-                        }
-                    }
-                }
-            }
-
-            sub("reload") {
+        sub("key") {
+            sub("give") {
                 permission = "crate.admin"
+                player("target")
+                string("crate")
+                int("amount", min = 1, max = 64)
                 executes {
-                    reloadCrates()
-                    reply("<green>Crates reloaded.")
+                    val target = argument<Player>("target")
+                    val crateId = argument<String>("crate")
+                    val amount = argument<Int>("amount")
+                    when (val key = crates.keyItem(crateId)) {
+                        is SculkResult.Success -> {
+                            key.value.amount = amount
+                            giveOrDrop(target, key.value)
+                            reply("<green>Gave <yellow>$amount</yellow> keys to <aqua>${target.name}</aqua>.")
+                        }
+                        is SculkResult.Failure -> reply("<red>${key.message}")
+                    }
                 }
             }
         }
 
-    private fun openCrate(
-        player: Player,
-        crateId: String,
-    ) {
+        sub("reload") {
+            permission = "crate.admin"
+            executes {
+                reloadCrates()
+                reply("<green>Crates reloaded.")
+            }
+        }
+    }
+
+    private fun openCrate(player: Player, crateId: String) {
         if (!consumeKey(player, crateId)) {
             player.sendMessage(parseMessage("<red>You need a key for this crate."))
             return
@@ -120,10 +116,7 @@ public class CrateSystemPlugin :
         }
     }
 
-    private fun consumeKey(
-        player: Player,
-        crateId: String,
-    ): Boolean {
+    private fun consumeKey(player: Player, crateId: String): Boolean {
         val inventory = player.inventory
         for (index in 0 until inventory.size) {
             val stack = inventory.getItem(index)
@@ -138,10 +131,7 @@ public class CrateSystemPlugin :
         return false
     }
 
-    private fun giveOrDrop(
-        player: Player,
-        stack: ItemStack,
-    ): List<ItemStack> {
+    private fun giveOrDrop(player: Player, stack: ItemStack): List<ItemStack> {
         val leftovers =
             player.inventory
                 .addItem(stack)

@@ -39,8 +39,8 @@ dependencyResolutionManagement {
 // build.gradle.kts
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
-    implementation("com.github.SculkStudios.sculk-library:sculk-platform:3.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-items:3.0.0")
+    // One dependency — sculk-platform re-exports the whole DSL.
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
 }
 ```
 

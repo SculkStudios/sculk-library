@@ -24,10 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * ```
  */
 @SculkStable
-public class AnimationTimeline internal constructor(
-    private val steps: List<TimelineStep>,
-    private val loopCount: Int,
-) {
+public class AnimationTimeline internal constructor(private val steps: List<TimelineStep>, private val loopCount: Int) {
     /**
      * Starts the timeline using [scheduler].
      *
@@ -64,10 +61,7 @@ public class AnimationTimeline internal constructor(
 }
 
 /** A single timed action at a specific [tick] offset. */
-internal data class TimelineStep(
-    val tick: Long,
-    val action: () -> Unit,
-)
+internal data class TimelineStep(val tick: Long, val action: () -> Unit)
 
 /**
  * DSL builder for [AnimationTimeline].
@@ -81,10 +75,7 @@ public class TimelineBuilder {
      * Registers an [action] to execute at [tick] ticks after the timeline starts.
      */
     @SculkStable
-    public fun at(
-        tick: Int,
-        action: () -> Unit,
-    ) {
+    public fun at(tick: Int, action: () -> Unit) {
         steps += TimelineStep(tick.toLong(), action)
     }
 

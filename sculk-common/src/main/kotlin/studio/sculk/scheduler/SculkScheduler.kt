@@ -32,17 +32,10 @@ public interface SculkScheduler {
     public fun runSync(task: Runnable): SculkHandle
 
     /** Runs [task] on the main/global-region thread after [delayTicks]. */
-    public fun runSyncDelayed(
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle
+    public fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle
 
     /** Runs [task] on the main/global-region thread every [periodTicks], starting after [delayTicks]. */
-    public fun runSyncRepeating(
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle
+    public fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle
 
     // -------------------------------------------------------------------------
     // Entity-region sync — runs on the thread owning the entity's chunk
@@ -66,33 +59,22 @@ public interface SculkScheduler {
      * }
      * ```
      */
-    public fun runSync(
-        entity: Entity,
-        task: Runnable,
-    ): SculkHandle = runSync(task)
+    public fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
 
     /**
      * Runs [task] on the thread owning [entity]'s chunk after [delayTicks].
      *
      * On Paper this is identical to [runSyncDelayed].
      */
-    public fun runSyncDelayed(
-        entity: Entity,
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle = runSyncDelayed(delayTicks, task)
+    public fun runSyncDelayed(entity: Entity, delayTicks: Long, task: Runnable): SculkHandle = runSyncDelayed(delayTicks, task)
 
     /**
      * Runs [task] on the thread owning [entity]'s chunk every [periodTicks], starting after [delayTicks].
      *
      * On Paper this is identical to [runSyncRepeating].
      */
-    public fun runSyncRepeating(
-        entity: Entity,
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle = runSyncRepeating(delayTicks, periodTicks, task)
+    public fun runSyncRepeating(entity: Entity, delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle =
+        runSyncRepeating(delayTicks, periodTicks, task)
 
     // -------------------------------------------------------------------------
     // Location-region sync — runs on the thread owning the location's chunk
@@ -106,33 +88,22 @@ public interface SculkScheduler {
      * modifications and location-specific work.
      * On Paper this is identical to [runSync].
      */
-    public fun runSync(
-        location: Location,
-        task: Runnable,
-    ): SculkHandle = runSync(task)
+    public fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
 
     /**
      * Runs [task] on the thread owning the chunk at [location] after [delayTicks].
      *
      * On Paper this is identical to [runSyncDelayed].
      */
-    public fun runSyncDelayed(
-        location: Location,
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle = runSyncDelayed(delayTicks, task)
+    public fun runSyncDelayed(location: Location, delayTicks: Long, task: Runnable): SculkHandle = runSyncDelayed(delayTicks, task)
 
     /**
      * Runs [task] on the thread owning the chunk at [location] every [periodTicks], starting after [delayTicks].
      *
      * On Paper this is identical to [runSyncRepeating].
      */
-    public fun runSyncRepeating(
-        location: Location,
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle = runSyncRepeating(delayTicks, periodTicks, task)
+    public fun runSyncRepeating(location: Location, delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle =
+        runSyncRepeating(delayTicks, periodTicks, task)
 
     // -------------------------------------------------------------------------
     // Async — off the main/region thread entirely
@@ -145,10 +116,7 @@ public interface SculkScheduler {
     public fun runAsync(task: Runnable): SculkHandle
 
     /** Runs [task] asynchronously after [delayTicks]. */
-    public fun runAsyncDelayed(
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle
+    public fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle
 
     /**
      * Runs [task] asynchronously on a repeating schedule, starting after [delayTicks]
@@ -165,11 +133,7 @@ public interface SculkScheduler {
      * handle.close()
      * ```
      */
-    public fun runAsyncRepeating(
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle
+    public fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle
 
     /** Runs [task] async and completes a [CompletableFuture] with its result. */
     public fun <T> runAsyncResult(task: () -> T): CompletableFuture<T> {
@@ -183,24 +147,14 @@ public interface SculkScheduler {
     }
 
     /** Runs [async] off-thread, then hands the result back to the sync context for [entity]. */
-    public fun <T> asyncThenSync(
-        entity: Entity,
-        async: () -> T,
-        sync: (T) -> Unit,
-    ): SculkHandle =
-        runAsync {
-            val result = async()
-            runSync(entity) { sync(result) }
-        }
+    public fun <T> asyncThenSync(entity: Entity, async: () -> T, sync: (T) -> Unit): SculkHandle = runAsync {
+        val result = async()
+        runSync(entity) { sync(result) }
+    }
 
     /** Runs [async] off-thread, then hands the result back to the sync context for [location]. */
-    public fun <T> asyncThenSync(
-        location: Location,
-        async: () -> T,
-        sync: (T) -> Unit,
-    ): SculkHandle =
-        runAsync {
-            val result = async()
-            runSync(location) { sync(result) }
-        }
+    public fun <T> asyncThenSync(location: Location, async: () -> T, sync: (T) -> Unit): SculkHandle = runAsync {
+        val result = async()
+        runSync(location) { sync(result) }
+    }
 }

@@ -61,27 +61,25 @@ public class ItemsPlugin : SculkPlugin({ gui() }) {
         )
     }
 
-    private fun starterSword() =
-        item(Material.DIAMOND_SWORD) {
-            name("<aqua>Starter Sword")
-            lore("<gray>A clean starter weapon.", "", "<yellow>Right-click to inspect.")
-            enchant(Enchantment.SHARPNESS, 5)
-            glint()
-            unbreakable()
-            customModelData(1001)
-            rarity(ItemRarity.EPIC)
-            maxStackSize(1)
-            pdc("starter_item", true)
-        }
+    private fun starterSword() = item(Material.DIAMOND_SWORD) {
+        name("<aqua>Starter Sword")
+        lore("<gray>A clean starter weapon.", "", "<yellow>Right-click to inspect.")
+        enchant(Enchantment.SHARPNESS, 5)
+        glint()
+        unbreakable()
+        customModelData(1001)
+        rarity(ItemRarity.EPIC)
+        maxStackSize(1)
+        pdc("starter_item", true)
+    }
 
     // Demonstrates the modern data-component surface: the generic component() escape hatch
     // reaches any component (here FOOD) that has no dedicated DSL method.
-    private fun healingApple() =
-        item(Material.GOLDEN_APPLE) {
-            name("<gold>Healing Apple")
-            itemName("<gray>Apple")
-            lore("<gray>Restores health on eat.")
-            rarity(ItemRarity.RARE)
-            food(nutrition = 8, saturation = 6f, canAlwaysEat = true)
-        }
+    private fun healingApple() = item(Material.GOLDEN_APPLE) {
+        name("<gold>Healing Apple")
+        itemName("<gray>Apple")
+        lore("<gray>Restores health on eat.")
+        rarity(ItemRarity.RARE)
+        food(nutrition = 8, saturation = 6f, canAlwaysEat = true)
+    }
 }
