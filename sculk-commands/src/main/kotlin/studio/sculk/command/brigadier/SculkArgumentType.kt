@@ -25,21 +25,15 @@ import java.util.concurrent.CompletableFuture
  * greedy parsers that should consume the remainder of the line.
  */
 @SculkInternal
-public class SculkArgumentType<T : Any>(
-    private val parser: ArgumentParser<T>,
-    private val greedy: Boolean = false,
-) : CustomArgumentType.Converted<T, String> {
+public class SculkArgumentType<T : Any>(private val parser: ArgumentParser<T>, private val greedy: Boolean = false) :
+    CustomArgumentType.Converted<T, String> {
     @Throws(CommandSyntaxException::class)
-    override fun convert(nativeType: String): T =
-        parser.parse(nativeType)
-            ?: throw INVALID.create("'$nativeType' is not a valid ${parser.typeName}.")
+    override fun convert(nativeType: String): T = parser.parse(nativeType)
+        ?: throw INVALID.create("'$nativeType' is not a valid ${parser.typeName}.")
 
     override fun getNativeType(): ArgumentType<String> = if (greedy) StringArgumentType.greedyString() else StringArgumentType.word()
 
-    override fun <S : Any> listSuggestions(
-        context: CommandContext<S>,
-        builder: SuggestionsBuilder,
-    ): CompletableFuture<Suggestions> {
+    override fun <S : Any> listSuggestions(context: CommandContext<S>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
         val remaining = builder.remaining
         parser
             .suggest(remaining)

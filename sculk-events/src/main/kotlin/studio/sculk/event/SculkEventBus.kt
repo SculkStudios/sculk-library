@@ -23,9 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * ```
  */
 @SculkStable
-public class SculkEventBus(
-    @PublishedApi internal val plugin: Plugin,
-) : SculkHandle {
+public class SculkEventBus(@PublishedApi internal val plugin: Plugin) : SculkHandle {
     @PublishedApi
     internal val listeners: MutableList<Listener> = mutableListOf()
 

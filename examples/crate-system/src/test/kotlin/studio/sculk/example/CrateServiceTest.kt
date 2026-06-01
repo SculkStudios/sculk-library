@@ -14,14 +14,14 @@ class CrateServiceTest {
             CrateService({
                 CrateSettings(
                     crates =
-                        mapOf(
-                            "bad" to
-                                CrateDefinition(
-                                    "<red>Bad",
-                                    ItemDescriptor("tripwire_hook"),
-                                    listOf(CrateReward("broken", 0, ItemDescriptor("stone"))),
-                                ),
-                        ),
+                    mapOf(
+                        "bad" to
+                            CrateDefinition(
+                                "<red>Bad",
+                                ItemDescriptor("tripwire_hook"),
+                                listOf(CrateReward("broken", 0, ItemDescriptor("stone"))),
+                            ),
+                    ),
                 )
             })
 

@@ -26,10 +26,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 @Table("bench_player")
-public data class BenchPlayer(
-    @PrimaryKey @Column("id") val id: UUID,
-    @Column("score") val score: Long,
-)
+public data class BenchPlayer(@PrimaryKey @Column("id") val id: UUID, @Column("score") val score: Long)
 
 /**
  * Benchmarks the Caffeine cache hit path — verifies zero database round-trips on warm reads.

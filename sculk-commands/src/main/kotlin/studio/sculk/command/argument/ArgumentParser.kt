@@ -64,16 +64,12 @@ public object LongParser : ArgumentParser<Long> {
 }
 
 @SculkInternal
-public class BoundedLongParser(
-    private val min: Long?,
-    private val max: Long?,
-) : ArgumentParser<Long> {
+public class BoundedLongParser(private val min: Long?, private val max: Long?) : ArgumentParser<Long> {
     override val typeName: String = "number"
 
-    override fun parse(input: String): Long? =
-        input.toLongOrNull()?.takeIf { value ->
-            (min == null || value >= min) && (max == null || value <= max)
-        }
+    override fun parse(input: String): Long? = input.toLongOrNull()?.takeIf { value ->
+        (min == null || value >= min) && (max == null || value <= max)
+    }
 }
 
 @SculkInternal
@@ -84,16 +80,12 @@ public object IntParser : ArgumentParser<Int> {
 }
 
 @SculkInternal
-public class BoundedIntParser(
-    private val min: Int?,
-    private val max: Int?,
-) : ArgumentParser<Int> {
+public class BoundedIntParser(private val min: Int?, private val max: Int?) : ArgumentParser<Int> {
     override val typeName: String = "number"
 
-    override fun parse(input: String): Int? =
-        input.toIntOrNull()?.takeIf { value ->
-            (min == null || value >= min) && (max == null || value <= max)
-        }
+    override fun parse(input: String): Int? = input.toIntOrNull()?.takeIf { value ->
+        (min == null || value >= min) && (max == null || value <= max)
+    }
 }
 
 @SculkInternal
@@ -104,28 +96,23 @@ public object DoubleParser : ArgumentParser<Double> {
 }
 
 @SculkInternal
-public class BoundedDoubleParser(
-    private val min: Double?,
-    private val max: Double?,
-) : ArgumentParser<Double> {
+public class BoundedDoubleParser(private val min: Double?, private val max: Double?) : ArgumentParser<Double> {
     override val typeName: String = "decimal"
 
-    override fun parse(input: String): Double? =
-        input.toDoubleOrNull()?.takeIf { value ->
-            (min == null || value >= min) && (max == null || value <= max)
-        }
+    override fun parse(input: String): Double? = input.toDoubleOrNull()?.takeIf { value ->
+        (min == null || value >= min) && (max == null || value <= max)
+    }
 }
 
 @SculkInternal
 public object BooleanParser : ArgumentParser<Boolean> {
     override val typeName: String = "true|false"
 
-    override fun parse(input: String): Boolean? =
-        when (input.lowercase()) {
-            "true", "yes", "1" -> true
-            "false", "no", "0" -> false
-            else -> null
-        }
+    override fun parse(input: String): Boolean? = when (input.lowercase()) {
+        "true", "yes", "1" -> true
+        "false", "no", "0" -> false
+        else -> null
+    }
 
     override fun suggest(input: String): List<String> = listOf("true", "false")
 }
@@ -136,11 +123,10 @@ public object PlayerParser : ArgumentParser<Player> {
 
     override fun parse(input: String): Player? = Bukkit.getPlayerExact(input)
 
-    override fun suggest(input: String): List<String> =
-        Bukkit
-            .getOnlinePlayers()
-            .map { it.name }
-            .filter { it.startsWith(input, ignoreCase = true) }
+    override fun suggest(input: String): List<String> = Bukkit
+        .getOnlinePlayers()
+        .map { it.name }
+        .filter { it.startsWith(input, ignoreCase = true) }
 }
 
 @SculkInternal
@@ -164,18 +150,16 @@ public object WorldParser : ArgumentParser<World> {
 public object MaterialParser : ArgumentParser<Material> {
     override val typeName: String = "material"
 
-    override fun parse(input: String): Material? =
-        Material.matchMaterial(input.uppercase())
-            ?: Material.matchMaterial(input)
-            ?: Material.matchMaterial(input.replace('-', '_').uppercase())
+    override fun parse(input: String): Material? = Material.matchMaterial(input.uppercase())
+        ?: Material.matchMaterial(input)
+        ?: Material.matchMaterial(input.replace('-', '_').uppercase())
 
-    override fun suggest(input: String): List<String> =
-        Material.entries
-            .asSequence()
-            .map { it.name.lowercase() }
-            .filter { it.startsWith(input.lowercase()) }
-            .take(50)
-            .toList()
+    override fun suggest(input: String): List<String> = Material.entries
+        .asSequence()
+        .map { it.name.lowercase() }
+        .filter { it.startsWith(input.lowercase()) }
+        .take(50)
+        .toList()
 }
 
 @SculkInternal
@@ -211,9 +195,7 @@ public object GreedyStringParser : ArgumentParser<String> {
 }
 
 @SculkInternal
-public class ChoiceParser(
-    private val choices: List<String>,
-) : ArgumentParser<String> {
+public class ChoiceParser(private val choices: List<String>) : ArgumentParser<String> {
     override val typeName: String = choices.joinToString("|")
 
     override fun parse(input: String): String? = choices.firstOrNull { it.equals(input, ignoreCase = true) }

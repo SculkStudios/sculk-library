@@ -9,10 +9,7 @@ import studio.sculk.annotation.SculkStable
 @SculkStable
 public object GuiSlots {
     /** Returns all slots in [row], where row 0 is the top row. */
-    public fun row(
-        row: Int,
-        size: Int,
-    ): List<Int> {
+    public fun row(row: Int, size: Int): List<Int> {
         require(size % 9 == 0 && size in 9..54) { "GUI size must be a multiple of 9 between 9 and 54." }
         val rows = size / 9
         require(row in 0 until rows) { "Row $row is out of range for a GUI with $rows rows." }

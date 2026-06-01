@@ -11,9 +11,7 @@ import studio.sculk.command.argument.ArgumentParser
  * sender type: [playerExecutor], [consoleExecutor], or [anyExecutor].
  */
 @SculkInternal
-public class CommandNode(
-    public val name: String,
-) {
+public class CommandNode(public val name: String) {
     public var permission: String? = null
     public var description: String = ""
     public val aliases: MutableList<String> = mutableListOf()
@@ -32,25 +30,17 @@ public class CommandNode(
     public var consoleExecutor: (suspend CommandContext.() -> Unit)? = null
     public var anyExecutor: (suspend CommandContext.() -> Unit)? = null
 
-    public fun findSubcommand(name: String): CommandNode? =
-        subcommands.firstOrNull { subcommand ->
-            subcommand.name.equals(name, ignoreCase = true) ||
-                subcommand.aliases.any { it.equals(name, ignoreCase = true) }
-        }
+    public fun findSubcommand(name: String): CommandNode? = subcommands.firstOrNull { subcommand ->
+        subcommand.name.equals(name, ignoreCase = true) ||
+            subcommand.aliases.any { it.equals(name, ignoreCase = true) }
+    }
 }
 
 /**
  * Metadata for a single argument slot on a [CommandNode].
  */
 @SculkInternal
-public data class ArgumentDefinition(
-    val name: String,
-    val parser: ArgumentParser<*>,
-    val optional: Boolean,
-)
+public data class ArgumentDefinition(val name: String, val parser: ArgumentParser<*>, val optional: Boolean)
 
 @SculkInternal
-public data class CooldownDefinition(
-    val key: String,
-    val durationMillis: Long,
-)
+public data class CooldownDefinition(val key: String, val durationMillis: Long)

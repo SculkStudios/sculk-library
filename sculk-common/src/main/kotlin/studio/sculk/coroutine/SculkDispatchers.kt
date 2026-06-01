@@ -21,21 +21,14 @@ import kotlin.coroutines.CoroutineContext
  * ```
  */
 @SculkStable
-public class SculkDispatchers internal constructor(
-    scheduler: SculkScheduler,
-) {
+public class SculkDispatchers internal constructor(scheduler: SculkScheduler) {
     /** Dispatches onto the main / global-region thread via [SculkScheduler.runSync]. */
     public val main: CoroutineDispatcher = SchedulerDispatcher { task -> scheduler.runSync(task) }
 
     /** Dispatches onto an async worker thread via [SculkScheduler.runAsync]. */
     public val async: CoroutineDispatcher = SchedulerDispatcher { task -> scheduler.runAsync(task) }
 
-    private class SchedulerDispatcher(
-        private val submit: (Runnable) -> Unit,
-    ) : CoroutineDispatcher() {
-        override fun dispatch(
-            context: CoroutineContext,
-            block: Runnable,
-        ): Unit = submit(block)
+    private class SchedulerDispatcher(private val submit: (Runnable) -> Unit) : CoroutineDispatcher() {
+        override fun dispatch(context: CoroutineContext, block: Runnable): Unit = submit(block)
     }
 }

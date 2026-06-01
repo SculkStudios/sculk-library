@@ -18,10 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @SculkInternal
 public object GuiRegistry {
-    private data class Entry(
-        val session: GuiSession,
-        val inventory: Inventory,
-    )
+    private data class Entry(val session: GuiSession, val inventory: Inventory)
 
     private val sessions: ConcurrentHashMap<UUID, Entry> = ConcurrentHashMap()
 
@@ -36,22 +33,14 @@ public object GuiRegistry {
 
     /** Called once from [SculkPlatformBuilder.build] to wire up Folia-aware dispatch and animations. */
     @SculkInternal
-    public fun init(
-        plugin: JavaPlugin,
-        isFolia: Boolean,
-        scope: SculkCoroutineScope? = null,
-    ) {
+    public fun init(plugin: JavaPlugin, isFolia: Boolean, scope: SculkCoroutineScope? = null) {
         this.plugin = plugin
         this.isFolia = isFolia
         this.scope = scope
     }
 
     /** Registers a [session] + [inventory] pair for [player]. */
-    public fun register(
-        player: Player,
-        session: GuiSession,
-        inventory: Inventory,
-    ) {
+    public fun register(player: Player, session: GuiSession, inventory: Inventory) {
         sessions[player.uniqueId] = Entry(session, inventory)
     }
 

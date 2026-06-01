@@ -44,10 +44,7 @@ class SculkContentTest {
             handler: PacketContext.() -> Unit,
         ): SculkResult<SculkHandle> = SculkResult.success(SculkHandle {})
 
-        override fun send(
-            player: Player,
-            packet: SculkPacket,
-        ): SculkResult<Unit> = SculkResult.success(Unit)
+        override fun send(player: Player, packet: SculkPacket): SculkResult<Unit> = SculkResult.success(Unit)
     }
 
     private class ImmediateScheduler : SculkScheduler {
@@ -56,38 +53,18 @@ class SculkContentTest {
             return SculkHandle {}
         }
 
-        override fun runSyncDelayed(
-            delayTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runSync(task)
 
-        override fun runSyncRepeating(
-            delayTicks: Long,
-            periodTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runSync(task)
 
-        override fun runSync(
-            entity: Entity,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
 
-        override fun runSync(
-            location: Location,
-            task: Runnable,
-        ): SculkHandle = runSync(task)
+        override fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
 
         override fun runAsync(task: Runnable): SculkHandle = runSync(task)
 
-        override fun runAsyncDelayed(
-            delayTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runAsync(task)
+        override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runAsync(task)
 
-        override fun runAsyncRepeating(
-            delayTicks: Long,
-            periodTicks: Long,
-            task: Runnable,
-        ): SculkHandle = runAsync(task)
+        override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runAsync(task)
     }
 }

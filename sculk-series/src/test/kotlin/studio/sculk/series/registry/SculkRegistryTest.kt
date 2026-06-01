@@ -10,16 +10,15 @@ class SculkRegistryTest {
     private val registry =
         SculkRegistry<String>(
             resolver =
-                object : MappingResolver<String> {
-                    override fun resolve(key: String): String? =
-                        when (key) {
-                            "hello" -> "Hello"
-                            "world" -> "World"
-                            else -> null
-                        }
+            object : MappingResolver<String> {
+                override fun resolve(key: String): String? = when (key) {
+                    "hello" -> "Hello"
+                    "world" -> "World"
+                    else -> null
+                }
 
-                    override fun keys(): Set<String> = setOf("hello", "world")
-                },
+                override fun keys(): Set<String> = setOf("hello", "world")
+            },
         )
 
     @Test
@@ -56,15 +55,15 @@ class SculkRegistryTest {
         val adaptingRegistry =
             SculkRegistry<String>(
                 resolver =
-                    object : MappingResolver<String> {
-                        override fun resolve(key: String): String? = null
+                object : MappingResolver<String> {
+                    override fun resolve(key: String): String? = null
 
-                        override fun keys(): Set<String> = emptySet()
-                    },
+                    override fun keys(): Set<String> = emptySet()
+                },
                 versionAdapter =
-                    object : VersionAdapter<String> {
-                        override fun adapt(key: String): String? = if (key == "old_name") "NewValue" else null
-                    },
+                object : VersionAdapter<String> {
+                    override fun adapt(key: String): String? = if (key == "old_name") "NewValue" else null
+                },
             )
         assertEquals("NewValue", adaptingRegistry.resolve("old_name"))
     }

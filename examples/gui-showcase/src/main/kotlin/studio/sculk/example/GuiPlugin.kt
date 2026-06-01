@@ -193,11 +193,7 @@ private fun shopItems(category: String = "all"): List<ItemStack> {
     }
 }
 
-private fun shopItem(
-    material: Material,
-    label: String,
-    price: Int,
-): ItemStack {
+private fun shopItem(material: Material, label: String, price: Int): ItemStack {
     val stack = ItemStack(material)
     val meta = stack.itemMeta ?: return stack
     meta.displayName(

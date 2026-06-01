@@ -4,6 +4,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
 
 /**
  * Backend-neutral packet service.
@@ -11,6 +12,7 @@ import studio.sculk.SculkResult
  * Prefer the high-level services for common features. Low-level listeners are for advanced packet
  * work and must follow packet thread-safety rules.
  */
+@SculkStable
 public interface SculkPacketService : SculkHandle {
     public val backend: PacketBackend
     public val clientBlocks: ClientBlockService
@@ -23,19 +25,14 @@ public interface SculkPacketService : SculkHandle {
         handler: PacketContext.() -> Unit,
     ): SculkResult<SculkHandle>
 
-    public fun send(
-        player: Player,
-        packet: SculkPacket,
-    ): SculkResult<Unit>
+    public fun send(player: Player, packet: SculkPacket): SculkResult<Unit>
 }
 
+@SculkStable
 public interface SculkPacketServiceProvider {
     public val backend: PacketBackend
 
     public fun isAvailable(): Boolean
 
-    public fun create(
-        plugin: JavaPlugin,
-        scheduler: studio.sculk.scheduler.SculkScheduler,
-    ): SculkPacketService
+    public fun create(plugin: JavaPlugin, scheduler: studio.sculk.scheduler.SculkScheduler): SculkPacketService
 }

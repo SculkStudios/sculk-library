@@ -28,18 +28,15 @@ public data class StorageConfig(
     val mysql: MysqlConfig = MysqlConfig(),
 ) {
     /** Returns the [SqlDialect] matching [type]. Defaults to [SqlDialect.SQLITE] for unknown values. */
-    public fun dialect(): SqlDialect =
-        when (type.lowercase()) {
-            "mysql", "mariadb" -> SqlDialect.MYSQL
-            else -> SqlDialect.SQLITE
-        }
+    public fun dialect(): SqlDialect = when (type.lowercase()) {
+        "mysql", "mariadb" -> SqlDialect.MYSQL
+        else -> SqlDialect.SQLITE
+    }
 }
 
 /** SQLite-specific connection settings. */
 @SculkStable
-public data class SqliteConfig(
-    val file: String = "data.db",
-)
+public data class SqliteConfig(val file: String = "data.db")
 
 /** MySQL / MariaDB connection settings. */
 @SculkStable

@@ -15,28 +15,16 @@ import java.io.File
 @OptIn(SculkInternal::class)
 class YamlMapperTest {
     @ConfigFile("settings.yml")
-    data class Settings(
-        val maxHomes: Int = 5,
-        val allowFlight: Boolean = false,
-        val prefix: String = "<green>Test",
-    )
+    data class Settings(val maxHomes: Int = 5, val allowFlight: Boolean = false, val prefix: String = "<green>Test")
 
     @ConfigFile("validated.yml")
-    data class Validated(
-        @param:Min(1) val minVal: Int = 5,
-        @param:Max(10) val maxVal: Int = 5,
-        @param:NotEmpty val name: String = "hello",
-    )
+    data class Validated(@param:Min(1) val minVal: Int = 5, @param:Max(10) val maxVal: Int = 5, @param:NotEmpty val name: String = "hello")
 
     @ConfigFile("env.yml")
-    data class EnvConfig(
-        val message: String = "hi",
-    )
+    data class EnvConfig(val message: String = "hi")
 
     @Test
-    fun `env substitution uses default when variable is unset`(
-        @TempDir dir: File,
-    ) {
+    fun `env substitution uses default when variable is unset`(@TempDir dir: File) {
         val file = File(dir, "env.yml")
         file.writeText("message: \"\${SCULK_TEST_UNSET:-fallback}\"\n")
 
@@ -44,9 +32,7 @@ class YamlMapperTest {
     }
 
     @Test
-    fun `env substitution keeps placeholder when unset and no default`(
-        @TempDir dir: File,
-    ) {
+    fun `env substitution keeps placeholder when unset and no default`(@TempDir dir: File) {
         val file = File(dir, "env.yml")
         file.writeText("message: \"\${SCULK_TEST_UNSET}\"\n")
 
@@ -54,9 +40,7 @@ class YamlMapperTest {
     }
 
     @Test
-    fun `load returns defaults when file does not exist`(
-        @TempDir dir: File,
-    ) {
+    fun `load returns defaults when file does not exist`(@TempDir dir: File) {
         val file = File(dir, "settings.yml")
         val result = YamlMapper.load(file, Settings::class)
         assertEquals(5, result.maxHomes)
@@ -64,9 +48,7 @@ class YamlMapperTest {
     }
 
     @Test
-    fun `save and reload round-trips correctly`(
-        @TempDir dir: File,
-    ) {
+    fun `save and reload round-trips correctly`(@TempDir dir: File) {
         val file = File(dir, "settings.yml")
         val original = Settings(maxHomes = 10, allowFlight = true, prefix = "<red>Hi")
         YamlMapper.save(file, original)
@@ -77,9 +59,7 @@ class YamlMapperTest {
     }
 
     @Test
-    fun `writeDefaults creates file with default values`(
-        @TempDir dir: File,
-    ) {
+    fun `writeDefaults creates file with default values`(@TempDir dir: File) {
         val file = File(dir, "settings.yml")
         YamlMapper.writeDefaults(file, Settings::class)
         assertTrue(file.exists())
@@ -88,9 +68,7 @@ class YamlMapperTest {
     }
 
     @Test
-    fun `writeDefaults preserves existing values`(
-        @TempDir dir: File,
-    ) {
+    fun `writeDefaults preserves existing values`(@TempDir dir: File) {
         val file = File(dir, "settings.yml")
         YamlMapper.save(file, Settings(maxHomes = 99))
         YamlMapper.writeDefaults(file, Settings::class)

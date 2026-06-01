@@ -32,34 +32,32 @@ import kotlin.coroutines.CoroutineContext
  */
 @SculkStable
 public class SculkCoroutineScope
-    @SculkInternal
-    constructor(
-        scheduler: SculkScheduler,
-        name: String = "sculk",
-    ) : CoroutineScope,
-        SculkHandle {
-        /** Dispatchers backed by the Folia-aware scheduler. */
-        public val dispatchers: SculkDispatchers = SculkDispatchers(scheduler)
+@SculkInternal
+constructor(scheduler: SculkScheduler, name: String = "sculk") :
+    CoroutineScope,
+    SculkHandle {
+    /** Dispatchers backed by the Folia-aware scheduler. */
+    public val dispatchers: SculkDispatchers = SculkDispatchers(scheduler)
 
-        private val job = SupervisorJob()
+    private val job = SupervisorJob()
 
-        // Default to async so plugin background work doesn't accidentally block the main thread.
-        override val coroutineContext: CoroutineContext = job + dispatchers.async + CoroutineName(name)
+    // Default to async so plugin background work doesn't accidentally block the main thread.
+    override val coroutineContext: CoroutineContext = job + dispatchers.async + CoroutineName(name)
 
-        /** Launches a coroutine on the main / global-region thread. */
-        public fun launchMain(block: suspend CoroutineScope.() -> Unit): Job = launch(dispatchers.main, block = block)
+    /** Launches a coroutine on the main / global-region thread. */
+    public fun launchMain(block: suspend CoroutineScope.() -> Unit): Job = launch(dispatchers.main, block = block)
 
-        /** Launches a coroutine on an async worker thread. */
-        public fun launchAsync(block: suspend CoroutineScope.() -> Unit): Job = launch(dispatchers.async, block = block)
+    /** Launches a coroutine on an async worker thread. */
+    public fun launchAsync(block: suspend CoroutineScope.() -> Unit): Job = launch(dispatchers.async, block = block)
 
-        /** Runs [block] on the main / global-region thread and suspends until it returns. */
-        public suspend fun <T> withMain(block: suspend CoroutineScope.() -> T): T = withContext(dispatchers.main, block)
+    /** Runs [block] on the main / global-region thread and suspends until it returns. */
+    public suspend fun <T> withMain(block: suspend CoroutineScope.() -> T): T = withContext(dispatchers.main, block)
 
-        /** Runs [block] on an async worker thread and suspends until it returns. */
-        public suspend fun <T> withAsync(block: suspend CoroutineScope.() -> T): T = withContext(dispatchers.async, block)
+    /** Runs [block] on an async worker thread and suspends until it returns. */
+    public suspend fun <T> withAsync(block: suspend CoroutineScope.() -> T): T = withContext(dispatchers.async, block)
 
-        /** Cancels every coroutine launched in this scope. Safe to call multiple times. */
-        override fun close() {
-            job.cancel()
-        }
+    /** Cancels every coroutine launched in this scope. Safe to call multiple times. */
+    override fun close() {
+        job.cancel()
     }
+}

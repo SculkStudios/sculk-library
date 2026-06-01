@@ -22,9 +22,7 @@ import studio.sculk.annotation.SculkStable
  * sequence — in which case use [SculkPlatform.create] manually.
  */
 @SculkStable
-public abstract class SculkPlugin(
-    private val configure: SculkPlatformBuilder.() -> Unit = {},
-) : JavaPlugin() {
+public abstract class SculkPlugin(private val configure: SculkPlatformBuilder.() -> Unit = {}) : JavaPlugin() {
     /** The Sculk platform for this plugin. Available from [setup] onward. */
     public lateinit var sculk: SculkPlatform
         private set

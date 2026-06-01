@@ -62,30 +62,26 @@ public class PlayerProfilesPlugin :
         }
     }
 
-    private fun profileCommand() =
-        command("profile") {
-            description = "Open a player profile."
-            player("target", optional = true)
-            executes {
-                val target = argumentOrNull<Player>("target") ?: player
-                if (target == null) {
-                    reply("<red>Console must specify an online player.")
-                    return@executes
-                }
-                openProfile(sender, target)
+    private fun profileCommand() = command("profile") {
+        description = "Open a player profile."
+        player("target", optional = true)
+        executes {
+            val target = argumentOrNull<Player>("target") ?: player
+            if (target == null) {
+                reply("<red>Console must specify an online player.")
+                return@executes
             }
-            sub("reload") {
-                permission = "profiles.reload"
-                executes {
-                    reply("<green>Profiles use live repository state; no config reload is required.")
-                }
+            openProfile(sender, target)
+        }
+        sub("reload") {
+            permission = "profiles.reload"
+            executes {
+                reply("<green>Profiles use live repository state; no config reload is required.")
             }
         }
+    }
 
-    private fun openProfile(
-        sender: CommandSender,
-        target: Player,
-    ) {
+    private fun openProfile(sender: CommandSender, target: Player) {
         sculk.scope.launchAsync {
             val result = profiles.profile(target.uniqueId, target.name)
             sculk.scheduler.runSync(target) {

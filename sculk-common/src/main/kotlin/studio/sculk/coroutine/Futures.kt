@@ -14,14 +14,13 @@ import kotlin.coroutines.resumeWithException
  * hand back futures (e.g. async chunk loads, profile lookups) into Sculk's coroutine surface.
  */
 @SculkStable
-public suspend fun <T> CompletableFuture<T>.await(): T =
-    suspendCancellableCoroutine { cont ->
-        whenComplete { value, error ->
-            when (error) {
-                null -> cont.resume(value)
-                is CancellationException -> cont.cancel(error)
-                else -> cont.resumeWithException(error.cause ?: error)
-            }
+public suspend fun <T> CompletableFuture<T>.await(): T = suspendCancellableCoroutine { cont ->
+    whenComplete { value, error ->
+        when (error) {
+            null -> cont.resume(value)
+            is CancellationException -> cont.cancel(error)
+            else -> cont.resumeWithException(error.cause ?: error)
         }
-        cont.invokeOnCancellation { cancel(true) }
     }
+    cont.invokeOnCancellation { cancel(true) }
+}

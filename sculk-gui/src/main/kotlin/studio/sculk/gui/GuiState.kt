@@ -38,10 +38,7 @@ public class GuiState {
     public inline fun <reified T> get(key: String): T? = this[key] as? T
 
     /** Stores [value] under [key]. */
-    public operator fun set(
-        key: String,
-        value: Any?,
-    ) {
+    public operator fun set(key: String, value: Any?) {
         backing[key] = value
     }
 
