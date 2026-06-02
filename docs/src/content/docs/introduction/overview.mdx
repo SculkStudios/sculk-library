@@ -64,18 +64,15 @@ fun homeCommand(sculk: SculkPlatform) = command("home") {
 
 ## Modules
 
-| Module | What it does |
-| --- | --- |
-| `sculk-core` | Command DSL, GUI system, Adventure helpers, scheduler contracts, version parser |
-| `sculk-config` | Typed YAML configs, comments, hot reload, validation annotations |
-| `sculk-series` | Registry-backed key lookup helpers for modern Paper keys |
-| `sculk-effects` | Particle builders, sound builders, animation timelines, effect sequences |
-| `sculk-data` | JDBC repositories, SQLite/MySQL config, Caffeine-backed cache layer |
-| `sculk-platform` | Paper integration for plugin lifecycle, commands, events, scheduler, and GUI cleanup |
+Sculk is split into focused modules — `sculk-commands`, `sculk-gui`, `sculk-config`, `sculk-items`,
+`sculk-data`, `sculk-text`, and more — all built on a slim `sculk-common` base. Depend on the single
+`sculk-platform` for everything, or pick individual modules à la carte.
+
+See [Modules & Architecture](/introduction/modules/) for the full section ↔ module ↔ package map and
+the dependency graph.
 
 ## What Sculk Studio is not
 
 - It is not a replacement for Paper's API.
 - It is not a full XSeries clone.
-- It is not a guarantee that blocking calls are safe on the main thread.
 - It is not a standalone server plugin. Shade and relocate it into your plugin jar.

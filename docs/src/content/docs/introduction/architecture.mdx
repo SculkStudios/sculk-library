@@ -3,32 +3,13 @@ title: Architecture
 description: How Sculk Studio modules fit together and how lifecycle ownership works.
 ---
 
-## Module dependency flow
+## Modules
 
-```text
-sculk-core
-  -> sculk-config
-  -> sculk-series
-  -> sculk-effects
-  -> sculk-data
-  -> sculk-platform
-```
+Sculk is split into focused modules whose packages mirror these docs sections, all built on a slim
+`sculk-common` base, with `sculk-platform` re-exporting everything. For the full section ↔ module ↔
+package map and the dependency graph, see [Modules & Architecture](/introduction/modules/).
 
-`sculk-platform` is the module that owns Paper plugin lifecycle integration. The lower modules expose reusable APIs that are easier to test and reason about without a full server runtime.
-
-## Module roles
-
-**`sculk-core`** contains the command DSL, GUI model, Adventure messaging helpers, `SculkResult`, scheduler contracts, and version parsing.
-
-**`sculk-config`** maps YAML files to Kotlin data classes. It writes defaults, supports comments, validates annotated constructor parameters, and exposes reload callbacks.
-
-**`sculk-series`** provides registry-backed lookups for modern Paper keys. It normalizes key input and returns `null` for missing values. It is not a complete historical alias database.
-
-**`sculk-effects`** wraps particle and sound work in readable builders and provides timelines/sequences for scheduled effects.
-
-**`sculk-data`** provides JDBC repositories and cache helpers. Repository methods are synchronous and blocking, so call them from async scheduler work.
-
-**`sculk-platform`** wires the library into a `JavaPlugin`: commands, events, scheduler, config, data, and GUI lifecycle cleanup.
+This page focuses on the **lifecycle model** that ties those modules together at runtime.
 
 ## Lifecycle model
 

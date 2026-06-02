@@ -87,7 +87,11 @@ below is for reference; à-la-carte use is possible for minimal builds.
 
 | Module | Description |
 |---|---|
-| `sculk-core` | Commands, GUI, Adventure helpers, coroutines, scheduler, version parsing |
+| `sculk-common` | Base: `SculkResult`/`SculkHandle`, coroutines, scheduler, version parsing, annotations |
+| `sculk-adventure` | MiniMessage messaging helpers and templates |
+| `sculk-commands` | Brigadier-native command DSL, typed arguments, cooldowns |
+| `sculk-gui` | Chest/container GUI menus, animations, pagination |
+| `sculk-events` | Coroutine-friendly auto-cleaned event bus |
 | `sculk-config` | Typed configs, hot reload, validation, env-var substitution, file-watch reload |
 | `sculk-series` | Registry-based compatibility helpers |
 | `sculk-items` | Data-component item builders, typed PDC, skulls, descriptors |
@@ -100,8 +104,8 @@ below is for reference; à-la-carte use is possible for minimal builds.
 | `sculk-packets-packetevents` | Optional PacketEvents packet backend adapter |
 | `sculk-packets-protocollib` | Optional ProtocolLib compatibility backend adapter |
 | `sculk-content` | High-level client block helpers over packet services |
-| `sculk-platform` | The single dependency — wires everything and re-exports the full DSL |
-| `sculk-platform` | Paper integration for plugin lifecycle |
+| `sculk-platform` | The single dependency — `SculkPlugin` + wires and re-exports the full DSL |
+| `sculk-bom` | Bill of materials for à-la-carte version alignment |
 
 ## Recipe Examples
 
