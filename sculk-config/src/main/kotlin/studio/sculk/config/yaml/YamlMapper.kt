@@ -2,11 +2,11 @@ package studio.sculk.config.yaml
 
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.config.annotation.Comment
 import studio.sculk.config.annotation.Max
 import studio.sculk.config.annotation.Min
 import studio.sculk.config.annotation.NotEmpty
-import studio.sculk.core.annotation.SculkInternal
 import java.io.File
 import java.io.StringWriter
 import java.util.UUID
@@ -28,26 +28,25 @@ public object YamlMapper {
         val opts =
             DumperOptions().apply {
                 defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-                isPrettyFlow = true
+                // isPrettyFlow=false keeps empty collections compact (`[]` / `{}`) instead of
+                // splitting them across lines; a huge width + no split-lines stops long message
+                // strings from wrapping. Together these keep generated configs clean and editable.
+                isPrettyFlow = false
                 indent = 2
+                width = Int.MAX_VALUE
+                splitLines = false
             }
         Yaml(opts)
     }
 
     /** Reads [file] and maps it to an instance of [klass]. Missing keys use constructor defaults. */
-    public fun <T : Any> load(
-        file: File,
-        klass: KClass<T>,
-    ): T {
+    public fun <T : Any> load(file: File, klass: KClass<T>): T {
         val raw = loadRaw(file)
         return fromMap(raw, klass)
     }
 
     /** Writes [instance] to [file] as YAML, creating parent directories if needed. */
-    public fun <T : Any> save(
-        file: File,
-        instance: T,
-    ) {
+    public fun <T : Any> save(file: File, instance: T) {
         file.parentFile?.mkdirs()
         val map = toMap(instance)
         val writer = StringWriter()
@@ -56,19 +55,15 @@ public object YamlMapper {
     }
 
     /** Reads raw YAML content as a mutable map. */
-    public fun loadRaw(file: File): MutableMap<String, Any?> =
-        if (file.exists() && file.length() > 0) {
-            @Suppress("UNCHECKED_CAST")
-            (yaml.load(file.readText()) as? Map<String, Any?>).orEmpty().toMutableMap()
-        } else {
-            mutableMapOf()
-        }
+    public fun loadRaw(file: File): MutableMap<String, Any?> = if (file.exists() && file.length() > 0) {
+        @Suppress("UNCHECKED_CAST")
+        (yaml.load(file.readText()) as? Map<String, Any?>).orEmpty().toMutableMap()
+    } else {
+        mutableMapOf()
+    }
 
     /** Writes raw YAML map content. */
-    public fun saveRaw(
-        file: File,
-        values: Map<String, Any?>,
-    ) {
+    public fun saveRaw(file: File, values: Map<String, Any?>) {
         file.parentFile?.mkdirs()
         val writer = StringWriter()
         yaml.dump(values, writer)
@@ -76,10 +71,7 @@ public object YamlMapper {
     }
 
     /** Writes defaults for [klass] to [file] only for keys not already present. */
-    public fun <T : Any> writeDefaults(
-        file: File,
-        klass: KClass<T>,
-    ) {
+    public fun <T : Any> writeDefaults(file: File, klass: KClass<T>) {
         val existing: Map<String, Any?> =
             if (file.exists() && file.length() > 0) {
                 @Suppress("UNCHECKED_CAST")
@@ -115,10 +107,7 @@ public object YamlMapper {
      *   lists, maps) are handled correctly
      * - A blank line is inserted after commented entries for readability
      */
-    private fun <T : Any> buildCommentedYaml(
-        klass: KClass<T>,
-        mergedMap: Map<String, Any?>,
-    ): String {
+    private fun <T : Any> buildCommentedYaml(klass: KClass<T>, mergedMap: Map<String, Any?>): String {
         val constructor =
             klass.primaryConstructor
                 ?: return yaml.dump(mergedMap)
@@ -196,10 +185,7 @@ public object YamlMapper {
     // Internals
     // ---------------------------------------------------------------------------
 
-    private fun <T : Any> fromMap(
-        map: Map<String, Any?>,
-        klass: KClass<T>,
-    ): T {
+    private fun <T : Any> fromMap(map: Map<String, Any?>, klass: KClass<T>): T {
         val constructor =
             requireNotNull(klass.primaryConstructor) {
                 "Config class ${klass.simpleName} must have a primary constructor."
@@ -217,10 +203,7 @@ public object YamlMapper {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun coerce(
-        value: Any?,
-        type: KType,
-    ): Any? {
+    private fun coerce(value: Any?, type: KType): Any? {
         if (value == null) return null
 
         // List<T>
@@ -268,47 +251,55 @@ public object YamlMapper {
      * Substitutes `${VAR}` / `${VAR:-default}` references in config string values with environment
      * variables. An unset variable with no default is left unchanged so the placeholder is visible.
      */
-    private fun substituteEnv(value: String): String =
-        envPattern.replace(value) { match ->
-            val name = match.groupValues[1]
-            val default = match.groups[2]?.value
-            System.getenv(name) ?: default ?: match.value
-        }
+    private fun substituteEnv(value: String): String = envPattern.replace(value) { match ->
+        val name = match.groupValues[1]
+        val default = match.groups[2]?.value
+        System.getenv(name) ?: default ?: match.value
+    }
 
-    private fun toMap(instance: Any): Map<String, Any?> {
-        val map = mutableMapOf<String, Any?>()
+    /**
+     * Serialises [instance] to a YAML-ready map.
+     *
+     * When [omitDefaults] is true (used for NESTED data classes), null values and empty
+     * collections are dropped so generated files stay lean — e.g. an item with only a material and
+     * name no longer prints `lore: []`, `enchantments: {}`, `item: null`, … On reload, absent keys
+     * simply fall back to the constructor default, so this is round-trip safe. Top-level config
+     * sections are always kept (omitDefaults=false) so every option stays discoverable.
+     */
+    private fun toMap(instance: Any, omitDefaults: Boolean = false): Map<String, Any?> {
+        val map = LinkedHashMap<String, Any?>()
         val klass = instance::class
         for (param in klass.primaryConstructor?.parameters ?: emptyList()) {
             val member = klass.members.firstOrNull { it.name == param.name } ?: continue
             val value = member.call(instance)
+            if (omitDefaults && isOmittable(value)) continue
             map[camelToKebab(param.name!!)] = toYamlValue(value)
         }
         return map
     }
 
-    private fun toYamlValue(value: Any?): Any? =
-        when (value) {
-            null -> null
-            is List<*> -> value.map { toYamlValue(it) }
-            is Map<*, *> ->
-                value
-                    .mapKeys { it.key.toString() }
-                    .mapValues { (_, v) -> toYamlValue(v) }
-            is Enum<*> -> value.name
-            is UUID -> value.toString()
-            else -> if (value::class.isData) toMap(value) else value
-        }
+    private fun isOmittable(value: Any?): Boolean = value == null ||
+        (value is Collection<*> && value.isEmpty()) ||
+        (value is Map<*, *> && value.isEmpty())
+
+    private fun toYamlValue(value: Any?): Any? = when (value) {
+        null -> null
+        is List<*> -> value.map { toYamlValue(it) }
+        is Map<*, *> ->
+            value
+                .mapKeys { it.key.toString() }
+                .mapValues { (_, v) -> toYamlValue(v) }
+        is Enum<*> -> value.name
+        is UUID -> value.toString()
+        else -> if (value::class.isData) toMap(value, omitDefaults = true) else value
+    }
 
     private fun <T : Any> createDefault(klass: KClass<T>): T {
         val constructor = requireNotNull(klass.primaryConstructor)
         return constructor.callBy(emptyMap())
     }
 
-    private fun validateParam(
-        param: KParameter,
-        value: Any?,
-        violations: MutableList<String>,
-    ) {
+    private fun validateParam(param: KParameter, value: Any?, violations: MutableList<String>) {
         val annotations = param.annotations
         for (annotation in annotations) {
             when (annotation) {

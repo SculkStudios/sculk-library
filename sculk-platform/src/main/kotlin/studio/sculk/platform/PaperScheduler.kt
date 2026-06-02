@@ -3,9 +3,9 @@ package studio.sculk.platform
 import org.bukkit.Location
 import org.bukkit.entity.Entity
 import org.bukkit.plugin.Plugin
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.scheduler.SculkScheduler
 import java.util.concurrent.TimeUnit
 
 private const val MILLIS_PER_TICK = 50L
@@ -24,81 +24,55 @@ private const val MILLIS_PER_TICK = 50L
  *   location-specific work.
  */
 @SculkInternal
-public class PaperScheduler(
-    private val plugin: Plugin,
-) : SculkScheduler {
+public class PaperScheduler(private val plugin: Plugin) : SculkScheduler {
     // -------------------------------------------------------------------------
     // Sync — global region (equivalent to Paper's main thread)
     // -------------------------------------------------------------------------
 
-    override fun runSync(task: Runnable): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t = plugin.server.globalRegionScheduler.run(plugin) { task.run() }
-            SculkHandle { t.cancel() }
-        } else {
-            val t = plugin.server.scheduler.runTask(plugin, task)
-            SculkHandle { t.cancel() }
-        }
+    override fun runSync(task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t = plugin.server.globalRegionScheduler.run(plugin) { task.run() }
+        SculkHandle { t.cancel() }
+    } else {
+        val t = plugin.server.scheduler.runTask(plugin, task)
+        SculkHandle { t.cancel() }
+    }
 
-    override fun runSyncDelayed(
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t = plugin.server.globalRegionScheduler.runDelayed(plugin, { task.run() }, delayTicks)
-            SculkHandle { t.cancel() }
-        } else {
-            val t = plugin.server.scheduler.runTaskLater(plugin, task, delayTicks)
-            SculkHandle { t.cancel() }
-        }
+    override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t = plugin.server.globalRegionScheduler.runDelayed(plugin, { task.run() }, delayTicks)
+        SculkHandle { t.cancel() }
+    } else {
+        val t = plugin.server.scheduler.runTaskLater(plugin, task, delayTicks)
+        SculkHandle { t.cancel() }
+    }
 
-    override fun runSyncRepeating(
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t = plugin.server.globalRegionScheduler.runAtFixedRate(plugin, { task.run() }, delayTicks, periodTicks)
-            SculkHandle { t.cancel() }
-        } else {
-            val t = plugin.server.scheduler.runTaskTimer(plugin, task, delayTicks, periodTicks)
-            SculkHandle { t.cancel() }
-        }
+    override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t = plugin.server.globalRegionScheduler.runAtFixedRate(plugin, { task.run() }, delayTicks, periodTicks)
+        SculkHandle { t.cancel() }
+    } else {
+        val t = plugin.server.scheduler.runTaskTimer(plugin, task, delayTicks, periodTicks)
+        SculkHandle { t.cancel() }
+    }
 
     // -------------------------------------------------------------------------
     // Sync — entity region (runs on the thread owning the entity's chunk)
     // On Paper falls back to global scheduler — entity context is ignored.
     // -------------------------------------------------------------------------
 
-    override fun runSync(
-        entity: Entity,
-        task: Runnable,
-    ): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t = entity.scheduler.run(plugin, { task.run() }, null)
-            SculkHandle { t?.cancel() }
-        } else {
-            runSync(task)
-        }
+    override fun runSync(entity: Entity, task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t = entity.scheduler.run(plugin, { task.run() }, null)
+        SculkHandle { t?.cancel() }
+    } else {
+        runSync(task)
+    }
 
-    override fun runSyncDelayed(
-        entity: Entity,
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t = entity.scheduler.runDelayed(plugin, { task.run() }, null, delayTicks)
-            SculkHandle { t?.cancel() }
-        } else {
-            runSyncDelayed(delayTicks, task)
-        }
+    override fun runSyncDelayed(entity: Entity, delayTicks: Long, task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t = entity.scheduler.runDelayed(plugin, { task.run() }, null, delayTicks)
+        SculkHandle { t?.cancel() }
+    } else {
+        runSyncDelayed(delayTicks, task)
+    }
 
-    override fun runSyncRepeating(
-        entity: Entity,
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle =
+    override fun runSyncRepeating(entity: Entity, delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle =
         if (FoliaDetector.isFolia) {
             val t = entity.scheduler.runAtFixedRate(plugin, { task.run() }, null, delayTicks, periodTicks)
             SculkHandle { t?.cancel() }
@@ -111,35 +85,21 @@ public class PaperScheduler(
     // On Paper falls back to global scheduler — location context is ignored.
     // -------------------------------------------------------------------------
 
-    override fun runSync(
-        location: Location,
-        task: Runnable,
-    ): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t = plugin.server.regionScheduler.run(plugin, location) { task.run() }
-            SculkHandle { t.cancel() }
-        } else {
-            runSync(task)
-        }
+    override fun runSync(location: Location, task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t = plugin.server.regionScheduler.run(plugin, location) { task.run() }
+        SculkHandle { t.cancel() }
+    } else {
+        runSync(task)
+    }
 
-    override fun runSyncDelayed(
-        location: Location,
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t = plugin.server.regionScheduler.runDelayed(plugin, location, { task.run() }, delayTicks)
-            SculkHandle { t.cancel() }
-        } else {
-            runSyncDelayed(delayTicks, task)
-        }
+    override fun runSyncDelayed(location: Location, delayTicks: Long, task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t = plugin.server.regionScheduler.runDelayed(plugin, location, { task.run() }, delayTicks)
+        SculkHandle { t.cancel() }
+    } else {
+        runSyncDelayed(delayTicks, task)
+    }
 
-    override fun runSyncRepeating(
-        location: Location,
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle =
+    override fun runSyncRepeating(location: Location, delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle =
         if (FoliaDetector.isFolia) {
             val t = plugin.server.regionScheduler.runAtFixedRate(plugin, location, { task.run() }, delayTicks, periodTicks)
             SculkHandle { t.cancel() }
@@ -152,50 +112,40 @@ public class PaperScheduler(
     // Folia's AsyncScheduler uses real time (ms), not ticks.
     // -------------------------------------------------------------------------
 
-    override fun runAsync(task: Runnable): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t = plugin.server.asyncScheduler.runNow(plugin) { task.run() }
-            SculkHandle { t.cancel() }
-        } else {
-            val t = plugin.server.scheduler.runTaskAsynchronously(plugin, task)
-            SculkHandle { t.cancel() }
-        }
+    override fun runAsync(task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t = plugin.server.asyncScheduler.runNow(plugin) { task.run() }
+        SculkHandle { t.cancel() }
+    } else {
+        val t = plugin.server.scheduler.runTaskAsynchronously(plugin, task)
+        SculkHandle { t.cancel() }
+    }
 
-    override fun runAsyncDelayed(
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t =
-                plugin.server.asyncScheduler.runDelayed(
-                    plugin,
-                    { task.run() },
-                    delayTicks * MILLIS_PER_TICK,
-                    TimeUnit.MILLISECONDS,
-                )
-            SculkHandle { t.cancel() }
-        } else {
-            val t = plugin.server.scheduler.runTaskLaterAsynchronously(plugin, task, delayTicks)
-            SculkHandle { t.cancel() }
-        }
+    override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t =
+            plugin.server.asyncScheduler.runDelayed(
+                plugin,
+                { task.run() },
+                delayTicks * MILLIS_PER_TICK,
+                TimeUnit.MILLISECONDS,
+            )
+        SculkHandle { t.cancel() }
+    } else {
+        val t = plugin.server.scheduler.runTaskLaterAsynchronously(plugin, task, delayTicks)
+        SculkHandle { t.cancel() }
+    }
 
-    override fun runAsyncRepeating(
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle =
-        if (FoliaDetector.isFolia) {
-            val t =
-                plugin.server.asyncScheduler.runAtFixedRate(
-                    plugin,
-                    { task.run() },
-                    delayTicks * MILLIS_PER_TICK,
-                    periodTicks * MILLIS_PER_TICK,
-                    TimeUnit.MILLISECONDS,
-                )
-            SculkHandle { t.cancel() }
-        } else {
-            val t = plugin.server.scheduler.runTaskTimerAsynchronously(plugin, task, delayTicks, periodTicks)
-            SculkHandle { t.cancel() }
-        }
+    override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = if (FoliaDetector.isFolia) {
+        val t =
+            plugin.server.asyncScheduler.runAtFixedRate(
+                plugin,
+                { task.run() },
+                delayTicks * MILLIS_PER_TICK,
+                periodTicks * MILLIS_PER_TICK,
+                TimeUnit.MILLISECONDS,
+            )
+        SculkHandle { t.cancel() }
+    } else {
+        val t = plugin.server.scheduler.runTaskTimerAsynchronously(plugin, task, delayTicks, periodTicks)
+        SculkHandle { t.cancel() }
+    }
 }

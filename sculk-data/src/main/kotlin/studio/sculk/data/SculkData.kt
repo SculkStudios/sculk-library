@@ -2,10 +2,10 @@ package studio.sculk.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
 import studio.sculk.config.yaml.YamlMapper
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkStable
 import studio.sculk.data.cache.CacheBuilder
 import studio.sculk.data.cache.SculkCache
 import studio.sculk.data.driver.ConnectionPool
@@ -34,10 +34,7 @@ import kotlin.reflect.KClass
  * ```
  */
 @SculkStable
-public class SculkData private constructor(
-    private val dataSource: DataSource,
-    private val config: StorageConfig,
-) : SculkHandle {
+public class SculkData private constructor(private val dataSource: DataSource, private val config: StorageConfig) : SculkHandle {
     // Distributed caches hold open Redis connections; close them when the data layer shuts down.
     private val managedHandles = java.util.concurrent.CopyOnWriteArrayList<SculkHandle>()
 
@@ -46,10 +43,8 @@ public class SculkData private constructor(
      * The table is created if it does not exist.
      */
     @SculkStable
-    public fun <T : Any, ID : Any> repository(
-        klass: KClass<T>,
-        idClass: KClass<ID>,
-    ): SculkRepository<T, ID> = jdbcRepository(dataSource, klass, config.dialect())
+    public fun <T : Any, ID : Any> repository(klass: KClass<T>, idClass: KClass<ID>): SculkRepository<T, ID> =
+        jdbcRepository(dataSource, klass, config.dialect())
 
     /**
      * Kotlin reified convenience — creates a [JdbcRepository] for [T]/[ID].
@@ -93,17 +88,14 @@ public class SculkData private constructor(
         redisUri: String,
         keyPrefix: String,
         ttl: java.time.Duration = java.time.Duration.ofMinutes(10),
-    ): studio.sculk.data.cache.RedisCache<T, ID> =
-        studio.sculk.data.cache.RedisCache
-            .create(delegate, idExtractor, serializer, redisUri, keyPrefix, ttl)
-            .also { managedHandles += it }
+    ): studio.sculk.data.cache.RedisCache<T, ID> = studio.sculk.data.cache.RedisCache
+        .create(delegate, idExtractor, serializer, redisUri, keyPrefix, ttl)
+        .also { managedHandles += it }
 
     /** Creates a UUID-first player profile workflow around a repository. */
     @SculkStable
-    public fun <T : Any, ID : Any> playerProfiles(
-        repository: SculkRepository<T, ID>,
-        create: (ID) -> T,
-    ): PlayerProfileStore<T, ID> = PlayerProfileStore(repository, create)
+    public fun <T : Any, ID : Any> playerProfiles(repository: SculkRepository<T, ID>, create: (ID) -> T): PlayerProfileStore<T, ID> =
+        PlayerProfileStore(repository, create)
 
     /**
      * Runs [block] inside a single database transaction on [Dispatchers.IO].
@@ -121,28 +113,27 @@ public class SculkData private constructor(
      * ```
      */
     @SculkStable
-    public suspend fun <R> transaction(block: (java.sql.Connection) -> R): SculkResult<R> =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                dataSource.connection.use { conn ->
-                    val previousAutoCommit = conn.autoCommit
-                    conn.autoCommit = false
-                    try {
-                        val result = block(conn)
-                        conn.commit()
-                        result
-                    } catch (e: Throwable) {
-                        conn.rollback()
-                        throw e
-                    } finally {
-                        conn.autoCommit = previousAutoCommit
-                    }
+    public suspend fun <R> transaction(block: (java.sql.Connection) -> R): SculkResult<R> = withContext(Dispatchers.IO) {
+        runCatching {
+            dataSource.connection.use { conn ->
+                val previousAutoCommit = conn.autoCommit
+                conn.autoCommit = false
+                try {
+                    val result = block(conn)
+                    conn.commit()
+                    result
+                } catch (e: Throwable) {
+                    conn.rollback()
+                    throw e
+                } finally {
+                    conn.autoCommit = previousAutoCommit
                 }
-            }.fold(
-                onSuccess = { SculkResult.success(it) },
-                onFailure = { SculkResult.failure("transaction failed: ${it.message}", it) },
-            )
-        }
+            }
+        }.fold(
+            onSuccess = { SculkResult.success(it) },
+            onFailure = { SculkResult.failure("transaction failed: ${it.message}", it) },
+        )
+    }
 
     /** Closes distributed caches and the underlying connection pool. Call from your plugin's `onDisable`. */
     override fun close() {
@@ -157,10 +148,7 @@ public class SculkData private constructor(
          * The file is written with defaults if it does not exist.
          */
         @SculkStable
-        public fun create(
-            dataFolder: File,
-            logger: Logger,
-        ): SculkData {
+        public fun create(dataFolder: File, logger: Logger): SculkData {
             val configFile = File(dataFolder, "storage.yml")
             YamlMapper.writeDefaults(configFile, StorageConfig::class)
             val config = YamlMapper.load(configFile, StorageConfig::class)
@@ -178,9 +166,7 @@ public class SculkData private constructor(
          * Useful for testing with an H2 in-memory database.
          */
         @SculkStable
-        public fun withDataSource(
-            dataSource: DataSource,
-            dialect: studio.sculk.data.driver.SqlDialect,
-        ): SculkData = SculkData(dataSource, StorageConfig(type = dialect.name.lowercase()))
+        public fun withDataSource(dataSource: DataSource, dialect: studio.sculk.data.driver.SqlDialect): SculkData =
+            SculkData(dataSource, StorageConfig(type = dialect.name.lowercase()))
     }
 }

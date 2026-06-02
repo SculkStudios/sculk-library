@@ -1,7 +1,7 @@
 package studio.sculk.platform
 
 import org.bukkit.plugin.java.JavaPlugin
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * A `JavaPlugin` base class that removes all Sculk lifecycle boilerplate.
@@ -22,9 +22,7 @@ import studio.sculk.core.annotation.SculkStable
  * sequence — in which case use [SculkPlatform.create] manually.
  */
 @SculkStable
-public abstract class SculkPlugin(
-    private val configure: SculkPlatformBuilder.() -> Unit = {},
-) : JavaPlugin() {
+public abstract class SculkPlugin(private val configure: SculkPlatformBuilder.() -> Unit = {}) : JavaPlugin() {
     /** The Sculk platform for this plugin. Available from [setup] onward. */
     public lateinit var sculk: SculkPlatform
         private set

@@ -1,11 +1,11 @@
 package studio.sculk.example
 
+import studio.sculk.command.CommandBuilder
+import studio.sculk.command.command
 import studio.sculk.config.annotation.ConfigFile
 import studio.sculk.config.annotation.Max
 import studio.sculk.config.annotation.Min
 import studio.sculk.config.annotation.NotEmpty
-import studio.sculk.core.command.CommandBuilder
-import studio.sculk.core.command.command
 import studio.sculk.platform.SculkPlugin
 
 // ---------------------------------------------------------------------------
@@ -44,27 +44,25 @@ public class ConfigPlugin : SculkPlugin({ config() }) {
     }
 
     // /info — shows current config values to the player
-    private fun infoCommand(): CommandBuilder =
-        command("info") {
-            description = "Show current config values."
-            player {
-                reply("${settings.prefix} <gray>Config values:")
-                reply("<gray>• maxHomes: <white>${settings.maxHomes}")
-                reply("<gray>• allowFlight: <white>${settings.allowFlight}")
-                reply("<gray>• welcomeMessage: <white>${settings.welcomeMessage}")
-            }
+    private fun infoCommand(): CommandBuilder = command("info") {
+        description = "Show current config values."
+        player {
+            reply("${settings.prefix} <gray>Config values:")
+            reply("<gray>• maxHomes: <white>${settings.maxHomes}")
+            reply("<gray>• allowFlight: <white>${settings.allowFlight}")
+            reply("<gray>• welcomeMessage: <white>${settings.welcomeMessage}")
         }
+    }
 
     // /config reload — reloads all config files from disk
-    private fun reloadCommand(): CommandBuilder =
-        command("config") {
-            description = "Reload the plugin config."
-            permission = "demo.admin"
-            sub("reload") {
-                executes {
-                    sculk.config.reloadAll()
-                    reply("${settings.prefix} <green>Config reloaded.")
-                }
+    private fun reloadCommand(): CommandBuilder = command("config") {
+        description = "Reload the plugin config."
+        permission = "demo.admin"
+        sub("reload") {
+            executes {
+                sculk.config.reloadAll()
+                reply("${settings.prefix} <green>Config reloaded.")
             }
         }
+    }
 }

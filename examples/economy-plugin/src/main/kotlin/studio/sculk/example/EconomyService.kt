@@ -1,6 +1,6 @@
 package studio.sculk.example
 
-import studio.sculk.core.SculkResult
+import studio.sculk.SculkResult
 import studio.sculk.data.cache.SculkCache
 import java.util.Collections
 import java.util.UUID
@@ -12,16 +12,9 @@ public class EconomyService(
 ) {
     private val knownAccounts = Collections.synchronizedMap(linkedMapOf<UUID, EconomyAccount>())
 
-    public suspend fun balance(
-        uuid: UUID,
-        name: String,
-    ): SculkResult<EconomyAccount> = account(uuid, name)
+    public suspend fun balance(uuid: UUID, name: String): SculkResult<EconomyAccount> = account(uuid, name)
 
-    public suspend fun set(
-        uuid: UUID,
-        name: String,
-        amount: Long,
-    ): SculkResult<EconomyAccount> {
+    public suspend fun set(uuid: UUID, name: String, amount: Long): SculkResult<EconomyAccount> {
         if (amount < 0) return SculkResult.failure("Balance cannot be negative.")
         val account = account(uuid, name).valueOrReturn { return it }
         account.name = name
@@ -30,11 +23,7 @@ public class EconomyService(
         return save(account)
     }
 
-    public suspend fun deposit(
-        uuid: UUID,
-        name: String,
-        amount: Long,
-    ): SculkResult<EconomyAccount> {
+    public suspend fun deposit(uuid: UUID, name: String, amount: Long): SculkResult<EconomyAccount> {
         if (amount <= 0) return SculkResult.failure("Amount must be positive.")
         val account = account(uuid, name).valueOrReturn { return it }
         account.name = name
@@ -43,11 +32,7 @@ public class EconomyService(
         return save(account)
     }
 
-    public suspend fun withdraw(
-        uuid: UUID,
-        name: String,
-        amount: Long,
-    ): SculkResult<EconomyAccount> {
+    public suspend fun withdraw(uuid: UUID, name: String, amount: Long): SculkResult<EconomyAccount> {
         if (amount <= 0) return SculkResult.failure("Amount must be positive.")
         val account = account(uuid, name).valueOrReturn { return it }
         if (account.coins < amount) return SculkResult.failure("Insufficient funds.")
@@ -96,31 +81,25 @@ public class EconomyService(
         return if (accounts.isEmpty()) SculkResult.success(Unit) else repository.saveAll(accounts)
     }
 
-    private suspend fun account(
-        uuid: UUID,
-        name: String,
-    ): SculkResult<EconomyAccount> =
-        repository
-            .findOrCreate(uuid) {
-                val now = clock()
-                EconomyAccount(uuid, name, startingCoins(), now, now)
-            }.also { result ->
-                if (result is SculkResult.Success) knownAccounts[uuid] = result.value
-            }
-
-    private suspend fun save(account: EconomyAccount): SculkResult<EconomyAccount> =
-        when (val saved = repository.save(account)) {
-            is SculkResult.Success -> {
-                knownAccounts[account.uuid] = account
-                SculkResult.success(account)
-            }
-            is SculkResult.Failure -> saved
+    private suspend fun account(uuid: UUID, name: String): SculkResult<EconomyAccount> = repository
+        .findOrCreate(uuid) {
+            val now = clock()
+            EconomyAccount(uuid, name, startingCoins(), now, now)
+        }.also { result ->
+            if (result is SculkResult.Success) knownAccounts[uuid] = result.value
         }
+
+    private suspend fun save(account: EconomyAccount): SculkResult<EconomyAccount> = when (val saved = repository.save(account)) {
+        is SculkResult.Success -> {
+            knownAccounts[account.uuid] = account
+            SculkResult.success(account)
+        }
+        is SculkResult.Failure -> saved
+    }
 
     /** Returns the success value, or runs [onFailure] (which must return non-locally) on failure. */
-    private inline fun <T> SculkResult<T>.valueOrReturn(onFailure: (SculkResult.Failure) -> Nothing): T =
-        when (this) {
-            is SculkResult.Success -> value
-            is SculkResult.Failure -> onFailure(this)
-        }
+    private inline fun <T> SculkResult<T>.valueOrReturn(onFailure: (SculkResult.Failure) -> Nothing): T = when (this) {
+        is SculkResult.Success -> value
+        is SculkResult.Failure -> onFailure(this)
+    }
 }

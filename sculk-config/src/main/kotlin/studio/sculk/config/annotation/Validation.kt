@@ -1,6 +1,6 @@
 package studio.sculk.config.annotation
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Validates that a numeric config value is at least [value].
@@ -18,9 +18,7 @@ import studio.sculk.core.annotation.SculkStable
 @SculkStable
 @Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-public annotation class Min(
-    val value: Long,
-)
+public annotation class Min(val value: Long)
 
 /**
  * Validates that a numeric config value is at most [value].
@@ -28,9 +26,7 @@ public annotation class Min(
 @SculkStable
 @Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-public annotation class Max(
-    val value: Long,
-)
+public annotation class Max(val value: Long)
 
 /**
  * Validates that a string config value is not blank.

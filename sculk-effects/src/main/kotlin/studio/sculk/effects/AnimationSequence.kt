@@ -1,8 +1,8 @@
 package studio.sculk.effects
 
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.annotation.SculkStable
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkStable
+import studio.sculk.scheduler.SculkScheduler
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -24,9 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * ```
  */
 @SculkStable
-public class AnimationSequence internal constructor(
-    private val steps: List<SequenceEntry>,
-) {
+public class AnimationSequence internal constructor(private val steps: List<SequenceEntry>) {
     /**
      * Starts the sequence using [scheduler].
      *
@@ -62,13 +60,9 @@ public class AnimationSequence internal constructor(
 }
 
 internal sealed interface SequenceEntry {
-    data class Step(
-        val action: () -> Unit,
-    ) : SequenceEntry
+    data class Step(val action: () -> Unit) : SequenceEntry
 
-    data class Delay(
-        val ticks: Long,
-    ) : SequenceEntry
+    data class Delay(val ticks: Long) : SequenceEntry
 }
 
 /**

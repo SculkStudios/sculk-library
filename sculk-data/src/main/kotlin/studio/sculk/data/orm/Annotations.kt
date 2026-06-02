@@ -1,6 +1,6 @@
 package studio.sculk.data.orm
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Marks a data class as a database entity and optionally overrides the table name.
@@ -14,9 +14,7 @@ import studio.sculk.core.annotation.SculkStable
 @SculkStable
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-public annotation class Table(
-    val name: String = "",
-)
+public annotation class Table(val name: String = "")
 
 /**
  * Marks a constructor parameter as the primary key for its entity.
@@ -34,6 +32,4 @@ public annotation class PrimaryKey
 @SculkStable
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-public annotation class Column(
-    val name: String,
-)
+public annotation class Column(val name: String)

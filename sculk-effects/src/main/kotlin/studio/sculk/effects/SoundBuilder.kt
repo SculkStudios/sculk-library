@@ -3,7 +3,7 @@ package studio.sculk.effects
 import org.bukkit.Location
 import org.bukkit.Sound
 import org.bukkit.entity.Player
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Builds and plays a sound effect.
@@ -28,10 +28,7 @@ import studio.sculk.core.annotation.SculkStable
  * ```
  */
 @SculkStable
-public class SoundBuilder private constructor(
-    private val soundType: Sound?,
-    private val soundKey: String?,
-) {
+public class SoundBuilder private constructor(private val soundType: Sound?, private val soundKey: String?) {
     /** Playback volume. Defaults to 1.0. */
     public var volume: Float = 1.0f
 
@@ -96,10 +93,7 @@ public class SoundBuilder private constructor(
  * immediately, or hold the builder for use in a timeline step.
  */
 @SculkStable
-public fun sound(
-    type: Sound,
-    block: SoundBuilder.() -> Unit,
-): SoundBuilder = SoundBuilder.of(type).apply(block)
+public fun sound(type: Sound, block: SoundBuilder.() -> Unit): SoundBuilder = SoundBuilder.of(type).apply(block)
 
 /**
  * Creates a [SoundBuilder] from a namespaced string [key] and applies [block].
@@ -114,7 +108,4 @@ public fun sound(
  * ```
  */
 @SculkStable
-public fun sound(
-    key: String,
-    block: SoundBuilder.() -> Unit,
-): SoundBuilder = SoundBuilder.ofKey(key).apply(block)
+public fun sound(key: String, block: SoundBuilder.() -> Unit): SoundBuilder = SoundBuilder.ofKey(key).apply(block)

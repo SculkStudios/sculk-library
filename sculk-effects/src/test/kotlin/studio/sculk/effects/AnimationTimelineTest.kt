@@ -2,15 +2,12 @@ package studio.sculk.effects
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.scheduler.SculkScheduler
 
 /** Captures scheduled tasks so tests can fire them manually. */
 private class FakeScheduler : SculkScheduler {
-    data class Task(
-        val delay: Long,
-        val action: Runnable,
-    )
+    data class Task(val delay: Long, val action: Runnable)
 
     val tasks = mutableListOf<Task>()
 
@@ -19,32 +16,18 @@ private class FakeScheduler : SculkScheduler {
         return SculkHandle {}
     }
 
-    override fun runSyncDelayed(
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle {
+    override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle {
         tasks += Task(delayTicks, task)
         return SculkHandle {}
     }
 
-    override fun runSyncRepeating(
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle = SculkHandle {}
+    override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = SculkHandle {}
 
     override fun runAsync(task: Runnable): SculkHandle = SculkHandle {}
 
-    override fun runAsyncDelayed(
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle = SculkHandle {}
+    override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = SculkHandle {}
 
-    override fun runAsyncRepeating(
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle = SculkHandle {}
+    override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = SculkHandle {}
 
     fun fireAll() = tasks.sortedBy { it.delay }.forEach { it.action.run() }
 }

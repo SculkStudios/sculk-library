@@ -6,12 +6,12 @@ description = "Sculk Studio — coroutine scheduling: repeating tasks, cron, deb
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.core.annotation.SculkInternal")
+        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
     }
 }
 
 dependencies {
-    api(project(":sculk-core"))
+    api(project(":sculk-common"))
     testImplementation(libs.paper.api)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.coroutines.test)

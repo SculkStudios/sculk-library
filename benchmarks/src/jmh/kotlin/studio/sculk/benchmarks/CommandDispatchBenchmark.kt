@@ -22,12 +22,12 @@ import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.Warmup
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.command.brigadier.CommandCompiler
-import studio.sculk.core.command.command
-import studio.sculk.core.coroutine.SculkCoroutineScope
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.command.brigadier.CommandCompiler
+import studio.sculk.command.command
+import studio.sculk.coroutine.SculkCoroutineScope
+import studio.sculk.scheduler.SculkScheduler
 import java.util.concurrent.TimeUnit
 
 /**
@@ -82,42 +82,22 @@ private class InlineScheduler : SculkScheduler {
         return SculkHandle {}
     }
 
-    override fun runSyncDelayed(
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle = runSync(task)
+    override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runSync(task)
 
-    override fun runSyncRepeating(
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle = runSync(task)
+    override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runSync(task)
 
-    override fun runSync(
-        entity: Entity,
-        task: Runnable,
-    ): SculkHandle = runSync(task)
+    override fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
 
-    override fun runSync(
-        location: Location,
-        task: Runnable,
-    ): SculkHandle = runSync(task)
+    override fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
 
     override fun runAsync(task: Runnable): SculkHandle {
         task.run()
         return SculkHandle {}
     }
 
-    override fun runAsyncDelayed(
-        delayTicks: Long,
-        task: Runnable,
-    ): SculkHandle = runAsync(task)
+    override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runAsync(task)
 
-    override fun runAsyncRepeating(
-        delayTicks: Long,
-        periodTicks: Long,
-        task: Runnable,
-    ): SculkHandle = runAsync(task)
+    override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runAsync(task)
 }
 
 /** Minimal CommandSender that discards all output — avoids Adventure overhead in benchmarks. */
@@ -126,15 +106,9 @@ private object NoopSender : CommandSender {
 
     override fun sendMessage(vararg messages: String): Unit = Unit
 
-    override fun sendMessage(
-        sender: java.util.UUID?,
-        message: String,
-    ): Unit = Unit
+    override fun sendMessage(sender: java.util.UUID?, message: String): Unit = Unit
 
-    override fun sendMessage(
-        sender: java.util.UUID?,
-        vararg messages: String,
-    ): Unit = Unit
+    override fun sendMessage(sender: java.util.UUID?, vararg messages: String): Unit = Unit
 
     override fun getServer() = throw UnsupportedOperationException()
 
@@ -152,23 +126,11 @@ private object NoopSender : CommandSender {
 
     override fun addAttachment(plugin: Plugin): PermissionAttachment = throw UnsupportedOperationException()
 
-    override fun addAttachment(
-        plugin: Plugin,
-        name: String,
-        value: Boolean,
-    ): PermissionAttachment = throw UnsupportedOperationException()
+    override fun addAttachment(plugin: Plugin, name: String, value: Boolean): PermissionAttachment = throw UnsupportedOperationException()
 
-    override fun addAttachment(
-        plugin: Plugin,
-        ticks: Int,
-    ): PermissionAttachment? = null
+    override fun addAttachment(plugin: Plugin, ticks: Int): PermissionAttachment? = null
 
-    override fun addAttachment(
-        plugin: Plugin,
-        name: String,
-        value: Boolean,
-        ticks: Int,
-    ): PermissionAttachment? = null
+    override fun addAttachment(plugin: Plugin, name: String, value: Boolean, ticks: Int): PermissionAttachment? = null
 
     override fun removeAttachment(attachment: PermissionAttachment): Unit = Unit
 
@@ -180,7 +142,6 @@ private object NoopSender : CommandSender {
 
     override fun setOp(value: Boolean): Unit = Unit
 
-    override fun name(): net.kyori.adventure.text.Component =
-        net.kyori.adventure.text.Component
-            .text("Benchmark")
+    override fun name(): net.kyori.adventure.text.Component = net.kyori.adventure.text.Component
+        .text("Benchmark")
 }

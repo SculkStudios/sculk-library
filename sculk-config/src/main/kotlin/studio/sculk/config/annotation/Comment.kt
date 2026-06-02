@@ -1,6 +1,6 @@
 package studio.sculk.config.annotation
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Emits one or more YAML comment lines directly above a config field when defaults
@@ -41,6 +41,4 @@ import studio.sculk.core.annotation.SculkStable
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-public annotation class Comment(
-    val value: String,
-)
+public annotation class Comment(val value: String)

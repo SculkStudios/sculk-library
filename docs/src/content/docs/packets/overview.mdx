@@ -3,7 +3,7 @@ title: Packets
 description: Optional packet APIs for client-side features without making core heavy.
 ---
 
-Sculk packet support is deliberately split into small optional modules. `sculk-core` and `sculk-platform` do not bundle PacketEvents or ProtocolLib, and Sculk does not shade either packet library.
+Sculk packet support is deliberately split into small optional modules. The core modules and `sculk-platform` do not bundle PacketEvents or ProtocolLib, and Sculk does not shade either packet library.
 
 Use packets when you need client-side behavior that Paper does not expose directly. Today, Sculk exposes production APIs for low-level listeners, packet sending, debug packet sessions, and temporary client-side block previews. Prefer Paper APIs when they already solve the job.
 

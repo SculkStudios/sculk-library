@@ -14,7 +14,7 @@ import org.bukkit.block.Biome
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.EntityType
 import org.bukkit.potion.PotionEffectType
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 import studio.sculk.series.registry.MappingResolver
 import studio.sculk.series.registry.SculkRegistry
 import java.util.concurrent.ConcurrentHashMap
@@ -43,16 +43,15 @@ public object SculkSeries {
     private val materialRegistry: SculkRegistry<Material> by lazy {
         SculkRegistry(
             resolver =
-                object : MappingResolver<Material> {
-                    override fun resolve(key: String): Material? =
-                        materialCandidates(key)
-                            .firstNotNullOfOrNull {
-                                runCatching { Material.matchMaterial(it.uppercase()) }.getOrNull()
-                                    ?: runCatching { Material.matchMaterial(it) }.getOrNull()
-                            }
+            object : MappingResolver<Material> {
+                override fun resolve(key: String): Material? = materialCandidates(key)
+                    .firstNotNullOfOrNull {
+                        runCatching { Material.matchMaterial(it.uppercase()) }.getOrNull()
+                            ?: runCatching { Material.matchMaterial(it) }.getOrNull()
+                    }
 
-                    override fun keys(): Set<String> = Material.values().map { it.name.lowercase() }.toSet()
-                },
+                override fun keys(): Set<String> = Material.values().map { it.name.lowercase() }.toSet()
+            },
         )
     }
 
@@ -60,17 +59,15 @@ public object SculkSeries {
         val registry = registry(RegistryKey.SOUND_EVENT)
         SculkRegistry(
             resolver =
-                object : MappingResolver<Sound> {
-                    override fun resolve(key: String): Sound? =
-                        normalizedLookupKeys(key)
-                            .firstNotNullOfOrNull { registry.get(it) }
+            object : MappingResolver<Sound> {
+                override fun resolve(key: String): Sound? = normalizedLookupKeys(key)
+                    .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> =
-                        registry
-                            .keyStream()
-                            .map { it.key }
-                            .collect(Collectors.toSet())
-                },
+                override fun keys(): Set<String> = registry
+                    .keyStream()
+                    .map { it.key }
+                    .collect(Collectors.toSet())
+            },
         )
     }
 
@@ -78,17 +75,15 @@ public object SculkSeries {
         val registry = registry(RegistryKey.PARTICLE_TYPE)
         SculkRegistry(
             resolver =
-                object : MappingResolver<Particle> {
-                    override fun resolve(key: String): Particle? =
-                        normalizedLookupKeys(key)
-                            .firstNotNullOfOrNull { registry.get(it) }
+            object : MappingResolver<Particle> {
+                override fun resolve(key: String): Particle? = normalizedLookupKeys(key)
+                    .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> =
-                        registry
-                            .keyStream()
-                            .map { it.key }
-                            .collect(Collectors.toSet())
-                },
+                override fun keys(): Set<String> = registry
+                    .keyStream()
+                    .map { it.key }
+                    .collect(Collectors.toSet())
+            },
         )
     }
 
@@ -96,41 +91,39 @@ public object SculkSeries {
         val registry = registry(RegistryKey.ENTITY_TYPE)
         SculkRegistry(
             resolver =
-                object : MappingResolver<EntityType> {
-                    override fun resolve(key: String): EntityType? =
-                        normalizedLookupKeys(key)
-                            .firstNotNullOfOrNull { registry.get(it) }
+            object : MappingResolver<EntityType> {
+                override fun resolve(key: String): EntityType? = normalizedLookupKeys(key)
+                    .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> =
-                        registry
-                            .keyStream()
-                            .map { it.key }
-                            .collect(Collectors.toSet())
-                },
+                override fun keys(): Set<String> = registry
+                    .keyStream()
+                    .map { it.key }
+                    .collect(Collectors.toSet())
+            },
         )
     }
 
     private val gameModeRegistry: SculkRegistry<GameMode> by lazy {
         SculkRegistry(
             resolver =
-                object : MappingResolver<GameMode> {
-                    override fun resolve(key: String): GameMode? =
-                        GameMode.entries.firstOrNull { it.name.equals(key.trim(), ignoreCase = true) }
+            object : MappingResolver<GameMode> {
+                override fun resolve(key: String): GameMode? =
+                    GameMode.entries.firstOrNull { it.name.equals(key.trim(), ignoreCase = true) }
 
-                    override fun keys(): Set<String> = GameMode.entries.map { it.name.lowercase() }.toSet()
-                },
+                override fun keys(): Set<String> = GameMode.entries.map { it.name.lowercase() }.toSet()
+            },
         )
     }
 
     private val difficultyRegistry: SculkRegistry<Difficulty> by lazy {
         SculkRegistry(
             resolver =
-                object : MappingResolver<Difficulty> {
-                    override fun resolve(key: String): Difficulty? =
-                        Difficulty.entries.firstOrNull { it.name.equals(key.trim(), ignoreCase = true) }
+            object : MappingResolver<Difficulty> {
+                override fun resolve(key: String): Difficulty? =
+                    Difficulty.entries.firstOrNull { it.name.equals(key.trim(), ignoreCase = true) }
 
-                    override fun keys(): Set<String> = Difficulty.entries.map { it.name.lowercase() }.toSet()
-                },
+                override fun keys(): Set<String> = Difficulty.entries.map { it.name.lowercase() }.toSet()
+            },
         )
     }
 
@@ -138,17 +131,15 @@ public object SculkSeries {
         val registry = registry(RegistryKey.ENCHANTMENT)
         SculkRegistry(
             resolver =
-                object : MappingResolver<Enchantment> {
-                    override fun resolve(key: String): Enchantment? =
-                        normalizedLookupKeys(key)
-                            .firstNotNullOfOrNull { registry.get(it) }
+            object : MappingResolver<Enchantment> {
+                override fun resolve(key: String): Enchantment? = normalizedLookupKeys(key)
+                    .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> =
-                        registry
-                            .keyStream()
-                            .map { it.key }
-                            .collect(Collectors.toSet())
-                },
+                override fun keys(): Set<String> = registry
+                    .keyStream()
+                    .map { it.key }
+                    .collect(Collectors.toSet())
+            },
         )
     }
 
@@ -156,17 +147,15 @@ public object SculkSeries {
         val registry = registry(RegistryKey.MOB_EFFECT)
         SculkRegistry(
             resolver =
-                object : MappingResolver<PotionEffectType> {
-                    override fun resolve(key: String): PotionEffectType? =
-                        normalizedLookupKeys(key)
-                            .firstNotNullOfOrNull { registry.get(it) }
+            object : MappingResolver<PotionEffectType> {
+                override fun resolve(key: String): PotionEffectType? = normalizedLookupKeys(key)
+                    .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> =
-                        registry
-                            .keyStream()
-                            .map { it.key }
-                            .collect(Collectors.toSet())
-                },
+                override fun keys(): Set<String> = registry
+                    .keyStream()
+                    .map { it.key }
+                    .collect(Collectors.toSet())
+            },
         )
     }
 
@@ -174,17 +163,15 @@ public object SculkSeries {
         val registry = registry(RegistryKey.BIOME)
         SculkRegistry(
             resolver =
-                object : MappingResolver<Biome> {
-                    override fun resolve(key: String): Biome? =
-                        normalizedLookupKeys(key)
-                            .firstNotNullOfOrNull { registry.get(it) }
+            object : MappingResolver<Biome> {
+                override fun resolve(key: String): Biome? = normalizedLookupKeys(key)
+                    .firstNotNullOfOrNull { registry.get(it) }
 
-                    override fun keys(): Set<String> =
-                        registry
-                            .keyStream()
-                            .map { it.key }
-                            .collect(Collectors.toSet())
-                },
+                override fun keys(): Set<String> = registry
+                    .keyStream()
+                    .map { it.key }
+                    .collect(Collectors.toSet())
+            },
         )
     }
 
@@ -205,10 +192,7 @@ public object SculkSeries {
      * ```
      */
     @SculkStable
-    public fun <T : Any> register(
-        type: Class<T>,
-        resolver: (String) -> T?,
-    ) {
+    public fun <T : Any> register(type: Class<T>, resolver: (String) -> T?) {
         customRegistries[type] =
             SculkRegistry(
                 object : MappingResolver<T> {
@@ -230,10 +214,7 @@ public object SculkSeries {
      */
     @SculkStable
     @Suppress("UNCHECKED_CAST")
-    public fun <T : Any> lookup(
-        type: Class<T>,
-        key: String,
-    ): T? = (customRegistries[type] as? SculkRegistry<T>)?.resolve(key)
+    public fun <T : Any> lookup(type: Class<T>, key: String): T? = (customRegistries[type] as? SculkRegistry<T>)?.resolve(key)
 
     /** Kotlin convenience inline overload for [lookup]. */
     @SculkStable
@@ -412,24 +393,16 @@ public object SculkSeries {
 
     private fun normalizedText(input: String): String = input.trim().lowercase().substringAfter("minecraft:")
 
-    private fun unknown(
-        type: String,
-        key: String,
-    ): IllegalArgumentException = IllegalArgumentException("Unknown $type key '$key'.")
+    private fun unknown(type: String, key: String): IllegalArgumentException = IllegalArgumentException("Unknown $type key '$key'.")
 }
 
 /** A missing registry key discovered during validation. */
 @SculkStable
-public data class SeriesMissingKey(
-    public val type: String,
-    public val key: String,
-)
+public data class SeriesMissingKey(public val type: String, public val key: String)
 
 /** Startup validation result for config-driven registry keys. */
 @SculkStable
-public data class SeriesValidationReport(
-    public val missing: List<SeriesMissingKey>,
-) {
+public data class SeriesValidationReport(public val missing: List<SeriesMissingKey>) {
     public val valid: Boolean get() = missing.isEmpty()
 }
 

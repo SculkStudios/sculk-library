@@ -1,6 +1,6 @@
 package studio.sculk.example
 
-import studio.sculk.core.SculkResult
+import studio.sculk.SculkResult
 import studio.sculk.data.repository.PlayerProfileStore
 import java.util.Collections
 import java.util.UUID
@@ -12,10 +12,7 @@ public class ProfileService(
 ) {
     private val loaded = Collections.synchronizedMap(linkedMapOf<UUID, PlayerProfile>())
 
-    public suspend fun loadForJoin(
-        uuid: UUID,
-        name: String,
-    ): SculkResult<PlayerProfile> {
+    public suspend fun loadForJoin(uuid: UUID, name: String): SculkResult<PlayerProfile> {
         val profile = store.getOrCreate(uuid).valueOrReturn { return it }
         profile.name = name
         profile.joins += 1
@@ -24,10 +21,7 @@ public class ProfileService(
         return saveLoaded(uuid, profile)
     }
 
-    public suspend fun profile(
-        uuid: UUID,
-        fallbackName: String,
-    ): SculkResult<PlayerProfile> {
+    public suspend fun profile(uuid: UUID, fallbackName: String): SculkResult<PlayerProfile> {
         loaded[uuid]?.let { return SculkResult.success(it) }
         val profile = store.getOrCreate(uuid).valueOrReturn { return it }
         if (profile.name.isBlank()) profile.name = fallbackName
@@ -55,10 +49,7 @@ public class ProfileService(
         return PlayerProfile(uuid, "", now, now, 0, 0, 0, startingCoins)
     }
 
-    private suspend fun saveLoaded(
-        uuid: UUID,
-        profile: PlayerProfile,
-    ): SculkResult<PlayerProfile> =
+    private suspend fun saveLoaded(uuid: UUID, profile: PlayerProfile): SculkResult<PlayerProfile> =
         when (val saved = store.save(profile)) {
             is SculkResult.Success -> {
                 loaded[uuid] = profile
@@ -67,9 +58,8 @@ public class ProfileService(
             is SculkResult.Failure -> saved
         }
 
-    private inline fun <T> SculkResult<T>.valueOrReturn(onFailure: (SculkResult.Failure) -> Nothing): T =
-        when (this) {
-            is SculkResult.Success -> value
-            is SculkResult.Failure -> onFailure(this)
-        }
+    private inline fun <T> SculkResult<T>.valueOrReturn(onFailure: (SculkResult.Failure) -> Nothing): T = when (this) {
+        is SculkResult.Success -> value
+        is SculkResult.Failure -> onFailure(this)
+    }
 }

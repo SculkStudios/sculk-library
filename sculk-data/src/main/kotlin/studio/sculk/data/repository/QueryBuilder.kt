@@ -1,7 +1,7 @@
 package studio.sculk.data.repository
 
-import studio.sculk.core.annotation.SculkInternal
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkInternal
+import studio.sculk.annotation.SculkStable
 import kotlin.reflect.KProperty1
 
 /**
@@ -91,9 +91,5 @@ public class QueryBuilder<T : Any> {
 
     /** A single parsed query condition. The [property] is a Kotlin property name, not a column name. */
     @SculkInternal
-    public data class Condition(
-        val property: String,
-        val operator: String,
-        val value: Any?,
-    )
+    public data class Condition(val property: String, val operator: String, val value: Any?)
 }

@@ -1,8 +1,9 @@
 package studio.sculk.packets
 
 import org.bukkit.entity.Player
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.annotation.SculkStable
+import studio.sculk.scheduler.SculkScheduler
 
 /**
  * Context passed to low-level packet listeners.
@@ -10,6 +11,7 @@ import studio.sculk.core.scheduler.SculkScheduler
  * Packet callbacks may run away from the main/region thread. Use [runSync] before touching
  * Bukkit/Paper APIs that require a synchronized context.
  */
+@SculkStable
 public class PacketContext(
     public val player: Player?,
     public val direction: PacketDirection,
@@ -43,10 +45,9 @@ public class PacketContext(
     /**
      * Runs [block] on the safe sync context for the current player when available.
      */
-    public fun runSync(block: () -> Unit): SculkHandle =
-        if (player != null) {
-            scheduler.runSync(player, Runnable(block))
-        } else {
-            scheduler.runSync(Runnable(block))
-        }
+    public fun runSync(block: () -> Unit): SculkHandle = if (player != null) {
+        scheduler.runSync(player, Runnable(block))
+    } else {
+        scheduler.runSync(Runnable(block))
+    }
 }

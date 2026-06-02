@@ -1,7 +1,7 @@
 package studio.sculk.data.repository
 
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
 
 /**
  * A typed data repository that provides find, save, and delete operations for entity [T]
