@@ -27,6 +27,7 @@ export default defineConfig({
 					label: 'Introduction',
 					items: [
 						{ label: 'What is Sculk Studio?', slug: 'introduction/overview' },
+						{ label: 'Modules & Architecture', slug: 'introduction/modules' },
 						{ label: 'Architecture', slug: 'introduction/architecture' },
 					],
 				},
