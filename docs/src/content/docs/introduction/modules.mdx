@@ -1,0 +1,77 @@
+---
+title: Modules & Architecture
+description: How Sculk is split into focused modules, what each one does, and how to depend on just the bits you need.
+---
+
+Sculk is split into **focused modules** that map one-to-one to the sections of these docs. Use the
+single `sculk-platform` dependency for everything, or pick individual modules for a minimal jar — the
+choice is yours.
+
+## The module map
+
+| Docs section | Module | Package | What it gives you |
+| --- | --- | --- | --- |
+| (base) | `sculk-common` | `studio.sculk` | `SculkResult`, `SculkHandle`, coroutine scope/dispatchers, scheduler contract, version parsing, stability annotations |
+| Messaging | `sculk-adventure` | `studio.sculk.adventure` | MiniMessage helpers, titles, action bars, templates |
+| Commands | `sculk-commands` | `studio.sculk.command` | Brigadier-native command DSL, typed arguments, cooldowns |
+| GUIs | `sculk-gui` | `studio.sculk.gui` | Chest/container menus, animations, pagination, click routing |
+| Events | `sculk-events` | `studio.sculk.event` | Coroutine-friendly auto-cleaned event bus |
+| Config | `sculk-config` | `studio.sculk.config` | Typed YAML configs, validation, hot reload, env-var substitution |
+| Series | `sculk-series` | `studio.sculk.series` | Registry lookups + cross-version aliases |
+| Items | `sculk-items` | `studio.sculk.items` | Data-component item builders, PDC, skulls, descriptors |
+| Effects | `sculk-effects` | `studio.sculk.effects` | Particle/sound builders, animation timelines |
+| Data | `sculk-data` | `studio.sculk.data` | Suspend repositories, query DSL, transactions, Caffeine + Redis cache |
+| Localization | `sculk-text` | `studio.sculk.text` | Per-player message bundles, placeholders, pluralization |
+| Tasks | `sculk-tasks` | `studio.sculk.tasks` | Cron, repeating/delayed tasks, debounce/throttle |
+| Integrations | `sculk-integrations` | `studio.sculk.integrations` | Optional PlaceholderAPI / Vault / LuckPerms adapters |
+| Packets | `sculk-packets-api` (+ backends) | `studio.sculk.packets` | Backend-neutral packet API; PacketEvents/ProtocolLib backends |
+| Packets | `sculk-content` | `studio.sculk.content` | High-level client-side block helpers |
+| (bootstrap) | `sculk-platform` | `studio.sculk.platform` | `SculkPlugin` base class; wires & re-exports everything |
+
+## Dependency flow
+
+Modules depend only on what they use. The graph is flat and acyclic:
+
+```
+sculk-common ← everything
+  ├─ sculk-adventure ← common
+  ├─ sculk-commands  ← common, adventure
+  ├─ sculk-gui       ← common, adventure, items
+  ├─ sculk-effects   ← common, series
+  ├─ sculk-data      ← common, config
+  ├─ sculk-text      ← common, adventure, config
+  └─ sculk-content   ← common, packets-api
+sculk-platform ← re-exports all of the above
+```
+
+## Two ways to depend on Sculk
+
+### One dependency (recommended)
+
+`sculk-platform` re-exports the entire DSL. With `shadowJar { minimize() }`, classes you don't use are
+stripped, so the jar stays small regardless.
+
+```kotlin
+implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
+```
+
+### À la carte
+
+Want only commands and GUIs? Depend on just those modules. Import the **BOM** once so you never repeat
+versions:
+
+```kotlin
+dependencies {
+    implementation(platform("com.github.SculkStudios.sculk-library:sculk-bom:4.0.0"))
+    implementation("com.github.SculkStudios.sculk-library:sculk-commands")
+    implementation("com.github.SculkStudios.sculk-library:sculk-gui")
+}
+```
+
+Each module pulls its own minimal dependencies (e.g. `sculk-commands` brings `sculk-common` +
+`sculk-adventure`), so you only ship what you actually use. Note: the `SculkPlugin` base class and the
+unified `sculk.*` accessors live in `sculk-platform` — à-la-carte users wire the relevant pieces
+themselves.
+
+See [Installation](/getting-started/installation/) for the full setup including shading and the
+opt-in MySQL / Redis / packet dependencies.

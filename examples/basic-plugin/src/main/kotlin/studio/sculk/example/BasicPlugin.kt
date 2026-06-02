@@ -2,8 +2,8 @@ package studio.sculk.example
 
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import studio.sculk.core.command.command
-import studio.sculk.core.gui.gui
+import studio.sculk.command.command
+import studio.sculk.gui.gui
 import studio.sculk.platform.SculkPlugin
 
 public class BasicPlugin :

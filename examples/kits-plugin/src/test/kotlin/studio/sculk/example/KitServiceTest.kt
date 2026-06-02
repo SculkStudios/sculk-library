@@ -4,7 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import studio.sculk.core.SculkResult
+import studio.sculk.SculkResult
 import studio.sculk.data.cache.CaffeineCache
 import studio.sculk.data.repository.QueryBuilder
 import studio.sculk.data.repository.SculkRepository
@@ -22,33 +22,30 @@ class KitServiceTest {
         )
 
     @Test
-    fun `first claim is allowed`() =
-        runBlocking {
-            val status = service.claimStatus(UUID.randomUUID(), "starter") as SculkResult.Success
-            assertTrue(status.value.allowed)
-        }
+    fun `first claim is allowed`() = runBlocking {
+        val status = service.claimStatus(UUID.randomUUID(), "starter") as SculkResult.Success
+        assertTrue(status.value.allowed)
+    }
 
     @Test
-    fun `claim is blocked during cooldown`() =
-        runBlocking {
-            val uuid = UUID.randomUUID()
-            service.recordClaim(uuid, "starter")
-            now += 1_000
+    fun `claim is blocked during cooldown`() = runBlocking {
+        val uuid = UUID.randomUUID()
+        service.recordClaim(uuid, "starter")
+        now += 1_000
 
-            val status = service.claimStatus(uuid, "starter") as SculkResult.Success
-            assertTrue(!status.value.allowed)
-        }
+        val status = service.claimStatus(uuid, "starter") as SculkResult.Success
+        assertTrue(!status.value.allowed)
+    }
 
     @Test
-    fun `claim is allowed after cooldown expires`() =
-        runBlocking {
-            val uuid = UUID.randomUUID()
-            service.recordClaim(uuid, "starter")
-            now += 86_401_000
+    fun `claim is allowed after cooldown expires`() = runBlocking {
+        val uuid = UUID.randomUUID()
+        service.recordClaim(uuid, "starter")
+        now += 86_401_000
 
-            val status = service.claimStatus(uuid, "starter") as SculkResult.Success
-            assertTrue(status.value.allowed)
-        }
+        val status = service.claimStatus(uuid, "starter") as SculkResult.Success
+        assertTrue(status.value.allowed)
+    }
 
     @Test
     fun `remaining time formats safely`() {

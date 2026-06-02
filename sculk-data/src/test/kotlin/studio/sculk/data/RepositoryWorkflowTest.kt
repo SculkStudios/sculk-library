@@ -4,33 +4,27 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import studio.sculk.core.SculkResult
+import studio.sculk.SculkResult
 import studio.sculk.data.repository.PlayerProfileStore
 import studio.sculk.data.repository.QueryBuilder
 import studio.sculk.data.repository.SculkRepository
 
 class RepositoryWorkflowTest {
     @Test
-    fun `player profile store creates and saves missing profile`() =
-        runBlocking {
-            val repo = MemoryRepository<PlayerProfile, Int> { it.id }
-            val store = PlayerProfileStore(repo) { id -> PlayerProfile(id, coins = 100) }
+    fun `player profile store creates and saves missing profile`() = runBlocking {
+        val repo = MemoryRepository<PlayerProfile, Int> { it.id }
+        val store = PlayerProfileStore(repo) { id -> PlayerProfile(id, coins = 100) }
 
-            val result = store.getOrCreate(1)
+        val result = store.getOrCreate(1)
 
-            assertTrue(result is SculkResult.Success)
-            assertEquals(100, (result as SculkResult.Success).value.coins)
-            assertEquals(100, (repo.find(1) as SculkResult.Success).value?.coins)
-        }
+        assertTrue(result is SculkResult.Success)
+        assertEquals(100, (result as SculkResult.Success).value.coins)
+        assertEquals(100, (repo.find(1) as SculkResult.Success).value?.coins)
+    }
 
-    private data class PlayerProfile(
-        val id: Int,
-        val coins: Long,
-    )
+    private data class PlayerProfile(val id: Int, val coins: Long)
 
-    private class MemoryRepository<T : Any, ID : Any>(
-        private val idOf: (T) -> ID,
-    ) : SculkRepository<T, ID> {
+    private class MemoryRepository<T : Any, ID : Any>(private val idOf: (T) -> ID) : SculkRepository<T, ID> {
         private val values = linkedMapOf<ID, T>()
 
         override suspend fun find(id: ID): SculkResult<T?> = SculkResult.success(values[id])

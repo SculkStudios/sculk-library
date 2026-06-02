@@ -11,9 +11,7 @@ class SculkTextTest {
     private val plain = PlainTextComponentSerializer.plainText()
 
     @Test
-    fun `resolves placeholders and falls back across languages`(
-        @TempDir dir: File,
-    ) {
+    fun `resolves placeholders and falls back across languages`(@TempDir dir: File) {
         File(dir, "lang").mkdirs()
         File(dir, "lang/en.yml").writeText(
             """
@@ -41,9 +39,7 @@ class SculkTextTest {
     }
 
     @Test
-    fun `pluralization picks one or other and substitutes count`(
-        @TempDir dir: File,
-    ) {
+    fun `pluralization picks one or other and substitutes count`(@TempDir dir: File) {
         File(dir, "lang").mkdirs()
         File(dir, "lang/en.yml").writeText(
             """

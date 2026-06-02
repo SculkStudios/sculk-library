@@ -13,16 +13,30 @@ Thank you for your interest in contributing to Sculk Studio. This document cover
 ```
 sculk-studio/
  ├── build-logic/        Convention plugins (shared Gradle config)
- ├── sculk-core/         Commands, GUI, Adventure wrapper, scheduler
- ├── sculk-config/       Typed configs, hot reload, message system
+ ├── sculk-common/       Base: result/handle, coroutines, scheduler, version, annotations
+ ├── sculk-adventure/    MiniMessage messaging helpers
+ ├── sculk-commands/     Brigadier command DSL
+ ├── sculk-gui/          GUI menus
+ ├── sculk-events/       Event bus
+ ├── sculk-config/       Typed configs, hot reload
  ├── sculk-series/       Registry-based material/sound/particle mapping
- ├── sculk-effects/      Particle builders, sound builders, timelines
- ├── sculk-data/         Async database abstraction + cache
- ├── sculk-platform/     Paper integration layer (bootstrap)
+ ├── sculk-items/        Item builders, data components, PDC
+ ├── sculk-effects/      Particle/sound builders, timelines
+ ├── sculk-data/         Suspend repositories, query DSL, cache
+ ├── sculk-text/         Localization
+ ├── sculk-tasks/        Cron & coroutine scheduling
+ ├── sculk-integrations/ Optional PAPI/Vault/LuckPerms adapters
+ ├── sculk-packets-*/    Packet API + PacketEvents/ProtocolLib backends
+ ├── sculk-content/      Client-side block helpers
+ ├── sculk-platform/     Paper bootstrap + SculkPlugin; re-exports everything
+ ├── sculk-bom/          Version BOM for à-la-carte use
  ├── examples/           Example plugins (not published)
  ├── benchmarks/         JMH microbenchmarks (not published)
  └── docs/               Documentation site
 ```
+
+See the [Modules & Architecture](https://docs.sculk.studio/introduction/modules/) page for the full
+section ↔ module ↔ package map.
 
 ## Getting Started
 
@@ -36,20 +50,21 @@ cd sculk-library
 
 These rules apply to every line of code in this repository:
 
-- **No generics in public APIs.** `ArgumentParser<T>` is internal only.
+- **Kotlin-first only.** No Java builder classes, no `@JvmStatic`/`@JvmOverloads`. DSLs only.
 - **Adventure-only messaging.** MiniMessage strings everywhere. Zero legacy color codes.
 - **No hardcoded config or messages.** Everything must be user-configurable.
-- **Java compatibility.** Every Kotlin DSL entry point needs a paired Java builder.
-- **No blocking the main thread.** All IO and DB calls must be async.
-- **Stability markers required.** Every public class needs `@SculkStable`, `@SculkExperimental`, or `@SculkInternal`.
+- **Coroutines, not callbacks.** IO/DB is `suspend`; no `CompletableFuture` on public APIs.
+- **Folia-correct.** Route timing through `SculkScheduler` / `SculkCoroutineScope`; document the thread.
+- **Stability markers required.** Every public type carries `@SculkStable`, `@SculkExperimental`, or `@SculkInternal`.
+- **ktlint + explicit API.** Code must pass `./gradlew ktlintCheck` and `explicitApi()` (max line 140).
 
 ## Module Dependency Flow
 
-```
-sculk-core → sculk-config → sculk-series → sculk-effects → sculk-data → sculk-platform
-```
+Modules depend only on what they use; the graph is flat and acyclic. `sculk-common` is the base;
+`sculk-platform` re-exports everything. See the
+[Modules & Architecture](https://docs.sculk.studio/introduction/modules/) page for the full graph.
 
-No skipping layers. No circular dependencies. Ever.
+No circular dependencies. Ever.
 
 ## Common Commands
 

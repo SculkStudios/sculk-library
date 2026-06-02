@@ -6,21 +6,21 @@ import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
 import studio.sculk.config.SculkConfig
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkStable
-import studio.sculk.core.coroutine.SculkCoroutineScope
-import studio.sculk.core.gui.GuiContext
-import studio.sculk.core.gui.GuiRegistry
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.coroutine.SculkCoroutineScope
 import studio.sculk.data.SculkData
+import studio.sculk.event.SculkEventBus
+import studio.sculk.gui.GuiContext
+import studio.sculk.gui.GuiRegistry
 import studio.sculk.integrations.SculkIntegrations
 import studio.sculk.packets.PacketServiceConfig
 import studio.sculk.packets.SculkPacketService
 import studio.sculk.packets.SculkPacketServices
 import studio.sculk.platform.command.SculkCommandBridge
-import studio.sculk.platform.event.SculkEventBus
+import studio.sculk.scheduler.SculkScheduler
 import studio.sculk.tasks.SculkTasks
 import studio.sculk.text.SculkText
 import java.util.concurrent.atomic.AtomicBoolean
@@ -117,10 +117,8 @@ public class SculkPlatform internal constructor(
         dataService?.close()
     }
 
-    private fun <T> missingSubsystem(
-        name: String,
-        call: String,
-    ): T = throw IllegalStateException("Sculk $name subsystem is not enabled. Call $call in SculkPlatform.create { ... }.")
+    private fun <T> missingSubsystem(name: String, call: String): T =
+        throw IllegalStateException("Sculk $name subsystem is not enabled. Call $call in SculkPlatform.create { ... }.")
 
     public companion object {
         /**
@@ -135,10 +133,8 @@ public class SculkPlatform internal constructor(
          * ```
          */
         @SculkStable
-        public fun create(
-            plugin: JavaPlugin,
-            block: SculkPlatformBuilder.() -> Unit = {},
-        ): SculkPlatform = SculkPlatformBuilder(plugin).apply(block).build()
+        public fun create(plugin: JavaPlugin, block: SculkPlatformBuilder.() -> Unit = {}): SculkPlatform =
+            SculkPlatformBuilder(plugin).apply(block).build()
     }
 }
 
@@ -146,9 +142,7 @@ public class SculkPlatform internal constructor(
  * DSL builder for [SculkPlatform].
  */
 @SculkStable
-public class SculkPlatformBuilder(
-    private val plugin: JavaPlugin,
-) {
+public class SculkPlatformBuilder(private val plugin: JavaPlugin) {
     private var configEnabled = false
     private var dataEnabled = false
     private var textEnabled = false
@@ -192,7 +186,7 @@ public class SculkPlatformBuilder(
         packetConfig = PacketServiceConfig().apply(block)
     }
 
-    @OptIn(studio.sculk.core.annotation.SculkInternal::class)
+    @OptIn(studio.sculk.annotation.SculkInternal::class)
     internal fun build(): SculkPlatform {
         val scheduler = PaperScheduler(plugin)
         val scope = SculkCoroutineScope(scheduler, plugin.name)
@@ -203,7 +197,7 @@ public class SculkPlatformBuilder(
 
         // Wire Folia-aware GUI dispatch — done unconditionally so Gui.openFor() works
         // even when the gui() subsystem is not enabled for event routing.
-        @OptIn(studio.sculk.core.annotation.SculkInternal::class)
+        @OptIn(studio.sculk.annotation.SculkInternal::class)
         GuiRegistry.init(plugin, FoliaDetector.isFolia, scope)
 
         // Config
@@ -253,7 +247,7 @@ public class SculkPlatformBuilder(
 
                     val handler = item.resolveHandler(event.click) ?: return@listen
 
-                    @OptIn(studio.sculk.core.annotation.SculkInternal::class)
+                    @OptIn(studio.sculk.annotation.SculkInternal::class)
                     val ctx = GuiContext(player, event.click, event, session)
                     handler(ctx)
                     // Handle pending GUI switch (opened via ctx.open())
@@ -268,11 +262,11 @@ public class SculkPlatformBuilder(
                     // Use inventory identity — prevents unregistering a *new* session when
                     // openFor() is called during a click handler (the new session is already
                     // registered under the player's UUID before the old inventory fires its close event).
-                    @OptIn(studio.sculk.core.annotation.SculkInternal::class)
+                    @OptIn(studio.sculk.annotation.SculkInternal::class)
                     val session = GuiRegistry.sessionForInventory(event.inventory) ?: return@listen
                     session.gui.closeHandler?.invoke(session)
                     GuiRegistry.unregister(player)
-                    @OptIn(studio.sculk.core.annotation.SculkInternal::class)
+                    @OptIn(studio.sculk.annotation.SculkInternal::class)
                     session.markClosed()
                 }
 

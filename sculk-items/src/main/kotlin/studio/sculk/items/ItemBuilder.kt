@@ -17,6 +17,7 @@ import org.bukkit.inventory.ItemRarity
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
+import studio.sculk.annotation.SculkStable
 
 /**
  * Kotlin-first builder for modern Paper item stacks.
@@ -35,9 +36,8 @@ import org.bukkit.persistence.PersistentDataType
  * }
  * ```
  */
-public open class ItemBuilder public constructor(
-    private var material: Material,
-) {
+@SculkStable
+public open class ItemBuilder public constructor(private var material: Material) {
     private var displayName: Component? = null
     private var itemName: Component? = null
     private val lore: MutableList<Component> = mutableListOf()
@@ -102,19 +102,13 @@ public open class ItemBuilder public constructor(
     }
 
     /** Adds an enchantment, allowing unsafe display levels. */
-    public fun enchant(
-        enchantment: Enchantment,
-        level: Int,
-    ) {
+    public fun enchant(enchantment: Enchantment, level: Int) {
         require(level > 0) { "Enchantment level must be positive." }
         enchantments[enchantment] = level
     }
 
     /** Adds an enchantment by modern Minecraft key. */
-    public fun enchant(
-        key: String,
-        level: Int,
-    ) {
+    public fun enchant(key: String, level: Int) {
         enchant(requireEnchantment(key), level)
     }
 
@@ -171,11 +165,7 @@ public open class ItemBuilder public constructor(
      * For tool, equippable, consumable, or any other component without a dedicated method, use the
      * generic [component] escape hatch with the matching [DataComponentTypes] value.
      */
-    public fun food(
-        nutrition: Int,
-        saturation: Float,
-        canAlwaysEat: Boolean = false,
-    ) {
+    public fun food(nutrition: Int, saturation: Float, canAlwaysEat: Boolean = false) {
         componentEdits += {
             setData(
                 DataComponentTypes.FOOD,
@@ -192,10 +182,7 @@ public open class ItemBuilder public constructor(
     // -- Generic data-component escape hatch -----------------------------------
 
     /** Sets any valued data component. The modern way to reach food, tool, equippable, etc. */
-    public fun <T : Any> component(
-        type: DataComponentType.Valued<T>,
-        value: T,
-    ) {
+    public fun <T : Any> component(type: DataComponentType.Valued<T>, value: T) {
         componentEdits += { setData(type, value) }
     }
 
@@ -212,70 +199,32 @@ public open class ItemBuilder public constructor(
     // -- Persistent data -------------------------------------------------------
 
     /** Sets a persistent data value of any [PersistentDataType], including lists and nested containers. */
-    public fun <P : Any, C : Any> pdc(
-        key: NamespacedKey,
-        type: PersistentDataType<P, C>,
-        value: C,
-    ) {
+    public fun <P : Any, C : Any> pdc(key: NamespacedKey, type: PersistentDataType<P, C>, value: C) {
         persistentData += { persistentDataContainer.set(key, type, value) }
     }
 
     /** Sets a persistent data value of any [PersistentDataType] using a string key. */
-    public fun <P : Any, C : Any> pdc(
-        key: String,
-        type: PersistentDataType<P, C>,
-        value: C,
-    ): Unit = pdc(ItemKeys.of(key), type, value)
+    public fun <P : Any, C : Any> pdc(key: String, type: PersistentDataType<P, C>, value: C): Unit = pdc(ItemKeys.of(key), type, value)
 
-    public fun pdc(
-        key: NamespacedKey,
-        value: String,
-    ): Unit = pdc(key, PersistentDataType.STRING, value)
+    public fun pdc(key: NamespacedKey, value: String): Unit = pdc(key, PersistentDataType.STRING, value)
 
-    public fun pdc(
-        key: NamespacedKey,
-        value: Int,
-    ): Unit = pdc(key, PersistentDataType.INTEGER, value)
+    public fun pdc(key: NamespacedKey, value: Int): Unit = pdc(key, PersistentDataType.INTEGER, value)
 
-    public fun pdc(
-        key: NamespacedKey,
-        value: Long,
-    ): Unit = pdc(key, PersistentDataType.LONG, value)
+    public fun pdc(key: NamespacedKey, value: Long): Unit = pdc(key, PersistentDataType.LONG, value)
 
-    public fun pdc(
-        key: NamespacedKey,
-        value: Double,
-    ): Unit = pdc(key, PersistentDataType.DOUBLE, value)
+    public fun pdc(key: NamespacedKey, value: Double): Unit = pdc(key, PersistentDataType.DOUBLE, value)
 
-    public fun pdc(
-        key: NamespacedKey,
-        value: Boolean,
-    ): Unit = pdc(key, PersistentDataType.BOOLEAN, value)
+    public fun pdc(key: NamespacedKey, value: Boolean): Unit = pdc(key, PersistentDataType.BOOLEAN, value)
 
-    public fun pdc(
-        key: String,
-        value: String,
-    ): Unit = pdc(ItemKeys.of(key), value)
+    public fun pdc(key: String, value: String): Unit = pdc(ItemKeys.of(key), value)
 
-    public fun pdc(
-        key: String,
-        value: Int,
-    ): Unit = pdc(ItemKeys.of(key), value)
+    public fun pdc(key: String, value: Int): Unit = pdc(ItemKeys.of(key), value)
 
-    public fun pdc(
-        key: String,
-        value: Long,
-    ): Unit = pdc(ItemKeys.of(key), value)
+    public fun pdc(key: String, value: Long): Unit = pdc(ItemKeys.of(key), value)
 
-    public fun pdc(
-        key: String,
-        value: Double,
-    ): Unit = pdc(ItemKeys.of(key), value)
+    public fun pdc(key: String, value: Double): Unit = pdc(ItemKeys.of(key), value)
 
-    public fun pdc(
-        key: String,
-        value: Boolean,
-    ): Unit = pdc(ItemKeys.of(key), value)
+    public fun pdc(key: String, value: Boolean): Unit = pdc(ItemKeys.of(key), value)
 
     /** Escape hatch for advanced Paper item metadata not covered by components or PDC helpers. */
     public fun meta(block: ItemMeta.() -> Unit) {

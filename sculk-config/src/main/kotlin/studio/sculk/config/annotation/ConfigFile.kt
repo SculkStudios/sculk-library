@@ -1,6 +1,6 @@
 package studio.sculk.config.annotation
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 
 /**
  * Marks a data class as a Sculk Studio configuration file.
@@ -20,6 +20,4 @@ import studio.sculk.core.annotation.SculkStable
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-public annotation class ConfigFile(
-    val path: String,
-)
+public annotation class ConfigFile(val path: String)

@@ -3,10 +3,12 @@ package studio.sculk.items
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
+import studio.sculk.annotation.SculkStable
 
 /**
  * Config-friendly item representation for common plugin items.
  */
+@SculkStable
 public data class ItemDescriptor(
     public val material: String,
     public val name: String? = null,
@@ -21,25 +23,26 @@ public data class ItemDescriptor(
 )
 
 /** Converts this descriptor to an [ItemStack], or null if its material is unknown. */
-public fun ItemDescriptor.toItemStack(): ItemStack? =
-    item(material) {
-        amount(amount)
-        name?.let { name(it) }
-        if (lore.isNotEmpty()) lore(lore)
-        enchantments.forEach { (key, level) ->
-            enchantmentByKey(key)?.let { enchant(it, level) }
-        }
-        flags
-            .mapNotNull { flag -> ItemFlag.entries.firstOrNull { it.name.equals(flag, ignoreCase = true) } }
-            .takeIf { it.isNotEmpty() }
-            ?.let { flag(*it.toTypedArray()) }
-        if (glint) glint()
-        customModelData?.let { customModelData(it) }
-        unbreakable(unbreakable)
-        data.forEach { (key, value) -> pdc(key, value) }
+@SculkStable
+public fun ItemDescriptor.toItemStack(): ItemStack? = item(material) {
+    amount(amount)
+    name?.let { name(it) }
+    if (lore.isNotEmpty()) lore(lore)
+    enchantments.forEach { (key, level) ->
+        enchantmentByKey(key)?.let { enchant(it, level) }
     }
+    flags
+        .mapNotNull { flag -> ItemFlag.entries.firstOrNull { it.name.equals(flag, ignoreCase = true) } }
+        .takeIf { it.isNotEmpty() }
+        ?.let { flag(*it.toTypedArray()) }
+    if (glint) glint()
+    customModelData?.let { customModelData(it) }
+    unbreakable(unbreakable)
+    data.forEach { (key, value) -> pdc(key, value) }
+}
 
 /** Converts an [ItemStack] into a compact [ItemDescriptor]. */
+@SculkStable
 public fun ItemStack.toDescriptor(): ItemDescriptor {
     val meta = itemMeta
     val name = meta?.displayName()?.let(::serializeComponentOrNull)

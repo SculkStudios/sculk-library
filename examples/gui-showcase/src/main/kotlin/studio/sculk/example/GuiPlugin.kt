@@ -4,10 +4,10 @@ import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.attribute.Attribute
 import org.bukkit.inventory.ItemStack
-import studio.sculk.core.adventure.playSound
-import studio.sculk.core.command.command
-import studio.sculk.core.gui.Gui
-import studio.sculk.core.gui.gui
+import studio.sculk.adventure.playSound
+import studio.sculk.command.command
+import studio.sculk.gui.Gui
+import studio.sculk.gui.gui
 import studio.sculk.platform.SculkPlugin
 
 public class GuiPlugin : SculkPlugin({ gui() }) {
@@ -193,11 +193,7 @@ private fun shopItems(category: String = "all"): List<ItemStack> {
     }
 }
 
-private fun shopItem(
-    material: Material,
-    label: String,
-    price: Int,
-): ItemStack {
+private fun shopItem(material: Material, label: String, price: Int): ItemStack {
     val stack = ItemStack(material)
     val meta = stack.itemMeta ?: return stack
     meta.displayName(

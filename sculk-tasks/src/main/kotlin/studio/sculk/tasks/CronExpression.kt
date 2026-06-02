@@ -1,6 +1,6 @@
 package studio.sculk.tasks
 
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.annotation.SculkStable
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
@@ -76,11 +76,7 @@ public class CronExpression private constructor(
         // cron allows 7 for Sunday; map it to 0.
         private fun normalizeDow(field: String): String = field.replace("7", "0")
 
-        private fun parseField(
-            field: String,
-            min: Int,
-            max: Int,
-        ): Set<Int> {
+        private fun parseField(field: String, min: Int, max: Int): Set<Int> {
             val result = sortedSetOf<Int>()
             for (part in field.split(",")) {
                 val (range, step) = part.split("/").let { it[0] to (it.getOrNull(1)?.toIntOrNull() ?: 1) }

@@ -1,8 +1,8 @@
 package studio.sculk.data.cache
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
 import studio.sculk.data.repository.QueryBuilder
 import studio.sculk.data.repository.SculkRepository
 import java.time.Duration
@@ -21,18 +21,11 @@ import java.time.Duration
 public interface SculkCache<T : Any, ID : Any> : SculkRepository<T, ID> {
     /** Returns the cached/stored entity for [id], creating and persisting one via [factory] if absent. */
     @SculkStable
-    public suspend fun findOrCreate(
-        id: ID,
-        factory: () -> T,
-    ): SculkResult<T>
+    public suspend fun findOrCreate(id: ID, factory: () -> T): SculkResult<T>
 
     /** Returns the top [limit] entities sorted by [selector]. Always reads through to the delegate. */
     @SculkStable
-    public suspend fun <R : Comparable<R>> findTopBy(
-        limit: Int,
-        selector: (T) -> R,
-        descending: Boolean = true,
-    ): SculkResult<List<T>>
+    public suspend fun <R : Comparable<R>> findTopBy(limit: Int, selector: (T) -> R, descending: Boolean = true): SculkResult<List<T>>
 
     /** Removes the cached entry for [id] without touching the delegate. */
     @SculkStable
@@ -98,10 +91,7 @@ public class CaffeineCache<T : Any, ID : Any>(
 
     override suspend fun query(block: QueryBuilder<T>.() -> Unit): SculkResult<List<T>> = delegate.query(block)
 
-    override suspend fun findOrCreate(
-        id: ID,
-        factory: () -> T,
-    ): SculkResult<T> {
+    override suspend fun findOrCreate(id: ID, factory: () -> T): SculkResult<T> {
         cache.getIfPresent(id)?.let { return SculkResult.success(it) }
 
         val found = delegate.find(id)
@@ -122,11 +112,7 @@ public class CaffeineCache<T : Any, ID : Any>(
         }
     }
 
-    override suspend fun <R : Comparable<R>> findTopBy(
-        limit: Int,
-        selector: (T) -> R,
-        descending: Boolean,
-    ): SculkResult<List<T>> =
+    override suspend fun <R : Comparable<R>> findTopBy(limit: Int, selector: (T) -> R, descending: Boolean): SculkResult<List<T>> =
         when (val all = delegate.findAll()) {
             is SculkResult.Failure -> SculkResult.failure(all.message, all.cause)
             is SculkResult.Success -> {
@@ -144,10 +130,7 @@ public class CaffeineCache<T : Any, ID : Any>(
  * DSL builder for a [CaffeineCache].
  */
 @SculkStable
-public class CacheBuilder<T : Any, ID : Any>(
-    private val delegate: SculkRepository<T, ID>,
-    private val idExtractor: (T) -> ID,
-) {
+public class CacheBuilder<T : Any, ID : Any>(private val delegate: SculkRepository<T, ID>, private val idExtractor: (T) -> ID) {
     /** How long entries stay in the cache after being written. */
     public var ttl: Duration = Duration.ofMinutes(10)
 

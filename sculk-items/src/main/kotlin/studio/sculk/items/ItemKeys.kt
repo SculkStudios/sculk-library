@@ -1,6 +1,7 @@
 package studio.sculk.items
 
 import org.bukkit.NamespacedKey
+import studio.sculk.annotation.SculkStable
 
 /**
  * Creates stable namespaced keys for item persistent data.
@@ -8,6 +9,7 @@ import org.bukkit.NamespacedKey
  * Plain keys use the `sculk` namespace. Namespaced strings such as
  * `myplugin:item_id` keep their explicit namespace.
  */
+@SculkStable
 public object ItemKeys {
     public const val DEFAULT_NAMESPACE: String = "sculk"
 

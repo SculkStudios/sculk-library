@@ -14,21 +14,21 @@ public data class KitSettings(
                     permission = "kits.use.starter",
                     cooldownSeconds = 86_400,
                     icon =
-                        ItemDescriptor(
-                            material = "chest",
-                            name = "<green>Starter Kit",
-                            lore = listOf("<gray>A balanced first-day kit."),
-                        ),
+                    ItemDescriptor(
+                        material = "chest",
+                        name = "<green>Starter Kit",
+                        lore = listOf("<gray>A balanced first-day kit."),
+                    ),
                     items =
-                        listOf(
-                            ItemDescriptor(
-                                material = "stone_sword",
-                                name = "<green>Starter Sword",
-                                lore = listOf("<gray>Marked with kit metadata."),
-                                data = mapOf("kit_id" to "starter"),
-                            ),
-                            ItemDescriptor(material = "bread", amount = 16),
+                    listOf(
+                        ItemDescriptor(
+                            material = "stone_sword",
+                            name = "<green>Starter Sword",
+                            lore = listOf("<gray>Marked with kit metadata."),
+                            data = mapOf("kit_id" to "starter"),
                         ),
+                        ItemDescriptor(material = "bread", amount = 16),
+                    ),
                 ),
         ),
 )

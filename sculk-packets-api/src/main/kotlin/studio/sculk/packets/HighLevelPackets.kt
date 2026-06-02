@@ -3,42 +3,30 @@ package studio.sculk.packets
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
+import studio.sculk.scheduler.SculkScheduler
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-public class ClientBlockService internal constructor(
-    private val scheduler: SculkScheduler,
-) {
-    public fun set(
-        player: Player,
-        location: Location,
-        material: Material,
-    ): SculkResult<Unit> {
+@SculkStable
+public class ClientBlockService internal constructor(private val scheduler: SculkScheduler) {
+    public fun set(player: Player, location: Location, material: Material): SculkResult<Unit> {
         scheduler.runSync(player) {
             player.sendBlockChange(location, material.createBlockData())
         }
         return SculkResult.success(Unit)
     }
 
-    public fun reset(
-        player: Player,
-        location: Location,
-    ): SculkResult<Unit> {
+    public fun reset(player: Player, location: Location): SculkResult<Unit> {
         scheduler.runSync(location) {
             player.sendBlockChange(location, location.block.blockData)
         }
         return SculkResult.success(Unit)
     }
 
-    public fun preview(
-        player: Player,
-        location: Location,
-        material: Material,
-        durationTicks: Long,
-    ): SculkResult<SculkHandle> {
+    public fun preview(player: Player, location: Location, material: Material, durationTicks: Long): SculkResult<SculkHandle> {
         set(player, location, material)
         val handle =
             scheduler.runSyncDelayed(player, durationTicks) {
@@ -48,10 +36,8 @@ public class ClientBlockService internal constructor(
     }
 }
 
-public class PacketDebugService internal constructor(
-    private val service: SculkPacketService,
-    private val scheduler: SculkScheduler,
-) {
+@SculkStable
+public class PacketDebugService internal constructor(private val service: SculkPacketService, private val scheduler: SculkScheduler) {
     public fun session(block: PacketDebugBuilder.() -> Unit): SculkResult<SculkHandle> {
         val request = PacketDebugBuilder().apply(block)
         val handles = mutableListOf<SculkHandle>()
@@ -91,6 +77,7 @@ public class PacketDebugService internal constructor(
     }
 }
 
+@SculkStable
 public class PacketDebugBuilder {
     internal val incoming: MutableList<PacketKey> = mutableListOf()
     internal val outgoing: MutableList<PacketKey> = mutableListOf()

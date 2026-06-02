@@ -1,6 +1,6 @@
 package studio.sculk.series.registry
 
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.annotation.SculkInternal
 import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 
@@ -14,10 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
  * uses the typed helpers on [studio.sculk.series.SculkSeries] instead.
  */
 @SculkInternal
-public class SculkRegistry<T : Any>(
-    private val resolver: MappingResolver<T>,
-    private val versionAdapter: VersionAdapter<T>? = null,
-) {
+public class SculkRegistry<T : Any>(private val resolver: MappingResolver<T>, private val versionAdapter: VersionAdapter<T>? = null) {
     // ConcurrentHashMap rejects null values, so we wrap results in Optional.
     private val cache: ConcurrentHashMap<String, Optional<T>> = ConcurrentHashMap()
 

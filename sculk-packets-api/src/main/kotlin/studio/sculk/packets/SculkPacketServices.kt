@@ -1,10 +1,12 @@
 package studio.sculk.packets
 
 import org.bukkit.plugin.java.JavaPlugin
-import studio.sculk.core.SculkResult
-import studio.sculk.core.scheduler.SculkScheduler
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
+import studio.sculk.scheduler.SculkScheduler
 import java.util.ServiceLoader
 
+@SculkStable
 public object SculkPacketServices {
     public fun create(
         plugin: JavaPlugin,
@@ -39,16 +41,12 @@ public object SculkPacketServices {
         return SculkResult.success(provider.create(plugin, scheduler))
     }
 
-    private fun providerOrder(backend: PacketBackend): Int =
-        when (backend) {
-            PacketBackend.PacketEvents -> 0
-            PacketBackend.ProtocolLib -> 1
-        }
+    private fun providerOrder(backend: PacketBackend): Int = when (backend) {
+        PacketBackend.PacketEvents -> 0
+        PacketBackend.ProtocolLib -> 1
+    }
 
-    private fun missingBackendMessage(
-        mode: PacketBackendMode,
-        discovered: Set<PacketBackend>,
-    ): String {
+    private fun missingBackendMessage(mode: PacketBackendMode, discovered: Set<PacketBackend>): String {
         val requested =
             when (mode) {
                 PacketBackendMode.Auto -> "PacketEvents or ProtocolLib"

@@ -1,6 +1,6 @@
 package studio.sculk.data.orm
 
-import studio.sculk.core.annotation.SculkInternal
+import studio.sculk.annotation.SculkInternal
 import java.sql.ResultSet
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -82,10 +82,7 @@ public object OrmMapper {
     }
 
     /** Maps a [ResultSet] row to an instance of [T]. */
-    public fun <T : Any> fromResultSet(
-        rs: ResultSet,
-        mapping: OrmMapping<T>,
-    ): T {
+    public fun <T : Any> fromResultSet(rs: ResultSet, mapping: OrmMapping<T>): T {
         val constructor = requireNotNull(mapping.klass.primaryConstructor)
         constructor.isAccessible = true
         val args = mutableMapOf<KParameter, Any?>()
@@ -100,10 +97,7 @@ public object OrmMapper {
      * Returns all column values from [entity] in the same order as [mapping.columns].
      * Used to bind PreparedStatement parameters.
      */
-    public fun <T : Any> valuesOf(
-        entity: T,
-        mapping: OrmMapping<T>,
-    ): List<Any?> {
+    public fun <T : Any> valuesOf(entity: T, mapping: OrmMapping<T>): List<Any?> {
         val klass = entity::class
         return mapping.columns.map { col ->
             val member = klass.members.firstOrNull { it.name == col.paramName }
@@ -113,10 +107,7 @@ public object OrmMapper {
     }
 
     /** Returns the primary key value for [entity]. */
-    public fun <T : Any> primaryKeyOf(
-        entity: T,
-        mapping: OrmMapping<T>,
-    ): Any? {
+    public fun <T : Any> primaryKeyOf(entity: T, mapping: OrmMapping<T>): Any? {
         val klass = entity::class
         val member = klass.members.firstOrNull { it.name == mapping.primaryKey.paramName }
         return coerceToSql(member?.call(entity))
@@ -126,19 +117,19 @@ public object OrmMapper {
     // Type helpers
     // ---------------------------------------------------------------------------
 
-    private fun sqlTypeFor(type: KClass<*>): String =
-        when (type) {
-            Int::class, Long::class, Boolean::class -> "INTEGER"
-            Double::class, Float::class -> "REAL"
-            UUID::class -> "VARCHAR(36)"
-            else -> "TEXT"
-        }
+    private fun sqlTypeFor(type: KClass<*>): String = when (type) {
+        Int::class, Long::class, Boolean::class -> "INTEGER"
+        Double::class, Float::class -> "REAL"
+        UUID::class -> "VARCHAR(36)"
+        else -> "TEXT"
+    }
 
-    private fun coerceFromSql(
-        value: Any?,
-        type: KClass<*>,
-    ): Any? =
-        when (type) {
+    private fun coerceFromSql(value: Any?, type: KClass<*>): Any? {
+        if (type.java.isEnum) {
+            val name = value?.toString() ?: return null
+            return type.java.enumConstants.firstOrNull { (it as Enum<*>).name == name }
+        }
+        return when (type) {
             UUID::class -> value?.let { UUID.fromString(it.toString()) }
             Int::class -> (value as? Number)?.toInt()
             Long::class -> (value as? Number)?.toLong()
@@ -153,16 +144,17 @@ public object OrmMapper {
             String::class -> value?.toString()
             else -> value
         }
+    }
 
     /** Converts a Kotlin value to its SQL-compatible representation. */
     public fun coerceToSqlPublic(value: Any?): Any? = coerceToSql(value)
 
-    private fun coerceToSql(value: Any?): Any? =
-        when (value) {
-            is UUID -> value.toString()
-            is Boolean -> if (value) 1 else 0
-            else -> value
-        }
+    private fun coerceToSql(value: Any?): Any? = when (value) {
+        is UUID -> value.toString()
+        is Boolean -> if (value) 1 else 0
+        is Enum<*> -> value.name
+        else -> value
+    }
 
     private fun camelToSnake(name: String): String = name.replace(Regex("([A-Z])")) { "_${it.value.lowercase()}" }.trimStart('_')
 }

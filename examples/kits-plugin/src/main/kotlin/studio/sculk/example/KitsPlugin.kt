@@ -2,8 +2,8 @@ package studio.sculk.example
 
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import studio.sculk.core.SculkResult
-import studio.sculk.core.command.command
+import studio.sculk.SculkResult
+import studio.sculk.command.command
 import studio.sculk.items.toItemStack
 import studio.sculk.platform.SculkPlugin
 import java.time.Duration
@@ -36,57 +36,52 @@ public class KitsPlugin :
         service.validate().forEach { logger.warning("[Kits] $it") }
     }
 
-    private fun kitCommand() =
-        command("kit") {
-            description = "Claim and preview server kits."
-            string("name", optional = true)
-            player {
-                val actor = player ?: return@player
-                val kitId = argumentOrNull<String>("name")
-                if (kitId == null) {
-                    menus.list().openFor(actor)
-                } else {
-                    claimKit(actor, kitId, bypassCooldown = false)
-                }
-            }
-
-            sub("preview") {
-                string("name")
-                player {
-                    menus.preview(argument("name")).openFor(player ?: return@player)
-                }
-            }
-
-            sub("give") {
-                permission = "kits.admin"
-                player("target")
-                string("name")
-                executes {
-                    claimKit(argument("target"), argument("name"), bypassCooldown = true)
-                    reply(
-                        "<green>Gave kit <yellow>${argument<String>("name")}</yellow> to <aqua>${argument<Player>("target").name}</aqua>.",
-                    )
-                }
-            }
-
-            sub("reload") {
-                permission = "kits.reload"
-                executes {
-                    reloadKits()
-                    reply("<green>Kits reloaded.")
-                }
+    private fun kitCommand() = command("kit") {
+        description = "Claim and preview server kits."
+        string("name", optional = true)
+        player {
+            val actor = player ?: return@player
+            val kitId = argumentOrNull<String>("name")
+            if (kitId == null) {
+                menus.list().openFor(actor)
+            } else {
+                claimKit(actor, kitId, bypassCooldown = false)
             }
         }
 
-    private fun claimKit(
-        player: Player,
-        kitId: String,
-        bypassCooldown: Boolean,
-    ) {
+        sub("preview") {
+            string("name")
+            player {
+                menus.preview(argument("name")).openFor(player ?: return@player)
+            }
+        }
+
+        sub("give") {
+            permission = "kits.admin"
+            player("target")
+            string("name")
+            executes {
+                claimKit(argument("target"), argument("name"), bypassCooldown = true)
+                reply(
+                    "<green>Gave kit <yellow>${argument<String>("name")}</yellow> to <aqua>${argument<Player>("target").name}</aqua>.",
+                )
+            }
+        }
+
+        sub("reload") {
+            permission = "kits.reload"
+            executes {
+                reloadKits()
+                reply("<green>Kits reloaded.")
+            }
+        }
+    }
+
+    private fun claimKit(player: Player, kitId: String, bypassCooldown: Boolean) {
         val kitResult = service.kit(kitId)
         if (kitResult is SculkResult.Failure) {
             player.sendMessage(
-                studio.sculk.core.adventure
+                studio.sculk.adventure
                     .parseMessage("<red>${kitResult.message}"),
             )
             return
@@ -95,7 +90,7 @@ public class KitsPlugin :
         val permission = service.permissionFor(kitId, kit)
         if (!bypassCooldown && !player.hasPermission(permission)) {
             player.sendMessage(
-                studio.sculk.core.adventure
+                studio.sculk.adventure
                     .parseMessage("<red>You need <yellow>$permission</yellow>."),
             )
             return
@@ -107,13 +102,13 @@ public class KitsPlugin :
                 when (status) {
                     is SculkResult.Failure ->
                         player.sendMessage(
-                            studio.sculk.core.adventure
+                            studio.sculk.adventure
                                 .parseMessage("<red>${status.message}"),
                         )
                     is SculkResult.Success -> {
                         if (!status.value.allowed) {
                             player.sendMessage(
-                                studio.sculk.core.adventure.parseMessage(
+                                studio.sculk.adventure.parseMessage(
                                     "<red>You can claim this kit in <yellow>${service.formatRemaining(
                                         status.value.remainingMillis,
                                     )}</yellow>.",
@@ -124,7 +119,7 @@ public class KitsPlugin :
                         val descriptors = service.kitItems(kitId)
                         if (descriptors is SculkResult.Failure) {
                             player.sendMessage(
-                                studio.sculk.core.adventure
+                                studio.sculk.adventure
                                     .parseMessage("<red>${descriptors.message}"),
                             )
                             return@runSync
@@ -132,12 +127,12 @@ public class KitsPlugin :
                         val stacks = (descriptors as SculkResult.Success).value.mapNotNull { it.toItemStack() }
                         val leftovers = stacks.flatMap { giveOrDrop(player, it) }
                         player.sendMessage(
-                            studio.sculk.core.adventure
+                            studio.sculk.adventure
                                 .parseMessage("<green>Claimed ${kit.displayName}<green>."),
                         )
                         if (leftovers.isNotEmpty()) {
                             player.sendMessage(
-                                studio.sculk.core.adventure
+                                studio.sculk.adventure
                                     .parseMessage("<yellow>Your inventory was full, so leftovers were dropped."),
                             )
                         }
@@ -152,10 +147,7 @@ public class KitsPlugin :
         }
     }
 
-    private fun giveOrDrop(
-        player: Player,
-        stack: ItemStack,
-    ): List<ItemStack> {
+    private fun giveOrDrop(player: Player, stack: ItemStack): List<ItemStack> {
         val leftovers =
             player.inventory
                 .addItem(stack)

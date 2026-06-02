@@ -41,11 +41,4 @@ public data class MenuButtons(
         ),
 )
 
-public data class WarpDefinition(
-    val id: String,
-    val name: String,
-    val world: String,
-    val x: Double,
-    val y: Double,
-    val z: Double,
-)
+public data class WarpDefinition(val id: String, val name: String, val world: String, val x: Double, val y: Double, val z: Double)

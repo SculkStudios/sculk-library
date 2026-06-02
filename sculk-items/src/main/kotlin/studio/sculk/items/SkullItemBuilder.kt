@@ -5,9 +5,11 @@ import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
+import studio.sculk.annotation.SculkStable
 import java.util.UUID
 
 /** Builder for player-head item stacks. */
+@SculkStable
 public class SkullItemBuilder public constructor() : ItemBuilder(Material.PLAYER_HEAD) {
     private var owner: OfflinePlayer? = null
 
@@ -38,4 +40,5 @@ public class SkullItemBuilder public constructor() : ItemBuilder(Material.PLAYER
 }
 
 /** Builds a player-head [ItemStack]. */
+@SculkStable
 public fun skull(block: SkullItemBuilder.() -> Unit = {}): ItemStack = SkullItemBuilder().apply(block).build()

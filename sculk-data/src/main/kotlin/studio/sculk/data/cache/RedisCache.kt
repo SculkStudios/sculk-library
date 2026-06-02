@@ -7,9 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import studio.sculk.core.SculkHandle
-import studio.sculk.core.SculkResult
-import studio.sculk.core.annotation.SculkStable
+import studio.sculk.SculkHandle
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
 import studio.sculk.data.repository.QueryBuilder
 import studio.sculk.data.repository.SculkRepository
 import java.time.Duration
@@ -88,10 +88,7 @@ public class RedisCache<T : Any, ID : Any>(
 
     override suspend fun query(block: QueryBuilder<T>.() -> Unit): SculkResult<List<T>> = delegate.query(block)
 
-    override suspend fun findOrCreate(
-        id: ID,
-        factory: () -> T,
-    ): SculkResult<T> {
+    override suspend fun findOrCreate(id: ID, factory: () -> T): SculkResult<T> {
         find(id).let { found ->
             if (found is SculkResult.Success && found.value != null) return SculkResult.success(found.value!!)
         }
@@ -102,11 +99,7 @@ public class RedisCache<T : Any, ID : Any>(
         }
     }
 
-    override suspend fun <R : Comparable<R>> findTopBy(
-        limit: Int,
-        selector: (T) -> R,
-        descending: Boolean,
-    ): SculkResult<List<T>> =
+    override suspend fun <R : Comparable<R>> findTopBy(limit: Int, selector: (T) -> R, descending: Boolean): SculkResult<List<T>> =
         when (val all = delegate.findAll()) {
             is SculkResult.Failure -> SculkResult.failure(all.message, all.cause)
             is SculkResult.Success -> {
@@ -123,10 +116,7 @@ public class RedisCache<T : Any, ID : Any>(
         runCatching { backend.deleteByPrefix(keyPrefix) }
     }
 
-    private suspend fun cachePut(
-        id: ID,
-        value: T,
-    ) {
+    private suspend fun cachePut(id: ID, value: T) {
         runCatching { backend.set(key(id), json.encodeToString(serializer, value), ttl.seconds) }
     }
 
@@ -154,11 +144,7 @@ public class RedisCache<T : Any, ID : Any>(
 public interface RedisBackend : SculkHandle {
     public suspend fun get(key: String): String?
 
-    public suspend fun set(
-        key: String,
-        value: String,
-        ttlSeconds: Long,
-    )
+    public suspend fun set(key: String, value: String, ttlSeconds: Long)
 
     public suspend fun delete(key: String)
 
@@ -167,20 +153,14 @@ public interface RedisBackend : SculkHandle {
 
 /** Lettuce-backed [RedisBackend]. Requires `io.lettuce:lettuce-core` on the runtime classpath. */
 @SculkStable
-public class LettuceRedisBackend(
-    redisUri: String,
-) : RedisBackend {
+public class LettuceRedisBackend(redisUri: String) : RedisBackend {
     private val client = RedisClient.create(redisUri)
     private val connection = client.connect()
     private val commands = connection.sync()
 
     override suspend fun get(key: String): String? = withContext(Dispatchers.IO) { commands.get(key) }
 
-    override suspend fun set(
-        key: String,
-        value: String,
-        ttlSeconds: Long,
-    ) {
+    override suspend fun set(key: String, value: String, ttlSeconds: Long) {
         withContext(Dispatchers.IO) { commands.setex(key, ttlSeconds, value) }
     }
 

@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import studio.sculk.core.SculkResult
+import studio.sculk.SculkResult
 import studio.sculk.items.ItemDescriptor
 
 class CrateServiceTest {
@@ -14,14 +14,14 @@ class CrateServiceTest {
             CrateService({
                 CrateSettings(
                     crates =
-                        mapOf(
-                            "bad" to
-                                CrateDefinition(
-                                    "<red>Bad",
-                                    ItemDescriptor("tripwire_hook"),
-                                    listOf(CrateReward("broken", 0, ItemDescriptor("stone"))),
-                                ),
-                        ),
+                    mapOf(
+                        "bad" to
+                            CrateDefinition(
+                                "<red>Bad",
+                                ItemDescriptor("tripwire_hook"),
+                                listOf(CrateReward("broken", 0, ItemDescriptor("stone"))),
+                            ),
+                    ),
                 )
             })
 
