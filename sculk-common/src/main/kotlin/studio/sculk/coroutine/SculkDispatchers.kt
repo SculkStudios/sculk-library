@@ -29,6 +29,18 @@ public class SculkDispatchers internal constructor(scheduler: SculkScheduler) {
     public val async: CoroutineDispatcher = SchedulerDispatcher { task -> scheduler.runAsync(task) }
 
     private class SchedulerDispatcher(private val submit: (Runnable) -> Unit) : CoroutineDispatcher() {
-        override fun dispatch(context: CoroutineContext, block: Runnable): Unit = submit(block)
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            try {
+                submit(block)
+            } catch (_: Exception) {
+                // The backing scheduler rejects new tasks once the plugin is disabled (e.g. during
+                // server shutdown, when the coroutine scope is cancelled and kotlinx dispatches the
+                // cancellation here). A CoroutineDispatcher.dispatch must never throw, or it surfaces
+                // as an "Uncaught exception in server thread". Shutdown dispatch already runs on the
+                // server thread, so running the continuation inline is safe and lets the coroutine
+                // machinery (cancellation/cleanup) complete quietly.
+                block.run()
+            }
+        }
     }
 }
