@@ -8,6 +8,8 @@ import org.bukkit.plugin.Plugin
 import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkStable
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
+import java.util.function.Predicate
 
 /**
  * Manages event listener registrations on behalf of a plugin.
@@ -71,6 +73,64 @@ public class SculkEventBus(@PublishedApi internal val plugin: Plugin) : SculkHan
         handle =
             listen<T>(priority, ignoreCancelled, filter) {
                 handler(it)
+                handle?.close()
+            }
+        return handle
+    }
+
+    /**
+     * Java-friendly overload of [listen] taking a [Class] token, a [Predicate] filter, and a
+     * [Consumer] handler.
+     *
+     * ```java
+     * sculk.getEvents().listen(PlayerJoinEvent.class, EventPriority.NORMAL, false,
+     *     e -> e.getPlayer().isOp(), e -> e.getPlayer().sendMessage("Welcome, admin"));
+     * ```
+     */
+    @SculkStable
+    public fun <T : Event> listen(
+        type: Class<T>,
+        priority: EventPriority,
+        ignoreCancelled: Boolean,
+        filter: Predicate<T>,
+        handler: Consumer<T>,
+    ): SculkHandle {
+        val listener = object : Listener {}
+        plugin.server.pluginManager.registerEvent(
+            type,
+            listener,
+            priority,
+            { _, event ->
+                if (type.isInstance(event)) {
+                    val typed = type.cast(event)
+                    if (filter.test(typed)) handler.accept(typed)
+                }
+            },
+            plugin,
+            ignoreCancelled,
+        )
+        listeners += listener
+        val closed = AtomicBoolean(false)
+        return SculkHandle {
+            if (closed.compareAndSet(false, true)) {
+                HandlerList.unregisterAll(listener)
+                listeners -= listener
+            }
+        }
+    }
+
+    /** Java-friendly convenience overload of [listen] at [NORMAL][EventPriority.NORMAL] priority. */
+    @SculkStable
+    public fun <T : Event> listen(type: Class<T>, handler: Consumer<T>): SculkHandle =
+        listen(type, EventPriority.NORMAL, false, Predicate { true }, handler)
+
+    /** Java-friendly overload of [once] taking a [Class] token and a [Consumer] handler. */
+    @SculkStable
+    public fun <T : Event> once(type: Class<T>, handler: Consumer<T>): SculkHandle {
+        var handle: SculkHandle? = null
+        handle =
+            listen(type, EventPriority.NORMAL, false, Predicate { true }) {
+                handler.accept(it)
                 handle?.close()
             }
         return handle

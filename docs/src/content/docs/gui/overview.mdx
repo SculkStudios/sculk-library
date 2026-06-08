@@ -1,11 +1,21 @@
 ---
 title: GUIs Overview
-description: Chest inventory GUIs with per-player sessions, click routing, and automatic cleanup.
+description: Chest inventory GUIs with per-player sessions, click routing, and automatic cleanup — Kotlin or Java.
 ---
 
-GUIs are **immutable definitions**. Define once, open for any player. Sessions are created automatically on `openFor` and cleaned up when the player closes the inventory or disconnects through the platform GUI subsystem.
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+GUIs are **immutable definitions**. Define once, open for any player. Sessions are created
+automatically on `openFor` and cleaned up when the player closes the inventory or disconnects.
+
+> **Java note:** GUI builder lambdas use Kotlin function types under the hood, so in Java give them a
+> **block body** (`slot -> { … }`) — a one-line expression lambda can be ambiguous. See
+> [Java Interop](/advanced/java-interop/).
 
 ## Defining a GUI
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 // gui/MainMenu.kt
@@ -27,18 +37,58 @@ val mainMenu = gui("<dark_aqua><bold>Main Menu") {
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+// gui/MainMenu.java
+static final Gui MAIN_MENU = SculkGui.gui("<dark_aqua><bold>Main Menu", menu -> {
+    menu.setSize(27);
+
+    menu.item(13, slot -> {
+        slot.setMaterial(Material.NETHER_STAR);
+        slot.setName("<gold><bold>Click Me");
+        slot.lore(
+            "<gray>Does something cool.",
+            "<dark_gray>Right-click for more options."
+        );
+        slot.onClick(ctx -> {
+            ctx.reply("<green>Clicked!");
+            ctx.close();
+        });
+    });
+});
+```
+
+</TabItem>
+</Tabs>
+
 ## Opening for a player
 
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
+
 ```kotlin
-// inside a command handler
 player {
     mainMenu.openFor(player!!)
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+cmd.player(ctx -> {
+    MAIN_MENU.openFor(ctx.getPlayer());
+});
+```
+
+</TabItem>
+</Tabs>
+
 ## Click context
 
-Inside `onClick { }`, `this` is a `GuiContext`:
+Inside a click handler the context (`this` in Kotlin, `ctx` in Java) is a `GuiContext`:
 
 | Property / method | Description |
 | --- | --- |
@@ -52,15 +102,33 @@ Inside `onClick { }`, `this` is a `GuiContext`:
 
 ## Switching GUIs
 
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
+
 ```kotlin
 onClick {
     open(settingsMenu)  // seamless switch — no flicker
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+slot.onClick(ctx -> {
+    ctx.open(settingsMenu);  // seamless switch — no flicker
+});
+```
+
+</TabItem>
+</Tabs>
+
 ## Open and close handlers
 
-Use lifecycle handlers for per-session setup or cleanup. The handlers receive the active `GuiSession`.
+The handlers receive the active `GuiSession`.
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 val menu = gui("<dark_gray>Profile") {
@@ -81,11 +149,39 @@ val menu = gui("<dark_gray>Profile") {
 }
 ```
 
-Close handlers run from the platform GUI listener. Keep heavy database or file work off the main thread; schedule it through `sculk.scheduler.runAsync { ... }`.
+</TabItem>
+<TabItem label="Java">
+
+```java
+Gui menu = SculkGui.gui("<dark_gray>Profile", m -> {
+    m.setSize(27);
+
+    m.onOpen(session -> {
+        session.getState().set("openedAt", System.currentTimeMillis());
+    });
+
+    m.onClose(session -> {
+        profileViewTracker.closed(session.getPlayer().getUniqueId());
+    });
+
+    m.item(13, slot -> {
+        slot.setMaterial(Material.PLAYER_HEAD);
+        slot.setName("<aqua>Your Profile");
+    });
+});
+```
+
+</TabItem>
+</Tabs>
+
+Keep heavy database or file work off the main thread; schedule it through `sculk.scheduler.runAsync { ... }`.
 
 ## Dynamic items
 
-Items whose content differs per player — use `dynamicContent { player -> }`. The block runs when the GUI opens, so the displayed stack is always up to date:
+Items whose content differs per player — the block runs when the GUI opens, so the displayed stack is always up to date:
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 item(4) {
@@ -97,28 +193,62 @@ item(4) {
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+menu.item(4, slot -> {
+    slot.setMaterial(Material.PLAYER_HEAD);
+    slot.dynamicContent((builder, player) -> {
+        builder.setName("<aqua>Welcome, <white>" + player.getName());
+        builder.lore("<gray>Coins: <gold>" + economy.getBalance(player));
+    });
+});
+```
+
+</TabItem>
+</Tabs>
+
 ## Filling and borders
 
-Two helpers cover the most common decoration patterns — filling all empty slots with filler glass, or just the outer ring:
+Fill all empty slots, or just the outer ring. `fill()` and `border()` only ever affect
+**unassigned** slots.
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 gui("<dark_aqua>Shop") {
     size = 54
 
-    // Fill the entire outer border with grey glass
     border(Material.GRAY_STAINED_GLASS_PANE) { name = "<gray> " }
-
-    // Fill every remaining empty slot with black glass
     fill(Material.BLACK_STAINED_GLASS_PANE) { name = "<gray> " }
 
-    // Your actual content slots go here — fill/border skip assigned slots
     item(22) { material = Material.DIAMOND; name = "<aqua>Diamonds!" }
 }
 ```
 
-Both methods accept an optional `GuiItemBuilder` block so you can set the name, lore, or click handler on the filler items. `fill()` and `border()` only ever affect **unassigned** slots — they will never overwrite an `item()` you've already defined, regardless of call order.
+</TabItem>
+<TabItem label="Java">
 
-For premium menu layouts that only decorate the top and bottom rows, use `GuiSlots` and the styled border overload:
+```java
+SculkGui.gui("<dark_aqua>Shop", menu -> {
+    menu.setSize(54);
+
+    menu.border(Material.GRAY_STAINED_GLASS_PANE, slot -> { slot.setName("<gray> "); });
+    menu.fill(Material.BLACK_STAINED_GLASS_PANE, slot -> { slot.setName("<gray> "); });
+
+    menu.item(22, slot -> { slot.setMaterial(Material.DIAMOND); slot.setName("<aqua>Diamonds!"); });
+});
+```
+
+</TabItem>
+</Tabs>
+
+For premium layouts that decorate only the top and bottom rows, use the styled border overload:
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 import studio.sculk.gui.GuiBorderStyle
@@ -130,81 +260,101 @@ gui("<dark_gray>Rewards") {
         material = Material.LIGHT_BLUE_STAINED_GLASS_PANE,
         style = GuiBorderStyle.Horizontal,
         skip = setOf(27, 31),
-    ) {
-        name = "<gray> "
-    }
+    ) { name = "<gray> " }
 
     item(27) { material = Material.ARROW; name = "<gray>Back" }
     item(31) { material = Material.BARRIER; name = "<gray>Close" }
 }
 ```
 
-`GuiSlots.horizontalBorder(27)` returns slots `0..8` and `18..26`; `GuiSlots.horizontalBorder(36)` returns `0..8` and `27..35`. This avoids the common off-by-one mistake where a 3-row menu accidentally tries to write slot `27`.
+</TabItem>
+<TabItem label="Java">
+
+```java
+// Styled border is an extension — call it via the SculkGuiSlots facade.
+SculkGui.gui("<dark_gray>Rewards", menu -> {
+    menu.setSize(36);
+
+    SculkGuiSlots.border(
+        menu, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
+        GuiBorderStyle.Horizontal, java.util.Set.of(27, 31),
+        slot -> { slot.setName("<gray> "); }
+    );
+
+    menu.item(27, slot -> { slot.setMaterial(Material.ARROW); slot.setName("<gray>Back"); });
+    menu.item(31, slot -> { slot.setMaterial(Material.BARRIER); slot.setName("<gray>Close"); });
+});
+```
+
+</TabItem>
+</Tabs>
+
+`GuiSlots.horizontalBorder(27)` returns slots `0..8` and `18..26` — avoiding off-by-one mistakes.
 
 ### Setting multiple slots at once
 
-Use `items(slots)` to apply the same builder to an arbitrary set of slots:
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
-// Corner accents
 items(listOf(0, 8, 45, 53)) {
     material = Material.NETHER_STAR
     name = "<gold>★"
 }
-
-// An entire row
-items(36..44) {
-    material = Material.WHITE_STAINED_GLASS_PANE
-    name = "<gray> "
-}
 ```
+
+</TabItem>
+<TabItem label="Java">
+
+```java
+menu.items(java.util.List.of(0, 8, 45, 53), slot -> {
+    slot.setMaterial(Material.NETHER_STAR);
+    slot.setName("<gold>★");
+});
+```
+
+</TabItem>
+</Tabs>
 
 ## Item glow, enchantments, and custom model data
 
-Sculk writes item metadata through Paper 26.1.2-compatible APIs:
-
-- `glow = true` uses Paper's enchantment glint override instead of adding a hidden fake enchantment.
-- `customModelData = 1001` keeps the DSL simple while writing a modern `CustomModelDataComponent` internally.
-- `enchantment("sharpness", 5)` resolves enchantments through Paper registry access.
-
-Add an enchantment shimmer to an item without showing any enchantment text:
-
-```kotlin
-item(22) {
-    material = Material.DIAMOND
-    name = "<aqua>Selected"
-    glow = true   // shimmer with no tooltip
-}
-```
-
-Apply specific enchantments by Minecraft key — useful for kit display items:
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 item(13) {
     material = Material.DIAMOND_SWORD
     name = "<#A1D8F5>Fang Kit"
+    glow = true                  // shimmer, no tooltip
     enchantment("sharpness", 5)
-    enchantment("unbreaking", 3)
-    enchantment("fire_aspect", 2)
+    customModelData = 1001
 }
 ```
 
-For resource-pack item overrides, set `customModelData`:
+</TabItem>
+<TabItem label="Java">
 
-```kotlin
-item(4) {
-    material = Material.STICK
-    name = "<gold>Custom Item"
-    customModelData = 1001   // writes a single float into the custom model data component
-}
+```java
+menu.item(13, slot -> {
+    slot.setMaterial(Material.DIAMOND_SWORD);
+    slot.setName("<#A1D8F5>Fang Kit");
+    slot.setGlow(true);          // shimmer, no tooltip
+    slot.enchantment("sharpness", 5);
+    slot.setCustomModelData(1001);
+});
 ```
+
+</TabItem>
+</Tabs>
 
 ## Session state
 
-Every open GUI has a `GuiSession` with a `state` bag — an arbitrary key-value store for driving dynamic behaviour within the session.
+Every open GUI has a `GuiSession` with a `state` bag — an arbitrary key-value store for dynamic behaviour.
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
-// Opening the GUI — store initial state
 val session = filterMenu.openFor(player)
 session.state["category"] = "weapons"
 session.setEntries(getItemsForCategory("weapons"))
@@ -214,17 +364,33 @@ onClick {
     val category = session.state.get<String>("category") ?: "all"
     session.state["category"] = "armour"
     session.setEntries(getItemsForCategory("armour"))
-    session.refresh(4)   // re-render the category indicator slot
+    session.refresh(4)
 }
 ```
 
-Use `session.state.get<T>("key")` for a safe typed read that returns `null` rather than throwing on a type mismatch. The untyped `session.state["key"]` returns `Any?` and requires a manual cast.
+</TabItem>
+<TabItem label="Java">
 
-State is tied to the `GuiSession` — it is cleared automatically when the player closes the inventory or the session ends. Use `open(otherGui)` to switch menus; the session (and its state) persists across the switch.
+```java
+GuiSession session = filterMenu.openFor(player);
+session.getState().set("category", "weapons");
+session.setEntries(getItemsForCategory("weapons"));
+
+// Inside an onClick handler — typed read with a Class token
+slot.onClick(ctx -> {
+    String category = ctx.getSession().getState().get("category", String.class);
+    ctx.getSession().getState().set("category", "armour");
+    ctx.getSession().setEntries(getItemsForCategory("armour"));
+    ctx.getSession().refresh(4);
+});
+```
+
+</TabItem>
+</Tabs>
 
 ## Best practices
 
-- Define GUIs as top-level `val`s or `object` constants — created once, reused for every player.
-- Keep `onClick` handlers short. Heavy logic belongs in a service.
-- Use `open(other)` rather than calling `player.closeInventory()` directly — it preserves session state.
+- Define GUIs as top-level `val`s / `static final` constants — created once, reused for every player.
+- Keep click handlers short. Heavy logic belongs in a service.
+- Use `open(other)` rather than `player.closeInventory()` — it preserves session state.
 - Enable `gui()` when creating `SculkPlatform`; without it, click and close routing is not registered.

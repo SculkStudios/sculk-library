@@ -38,6 +38,10 @@ public class ClientBlockService internal constructor(private val scheduler: Scul
 
 @SculkStable
 public class PacketDebugService internal constructor(private val service: SculkPacketService, private val scheduler: SculkScheduler) {
+    /** Java-friendly overload of [session] taking a [java.util.function.Consumer]. */
+    @SculkStable
+    public fun session(block: java.util.function.Consumer<PacketDebugBuilder>): SculkResult<SculkHandle> = session { block.accept(this) }
+
     public fun session(block: PacketDebugBuilder.() -> Unit): SculkResult<SculkHandle> {
         val request = PacketDebugBuilder().apply(block)
         val handles = mutableListOf<SculkHandle>()
@@ -100,5 +104,11 @@ public class PacketDebugBuilder {
 
     public fun onPacket(block: PacketContext.() -> Unit) {
         onPacket = block
+    }
+
+    /** Java-friendly overload of [onPacket] taking a [java.util.function.Consumer]. */
+    @SculkStable
+    public fun onPacket(block: java.util.function.Consumer<PacketContext>) {
+        onPacket = { block.accept(this) }
     }
 }

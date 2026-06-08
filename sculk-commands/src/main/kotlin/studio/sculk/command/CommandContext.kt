@@ -42,6 +42,7 @@ constructor(
      * Sends a title to the player executing this command.
      * No-op if the sender is the console.
      */
+    @JvmOverloads
     public fun title(title: String, subtitle: String = "", fadeIn: Int = 10, stay: Int = 70, fadeOut: Int = 20) {
         player?.title(title, subtitle, fadeIn, stay, fadeOut)
     }
@@ -58,6 +59,7 @@ constructor(
      * Plays a sound to the player executing this command.
      * No-op if the sender is the console.
      */
+    @JvmOverloads
     public fun playSound(sound: org.bukkit.Sound, volume: Float = 1.0f, pitch: Float = 1.0f) {
         player?.playSound(sound, volume, pitch)
     }
@@ -82,4 +84,27 @@ constructor(
      * Returns a parsed argument by [name], or null if not present or wrong type.
      */
     public inline fun <reified T> argumentOrNull(name: String): T? = parsedArgs[name] as? T
+
+    /**
+     * Java-friendly overload of [argument] taking a [Class] token.
+     *
+     * ```java
+     * Player target = ctx.argument("target", Player.class);
+     * int amount = ctx.argument("amount", Integer.class);
+     * ```
+     */
+    @SculkStable
+    public fun <T> argument(name: String, type: Class<T>): T {
+        val value =
+            parsedArgs[name]
+                ?: error("Argument '$name' not found. Make sure it is registered on the command.")
+        return if (type.isInstance(value)) type.cast(value) else error("Argument '$name' is not of type ${type.simpleName}.")
+    }
+
+    /** Java-friendly overload of [argumentOrNull] taking a [Class] token. */
+    @SculkStable
+    public fun <T> argumentOrNull(name: String, type: Class<T>): T? {
+        val value = parsedArgs[name] ?: return null
+        return if (type.isInstance(value)) type.cast(value) else null
+    }
 }

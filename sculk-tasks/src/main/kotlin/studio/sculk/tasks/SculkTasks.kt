@@ -9,6 +9,7 @@ import studio.sculk.annotation.SculkStable
 import studio.sculk.coroutine.SculkCoroutineScope
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.function.Consumer
 
 private const val MILLIS_PER_TICK = 50L
 
@@ -46,6 +47,18 @@ constructor(private val scope: SculkCoroutineScope) {
         return SculkHandle { job.cancel() }
     }
 
+    /**
+     * Java-friendly overload of [repeating]. The [action] runs on the main thread.
+     *
+     * ```java
+     * sculk.getTasks().repeating(20L, 0L, () -> Bukkit.broadcast(Component.text("tick")));
+     * ```
+     */
+    @JvmOverloads
+    @SculkStable
+    public fun repeating(intervalTicks: Long, initialDelayTicks: Long = 0, action: Runnable): SculkHandle =
+        repeating(intervalTicks, initialDelayTicks) { action.run() }
+
     /** Runs [action] once after [delayTicks] ticks, on the main thread. */
     @SculkStable
     public fun delayed(delayTicks: Long, action: suspend () -> Unit): SculkHandle {
@@ -56,6 +69,10 @@ constructor(private val scope: SculkCoroutineScope) {
             }
         return SculkHandle { job.cancel() }
     }
+
+    /** Java-friendly overload of [delayed]. The [action] runs on the main thread. */
+    @SculkStable
+    public fun delayed(delayTicks: Long, action: Runnable): SculkHandle = delayed(delayTicks) { action.run() }
 
     /**
      * Runs [action] on the schedule described by the cron [expression] (see [CronExpression]).
@@ -83,6 +100,15 @@ constructor(private val scope: SculkCoroutineScope) {
     }
 
     /**
+     * Java-friendly overload of [cron]. [zone] defaults to the system zone; the [action] runs on
+     * the main thread.
+     */
+    @JvmOverloads
+    @SculkStable
+    public fun cron(expression: String, zone: ZoneId = ZoneId.systemDefault(), action: Runnable): SculkHandle =
+        cron(expression, zone) { action.run() }
+
+    /**
      * Returns a function that delays running [action] until [waitMillis] have passed without
      * another call — the last call within a burst wins. Useful for "save after the player stops
      * editing" style behaviour.
@@ -101,6 +127,20 @@ constructor(private val scope: SculkCoroutineScope) {
     }
 
     /**
+     * Java-friendly overload of [debounce]. Returns a [Consumer] that debounces calls to [action].
+     *
+     * ```java
+     * Consumer<UUID> save = sculk.getTasks().debounce(1000L, uuid -> persist(uuid));
+     * save.accept(playerId);
+     * ```
+     */
+    @SculkStable
+    public fun <T> debounce(waitMillis: Long, action: Consumer<T>): Consumer<T> {
+        val fn = debounce<T>(waitMillis) { action.accept(it) }
+        return Consumer { fn(it) }
+    }
+
+    /**
      * Returns a function that runs [action] immediately, then ignores further calls until
      * [intervalMillis] have elapsed — rate-limits bursty triggers.
      */
@@ -114,5 +154,14 @@ constructor(private val scope: SculkCoroutineScope) {
                 scope.launchMain { action() }
             }
         }
+    }
+
+    /**
+     * Java-friendly overload of [throttle]. Returns a [Runnable] that rate-limits calls to [action].
+     */
+    @SculkStable
+    public fun throttle(intervalMillis: Long, action: Runnable): Runnable {
+        val fn = throttle(intervalMillis) { action.run() }
+        return Runnable { fn() }
     }
 }

@@ -1,3 +1,5 @@
+@file:JvmName("SculkGui")
+
 package studio.sculk.gui
 
 import org.bukkit.Bukkit
@@ -7,6 +9,7 @@ import org.bukkit.inventory.Inventory
 import studio.sculk.adventure.parseMessage
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
+import java.util.function.Consumer
 
 /**
  * An immutable GUI definition.
@@ -149,6 +152,20 @@ constructor(private val title: String) {
     }
 
     /**
+     * Java-friendly overload of [item] taking a [Consumer].
+     *
+     * ```java
+     * b.item(13, i -> { i.setMaterial(Material.DIAMOND); i.setName("<aqua>Click"); i.onClick(c -> c.reply("Hi")); });
+     * ```
+     */
+    @SculkStable
+    @OptIn(SculkInternal::class)
+    public fun item(slot: Int, block: Consumer<GuiItemBuilder>) {
+        require(slot in 0 until size) { "Slot $slot is out of range for a GUI of size $size." }
+        items[slot] = GuiItemBuilder(slot).also { block.accept(it) }.build()
+    }
+
+    /**
      * Configures pagination for this GUI.
      *
      * Define which slots hold paginated entries. Navigation is wired up manually
@@ -166,14 +183,32 @@ constructor(private val title: String) {
         paginationConfig = PaginationBuilder().apply(block).build()
     }
 
+    /** Java-friendly overload of [pagination] taking a [Consumer]. */
+    @SculkStable
+    public fun pagination(block: Consumer<PaginationBuilder>) {
+        paginationConfig = PaginationBuilder().also { block.accept(it) }.build()
+    }
+
     /** Runs after this GUI is opened for a player. */
     public fun onOpen(handler: (GuiSession) -> Unit) {
         openHandler = handler
     }
 
+    /** Java-friendly overload of [onOpen] taking a [Consumer]. */
+    @SculkStable
+    public fun onOpen(handler: Consumer<GuiSession>) {
+        openHandler = { handler.accept(it) }
+    }
+
     /** Runs when this GUI session is closed through the platform GUI listener. */
     public fun onClose(handler: (GuiSession) -> Unit) {
         closeHandler = handler
+    }
+
+    /** Java-friendly overload of [onClose] taking a [Consumer]. */
+    @SculkStable
+    public fun onClose(handler: Consumer<GuiSession>) {
+        closeHandler = { handler.accept(it) }
     }
 
     /**
@@ -188,6 +223,7 @@ constructor(private val title: String) {
      * }
      * ```
      */
+    @JvmOverloads
     public fun fill(material: Material, block: GuiItemBuilder.() -> Unit = {}) {
         for (slot in 0 until size) {
             if (slot !in items) {
@@ -196,6 +232,10 @@ constructor(private val title: String) {
             }
         }
     }
+
+    /** Java-friendly overload of [fill] taking a [Consumer]. */
+    @SculkStable
+    public fun fill(material: Material, block: Consumer<GuiItemBuilder>): Unit = fill(material) { block.accept(this) }
 
     /**
      * Fills the outer ring of slots (top row, bottom row, left column, right column)
@@ -208,6 +248,7 @@ constructor(private val title: String) {
      * }
      * ```
      */
+    @JvmOverloads
     public fun border(material: Material, block: GuiItemBuilder.() -> Unit = {}) {
         val rows = size / 9
         for (slot in 0 until size) {
@@ -220,6 +261,10 @@ constructor(private val title: String) {
             }
         }
     }
+
+    /** Java-friendly overload of [border] taking a [Consumer]. */
+    @SculkStable
+    public fun border(material: Material, block: Consumer<GuiItemBuilder>): Unit = border(material) { block.accept(this) }
 
     /**
      * Assigns the same item definition to every slot in [slots].
@@ -239,6 +284,10 @@ constructor(private val title: String) {
             if (slot !in items) item(slot, block)
         }
     }
+
+    /** Java-friendly overload of [items] taking a [Consumer]. */
+    @SculkStable
+    public fun items(slots: Iterable<Int>, block: Consumer<GuiItemBuilder>): Unit = items(slots) { block.accept(this) }
 
     @SculkInternal
     public fun build(): Gui {
@@ -272,9 +321,27 @@ constructor(private val title: String) {
 @SculkStable
 public fun gui(title: String, block: GuiBuilder.() -> Unit): Gui = GuiBuilder(title).apply(block).build()
 
+/**
+ * Java-friendly overload of [gui] taking a [Consumer].
+ *
+ * ```java
+ * Gui menu = SculkGui.gui("Main Menu", b -> {
+ *     b.setSize(27);
+ *     b.item(13, i -> { i.setMaterial(Material.DIAMOND); i.setName("<aqua>Diamonds!"); });
+ * });
+ * ```
+ */
+@SculkStable
+public fun gui(title: String, block: Consumer<GuiBuilder>): Gui = GuiBuilder(title).also { block.accept(it) }.build()
+
 /** Creates a compact confirmation menu with configurable confirm/cancel buttons. */
 @SculkStable
 public fun confirmMenu(title: String, block: ConfirmMenuBuilder.() -> Unit): Gui = ConfirmMenuBuilder(title).apply(block).build()
+
+/** Java-friendly overload of [confirmMenu] taking a [Consumer]. */
+@SculkStable
+public fun confirmMenu(title: String, block: Consumer<ConfirmMenuBuilder>): Gui =
+    ConfirmMenuBuilder(title).also { block.accept(it) }.build()
 
 /** Builder for [confirmMenu]. */
 @SculkStable
@@ -287,9 +354,21 @@ public class ConfirmMenuBuilder internal constructor(private val title: String) 
         confirmBlock = block
     }
 
+    /** Java-friendly overload of [confirm] taking a [Consumer]. */
+    @SculkStable
+    public fun confirm(block: Consumer<GuiItemBuilder>) {
+        confirmBlock = { block.accept(this) }
+    }
+
     /** Configures the cancel button. */
     public fun cancel(block: GuiItemBuilder.() -> Unit) {
         cancelBlock = block
+    }
+
+    /** Java-friendly overload of [cancel] taking a [Consumer]. */
+    @SculkStable
+    public fun cancel(block: Consumer<GuiItemBuilder>) {
+        cancelBlock = { block.accept(this) }
     }
 
     @SculkInternal

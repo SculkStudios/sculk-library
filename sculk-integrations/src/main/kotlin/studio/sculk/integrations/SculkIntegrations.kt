@@ -35,6 +35,7 @@ public class SculkIntegrations public constructor(private val plugin: Plugin) {
 /** PlaceholderAPI adapter. */
 @SculkStable
 public object PlaceholderApiIntegration {
+    @JvmStatic
     public fun parse(player: Player?, text: String): String = runCatching {
         val clazz = Class.forName("me.clip.placeholderapi.PlaceholderAPI")
         clazz.getMethod("setPlaceholders", OfflinePlayer::class.java, String::class.java).invoke(null, player, text) as String
@@ -84,6 +85,7 @@ public class VaultEconomyIntegration private constructor(private val economy: An
 /** LuckPerms adapter for common metadata lookups. */
 @SculkStable
 public object LuckPermsIntegration {
+    @JvmStatic
     public fun primaryGroup(uuid: UUID): SculkResult<String?> = runCatching {
         val provider = Class.forName("net.luckperms.api.LuckPermsProvider").getMethod("get").invoke(null)
         val userManager = provider.javaClass.getMethod("getUserManager").invoke(provider)

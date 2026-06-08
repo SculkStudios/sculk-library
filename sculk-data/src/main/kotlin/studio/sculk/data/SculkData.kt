@@ -7,14 +7,20 @@ import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
 import studio.sculk.config.yaml.YamlMapper
 import studio.sculk.data.cache.CacheBuilder
+import studio.sculk.data.cache.JavaCache
 import studio.sculk.data.cache.SculkCache
 import studio.sculk.data.driver.ConnectionPool
 import studio.sculk.data.driver.StorageConfig
+import studio.sculk.data.repository.JavaProfileStore
+import studio.sculk.data.repository.JavaRepository
 import studio.sculk.data.repository.JdbcRepository
 import studio.sculk.data.repository.PlayerProfileStore
 import studio.sculk.data.repository.SculkRepository
 import studio.sculk.data.repository.jdbcRepository
 import java.io.File
+import java.util.concurrent.CompletableFuture
+import java.util.function.Consumer
+import java.util.function.Function
 import java.util.logging.Logger
 import javax.sql.DataSource
 import kotlin.reflect.KClass
@@ -47,10 +53,33 @@ public class SculkData private constructor(private val dataSource: DataSource, p
         jdbcRepository(dataSource, klass, config.dialect())
 
     /**
+     * Java-friendly overload of [repository] taking [Class] tokens.
+     *
+     * ```java
+     * SculkRepository<PlayerData, UUID> repo = data.repository(PlayerData.class, UUID.class);
+     * ```
+     */
+    @SculkStable
+    public fun <T : Any, ID : Any> repository(klass: Class<T>, idClass: Class<ID>): SculkRepository<T, ID> =
+        repository(klass.kotlin, idClass.kotlin)
+
+    /**
      * Kotlin reified convenience — creates a [JdbcRepository] for [T]/[ID].
      */
     @SculkStable
     public inline fun <reified T : Any, reified ID : Any> repository(): SculkRepository<T, ID> = repository(T::class, ID::class)
+
+    /**
+     * Java-friendly repository whose suspend operations are exposed as [java.util.concurrent.CompletableFuture]s.
+     *
+     * ```java
+     * JavaRepository<PlayerData, UUID> repo = data.javaRepository(PlayerData.class, UUID.class);
+     * repo.find(id).thenAccept(result -> { ... });
+     * ```
+     */
+    @SculkStable
+    public fun <T : Any, ID : Any> javaRepository(klass: Class<T>, idClass: Class<ID>): JavaRepository<T, ID> =
+        JavaRepository(repository(klass.kotlin, idClass.kotlin))
 
     /**
      * Wraps [delegate] in a Caffeine-backed [SculkCache].
@@ -70,6 +99,34 @@ public class SculkData private constructor(private val dataSource: DataSource, p
         idExtractor: (T) -> ID,
         block: CacheBuilder<T, ID>.() -> Unit = {},
     ): SculkCache<T, ID> = CacheBuilder(delegate, idExtractor).apply(block).build()
+
+    /**
+     * Java-friendly overload of [cached] with a [Consumer] tuning block. The id-extractor is a plain
+     * function, so a Java method reference works directly:
+     *
+     * ```java
+     * SculkCache<PlayerData, UUID> cached = data.cached(repo, PlayerData::uuid, b -> {
+     *     b.setTtl(Duration.ofMinutes(10));
+     *     b.setMaxSize(500);
+     * });
+     * ```
+     */
+    @SculkStable
+    public fun <T : Any, ID : Any> cached(
+        delegate: SculkRepository<T, ID>,
+        idExtractor: (T) -> ID,
+        block: Consumer<CacheBuilder<T, ID>>,
+    ): SculkCache<T, ID> = cached(delegate, idExtractor) { block.accept(this) }
+
+    /**
+     * Wraps a [SculkCache] in a Java-friendly [JavaCache] (CompletableFuture-based).
+     *
+     * ```java
+     * JavaCache<PlayerData, UUID> cache = data.javaCache(data.cached(repo, PlayerData::uuid, b -> {}));
+     * ```
+     */
+    @SculkStable
+    public fun <T : Any, ID : Any> javaCache(cache: SculkCache<T, ID>): JavaCache<T, ID> = JavaCache(cache)
 
     /**
      * Wraps [delegate] in a distributed [studio.sculk.data.cache.RedisCache] for multi-server setups.
@@ -92,10 +149,28 @@ public class SculkData private constructor(private val dataSource: DataSource, p
         .create(delegate, idExtractor, serializer, redisUri, keyPrefix, ttl)
         .also { managedHandles += it }
 
-    /** Creates a UUID-first player profile workflow around a repository. */
+    /**
+     * Creates a UUID-first player profile workflow around a repository.
+     *
+     * [create] is a plain function, so Java passes a lambda directly:
+     * `data.playerProfiles(repo, id -> new PlayerData(id, 0))`.
+     */
     @SculkStable
     public fun <T : Any, ID : Any> playerProfiles(repository: SculkRepository<T, ID>, create: (ID) -> T): PlayerProfileStore<T, ID> =
         PlayerProfileStore(repository, create)
+
+    /**
+     * Java-friendly player-profile workflow whose `getOrCreate`/`save` are exposed as
+     * [java.util.concurrent.CompletableFuture]s.
+     *
+     * ```java
+     * JavaProfileStore<PlayerData, UUID> profiles = data.javaPlayerProfiles(repo, id -> new PlayerData(id, 0));
+     * profiles.getOrCreate(id).thenAccept(result -> { ... });
+     * ```
+     */
+    @SculkStable
+    public fun <T : Any, ID : Any> javaPlayerProfiles(repository: SculkRepository<T, ID>, create: (ID) -> T): JavaProfileStore<T, ID> =
+        JavaProfileStore(PlayerProfileStore(repository, create))
 
     /**
      * Runs [block] inside a single database transaction on [Dispatchers.IO].
@@ -113,27 +188,45 @@ public class SculkData private constructor(private val dataSource: DataSource, p
      * ```
      */
     @SculkStable
-    public suspend fun <R> transaction(block: (java.sql.Connection) -> R): SculkResult<R> = withContext(Dispatchers.IO) {
-        runCatching {
-            dataSource.connection.use { conn ->
-                val previousAutoCommit = conn.autoCommit
-                conn.autoCommit = false
-                try {
-                    val result = block(conn)
-                    conn.commit()
-                    result
-                } catch (e: Throwable) {
-                    conn.rollback()
-                    throw e
-                } finally {
-                    conn.autoCommit = previousAutoCommit
-                }
+    public suspend fun <R> transaction(block: (java.sql.Connection) -> R): SculkResult<R> =
+        withContext(Dispatchers.IO) { runTransaction(block) }
+
+    /**
+     * Java bridge for [transaction]: runs [block] in a transaction on a background thread and
+     * completes the returned [CompletableFuture] with the [SculkResult].
+     *
+     * The future never completes exceptionally — failures are captured as [SculkResult.Failure].
+     *
+     * ```java
+     * data.transactionAsync(conn -> {
+     *     try (var ps = conn.prepareStatement("UPDATE accounts SET coins = coins - ? WHERE id = ?")) { ... }
+     *     return null;
+     * }).thenAccept(result -> { if (!result.isSuccess()) getLogger().warning(result.toString()); });
+     * ```
+     */
+    @SculkStable
+    public fun <R> transactionAsync(block: Function<java.sql.Connection, R>): CompletableFuture<SculkResult<R>> =
+        CompletableFuture.supplyAsync { runTransaction { block.apply(it) } }
+
+    private fun <R> runTransaction(block: (java.sql.Connection) -> R): SculkResult<R> = runCatching {
+        dataSource.connection.use { conn ->
+            val previousAutoCommit = conn.autoCommit
+            conn.autoCommit = false
+            try {
+                val result = block(conn)
+                conn.commit()
+                result
+            } catch (e: Throwable) {
+                conn.rollback()
+                throw e
+            } finally {
+                conn.autoCommit = previousAutoCommit
             }
-        }.fold(
-            onSuccess = { SculkResult.success(it) },
-            onFailure = { SculkResult.failure("transaction failed: ${it.message}", it) },
-        )
-    }
+        }
+    }.fold(
+        onSuccess = { SculkResult.success(it) },
+        onFailure = { SculkResult.failure("transaction failed: ${it.message}", it) },
+    )
 
     /** Closes distributed caches and the underlying connection pool. Call from your plugin's `onDisable`. */
     override fun close() {
@@ -147,6 +240,7 @@ public class SculkData private constructor(private val dataSource: DataSource, p
          * Creates a [SculkData] instance, loading storage config from [dataFolder]/storage.yml.
          * The file is written with defaults if it does not exist.
          */
+        @JvmStatic
         @SculkStable
         public fun create(dataFolder: File, logger: Logger): SculkData {
             val configFile = File(dataFolder, "storage.yml")
@@ -165,6 +259,7 @@ public class SculkData private constructor(private val dataSource: DataSource, p
          * Creates a [SculkData] instance with a pre-configured [DataSource].
          * Useful for testing with an H2 in-memory database.
          */
+        @JvmStatic
         @SculkStable
         public fun withDataSource(dataSource: DataSource, dialect: studio.sculk.data.driver.SqlDialect): SculkData =
             SculkData(dataSource, StorageConfig(type = dialect.name.lowercase()))

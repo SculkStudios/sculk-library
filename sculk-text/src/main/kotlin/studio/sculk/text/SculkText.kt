@@ -84,6 +84,40 @@ internal constructor(
     public fun send(player: Player, key: String, vararg placeholders: Pair<String, String>): Unit =
         (player as Audience).sendMessage(component(player, key, *placeholders))
 
+    // -----------------------------------------------------------------------
+    // Java-friendly overloads (Map placeholders instead of Kotlin Pair varargs)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Java-friendly overload of [component] taking a placeholder [Map].
+     *
+     * ```java
+     * Component c = sculk.getText().component(player, "welcome", Map.of("name", player.getName()));
+     * ```
+     */
+    @SculkStable
+    public fun component(language: String, key: String, placeholders: Map<String, String>): Component {
+        val template = template(language, key) ?: return Component.text(key)
+        return parseMessage(substitute(template, placeholders))
+    }
+
+    /** Java-friendly overload of [component] in [player]'s language, taking a placeholder [Map]. */
+    @SculkStable
+    public fun component(player: Player, key: String, placeholders: Map<String, String>): Component =
+        component(languageOf(player), key, placeholders)
+
+    /** Java-friendly overload of [plural] taking a placeholder [Map]. */
+    @SculkStable
+    public fun plural(player: Player, key: String, count: Int, placeholders: Map<String, String>): Component {
+        val form = if (count == 1) "$key.one" else "$key.other"
+        return component(languageOf(player), form, placeholders + ("count" to count.toString()))
+    }
+
+    /** Java-friendly overload of [send] taking a placeholder [Map]. */
+    @SculkStable
+    public fun send(player: Player, key: String, placeholders: Map<String, String>): Unit =
+        (player as Audience).sendMessage(component(player, key, placeholders))
+
     /** The resolved language tag for [player] (client locale language, lowercased). */
     @SculkStable
     public fun languageOf(player: Player): String = runCatching { player.locale().language.lowercase() }
@@ -109,6 +143,8 @@ internal constructor(
 
     public companion object {
         /** Creates a [SculkText] loading bundles from `<dataFolder>/lang`. */
+        @JvmStatic
+        @JvmOverloads
         @SculkStable
         @OptIn(SculkInternal::class)
         public fun create(dataFolder: File, logger: Logger, defaultLanguage: String = Locale.ENGLISH.language): SculkText {
