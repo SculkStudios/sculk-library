@@ -1,3 +1,5 @@
+@file:JvmName("SculkMessenger")
+
 package studio.sculk.adventure
 
 import net.kyori.adventure.audience.Audience
@@ -7,6 +9,7 @@ import org.bukkit.Bukkit
 import studio.sculk.annotation.SculkStable
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
+import java.util.function.Consumer
 import net.kyori.adventure.sound.Sound as AdventureSound
 
 private val miniMessage = MiniMessage.miniMessage()
@@ -48,6 +51,7 @@ public fun Audience.reply(message: String): Unit = sendMessage(parseMessage(mess
  * @param stay Stay duration in ticks. Defaults to 70.
  * @param fadeOut Fade-out duration in ticks. Defaults to 20.
  */
+@JvmOverloads
 @SculkStable
 public fun Audience.title(title: String, subtitle: String = "", fadeIn: Int = 10, stay: Int = 70, fadeOut: Int = 20) {
     val times =
@@ -80,6 +84,7 @@ public fun Audience.actionbar(message: String): Unit = sendActionBar(parseMessag
  * @param volume The volume. Defaults to 1.0.
  * @param pitch The pitch. Defaults to 1.0.
  */
+@JvmOverloads
 @SculkStable
 public fun Audience.playSound(sound: org.bukkit.Sound, volume: Float = 1.0f, pitch: Float = 1.0f) {
     playSound(
@@ -122,6 +127,7 @@ public fun broadcastActionbar(message: String) {
 @SculkStable
 public class MessageTemplate internal constructor(private val source: String, private val defaults: Map<String, String>) {
     /** Renders this template with [values] layered over default placeholders. */
+    @JvmOverloads
     public fun render(values: Map<String, String> = emptyMap()): net.kyori.adventure.text.Component {
         val merged = defaults + values
         val rendered =
@@ -132,6 +138,7 @@ public class MessageTemplate internal constructor(private val source: String, pr
     }
 
     /** Sends this rendered template to [audience]. */
+    @JvmOverloads
     public fun sendTo(audience: Audience, values: Map<String, String> = emptyMap()) {
         audience.sendMessage(render(values))
     }
@@ -162,13 +169,27 @@ public class MessagePlaceholders internal constructor() {
 }
 
 /** Creates a reusable MiniMessage template. */
+@JvmOverloads
 @SculkStable
 public fun messageTemplate(source: String, block: MessageTemplateBuilder.() -> Unit = {}): MessageTemplate =
     MessageTemplateBuilder(source).apply(block).build()
 
+/** Java-friendly overload of [messageTemplate] taking a [Consumer]. */
+@SculkStable
+public fun messageTemplate(source: String, block: Consumer<MessageTemplateBuilder>): MessageTemplate =
+    MessageTemplateBuilder(source).also { block.accept(it) }.build()
+
 /** Sends a [template] to this [Audience] with runtime placeholders. */
+@JvmOverloads
 @SculkStable
 public fun Audience.sendTemplate(template: MessageTemplate, block: MessagePlaceholders.() -> Unit = {}) {
     val placeholders = MessagePlaceholders().apply(block)
+    sendMessage(template.render(placeholders.values))
+}
+
+/** Java-friendly overload of [sendTemplate] taking a [Consumer]. */
+@SculkStable
+public fun Audience.sendTemplate(template: MessageTemplate, block: Consumer<MessagePlaceholders>) {
+    val placeholders = MessagePlaceholders().also { block.accept(it) }
     sendMessage(template.render(placeholders.values))
 }

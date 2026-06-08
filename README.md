@@ -6,7 +6,9 @@
 [![JitPack](https://jitpack.io/v/SculkStudios/sculk-library.svg)](https://jitpack.io/#SculkStudios/sculk-library)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Sculk Studio is the shared Kotlin library used by Sculk Studios plugins. It provides small, composable APIs for commands, GUI menus, item stacks, typed config, data access, Adventure text, localization, scheduling, effects, optional integrations, and Paper lifecycle integration. Sculk 4.0 is Kotlin-first and coroutine-based throughout — see the [4.0 migration guide](https://docs.sculk.studio/advanced/migration-to-sculk-4/).
+Sculk Studio is the shared Kotlin library used by Sculk Studios plugins. It provides small, composable APIs for commands, GUI menus, item stacks, typed config, data access, Adventure text, localization, scheduling, effects, optional integrations, and Paper lifecycle integration. Sculk is Kotlin-first and coroutine-based throughout — and as of **4.5.0**, every stable API is equally first-class from **Java**.
+
+**Writing a plugin in Java?** Start with the [Java Guide](https://docs.sculk.studio/getting-started/java/) — `@JvmStatic` factories, `java.util.function` overloads, a `CompletableFuture` bridge, and a complete all-Java example. See also the [4.0 → 4.5 migration guide](https://docs.sculk.studio/advanced/migration-to-sculk-4-5/) and [Java Interop & Limitations](https://docs.sculk.studio/advanced/java-interop/).
 
 ## Features
 

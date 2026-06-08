@@ -30,6 +30,51 @@ public sealed interface SculkResult<out T> {
     @SculkStable
     public data class Failure(public val message: String, public val cause: Throwable? = null) : SculkResult<Nothing>
 
+    // -------------------------------------------------------------------------
+    // Member accessors — first-class from both Kotlin and Java (no `SculkResultKt`).
+    // -------------------------------------------------------------------------
+
+    /** True if this is a [Success]. */
+    @SculkStable
+    public fun isSuccess(): Boolean = this is Success
+
+    /** True if this is a [Failure]. */
+    @SculkStable
+    public fun isFailure(): Boolean = this is Failure
+
+    /** The success value, or null if this is a [Failure]. */
+    @SculkStable
+    public fun getOrNull(): T? = (this as? Success)?.value
+
+    /** The success value, or throws [IllegalStateException] (with the failure cause) if this is a [Failure]. */
+    @SculkStable
+    public fun getOrThrow(): T = when (this) {
+        is Success -> value
+        is Failure -> throw IllegalStateException(message, cause)
+    }
+
+    /**
+     * Runs [action] with the value when this is a [Success]; returns this unchanged.
+     *
+     * ```java
+     * repo.save(data)
+     *     .ifSuccess(v -> player.sendMessage("<green>Saved!"))
+     *     .ifFailure((msg, err) -> getLogger().warning(msg));
+     * ```
+     */
+    @SculkStable
+    public fun ifSuccess(action: java.util.function.Consumer<@UnsafeVariance T>): SculkResult<T> {
+        if (this is Success) action.accept(value)
+        return this
+    }
+
+    /** Runs [action] with the message and cause when this is a [Failure]; returns this unchanged. */
+    @SculkStable
+    public fun ifFailure(action: java.util.function.BiConsumer<String, Throwable?>): SculkResult<T> {
+        if (this is Failure) action.accept(message, cause)
+        return this
+    }
+
     public companion object {
         /** Wraps [value] in a [Success]. */
         public fun <T> success(value: T): SculkResult<T> = Success(value)
@@ -39,11 +84,12 @@ public sealed interface SculkResult<out T> {
     }
 }
 
-/** Returns the value if this is a [SculkResult.Success], or null otherwise. */
-@SculkStable
-public fun <T> SculkResult<T>.getOrNull(): T? = (this as? SculkResult.Success)?.value
-
-/** Returns the value if this is a [SculkResult.Success], or [default] otherwise. */
+/**
+ * Returns the value if this is a [SculkResult.Success], or [default] otherwise.
+ *
+ * Kotlin convenience (Java callers use `getOrNull()` with a fallback, since a member returning the
+ * default value cannot be expressed safely on the `Failure : SculkResult<Nothing>` arm).
+ */
 @SculkStable
 public fun <T> SculkResult<T>.getOrDefault(default: T): T = getOrNull() ?: default
 

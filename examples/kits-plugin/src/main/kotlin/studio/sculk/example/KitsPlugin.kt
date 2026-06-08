@@ -105,6 +105,7 @@ public class KitsPlugin :
                             studio.sculk.adventure
                                 .parseMessage("<red>${status.message}"),
                         )
+
                     is SculkResult.Success -> {
                         if (!status.value.allowed) {
                             player.sendMessage(

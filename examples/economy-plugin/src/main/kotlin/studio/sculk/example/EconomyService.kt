@@ -69,6 +69,7 @@ public class EconomyService(
                 knownAccounts[to.uuid] = to
                 SculkResult.success(from to to)
             }
+
             is SculkResult.Failure -> saved
         }
     }
@@ -94,6 +95,7 @@ public class EconomyService(
             knownAccounts[account.uuid] = account
             SculkResult.success(account)
         }
+
         is SculkResult.Failure -> saved
     }
 

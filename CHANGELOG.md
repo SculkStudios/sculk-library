@@ -6,10 +6,49 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [4.0.0] — "Modern Core" — Unreleased
+## [4.5.0] — "Modern Core + Java Parity" — 2026-06-06
 
-A major, breaking modernisation around Kotlin coroutines and the latest Paper APIs. See the
-[migration guide](https://docs.sculk.studio/advanced/migration-to-sculk-4/).
+A major, breaking modernisation around Kotlin coroutines and the latest Paper APIs, shipped together
+with a first-class Java surface so Java plugin authors get the same ergonomics as Kotlin. See the
+[4.0 → 4.5 migration guide](https://docs.sculk.studio/advanced/migration-to-sculk-4-5/) and the
+[Java getting-started guide](https://docs.sculk.studio/getting-started/java/).
+
+> This release supersedes the never-shipped `4.0.0 "Modern Core"` line: it folds in that work plus
+> the dependency updates (Kotlin 2.4, kotlinx-coroutines 1.11, kotlinx-serialization 1.11, Lettuce 7,
+> PacketEvents 2.12, Caffeine 3.2, MiniMessage 5.1, JUnit 6) and the new Java-parity layer.
+
+### Added — Java parity (new in 4.5.0)
+- **Kotlin stays first-class; Java is now equal.** Every `@SculkStable` entry point is callable from
+  idiomatic Java with no `Unit.INSTANCE`, no `.Companion.`, and no `Function1`.
+- `@JvmStatic` on stable companion factories (`SculkPlatform.create`, `SculkConfig.create`,
+  `SculkData.create`/`withDataSource`, `SculkText.create`, `SoundBuilder.of`/`ofKey`) and on the
+  `SculkSeries` registry lookups.
+- `java.util.function.*` overloads (`Consumer`/`Function`/`Predicate`/`Runnable`/`BiConsumer`)
+  alongside every Kotlin DSL block and `suspend` fire-and-forget API — commands, events, tasks, GUI,
+  items, effects, text, packets, platform bootstrap.
+- `@JvmOverloads` on stable APIs with default arguments, so Java skips optional parameters.
+- `Class<T>` overloads for the `inline reified` APIs (`SculkEventBus.listen`/`once`,
+  `SculkConfig.load`/`reload`, `SculkData.repository`, `CommandContext.argument`, `GuiState.get`,
+  `CommandBuilder.enum`).
+- `SculkData.transactionAsync(...)` — a `CompletableFuture` bridge for the value-returning
+  `suspend transaction`.
+- The whole `suspend` data layer is usable from Java via `CompletableFuture` bridges:
+  `SculkData.javaRepository(...)` (`JavaRepository`), `SculkData.javaCache(...)` (`JavaCache` —
+  repository ops plus `findOrCreate`/`findTopBy`/`invalidate`/`invalidateAll`), and
+  `SculkData.javaPlayerProfiles(...)` (`JavaProfileStore` — `getOrCreate`/`save`).
+- `SculkResult` gained Java-first member methods (`isSuccess()`, `isFailure()`, `getOrNull()`,
+  `getOrThrow()`, `getOrDefault(x)`, `ifSuccess(...)`, `ifFailure(...)`) so Java no longer calls the
+  `SculkResultKt` extensions.
+- `SculkPlugin` gains `Consumer<SculkPlatformBuilder>` and no-arg constructors so Java plugins can
+  `extends SculkPlugin`.
+- Clean Java facades for top-level DSL functions via `@JvmName`: `SculkCommands`, `SculkGui`,
+  `SculkItems`, `SculkSounds`, `SculkParticles`, `SculkMessenger`, `SculkBlocks`.
+- New `examples/java-basic-plugin` — a full plugin written entirely in Java, compiled by CI as the
+  Java parity gate.
+
+### Added — Sculk blocks
+- `SculkBlocks` helpers (`isSculkBlock`, `SCULK_BLOCKS`, typed `sculkSensorAt`/`sculkCatalystAt`/
+  `sculkShriekerAt`/`calibratedSculkSensorAt` state accessors).
 
 ### Added
 - **Coroutine core**: plugin-scoped `SculkCoroutineScope` (`sculk.scope`) with Folia-aware
@@ -39,8 +78,9 @@ A major, breaking modernisation around Kotlin coroutines and the latest Paper AP
 - Commands must be registered during `onEnable` (Brigadier lifecycle).
 
 ### Removed
-- All Java builder classes (`Java*Builder`) and `@JvmStatic`/`@JvmOverloads` shims — Sculk is now
-  Kotlin-first only.
+- The legacy parallel Java builder classes (`Java*Builder`). Java parity in 4.5.0 is delivered by
+  annotating and overloading the *same* Kotlin API (`@JvmStatic`/`@JvmOverloads`/`java.util.function`
+  overloads) — not by duplicate Java types.
 
 ---
 

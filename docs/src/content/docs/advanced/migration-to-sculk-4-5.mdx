@@ -1,0 +1,41 @@
+---
+title: Migrating to Sculk 4.5 (Java)
+description: What changed from 4.0 to 4.5, and how Java plugins move to first-class support.
+---
+
+Sculk **4.5.0** ("Modern Core + Java Parity") is the first public release. It folds in the
+never-shipped `4.0.0 "Modern Core"` work, the dependency refresh, and a new **Java parity** layer.
+
+## For Kotlin users
+
+**Nothing breaks.** The Java parity work is purely additive — `@JvmStatic` / `@JvmOverloads` /
+`java.util.function` overloads were added *alongside* the existing Kotlin DSLs. Your `4.0`-era Kotlin
+code compiles unchanged. If you are coming from Sculk 3.x, follow
+[Migrating to Sculk 4.0](/advanced/migration-to-sculk-4/) first; everything there still applies.
+
+Dependency baselines in 4.5.0: Kotlin 2.4, kotlinx-coroutines 1.11, kotlinx-serialization 1.11,
+Lettuce 7, PacketEvents 2.12, Caffeine 3.2, MiniMessage 5.1, JUnit 6, Paper 26.1.2+, Java 25.
+
+## For Java users
+
+4.5.0 is the release that makes Java a first-class citizen. If you were avoiding Sculk because the
+DSLs were awkward from Java, start with the [Java Guide](/getting-started/java/).
+
+What you get:
+
+- `extends SculkPlugin` with a `Consumer<SculkPlatformBuilder>` (or no-arg) constructor.
+- `@JvmStatic` factories — `SculkPlatform.create(...)`, `SculkConfig.create(...)`,
+  `SculkData.create(...)`, `SculkText.create(...)`, `SculkSeries.material(...)`, etc. No more
+  `.Companion.`.
+- `java.util.function.*` overloads everywhere a Kotlin DSL block or `suspend` callback was required.
+- `Class<T>` overloads for every `inline reified` API.
+- `SculkData.transactionAsync(...)` → `CompletableFuture` for the value-returning transaction.
+- Clean facade classes for top-level functions (`SculkCommands`, `SculkGui`, `SculkItems`, …).
+
+See [Java Interop & Limitations](/advanced/java-interop/) for the full mapping table and the one
+lambda gotcha (use block-body `{ }` lambdas).
+
+## Removed
+
+- The legacy parallel `Java*Builder` classes. Parity is now delivered on the same Kotlin API rather
+  than through duplicate Java types, so there is a single source of truth for every feature.

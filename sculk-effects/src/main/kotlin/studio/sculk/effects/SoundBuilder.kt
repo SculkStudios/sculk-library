@@ -1,9 +1,12 @@
+@file:JvmName("SculkSounds")
+
 package studio.sculk.effects
 
 import org.bukkit.Location
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import studio.sculk.annotation.SculkStable
+import java.util.function.Consumer
 
 /**
  * Builds and plays a sound effect.
@@ -43,6 +46,7 @@ public class SoundBuilder private constructor(private val soundType: Sound?, pri
          * val builder = SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP)
          * ```
          */
+        @JvmStatic
         @SculkStable
         public fun of(type: Sound): SoundBuilder = SoundBuilder(type, null)
 
@@ -56,6 +60,7 @@ public class SoundBuilder private constructor(private val soundType: Sound?, pri
          * val builder = SoundBuilder.ofKey("myplugin:ui.click")
          * ```
          */
+        @JvmStatic
         @SculkStable
         public fun ofKey(key: String): SoundBuilder = SoundBuilder(null, key)
     }
@@ -94,6 +99,14 @@ public class SoundBuilder private constructor(private val soundType: Sound?, pri
  */
 @SculkStable
 public fun sound(type: Sound, block: SoundBuilder.() -> Unit): SoundBuilder = SoundBuilder.of(type).apply(block)
+
+/** Java-friendly overload of [sound] taking a [Consumer]. */
+@SculkStable
+public fun sound(type: Sound, block: Consumer<SoundBuilder>): SoundBuilder = SoundBuilder.of(type).also { block.accept(it) }
+
+/** Java-friendly overload of [sound] from a namespaced key, taking a [Consumer]. */
+@SculkStable
+public fun sound(key: String, block: Consumer<SoundBuilder>): SoundBuilder = SoundBuilder.ofKey(key).also { block.accept(it) }
 
 /**
  * Creates a [SoundBuilder] from a namespaced string [key] and applies [block].
