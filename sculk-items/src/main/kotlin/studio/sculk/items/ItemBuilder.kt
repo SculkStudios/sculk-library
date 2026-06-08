@@ -118,11 +118,13 @@ public open class ItemBuilder public constructor(private var material: Material)
     }
 
     /** Sets whether this item is unbreakable. */
+    @JvmOverloads
     public fun unbreakable(value: Boolean = true) {
         unbreakable = value
     }
 
     /** Sets Paper's enchantment glint override without fake enchantments. */
+    @JvmOverloads
     public fun glint(value: Boolean = true) {
         glint = value
     }
@@ -165,6 +167,7 @@ public open class ItemBuilder public constructor(private var material: Material)
      * For tool, equippable, consumable, or any other component without a dedicated method, use the
      * generic [component] escape hatch with the matching [DataComponentTypes] value.
      */
+    @JvmOverloads
     public fun food(nutrition: Int, saturation: Float, canAlwaysEat: Boolean = false) {
         componentEdits += {
             setData(
@@ -229,6 +232,12 @@ public open class ItemBuilder public constructor(private var material: Material)
     /** Escape hatch for advanced Paper item metadata not covered by components or PDC helpers. */
     public fun meta(block: ItemMeta.() -> Unit) {
         metaEdits += block
+    }
+
+    /** Java-friendly overload of [meta] taking a [java.util.function.Consumer]. */
+    @SculkStable
+    public fun meta(block: java.util.function.Consumer<ItemMeta>) {
+        metaEdits += { block.accept(this) }
     }
 
     /** Builds the final [ItemStack]. */

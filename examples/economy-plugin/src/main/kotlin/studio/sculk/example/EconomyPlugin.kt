@@ -76,6 +76,7 @@ public class EconomyPlugin :
                             reply(paidMessage)
                             target.reply(receivedMessage)
                         }
+
                         is SculkResult.Failure -> reply("<red>${result.message}")
                     }
                 }
@@ -119,6 +120,7 @@ public class EconomyPlugin :
                                 reply("<yellow>${index + 1}. <aqua>${account.name}</aqua> <gray>- <white>${account.coins}")
                             }
                         }
+
                         is SculkResult.Failure -> reply("<red>${result.message}")
                     }
                 }
@@ -142,6 +144,7 @@ public class EconomyPlugin :
                         if (sender == target) settings.messages.balance else settings.messages.otherBalance.replace("<player>", target.name)
                     sender.reply(message.replace("<coins>", result.value.coins.toString()))
                 }
+
                 is SculkResult.Failure -> sender.reply("<red>${result.message}")
             }
         }
@@ -161,6 +164,7 @@ public class EconomyPlugin :
                         "<green>$verb <yellow>$amount</yellow> coins for <aqua>${target.name}</aqua>. " +
                             "New balance: <yellow>${result.value.coins}</yellow>.",
                     )
+
                 is SculkResult.Failure -> sender.reply("<red>${result.message}")
             }
         }

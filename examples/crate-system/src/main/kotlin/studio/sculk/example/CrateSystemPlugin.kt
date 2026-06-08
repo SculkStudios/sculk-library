@@ -66,6 +66,7 @@ public class CrateSystemPlugin :
                             giveOrDrop(target, key.value)
                             reply("<green>Gave <yellow>$amount</yellow> keys to <aqua>${target.name}</aqua>.")
                         }
+
                         is SculkResult.Failure -> reply("<red>${key.message}")
                     }
                 }
@@ -109,6 +110,7 @@ public class CrateSystemPlugin :
                     )
                 }
             }
+
             is SculkResult.Failure ->
                 player.sendMessage(
                     parseMessage("<red>${rolled.message}"),

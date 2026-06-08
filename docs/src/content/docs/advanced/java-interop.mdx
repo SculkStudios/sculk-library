@@ -1,0 +1,80 @@
+---
+title: Java Interop & Limitations
+description: How Sculk's Kotlin-first API maps to Java, and the few edges to know about.
+---
+
+Sculk Studio 4.5.0 makes every `@SculkStable` API first-class from Java. This page explains the
+mapping and the small number of Kotlin-only edges.
+
+## How the mapping works
+
+| Kotlin | Java |
+| --- | --- |
+| `SculkPlatform.create(plugin) { … }` | `SculkPlatform.create(plugin, b -> { … })` (`@JvmStatic` + `Consumer`) |
+| `command("x") { … }` | `SculkCommands.command("x", c -> { … })` (`@JvmName` facade) |
+| `cmd.player { … }` (suspend) | `cmd.player(ctx -> { … })` (`Consumer`) |
+| `events.listen<PlayerJoinEvent> { … }` (reified) | `events.listen(PlayerJoinEvent.class, e -> { … })` (`Class`) |
+| `tasks.repeating(20) { … }` (suspend) | `tasks.repeating(20L, () -> { … })` (`Runnable`) |
+| `config.load<Settings>()` (reified) | `config.load(Settings.class)` (`Class`) |
+| `ctx.argument<Player>("t")` | `ctx.argument("t", Player.class)` |
+| `repo.find(id)` (suspend) | `data.javaRepository(…).find(id)` → `CompletableFuture<SculkResult<T>>` |
+| `data.transaction { … }` (suspend, returns value) | `data.transactionAsync(c -> …)` → `CompletableFuture` |
+| `result.getOrNull()` / `result.isSuccess` (ext) | `result.getOrNull()` / `result.isSuccess()` (members) |
+| `SculkSeries.material("…")` | `SculkSeries.material("…")` (`@JvmStatic`) |
+
+Top-level DSL functions are exposed under clean facade classes via `@JvmName`: `SculkCommands`,
+`SculkGui`, `SculkItems`, `SculkSounds`, `SculkParticles`, `SculkMessenger`, `SculkBlocks`.
+
+## The one lambda gotcha — use block bodies
+
+Many builder methods have **two** overloads with the same arity: the Kotlin one
+(`GuiItemBuilder.() -> Unit`) and the Java one (`Consumer<GuiItemBuilder>`). Java's overload
+resolution can find a **single-expression** lambda ambiguous between them:
+
+```java
+// ❌ ambiguous — expression lambda matches both overloads
+menu.border(Material.GLASS, slot -> slot.setName("<gray> "));
+
+// ✅ block body resolves cleanly to the Consumer overload
+menu.border(Material.GLASS, slot -> {
+    slot.setName("<gray> ");
+});
+```
+
+**Rule of thumb:** in Java, always give builder lambdas a `{ }` block body. Multi-statement lambdas
+are never ambiguous; this only affects one-liners.
+
+## Kotlin-recommended edges
+
+A few APIs remain most natural from Kotlin. They are all reachable from Java, but consider these notes:
+
+The entire `suspend` data layer has a `CompletableFuture`-based Java view — none of it requires
+coroutines from Java:
+
+- **Repositories** → `getData().javaRepository(Class, Class)` returns a `JavaRepository`
+  (`find`/`findAll`/`save`/`delete`/`exists`/`saveAll`/`query`).
+- **Caches** → `getData().javaCache(cache)` returns a `JavaCache` (all repository ops **plus**
+  `findOrCreate`/`findTopBy`/`invalidate`/`invalidateAll`).
+- **Player profiles** → `getData().javaPlayerProfiles(repo, factory)` returns a `JavaProfileStore`
+  (`getOrCreate`/`save`).
+- **Raw transactions** → `transactionAsync(...)`.
+
+All of the above complete on a **background thread** — hop back with
+`getScheduler().runSync(player, …)` before touching the Paper API. None complete exceptionally;
+failures arrive as `SculkResult.Failure`.
+
+A couple of genuinely Kotlin-flavoured edges remain (reachable, but nicer in Kotlin):
+
+- **`repo.query { … }`** uses a Kotlin DSL (infix conditions, property references). `JavaRepository.query`
+  exists, but for complex predicates from Java prefer `findAll()` + the Java Streams API.
+- **`SculkResult<T>`** has Java-first members: `isSuccess()`, `isFailure()`, `getOrNull()`,
+  `getOrThrow()`, `ifSuccess(...)`, `ifFailure(...)`. For a default value use
+  `Objects.requireNonNullElse(result.getOrNull(), fallback)`. The Kotlin `getOrDefault`/`map`/`flatMap`/
+  `fold`/`recover` helpers remain extensions for Kotlin call sites (they can't be safe members on the
+  `Failure : SculkResult<Nothing>` arm).
+
+## What did *not* change
+
+The Kotlin call sites in every other doc page are unchanged — adding Java parity is purely additive
+(`@JvmStatic` / `@JvmOverloads` / `java.util.function` overloads on the same members). No Kotlin code
+needs to migrate.

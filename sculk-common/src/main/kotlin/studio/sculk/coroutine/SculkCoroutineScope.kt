@@ -50,6 +50,20 @@ constructor(scheduler: SculkScheduler, name: String = "sculk") :
     /** Launches a coroutine on an async worker thread. */
     public fun launchAsync(block: suspend CoroutineScope.() -> Unit): Job = launch(dispatchers.async, block = block)
 
+    /**
+     * Java-friendly overload of [launchMain]. Runs [block] on the main / global-region thread.
+     *
+     * ```java
+     * sculk.getScope().launchMain(() -> player.sendMessage("on main thread"));
+     * ```
+     */
+    @SculkStable
+    public fun launchMain(block: Runnable): Job = launchMain { block.run() }
+
+    /** Java-friendly overload of [launchAsync]. Runs [block] on an async worker thread. */
+    @SculkStable
+    public fun launchAsync(block: Runnable): Job = launchAsync { block.run() }
+
     /** Runs [block] on the main / global-region thread and suspends until it returns. */
     public suspend fun <T> withMain(block: suspend CoroutineScope.() -> T): T = withContext(dispatchers.main, block)
 

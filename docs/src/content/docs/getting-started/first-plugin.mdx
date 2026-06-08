@@ -1,12 +1,18 @@
 ---
 title: Your First Plugin
-description: Build a minimal Sculk Studio plugin with a command and a GUI.
+description: Build a minimal Sculk Studio plugin with a command and a GUI — in Kotlin or Java.
 ---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Sculk is Kotlin-first, but every example below is equally idiomatic in Java. Pick a language with the
+toggle on any code block — your choice syncs across the whole site. New to the Java surface? See the
+[Java Guide](/getting-started/java/).
 
 ## Bootstrap
 
 The simplest way to start is to extend `SculkPlugin`. It creates the platform for you, exposes it as
-`sculk`, and closes it on disable — no `onEnable`/`onDisable` boilerplate.
+`sculk` (`getSculk()` in Java), and closes it on disable — no `onEnable`/`onDisable` boilerplate.
 
 The constructor block enables **optional systems** that need platform-level setup:
 - `gui()` — registers inventory click/close routing so GUI click handlers fire
@@ -15,6 +21,9 @@ The constructor block enables **optional systems** that need platform-level setu
 - `text()` — loads localization bundles from `lang/`
 
 **Commands, events, the scheduler, and tasks are always available** — no builder call needed.
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 class MyPlugin : SculkPlugin({ gui(); config() }) {
@@ -30,12 +39,41 @@ class MyPlugin : SculkPlugin({ gui(); config() }) {
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+public final class MyPlugin extends SculkPlugin {
+    public MyPlugin() {
+        super(b -> {
+            b.gui();
+            b.config();
+        });
+    }
+
+    @Override
+    protected void setup() {
+        getSculk().getCommands().registerAll(greetCommand(), homeCommand());
+    }
+
+    // Optional: flush/save before the platform closes.
+    @Override
+    protected void shutdown() {}
+}
+```
+
+</TabItem>
+</Tabs>
+
 That's the whole bootstrap. Put registration in `setup()` and any teardown in `shutdown()`.
 
 ### Full control (manual)
 
 If you need to own the enable/disable sequence yourself, extend `JavaPlugin` and create the platform
 directly:
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 class MyPlugin : JavaPlugin() {
@@ -50,7 +88,36 @@ class MyPlugin : JavaPlugin() {
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+public final class MyPlugin extends JavaPlugin {
+    private SculkPlatform sculk;
+
+    @Override
+    public void onEnable() {
+        sculk = SculkPlatform.create(this, b -> {
+            b.gui();
+            b.config();
+        });
+        sculk.getCommands().registerAll(greetCommand(), homeCommand());
+    }
+
+    @Override
+    public void onDisable() {
+        sculk.close();
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
 ## A command in its own file
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 // commands/GreetCommand.kt
@@ -64,7 +131,30 @@ fun greetCommand() = command("greet") {
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+// commands/GreetCommand.java
+static CommandBuilder greetCommand() {
+    return SculkCommands.command("greet", cmd -> {
+        cmd.setDescription("Greet the player.");
+        cmd.setPermission("myplugin.greet");
+
+        cmd.player(ctx -> {
+            ctx.reply("<green>Hey, <white>" + ctx.getPlayer().getName() + "<green>!");
+        });
+    });
+}
+```
+
+</TabItem>
+</Tabs>
+
 ## A GUI in its own file
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 // gui/MainMenu.kt
@@ -80,7 +170,37 @@ val mainMenu = gui("<dark_aqua><bold>Main Menu") {
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+// gui/MainMenu.java
+static Gui mainMenu(Gui settingsMenu) {
+    return SculkGui.gui("<dark_aqua><bold>Main Menu", menu -> {
+        menu.setSize(27);
+
+        menu.item(13, slot -> {
+            slot.setMaterial(Material.NETHER_STAR);
+            slot.setName("<gold><bold>Settings");
+            slot.lore("<gray>Click to open settings.");
+            slot.onClick(ctx -> {
+                ctx.open(settingsMenu);
+            });
+        });
+    });
+}
+```
+
+</TabItem>
+</Tabs>
+
 ## Loading a config
+
+Config models are plain data holders. Define the model once and load it from either language with the
+same typed API.
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 @ConfigFile("settings.yml")
@@ -92,8 +212,20 @@ data class Settings(
 val settings = sculk.config.load<Settings>()
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+// The model is defined once (Kotlin data class above). Load it from Java with a Class token:
+Settings settings = getSculk().getConfig().load(Settings.class);
+```
+
+</TabItem>
+</Tabs>
+
 ## Next steps
 
 - [Commands — subcommands and arguments](/commands/subcommands/)
 - [GUIs — pagination](/gui/pagination/)
 - [Config — hot reload](/config/hot-reload/)
+- [Java Guide](/getting-started/java/) · [Java Interop & Limitations](/advanced/java-interop/)

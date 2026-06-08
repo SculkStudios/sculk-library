@@ -24,6 +24,7 @@ import studio.sculk.scheduler.SculkScheduler
 import studio.sculk.tasks.SculkTasks
 import studio.sculk.text.SculkText
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
 
 /**
  * The Sculk Studio platform — the single entry point that wires all modules together.
@@ -132,9 +133,23 @@ public class SculkPlatform internal constructor(
          * }
          * ```
          */
+        @JvmStatic
+        @JvmOverloads
         @SculkStable
         public fun create(plugin: JavaPlugin, block: SculkPlatformBuilder.() -> Unit = {}): SculkPlatform =
             SculkPlatformBuilder(plugin).apply(block).build()
+
+        /**
+         * Java-friendly overload of [create] taking a [Consumer].
+         *
+         * ```java
+         * sculk = SculkPlatform.create(this, b -> { b.gui(); b.config(); b.data(); });
+         * ```
+         */
+        @JvmStatic
+        @SculkStable
+        public fun create(plugin: JavaPlugin, block: Consumer<SculkPlatformBuilder>): SculkPlatform =
+            SculkPlatformBuilder(plugin).also { block.accept(it) }.build()
     }
 }
 
@@ -181,9 +196,16 @@ public class SculkPlatformBuilder(private val plugin: JavaPlugin) {
     }
 
     /** Enables optional packet APIs. PacketEvents is preferred when the backend mode is Auto. */
+    @JvmOverloads
     @SculkStable
     public fun packets(block: PacketServiceConfig.() -> Unit = {}) {
         packetConfig = PacketServiceConfig().apply(block)
+    }
+
+    /** Java-friendly overload of [packets] taking a [Consumer]. */
+    @SculkStable
+    public fun packets(block: Consumer<PacketServiceConfig>) {
+        packetConfig = PacketServiceConfig().also { block.accept(it) }
     }
 
     @OptIn(studio.sculk.annotation.SculkInternal::class)
@@ -225,6 +247,7 @@ public class SculkPlatformBuilder(private val plugin: JavaPlugin) {
                 SculkPacketServices.create(plugin, scheduler, config).also { result ->
                     when (result) {
                         is SculkResult.Success -> extraHandles += result.value
+
                         is SculkResult.Failure ->
                             if (config.required) {
                                 throw IllegalStateException(result.message, result.cause)

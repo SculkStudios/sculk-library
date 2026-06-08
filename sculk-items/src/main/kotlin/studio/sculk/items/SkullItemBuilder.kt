@@ -1,3 +1,6 @@
+@file:JvmName("SculkItems")
+@file:JvmMultifileClass
+
 package studio.sculk.items
 
 import org.bukkit.Bukkit
@@ -7,6 +10,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import studio.sculk.annotation.SculkStable
 import java.util.UUID
+import java.util.function.Consumer
 
 /** Builder for player-head item stacks. */
 @SculkStable
@@ -40,5 +44,10 @@ public class SkullItemBuilder public constructor() : ItemBuilder(Material.PLAYER
 }
 
 /** Builds a player-head [ItemStack]. */
+@JvmOverloads
 @SculkStable
 public fun skull(block: SkullItemBuilder.() -> Unit = {}): ItemStack = SkullItemBuilder().apply(block).build()
+
+/** Java-friendly overload of [skull] taking a [Consumer]. */
+@SculkStable
+public fun skull(block: Consumer<SkullItemBuilder>): ItemStack = SkullItemBuilder().also { block.accept(it) }.build()

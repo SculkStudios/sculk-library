@@ -1,3 +1,5 @@
+@file:JvmName("SculkParticles")
+
 package studio.sculk.effects
 
 import org.bukkit.Location
@@ -5,6 +7,7 @@ import org.bukkit.Particle
 import org.bukkit.World
 import org.bukkit.entity.Player
 import studio.sculk.annotation.SculkStable
+import java.util.function.Consumer
 
 /**
  * Builds and spawns a particle effect at a given [location].
@@ -113,3 +116,17 @@ public class ParticleBuilder(public val type: Particle) {
  */
 @SculkStable
 public fun particle(type: Particle, block: ParticleBuilder.() -> Unit): ParticleBuilder = ParticleBuilder(type).apply(block)
+
+/**
+ * Java-friendly overload of [particle] taking a [Consumer].
+ *
+ * ```java
+ * SculkParticles.particle(Particle.FLAME, p -> {
+ *     p.setLocation(player.getLocation());
+ *     p.setCount(20);
+ *     p.spawn();
+ * });
+ * ```
+ */
+@SculkStable
+public fun particle(type: Particle, block: Consumer<ParticleBuilder>): ParticleBuilder = ParticleBuilder(type).also { block.accept(it) }

@@ -45,10 +45,19 @@ one-line install surfaces the whole DSL; consumers may instead pick individual m
 
 ## Non-negotiable rules
 
-1. **Kotlin-first only** — no Java builder classes, no `@JvmStatic`/`@JvmOverloads`. DSLs only.
+1. **Kotlin-first, Java-equal** — Kotlin DSLs are the primary authoring surface, but every
+   `@SculkStable` public member must also be *first-class from Java*. That means: companion
+   factories carry `@JvmStatic`; public functions with default arguments carry `@JvmOverloads`
+   (or explicit overloads); Kotlin function-type / `suspend` parameters get a sibling overload
+   taking `java.util.function.*` (`Consumer`/`Function`/`Predicate`/`Supplier`/`Runnable`). Parity
+   is achieved by annotating and overloading the *same* Kotlin API — **never** by parallel Java
+   `*Builder` classes. The Kotlin call site must stay unchanged.
 2. **Adventure/MiniMessage only** — never legacy color codes (`&c`, `§c`).
-3. **Coroutines, not callbacks** — IO/DB is `suspend`; no `CompletableFuture` on public APIs (a
-   `CompletableFuture.await()` bridge exists for Paper APIs that hand back futures).
+3. **Coroutines first, with Java bridges** — IO/DB stays `suspend` for Kotlin callers. Any
+   *value-returning* `suspend` public API must also expose a Java bridge: a
+   `CompletableFuture`-returning overload (preferred) or a `Consumer<SculkResult<T>>` callback,
+   marked clearly and documented with the thread it resolves on. The `CompletableFuture.await()`
+   bridge still covers Paper APIs that hand Kotlin callers a future.
 4. **Folia-correct** — route timing through `SculkScheduler` / `SculkCoroutineScope`; document the
    thread a callback runs on.
 5. **Stability markers required** — every public type/member carries `@SculkStable`,
@@ -63,9 +72,25 @@ one-line install surfaces the whole DSL; consumers may instead pick individual m
   `settings.gradle.kts` + re-exported by `sculk-platform`). Mark public types `@SculkStable`, KDoc
   them, add tests, add a `docs/src/content/docs/<section>/<page>.mdx` page, wire it into the sidebar in
   `docs/astro.config.mjs`.
-- **Add docs:** MDX with `title`/`description` frontmatter; show full-file Kotlin snippets; lead with
-  the `SculkPlugin` bootstrap; explain why/when, not just what.
+- **Keep Java parity (rule #1):** any new `@SculkStable` member needs a Java path. Receiver blocks
+  (`X.() -> Unit`), `() -> Unit`, `(T) -> Unit`, and `suspend` params need a sibling overload taking
+  `Consumer`/`Runnable`/`Predicate`. **Value-returning** plain functions (`(T) -> R`) are already
+  Java-callable via lambda/method-ref — do **not** add a `Function<T,R>` overload (it makes the call
+  ambiguous from Java). Companion factories → `@JvmStatic`; default args → `@JvmOverloads`; top-level
+  DSL functions → a `@file:JvmName("Sculk…")` facade. Add the API to
+  `examples/java-basic-plugin` (the Java compile gate).
+- **Add docs:** MDX with `title`/`description` frontmatter; show the Kotlin snippet and a Java tab via
+  `<Tabs syncKey="lang">` so the choice syncs site-wide; lead with the `SculkPlugin` bootstrap. Java
+  builder lambdas use block bodies (`x -> { … }`).
 - **Fix a bug:** add a failing test first; keep the change behavior-scoped.
+
+## Release checklist
+
+1. `./gradlew build` green (all modules + examples incl. `java-basic-plugin` + tests + ktlint).
+2. `cd docs && bun run build` green.
+3. Version bumped in `build.gradle.kts`; `CHANGELOG.md` entry dated; `sculk-bom` lists every module.
+4. `git diff origin/main...HEAD` reviewed; renovate PRs triaged/closed.
+5. Tag `vX.Y.Z` and draft GitHub release notes from the CHANGELOG.
 
 ## Commands
 

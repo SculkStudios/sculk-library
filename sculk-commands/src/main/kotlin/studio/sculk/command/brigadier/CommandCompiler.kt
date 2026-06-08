@@ -121,6 +121,7 @@ public class CommandCompiler(private val scope: SculkCoroutineScope, private val
     private suspend fun runExecutor(node: CommandNode, context: CommandContext, sender: CommandSender) {
         when {
             node.anyExecutor != null -> node.anyExecutor!!.invoke(context)
+
             node.playerExecutor != null -> {
                 if (sender !is Player) {
                     sender.reply(PLAYER_ONLY)
@@ -128,6 +129,7 @@ public class CommandCompiler(private val scope: SculkCoroutineScope, private val
                 }
                 node.playerExecutor!!.invoke(context)
             }
+
             node.consoleExecutor != null -> {
                 if (sender is Player) {
                     sender.reply(CONSOLE_ONLY)

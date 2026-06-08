@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "studio.sculk"
-version = "4.0.0"
+version = "4.5.0"
 
 subprojects {
     group = rootProject.group

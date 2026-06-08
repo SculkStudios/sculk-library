@@ -131,17 +131,24 @@ public object OrmMapper {
         }
         return when (type) {
             UUID::class -> value?.let { UUID.fromString(it.toString()) }
+
             Int::class -> (value as? Number)?.toInt()
+
             Long::class -> (value as? Number)?.toLong()
+
             Double::class -> (value as? Number)?.toDouble()
+
             Float::class -> (value as? Number)?.toFloat()
+
             Boolean::class ->
                 when (value) {
                     is Boolean -> value
                     is Number -> value.toInt() != 0
                     else -> null
                 }
+
             String::class -> value?.toString()
+
             else -> value
         }
     }

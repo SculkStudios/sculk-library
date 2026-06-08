@@ -84,10 +84,12 @@ public class CronExpression private constructor(
                 val (lo, hi) =
                     when {
                         range == "*" -> min to max
+
                         "-" in range -> {
                             val bounds = range.split("-")
                             (bounds[0].toInt()) to (bounds[1].toInt())
                         }
+
                         else -> {
                             val value = range.toInt()
                             value to value
