@@ -247,6 +247,7 @@ public class SculkPlatformBuilder(private val plugin: JavaPlugin) {
                 SculkPacketServices.create(plugin, scheduler, config).also { result ->
                     when (result) {
                         is SculkResult.Success -> extraHandles += result.value
+
                         is SculkResult.Failure ->
                             if (config.required) {
                                 throw IllegalStateException(result.message, result.cause)

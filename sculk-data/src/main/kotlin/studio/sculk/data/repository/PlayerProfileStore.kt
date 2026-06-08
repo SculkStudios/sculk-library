@@ -24,6 +24,7 @@ public class PlayerProfileStore<T : Any, ID : Any> public constructor(
                 }
             }
         }
+
         is SculkResult.Failure -> SculkResult.Failure(result.message, result.cause)
     }
 
