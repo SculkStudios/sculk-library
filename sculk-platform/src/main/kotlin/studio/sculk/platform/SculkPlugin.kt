@@ -23,6 +23,21 @@ import studio.sculk.annotation.SculkStable
  */
 @SculkStable
 public abstract class SculkPlugin(private val configure: SculkPlatformBuilder.() -> Unit = {}) : JavaPlugin() {
+    /**
+     * Java-friendly constructor taking a [java.util.function.Consumer] of the platform builder.
+     *
+     * ```java
+     * public final class MyPlugin extends SculkPlugin {
+     *     public MyPlugin() { super(b -> { b.gui(); b.data(); }); }
+     *     @Override protected void setup() { /* register commands/listeners */ }
+     * }
+     * ```
+     */
+    public constructor(configure: java.util.function.Consumer<SculkPlatformBuilder>) : this({ configure.accept(this) })
+
+    /** Java-friendly no-subsystem constructor. Equivalent to enabling nothing in the builder. */
+    public constructor() : this({})
+
     /** The Sculk platform for this plugin. Available from [setup] onward. */
     public lateinit var sculk: SculkPlatform
         private set

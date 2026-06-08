@@ -1,3 +1,5 @@
+@file:JvmName("SculkCommands")
+
 package studio.sculk.command
 
 import org.bukkit.entity.Player
@@ -20,6 +22,8 @@ import studio.sculk.command.argument.StringParser
 import studio.sculk.command.argument.UuidParser
 import studio.sculk.command.argument.WorldParser
 import java.time.Duration
+import java.util.function.Consumer
+import java.util.function.Predicate
 
 /**
  * DSL builder for a [CommandNode].
@@ -111,6 +115,34 @@ constructor(name: String) {
         node.anyExecutor = block
     }
 
+    // -----------------------------------------------------------------------
+    // Java-friendly executor overloads (Consumer<CommandContext>)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Java-friendly overload of [player]. Executes when a [Player] runs the command.
+     *
+     * ```java
+     * command.player(ctx -> ctx.reply("<green>Hello, " + ctx.getPlayer().getName()));
+     * ```
+     */
+    @SculkStable
+    public fun player(block: Consumer<CommandContext>) {
+        node.playerExecutor = { block.accept(this) }
+    }
+
+    /** Java-friendly overload of [console]. Executes when the console runs the command. */
+    @SculkStable
+    public fun console(block: Consumer<CommandContext>) {
+        node.consoleExecutor = { block.accept(this) }
+    }
+
+    /** Java-friendly overload of [executes]. Executes for any sender. */
+    @SculkStable
+    public fun executes(block: Consumer<CommandContext>) {
+        node.anyExecutor = { block.accept(this) }
+    }
+
     /** Applies a per-sender cooldown to this command node. */
     public fun cooldown(key: String, duration: Duration) {
         node.cooldown = CooldownDefinition(key, duration.toMillis())
@@ -135,6 +167,14 @@ constructor(name: String) {
         node.middleware += block
     }
 
+    /**
+     * Java-friendly overload of [middleware] taking a [Predicate]. Returning `false` aborts dispatch.
+     */
+    @SculkStable
+    public fun middleware(block: Predicate<CommandContext>) {
+        node.middleware += { ctx -> block.test(ctx) }
+    }
+
     // -----------------------------------------------------------------------
     // Subcommands
     // -----------------------------------------------------------------------
@@ -156,59 +196,83 @@ constructor(name: String) {
         node.subcommands += child.node
     }
 
+    /**
+     * Java-friendly overload of [sub] taking a [Consumer].
+     *
+     * ```java
+     * command.sub("reload", sub -> sub.player(ctx -> ctx.reply("<green>Reloaded.")));
+     * ```
+     */
+    @SculkStable
+    public fun sub(name: String, block: Consumer<CommandBuilder>) {
+        val child = CommandBuilder(name)
+        block.accept(child)
+        node.subcommands += child.node
+    }
+
     // -----------------------------------------------------------------------
     // Arguments
     // -----------------------------------------------------------------------
 
     /** Registers a required string argument with [name]. */
+    @JvmOverloads
     public fun string(name: String, optional: Boolean = false) {
         node.arguments += ArgumentDefinition(name, StringParser, optional)
     }
 
     /** Registers an integer argument with [name]. */
+    @JvmOverloads
     public fun int(name: String, optional: Boolean = false, min: Int? = null, max: Int? = null) {
         val parser = if (min == null && max == null) IntParser else BoundedIntParser(min, max)
         node.arguments += ArgumentDefinition(name, parser, optional)
     }
 
     /** Registers a double argument with [name]. */
+    @JvmOverloads
     public fun double(name: String, optional: Boolean = false, min: Double? = null, max: Double? = null) {
         val parser = if (min == null && max == null) DoubleParser else BoundedDoubleParser(min, max)
         node.arguments += ArgumentDefinition(name, parser, optional)
     }
 
     /** Registers a boolean argument with [name]. */
+    @JvmOverloads
     public fun boolean(name: String, optional: Boolean = false) {
         node.arguments += ArgumentDefinition(name, BooleanParser, optional)
     }
 
     /** Registers an online-player argument with [name]. */
+    @JvmOverloads
     public fun player(name: String, optional: Boolean = false) {
         node.arguments += ArgumentDefinition(name, PlayerParser, optional)
     }
 
     /** Registers a long-integer argument with [name]. */
+    @JvmOverloads
     public fun long(name: String, optional: Boolean = false, min: Long? = null, max: Long? = null) {
         val parser = if (min == null && max == null) LongParser else BoundedLongParser(min, max)
         node.arguments += ArgumentDefinition(name, parser, optional)
     }
 
     /** Registers a UUID argument with [name]. */
+    @JvmOverloads
     public fun uuid(name: String, optional: Boolean = false) {
         node.arguments += ArgumentDefinition(name, UuidParser, optional)
     }
 
     /** Registers a world argument with [name]. */
+    @JvmOverloads
     public fun world(name: String, optional: Boolean = false) {
         node.arguments += ArgumentDefinition(name, WorldParser, optional)
     }
 
     /** Registers a material argument with [name]. */
+    @JvmOverloads
     public fun material(name: String, optional: Boolean = false) {
         node.arguments += ArgumentDefinition(name, MaterialParser, optional)
     }
 
     /** Registers a duration argument with [name], accepting values like `10s`, `5m`, or `1h`. */
+    @JvmOverloads
     public fun duration(name: String, optional: Boolean = false) {
         node.arguments += ArgumentDefinition(name, DurationParser, optional)
     }
@@ -216,6 +280,19 @@ constructor(name: String) {
     /** Registers an enum argument with [name]. */
     public inline fun <reified E : Enum<E>> enum(name: String, optional: Boolean = false) {
         argument(name, ChoiceParser(enumValues<E>().map { it.name.lowercase() }), optional)
+    }
+
+    /**
+     * Java-friendly overload of [enum] taking a [Class] token.
+     *
+     * ```java
+     * command.enum("mode", GameMode.class);
+     * ```
+     */
+    @JvmOverloads
+    @SculkStable
+    public fun <E : Enum<E>> enum(name: String, type: Class<E>, optional: Boolean = false) {
+        argument(name, ChoiceParser(type.enumConstants.map { it.name.lowercase() }), optional)
     }
 
     /**
@@ -233,6 +310,7 @@ constructor(name: String) {
     }
 
     /** Registers a fixed-choice argument with [name] accepting only [choices]. */
+    @JvmOverloads
     public fun choice(name: String, vararg choices: String, optional: Boolean = false) {
         node.arguments += ArgumentDefinition(name, ChoiceParser(choices.toList()), optional)
     }
@@ -256,6 +334,7 @@ constructor(name: String) {
      * }
      * ```
      */
+    @JvmOverloads
     public fun <T : Any> argument(name: String, parser: ArgumentParser<T>, optional: Boolean = false) {
         node.arguments += ArgumentDefinition(name, parser, optional)
     }
@@ -277,3 +356,16 @@ constructor(name: String) {
  */
 @SculkStable
 public fun command(name: String, block: CommandBuilder.() -> Unit): CommandBuilder = CommandBuilder(name).apply(block)
+
+/**
+ * Java-friendly overload of [command] taking a [Consumer].
+ *
+ * ```java
+ * CommandBuilder cmd = SculkCommands.command("sculk", b -> {
+ *     b.setPermission("sculk.admin");
+ *     b.sub("ping", sub -> sub.executes(ctx -> ctx.reply("<gray>Pong!")));
+ * });
+ * ```
+ */
+@SculkStable
+public fun command(name: String, block: Consumer<CommandBuilder>): CommandBuilder = CommandBuilder(name).also { block.accept(it) }

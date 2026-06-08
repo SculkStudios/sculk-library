@@ -1,12 +1,21 @@
 ---
 title: Commands Overview
-description: DSL-first command system with sender routing, typed arguments, and tab-completion from the command tree.
+description: DSL-first command system with sender routing, typed arguments, and tab-completion — Kotlin or Java.
 ---
 
-Commands are defined with the `command {}` DSL and registered via `sculk.commands.registerAll()`.
-Each command lives in its own file and returns a `CommandBuilder`.
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Commands are defined with the `command {}` DSL (`SculkCommands.command(...)` in Java) and registered
+via `sculk.commands.registerAll()`. Each command lives in its own file and returns a `CommandBuilder`.
+
+> **Java note:** executors (`player`/`console`/`executes`) are `suspend` on the Kotlin side, which Java
+> cannot target — so the `Consumer` overloads are the only ones Java sees. No ambiguity, even for
+> one-liners.
 
 ## Defining a command
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 // commands/AdminCommand.kt
@@ -16,7 +25,7 @@ fun adminCommand() = command("sculk") {
 
     sub("reload") {
         player {
-            sculk.config.reload()
+            sculk.config.reloadAll()
             reply("<green>Config reloaded.")
         }
     }
@@ -29,7 +38,35 @@ fun adminCommand() = command("sculk") {
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+// commands/AdminCommand.java
+CommandBuilder adminCommand() {
+    return SculkCommands.command("sculk", cmd -> {
+        cmd.setDescription("Sculk admin commands.");
+        cmd.setPermission("sculk.admin");
+
+        cmd.sub("reload", sub -> sub.player(ctx -> {
+            getSculk().getConfig().reloadAll();
+            ctx.reply("<green>Config reloaded.");
+        }));
+
+        cmd.sub("ping", sub -> sub.executes(ctx -> {
+            ctx.reply("<gray>Pong!");
+        }));
+    });
+}
+```
+
+</TabItem>
+</Tabs>
+
 ## Registering commands
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 sculk.commands.registerAll(
@@ -39,6 +76,16 @@ sculk.commands.registerAll(
 )
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+getSculk().getCommands().registerAll(adminCommand(), homeCommand(), shopCommand());
+```
+
+</TabItem>
+</Tabs>
+
 ## Sender-type routing
 
 | Block | Who runs it | Rejects |
@@ -47,11 +94,14 @@ sculk.commands.registerAll(
 | `console { }` | Server console | Players (auto error) |
 | `executes { }` | Anyone | — |
 
-`player` is non-null inside a `player { }` block — no null checks needed.
+`player` is non-null inside a `player { }` block — no null checks needed (`ctx.getPlayer()` in Java).
 
 ## Aliases
 
 Commands can have aliases — additional names that trigger the same handler:
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 fun teleportCommand() = command("teleport") {
@@ -62,6 +112,23 @@ fun teleportCommand() = command("teleport") {
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+CommandBuilder teleportCommand() {
+    return SculkCommands.command("teleport", cmd -> {
+        cmd.setAliases(java.util.List.of("tp", "tele"));
+        cmd.player(ctx -> {
+            // /teleport, /tp, and /tele all work
+        });
+    });
+}
+```
+
+</TabItem>
+</Tabs>
+
 ## Auto tab-completion
 
 Generated from the subcommand tree and registered argument names. Add explicit suggestions on arguments when a command needs dynamic values such as online players, worlds, or config keys.
@@ -71,15 +138,13 @@ Generated from the subcommand tree and registered argument names. Add explicit s
 Set `permission` on any node. Players without the permission get a clean error message automatically.
 Root-level permissions cascade — a player denied at the root never reaches subcommands.
 
-Sculk checks node permissions during command dispatch. The Bukkit/Paper command permission is still set for command visibility and registration behavior, but Sculk does not rely on deprecated Bukkit permission-message handling for normal player feedback.
-
-:::note
-Commands currently register through Bukkit's command map. That keeps the DSL small and predictable while Sculk continues to target modern Paper. If you need Brigadier-specific client UX today, use Paper's command API directly for that command and keep Sculk commands for the rest of your plugin.
-:::
-
 ## Feedback helpers
 
-Inside any executor block, `this` is a `CommandContext` with helpers beyond `reply()`:
+Inside any executor block the context (`this` in Kotlin, `ctx` in Java) is a `CommandContext` with
+helpers beyond `reply()`:
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 player {
@@ -90,11 +155,26 @@ player {
 }
 ```
 
-`title` and `actionbar` are no-ops when the sender is console. `playSound` defaults to `volume = 1.0, pitch = 1.0` — pass extra args to override.
+</TabItem>
+<TabItem label="Java">
+
+```java
+cmd.player(ctx -> {
+    ctx.reply("<green>Operation complete.");        // chat message
+    ctx.actionbar("<gray>Processing…");             // above hotbar
+    ctx.title("<aqua>Welcome!", "<gray>to the server");  // full-screen title
+    ctx.playSound(Sound.ENTITY_PLAYER_LEVELUP);     // sound at player location
+});
+```
+
+</TabItem>
+</Tabs>
+
+`title` and `actionbar` are no-ops when the sender is console. `playSound` defaults to `volume = 1.0, pitch = 1.0`.
 
 ## Best practices
 
-- One command per file, returning a `CommandBuilder` from a top-level function.
-- Register everything in `onEnable` with `registerAll`.
+- One command per file, returning a `CommandBuilder`.
+- Register everything in `setup()` with `registerAll`.
 - Use `executes { }` when behaviour is identical for players and console.
 - Keep handlers thin — delegate heavy logic to a service class.

@@ -1,0 +1,8 @@
+name: JavaBasicPlugin
+version: '${version}'
+main: studio.sculk.example.java.JavaBasicPlugin
+description: Sculk Studio Java parity example — a full plugin written in idiomatic Java
+api-version: '26.1.2'
+authors:
+  - SculkStudios
+folia-supported: true

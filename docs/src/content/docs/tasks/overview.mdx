@@ -1,14 +1,23 @@
 ---
 title: Tasks & cron
-description: Coroutine-based scheduling — repeating tasks, cron expressions, and debounce/throttle helpers.
+description: Coroutine-based scheduling — repeating tasks, cron, and debounce/throttle — from Kotlin or Java.
 ---
 
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
 The `sculk-tasks` module provides coroutine scheduling on top of the platform scope. It is always
-available via `sculk.tasks` — no toggle needed. Every helper runs its action on the main /
-global-region thread (Folia-correct) and returns a `SculkHandle` for cancellation. All tasks stop
-automatically when the platform closes.
+available via `sculk.tasks` (`getTasks()` in Java) — no toggle needed. Every helper runs its action on
+the main / global-region thread (Folia-correct) and returns a `SculkHandle` for cancellation. All
+tasks stop automatically when the platform closes.
+
+> **Java note:** the Kotlin helpers are `suspend`; Java cannot target a suspend lambda, so the
+> `Runnable`/`Consumer` overloads are the *only* ones Java sees — no overload ambiguity, even for
+> one-liners.
 
 ## Repeating & delayed
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 val handle = sculk.tasks.repeating(intervalTicks = 20) {   // every second
@@ -22,11 +31,32 @@ sculk.tasks.delayed(delayTicks = 100) {
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+SculkHandle handle = sculk.getTasks().repeating(20L, () ->   // every second
+    getServer().broadcast(Component.text("tick"))
+);
+// stop later:
+handle.close();
+
+sculk.getTasks().delayed(100L, () ->
+    getServer().broadcast(Component.text("5 seconds later"))
+);
+```
+
+</TabItem>
+</Tabs>
+
 ## Cron
 
 `cron(expression)` runs an action on a standard 5-field cron schedule
 (`minute hour day-of-month month day-of-week`). Timing is computed off-thread; the action runs on
 the main thread.
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 sculk.tasks.cron("0 3 * * *") {     // 03:00 every day
@@ -37,6 +67,17 @@ sculk.tasks.cron("0,15,30,45 * * * *") {   // every 15 minutes
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+sculk.getTasks().cron("0 3 * * *", () -> runNightlyBackup());        // 03:00 every day
+sculk.getTasks().cron("0,15,30,45 * * * *", () -> saveAll());        // every 15 minutes
+```
+
+</TabItem>
+</Tabs>
+
 Fields support `*`, lists (`1,2,3`), ranges (`1-5`), and step syntax. Day-of-week is `0-6` with
 `0`/`7` = Sunday.
 
@@ -44,6 +85,9 @@ Fields support `*`, lists (`1,2,3`), ranges (`1-5`), and step syntax. Day-of-wee
 
 `debounce` delays running until calls stop for a window — the last call wins. `throttle` runs
 immediately then rate-limits:
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 val saveSoon = sculk.tasks.debounce<UUID>(waitMillis = 2000) { uuid ->
@@ -56,3 +100,19 @@ val announce = sculk.tasks.throttle(intervalMillis = 5000) {
     broadcast("<gray>throttled announcement")
 }
 ```
+
+</TabItem>
+<TabItem label="Java">
+
+```java
+Consumer<UUID> saveSoon = sculk.getTasks().debounce(2000L, uuid -> profiles.save(uuid));
+// call repeatedly while the player edits; only the last save runs after 2s of quiet
+saveSoon.accept(player.getUniqueId());
+
+Runnable announce = sculk.getTasks().throttle(5000L, () ->
+    getServer().broadcast(Component.text("throttled announcement"))
+);
+```
+
+</TabItem>
+</Tabs>

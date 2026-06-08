@@ -1,11 +1,18 @@
 ---
 title: Events
-description: Register auto-cleaned Bukkit event listeners through the Sculk event bus.
+description: Register auto-cleaned Bukkit event listeners through the Sculk event bus — Kotlin or Java.
 ---
 
-`sculk.events` is a lightweight wrapper around Bukkit's event system. Every listener registered through it is automatically unregistered when `sculk.close()` is called — no manual cleanup, no `HandlerList.unregisterAll()`.
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+`sculk.events` (`getEvents()` in Java) is a lightweight wrapper around Bukkit's event system. Every
+listener registered through it is automatically unregistered when `sculk.close()` is called — no
+manual cleanup, no `HandlerList.unregisterAll()`.
 
 ## Registering a listener
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 sculk.events.listen<PlayerJoinEvent> { event ->
@@ -13,9 +20,24 @@ sculk.events.listen<PlayerJoinEvent> { event ->
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+sculk.getEvents().listen(PlayerJoinEvent.class, event ->
+    event.getPlayer().sendMessage("<green>Welcome, <white>" + event.getPlayer().getName() + "<green>!")
+);
+```
+
+</TabItem>
+</Tabs>
+
 No `implements Listener`, no `@EventHandler`, no plugin registration call — just the handler.
 
 ## Priority and cancellation
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 // High priority, ignore already-cancelled events
@@ -27,11 +49,32 @@ sculk.events.listen<PlayerMoveEvent>(
 }
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+// listen(type, priority, ignoreCancelled, filter, handler)
+sculk.getEvents().listen(
+    PlayerMoveEvent.class,
+    EventPriority.HIGH, true,
+    event -> true,                       // filter (Predicate)
+    event -> {
+        if (event.getTo().getY() < 0) event.setCancelled(true);
+    }
+);
+```
+
+</TabItem>
+</Tabs>
+
 Available priorities (lowest to highest): `LOWEST`, `LOW`, `NORMAL` (default), `HIGH`, `HIGHEST`, `MONITOR`.
 
 ## Cancelling a specific listener early
 
 `listen` returns a `SculkHandle`. Call `close()` to unregister just that listener:
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
 val handle = sculk.events.listen<PlayerMoveEvent> { event ->
@@ -42,20 +85,47 @@ val handle = sculk.events.listen<PlayerMoveEvent> { event ->
 handle.close()
 ```
 
+</TabItem>
+<TabItem label="Java">
+
+```java
+SculkHandle handle = sculk.getEvents().listen(PlayerMoveEvent.class, event -> {
+    // track movement once
+});
+
+// Later — stop listening
+handle.close();
+```
+
+</TabItem>
+</Tabs>
+
 ## One-shot listeners
 
-Use the returned handle to unregister inside the handler itself:
+`once` fires the handler for the first matching event, then unregisters itself:
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
 
 ```kotlin
-// Fire once, then stop
-var handle: SculkHandle? = null
-handle = sculk.events.listen<PlayerInteractEvent> { event ->
-    if (event.player.uniqueId == targetUuid) {
-        event.player.sendMessage("<green>Interaction recorded.")
-        handle?.close()
-    }
+sculk.events.once<PlayerInteractEvent>(filter = { it.player.uniqueId == targetUuid }) { event ->
+    event.player.sendMessage("<green>Interaction recorded.")
 }
 ```
+
+</TabItem>
+<TabItem label="Java">
+
+```java
+sculk.getEvents().once(PlayerInteractEvent.class, event -> {
+    if (event.getPlayer().getUniqueId().equals(targetUuid)) {
+        event.getPlayer().sendMessage("<green>Interaction recorded.");
+    }
+});
+```
+
+</TabItem>
+</Tabs>
 
 ## Lifecycle
 

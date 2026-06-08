@@ -6,6 +6,7 @@ import studio.sculk.annotation.SculkStable
 import studio.sculk.config.managed.SculkConfigManager
 import studio.sculk.config.yaml.YamlMapper
 import java.io.File
+import java.util.function.Consumer
 import java.util.logging.Logger
 
 /**
@@ -65,6 +66,7 @@ constructor(private val dataFolder: File, private val logger: Logger) {
      * `{ sculk.scheduler.runSync(it) }` so they run on the main thread. Returns a
      * [studio.sculk.SculkHandle]; close it (or the platform) to stop watching.
      */
+    @JvmOverloads
     @SculkStable
     public fun watch(dispatch: (Runnable) -> Unit = Runnable::run): studio.sculk.SculkHandle {
         val reloaders: Map<String, () -> Unit> =
@@ -75,14 +77,30 @@ constructor(private val dataFolder: File, private val logger: Logger) {
             .ConfigWatcher(dataFolder, reloaders, logger, dispatch)
     }
 
+    /**
+     * Java-friendly overload of [watch] taking a [Consumer] dispatcher.
+     *
+     * Pass `r -> sculk.getScheduler().runSync(r)` so reloads run on the main thread.
+     */
+    @SculkStable
+    public fun watch(dispatch: Consumer<Runnable>): studio.sculk.SculkHandle = watch { dispatch.accept(it) }
+
     /** Reloads one registered config and returns a structured result. */
     public inline fun <reified T : Any> reload(): SculkResult<T> = reload(T::class.java)
 
     // ---------------------------------------------------------------------------
-    // Non-inline internals (called by the inline functions above)
+    // Class-token overloads — the Java-facing surface (also back the inline reified API)
     // ---------------------------------------------------------------------------
 
-    @SculkInternal
+    /**
+     * Java-friendly overload of [load]. Loads the config for [javaClass], creating defaults on disk
+     * if the file doesn't exist.
+     *
+     * ```java
+     * Settings settings = config.load(Settings.class);
+     * ```
+     */
+    @SculkStable
     @Suppress("UNCHECKED_CAST")
     public fun <T : Any> load(javaClass: Class<T>): T {
         val manager =
@@ -92,7 +110,8 @@ constructor(private val dataFolder: File, private val logger: Logger) {
         return manager.value
     }
 
-    @SculkInternal
+    /** Java-friendly overload of [load] with explicit [ConfigLoadMode]. */
+    @SculkStable
     public fun <T : Any> load(javaClass: Class<T>, mode: ConfigLoadMode): T = load(javaClass).also {
         if (mode == ConfigLoadMode.Strict) {
             val violations = YamlMapper.validate(it)
@@ -102,7 +121,8 @@ constructor(private val dataFolder: File, private val logger: Logger) {
         }
     }
 
-    @SculkInternal
+    /** Java-friendly overload of [reload]. Reloads one config and returns a structured result. */
+    @SculkStable
     @Suppress("UNCHECKED_CAST")
     public fun <T : Any> reload(javaClass: Class<T>): SculkResult<T> {
         val manager =
@@ -119,6 +139,23 @@ constructor(private val dataFolder: File, private val logger: Logger) {
         }
         val builder = ConfigMigrationBuilder().apply(block)
         migrationSteps[javaClass] = builder.steps.sortedBy { it.from }
+    }
+
+    /**
+     * Java-friendly overload of [migrations]. Registers versioned migrations for [javaClass]
+     * before [load] is called.
+     */
+    @SculkStable
+    public fun <T : Any> migrations(javaClass: Class<T>, block: Consumer<ConfigMigrationBuilder>) {
+        migrations(javaClass) { block.accept(this) }
+    }
+
+    /**
+     * Java-friendly overload of [onReload]. Runs [callback] after [javaClass]'s config is reloaded.
+     */
+    @SculkStable
+    public fun <T : Any> onReload(javaClass: Class<T>, callback: Runnable) {
+        onReload(javaClass) { callback.run() }
     }
 
     @SculkInternal
@@ -138,6 +175,7 @@ constructor(private val dataFolder: File, private val logger: Logger) {
          * @param dataFolder The plugin's data folder (e.g. `plugin.dataFolder`).
          * @param logger The plugin's logger for validation warnings.
          */
+        @JvmStatic
         @SculkStable
         public fun create(dataFolder: File, logger: Logger): SculkConfig = SculkConfig(dataFolder, logger)
     }

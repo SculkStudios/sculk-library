@@ -37,6 +37,19 @@ public class GuiState {
     @JvmName("getTyped")
     public inline fun <reified T> get(key: String): T? = this[key] as? T
 
+    /**
+     * Java-friendly typed getter. Returns the value for [key] cast to [type], or null.
+     *
+     * ```java
+     * String category = session.getState().get("category", String.class);
+     * ```
+     */
+    @SculkStable
+    public fun <T> get(key: String, type: Class<T>): T? {
+        val value = backing[key] ?: return null
+        return if (type.isInstance(value)) type.cast(value) else null
+    }
+
     /** Stores [value] under [key]. */
     public operator fun set(key: String, value: Any?) {
         backing[key] = value

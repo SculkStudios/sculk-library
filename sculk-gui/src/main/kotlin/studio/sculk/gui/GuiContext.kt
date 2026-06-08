@@ -35,6 +35,7 @@ constructor(
     public fun reply(message: String): Unit = player.reply(message)
 
     /** Sends a title to the player. */
+    @JvmOverloads
     public fun title(title: String, subtitle: String = "", fadeIn: Int = 10, stay: Int = 70, fadeOut: Int = 20) {
         player.title(title, subtitle, fadeIn, stay, fadeOut)
     }

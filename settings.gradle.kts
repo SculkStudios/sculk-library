@@ -44,6 +44,7 @@ include(
 // Examples (not published)
 include(
     ":examples:basic-plugin",
+    ":examples:java-basic-plugin",
     ":examples:commands-showcase",
     ":examples:gui-showcase",
     ":examples:config-showcase",

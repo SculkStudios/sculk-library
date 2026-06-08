@@ -1,0 +1,240 @@
+---
+title: Java Guide
+description: Build a Sculk Studio plugin entirely in idiomatic Java — first-class, no Kotlin required.
+---
+
+Sculk Studio is Kotlin-first, but as of **4.5.0** every stable API is equally usable from Java. There
+are no parallel `Java*Builder` classes — you call the *same* API the Kotlin docs show, using Java
+lambdas (`Consumer`, `Function`, `Predicate`, `Runnable`) instead of Kotlin DSL blocks. Companion
+factories are `@JvmStatic`, default arguments are `@JvmOverloads`, and `reified` APIs have `Class<T>`
+overloads.
+
+A complete, compile-tested reference plugin lives at
+[`examples/java-basic-plugin`](https://github.com/SculkStudios/sculk-library/tree/main/examples/java-basic-plugin).
+
+## Dependency setup
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+<TabItem label="Gradle (Kotlin DSL)">
+
+```kotlin
+repositories {
+    maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://jitpack.io")
+}
+
+dependencies {
+    // One line pulls the whole DSL; or pick individual modules with the BOM.
+    implementation("com.github.SculkStudios:sculk-library:4.5.0")
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+```
+
+</TabItem>
+<TabItem label="Maven">
+
+```xml
+<dependency>
+  <groupId>com.github.SculkStudios</groupId>
+  <artifactId>sculk-library</artifactId>
+  <version>4.5.0</version>
+</dependency>
+```
+
+</TabItem>
+</Tabs>
+
+## Minimal plugin
+
+Extend `SculkPlugin` and pass a `Consumer<SculkPlatformBuilder>` to enable optional systems. Commands,
+events, the scheduler, and tasks are always available.
+
+```java
+package com.example;
+
+import org.bukkit.entity.Player;
+import studio.sculk.command.SculkCommands;
+import studio.sculk.platform.SculkPlugin;
+
+public final class MyPlugin extends SculkPlugin {
+
+    public MyPlugin() {
+        super(builder -> {
+            builder.gui();
+            builder.config();
+        });
+    }
+
+    @Override
+    protected void setup() {
+        getSculk().getCommands().register(
+            SculkCommands.command("hello", cmd -> {
+                cmd.setPermission("example.hello");
+                cmd.player(ctx -> {
+                    Player player = ctx.getPlayer();
+                    ctx.reply("<green>Hello, " + player.getName() + "!");
+                });
+            })
+        );
+    }
+}
+```
+
+```yaml
+# src/main/resources/paper-plugin.yml
+name: MyPlugin
+version: '1.0.0'
+main: com.example.MyPlugin
+api-version: '26.1.2'
+```
+
+## Commands
+
+```java
+getSculk().getCommands().register(
+    SculkCommands.command("give", cmd -> {
+        cmd.material("type");                 // typed argument
+        cmd.enum("mode", org.bukkit.GameMode.class);  // Class-based enum arg
+        cmd.player(ctx -> {
+            var type = ctx.argument("type", org.bukkit.Material.class);
+            ctx.getPlayer().getInventory().addItem(studio.sculk.items.SculkItems.item(type));
+            ctx.reply("<green>Given!");
+        });
+    })
+);
+```
+
+## Events
+
+```java
+getSculk().getEvents().listen(
+    org.bukkit.event.player.PlayerJoinEvent.class,
+    event -> event.getPlayer().sendMessage("Welcome!")
+);
+
+// With priority + filter:
+getSculk().getEvents().listen(
+    org.bukkit.event.block.BlockBreakEvent.class,
+    org.bukkit.event.EventPriority.NORMAL, false,
+    e -> e.getPlayer().isOp(),
+    e -> e.getPlayer().sendMessage("You broke " + e.getBlock().getType())
+);
+```
+
+## Tasks (the dispatcher)
+
+`SculkTasks` routes work onto the correct (Folia-aware) thread for you. Java uses `Runnable`/`Consumer`
+overloads — fire-and-forget, returning a `SculkHandle` you can close to cancel.
+
+```java
+var handle = getSculk().getTasks().repeating(20L, () ->
+    getServer().broadcast(net.kyori.adventure.text.Component.text("tick"))
+);
+// later: handle.close();
+
+getSculk().getTasks().delayed(100L, () -> getLogger().info("ran after 5s"));
+getSculk().getTasks().cron("0 3 * * *", () -> runNightlyBackup());
+```
+
+## GUIs
+
+```java
+studio.sculk.gui.SculkGui.gui("<dark_aqua>Menu", menu -> {
+    menu.setSize(27);
+    menu.item(13, slot -> {
+        slot.setMaterial(org.bukkit.Material.DIAMOND);
+        slot.setName("<aqua>Click me");
+        slot.onClick(ctx -> {
+            ctx.reply("<green>Clicked!");
+            ctx.close();
+        });
+    });
+}).openFor(player);
+```
+
+## Configuration
+
+```java
+var config = getSculk().getConfig();
+Settings settings = config.load(Settings.class);   // Class-based, no reified needed
+config.onReload(Settings.class, () -> getLogger().info("config reloaded"));
+```
+
+## Results — `SculkResult`
+
+Every fallible Sculk operation returns a `SculkResult<T>`. From Java it has first-class member
+methods — no `SculkResultKt` static calls:
+
+```java
+SculkResult<PlayerData> result = /* ... */;
+
+if (result.isSuccess()) {
+    PlayerData data = result.getOrThrow();   // throws if it was a failure
+}
+
+PlayerData maybe = result.getOrNull();                                  // value or null
+PlayerData data  = Objects.requireNonNullElse(result.getOrNull(), PlayerData.empty());  // with fallback
+
+result.ifSuccess(value -> getLogger().info("ok: " + value))
+      .ifFailure((message, cause) -> getLogger().warning(message));
+```
+
+## Data — repositories
+
+The Kotlin data layer is `suspend`. Java gets `getData().javaRepository(...)`, which exposes every
+operation as a `CompletableFuture` that completes on a **background thread** — hop back to the main
+thread with the scheduler before touching the Paper API:
+
+```java
+JavaRepository<PlayerData, UUID> repo = getSculk().getData()
+    .javaRepository(PlayerData.class, UUID.class);
+
+repo.find(player.getUniqueId()).thenAccept(result -> {
+    PlayerData data = Objects.requireNonNullElse(result.getOrNull(), new PlayerData(player.getUniqueId(), 0));
+    // back to the main thread (Folia-correct) before calling the Paper API:
+    getSculk().getScheduler().runSync(player, () ->
+        player.sendMessage("Coins: " + data.coins())
+    );
+});
+
+repo.save(new PlayerData(player.getUniqueId(), 100));
+```
+
+For raw multi-statement transactions, use the `transactionAsync` bridge:
+
+```java
+getSculk().getData()
+    .transactionAsync(conn -> {
+        try (var ps = conn.prepareStatement("UPDATE accounts SET coins = coins + ? WHERE id = ?")) {
+            ps.setInt(1, 100);
+            ps.setString(2, id.toString());
+            ps.executeUpdate();
+        }
+        return null;
+    })
+    .thenAccept(result -> result.ifFailure((msg, err) -> getLogger().warning(msg)));
+```
+
+Caches and player profiles have the same treatment: `getData().javaCache(cache)` returns a `JavaCache`
+(repository ops plus `findOrCreate`/`findTopBy`/`invalidate`), and `getData().javaPlayerProfiles(repo, factory)`
+returns a `JavaProfileStore` with `getOrCreate`/`save` — all `CompletableFuture`-based.
+
+## Scheduling & threads
+
+`getScheduler()` is fully `Runnable`-based and Folia-aware. Use the entity/location overloads when the
+task touches a specific player or block:
+
+```java
+var scheduler = getSculk().getScheduler();
+scheduler.runSync(player, () -> player.openInventory(menu));        // entity-region thread
+scheduler.runAsync(() -> httpClient.ping());                        // off-thread
+CompletableFuture<Integer> total = scheduler.runAsyncResult(() -> heavyCompute());
+```
+
+See [Java Interop & Limitations](/advanced/java-interop/) for the full mapping table and the one lambda
+gotcha (use block-body lambdas for builder DSLs).

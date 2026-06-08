@@ -1,9 +1,12 @@
+@file:JvmName("SculkSequences")
+
 package studio.sculk.effects
 
 import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkStable
 import studio.sculk.scheduler.SculkScheduler
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Consumer
 
 /**
  * A sequential series of animation steps with configurable delays between them.
@@ -80,6 +83,12 @@ public class SequenceBuilder {
         entries += SequenceEntry.Step(action)
     }
 
+    /** Java-friendly overload of [step] taking a [Runnable]. */
+    @SculkStable
+    public fun step(action: Runnable) {
+        entries += SequenceEntry.Step(action::run)
+    }
+
     /**
      * Advances the cursor by [ticks] before the next step.
      */
@@ -98,3 +107,7 @@ public class SequenceBuilder {
  */
 @SculkStable
 public fun sequence(block: SequenceBuilder.() -> Unit): AnimationSequence = SequenceBuilder().apply(block).build()
+
+/** Java-friendly overload of [sequence] taking a [Consumer]. */
+@SculkStable
+public fun sequence(block: Consumer<SequenceBuilder>): AnimationSequence = SequenceBuilder().also { block.accept(it) }.build()
