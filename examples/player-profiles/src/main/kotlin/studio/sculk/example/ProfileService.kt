@@ -55,6 +55,7 @@ public class ProfileService(
                 loaded[uuid] = profile
                 SculkResult.success(profile)
             }
+
             is SculkResult.Failure -> saved
         }
 

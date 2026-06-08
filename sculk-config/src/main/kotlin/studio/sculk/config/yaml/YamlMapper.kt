@@ -284,13 +284,18 @@ public object YamlMapper {
 
     private fun toYamlValue(value: Any?): Any? = when (value) {
         null -> null
+
         is List<*> -> value.map { toYamlValue(it) }
+
         is Map<*, *> ->
             value
                 .mapKeys { it.key.toString() }
                 .mapValues { (_, v) -> toYamlValue(v) }
+
         is Enum<*> -> value.name
+
         is UUID -> value.toString()
+
         else -> if (value::class.isData) toMap(value, omitDefaults = true) else value
     }
 
@@ -309,12 +314,14 @@ public object YamlMapper {
                         violations += "${param.name} must be >= ${annotation.value} (was $num)"
                     }
                 }
+
                 is Max -> {
                     val num = (value as? Number)?.toLong()
                     if (num != null && num > annotation.value) {
                         violations += "${param.name} must be <= ${annotation.value} (was $num)"
                     }
                 }
+
                 is NotEmpty -> {
                     if (value is String && value.isBlank()) {
                         violations += "${param.name} must not be empty"

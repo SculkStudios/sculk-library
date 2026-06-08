@@ -29,7 +29,7 @@ dependencies {
 }
 
 ktlint {
-    version = "1.5.0"
+    version = "1.8.0"
     android = false
 }
 

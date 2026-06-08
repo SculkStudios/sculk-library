@@ -28,6 +28,7 @@ public object ConnectionPool {
                 hikari.maximumPoolSize = 1 // SQLite is single-writer
                 hikari.connectionTestQuery = "SELECT 1"
             }
+
             SqlDialect.MYSQL -> {
                 val mysql = config.mysql
                 hikari.driverClassName = "org.mariadb.jdbc.Driver"

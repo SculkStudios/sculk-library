@@ -51,6 +51,7 @@ public class AnimationSequence internal constructor(private val steps: List<Sequ
                         }
                     handles += h
                 }
+
                 is SequenceEntry.Delay -> cursor += entry.ticks
             }
         }

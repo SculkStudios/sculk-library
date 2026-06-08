@@ -93,6 +93,7 @@ public class PlayerProfilesPlugin :
                             sender.reply("<aqua>${result.value.name}</aqua> <gray>joins: <white>${result.value.joins}")
                         }
                     }
+
                     is SculkResult.Failure -> sender.reply("<red>${result.message}")
                 }
             }

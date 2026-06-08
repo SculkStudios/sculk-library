@@ -108,6 +108,7 @@ public class CaffeineCache<T : Any, ID : Any>(
                 cache.put(id, new)
                 SculkResult.success(new)
             }
+
             is SculkResult.Failure -> SculkResult.failure("findOrCreate: failed to persist new entity for id $id", saved.cause)
         }
     }
@@ -115,6 +116,7 @@ public class CaffeineCache<T : Any, ID : Any>(
     override suspend fun <R : Comparable<R>> findTopBy(limit: Int, selector: (T) -> R, descending: Boolean): SculkResult<List<T>> =
         when (val all = delegate.findAll()) {
             is SculkResult.Failure -> SculkResult.failure(all.message, all.cause)
+
             is SculkResult.Success -> {
                 val sorted = if (descending) all.value.sortedByDescending(selector) else all.value.sortedBy(selector)
                 SculkResult.success(sorted.take(limit))
