@@ -11,7 +11,7 @@
     "deploy": "astro build && wrangler deploy"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.39.2",
+    "@astrojs/starlight": "^0.40.0",
     "astro": "^6.3.8",
     "sharp": "^0.35.0"
   },
