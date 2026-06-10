@@ -39,7 +39,7 @@ internal constructor(
     public val configPath: String get() = path
 
     private val file: File get() = File(dataFolder, path)
-    private var current: T = loadOrDefault()
+    private var current: T = initialLoad()
     private val reloadCallbacks: MutableList<() -> Unit> = mutableListOf()
 
     /** Returns the current config value. */
@@ -53,8 +53,8 @@ internal constructor(
     /**
      * Reloads the config from disk.
      *
-     * If the loaded values fail validation, logs errors and keeps the previous
-     * valid config. Fires all registered reload callbacks on success.
+     * If the file is unreadable or the loaded values fail validation, logs errors and keeps
+     * the previous valid config. Fires all registered reload callbacks on success.
      */
     public fun reload() {
         reloadResult()
@@ -62,7 +62,14 @@ internal constructor(
 
     /** Reloads and returns a structured result for command/admin workflows. */
     public fun reloadResult(): SculkResult<T> {
-        val loaded = loadOrDefault()
+        val loaded =
+            runCatching { readFromDisk() }.getOrElse { error ->
+                logger.severe(
+                    "[SculkConfig] Could not read $path (${summarize(error)}). " +
+                        "Keeping the previous values; the file was left untouched.",
+                )
+                return SculkResult.failure("Could not read $path: ${summarize(error)}", error)
+            }
         val violations = YamlMapper.validate(loaded)
         if (violations.isNotEmpty()) {
             violations.forEach { logger.warning("[SculkConfig] Validation error in $path: $it") }
@@ -75,17 +82,35 @@ internal constructor(
         return SculkResult.success(current)
     }
 
-    private fun loadOrDefault(): T {
+    /**
+     * First load at startup. A broken file (YAML syntax error, unreadable disk) must not take
+     * the whole plugin down with a stack trace: log what is wrong, fall back to built-in
+     * defaults, and leave the user's file untouched so nothing they wrote is lost.
+     */
+    private fun initialLoad(): T {
+        val instance =
+            runCatching { readFromDisk() }.getOrElse { error ->
+                logger.severe(
+                    "[SculkConfig] Could not read $path (${summarize(error)}). " +
+                        "Using built-in defaults; the file was left untouched. " +
+                        "Fix the file and reload to apply it.",
+                )
+                return YamlMapper.defaults(klass)
+            }
+        val violations = YamlMapper.validate(instance)
+        violations.forEach { logger.warning("[SculkConfig] Validation error in $path: $it") }
+        return instance
+    }
+
+    private fun readFromDisk(): T {
         applyMigrations()
         checkVersion()
         YamlMapper.writeDefaults(file, klass)
-        val instance = YamlMapper.load(file, klass)
-        val violations = YamlMapper.validate(instance)
-        if (violations.isNotEmpty()) {
-            violations.forEach { logger.warning("[SculkConfig] Validation error in $path: $it") }
-        }
-        return instance
+        return YamlMapper.load(file, klass) { message -> logger.warning("[SculkConfig] $path: $message") }
     }
+
+    /** SnakeYAML errors are long and multi-line; collapse to one readable line. */
+    private fun summarize(error: Throwable): String = (error.message ?: error.toString()).replace(Regex("\\s+"), " ").take(200)
 
     private fun applyMigrations() {
         if (!file.exists() || migrations.isEmpty()) return

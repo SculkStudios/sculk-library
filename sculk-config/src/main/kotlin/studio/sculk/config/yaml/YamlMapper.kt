@@ -20,7 +20,12 @@ import kotlin.reflect.full.primaryConstructor
  *
  * Supports: String, Int, Long, Double, Float, Boolean, List<T>, Map<String, V>,
  * Enum, UUID, and nested data classes.
- * Keys are kebab-case in YAML, camelCase in Kotlin.
+ *
+ * Keys are kebab-case in YAML, camelCase in Kotlin. Reading accepts BOTH forms, so a
+ * hand-written camelCase file still maps instead of silently falling back to defaults.
+ * Unrecognised keys and unusable values are reported through the optional `onWarning`
+ * callback (with a did-you-mean suggestion where possible) — a config edit should never
+ * just do nothing without telling the operator why.
  */
 @SculkInternal
 public object YamlMapper {
@@ -39,10 +44,14 @@ public object YamlMapper {
         Yaml(opts)
     }
 
-    /** Reads [file] and maps it to an instance of [klass]. Missing keys use constructor defaults. */
-    public fun <T : Any> load(file: File, klass: KClass<T>): T {
+    /**
+     * Reads [file] and maps it to an instance of [klass]. Missing keys use constructor defaults.
+     * Ignored keys and rejected values are reported through [onWarning].
+     */
+    @JvmOverloads
+    public fun <T : Any> load(file: File, klass: KClass<T>, onWarning: (String) -> Unit = {}): T {
         val raw = loadRaw(file)
-        return fromMap(raw, klass)
+        return fromMap(raw, klass, path = "", onWarning = onWarning)
     }
 
     /** Writes [instance] to [file] as YAML, creating parent directories if needed. */
@@ -69,6 +78,9 @@ public object YamlMapper {
         yaml.dump(values, writer)
         file.writeText(writer.toString())
     }
+
+    /** Returns a [klass] instance built purely from constructor defaults. */
+    public fun <T : Any> defaults(klass: KClass<T>): T = createDefault(klass)
 
     /** Writes defaults for [klass] to [file] only for keys not already present. */
     public fun <T : Any> writeDefaults(file: File, klass: KClass<T>) {
@@ -185,64 +197,153 @@ public object YamlMapper {
     // Internals
     // ---------------------------------------------------------------------------
 
-    private fun <T : Any> fromMap(map: Map<String, Any?>, klass: KClass<T>): T {
+    private fun <T : Any> fromMap(map: Map<String, Any?>, klass: KClass<T>, path: String = "", onWarning: (String) -> Unit = {}): T {
         val constructor =
             requireNotNull(klass.primaryConstructor) {
                 "Config class ${klass.simpleName} must have a primary constructor."
             }
         val args = mutableMapOf<KParameter, Any?>()
+        val knownKeys = mutableSetOf("config-version")
         for (param in constructor.parameters) {
-            val key = camelToKebab(param.name!!)
-            val raw = map[key]
+            val name = param.name!!
+            val kebab = camelToKebab(name)
+            knownKeys += kebab
+            knownKeys += name
+            // Canonical files are kebab-case, but a hand-written camelCase key must still map —
+            // silently falling back to the default is how config edits "do nothing".
+            val raw = map[kebab] ?: map[name]
             if (raw != null) {
-                args[param] = coerce(raw, param.type)
+                val coerced = coerce(raw, param.type, keyPath(path, kebab), onWarning)
+                when {
+                    coerced == null -> Unit
+
+                    // coerce already warned; the default applies.
+
+                    isAssignable(coerced, param.type) -> args[param] = coerced
+
+                    else -> {
+                        onWarning(
+                            "${keyPath(path, kebab)}: '$raw' is not a valid ${typeName(param.type)}; using the default value.",
+                        )
+                    }
+                }
             }
             // Missing keys keep the constructor default — Kotlin handles this automatically.
+        }
+        for (key in map.keys - knownKeys) {
+            val suggestion =
+                knownKeys
+                    .minus("config-version")
+                    .filter { it.contains('-') || !it.any(Char::isUpperCase) } // suggest the canonical kebab form
+                    .minByOrNull { levenshtein(key, it) }
+                    ?.takeIf { levenshtein(key, it) <= 2 }
+            onWarning(
+                buildString {
+                    append("'${keyPath(path, key)}' is not a recognised option and was ignored")
+                    if (suggestion != null) append(" — did you mean '$suggestion'?") else append(".")
+                },
+            )
         }
         return constructor.callBy(args)
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun coerce(value: Any?, type: KType): Any? {
+    private fun coerce(value: Any?, type: KType, path: String, onWarning: (String) -> Unit): Any? {
         if (value == null) return null
 
-        // List<T>
+        // List<T> — entries that fail to coerce were already warned about and are skipped, so
+        // one broken entry can't take the whole config (or the plugin) down with it.
         if (type.classifier == List::class) {
             val elementType = type.arguments.firstOrNull()?.type ?: return value
-            return (value as? List<*>)?.map { coerce(it, elementType) } ?: emptyList<Any?>()
+            val list = value as? List<*> ?: return emptyList<Any?>()
+            return list.mapIndexedNotNull { index, item -> coerce(item, elementType, "$path[$index]", onWarning) }
         }
 
         // Map<String, V>
         if (type.classifier == Map::class) {
             val valueType = type.arguments.getOrNull(1)?.type ?: return value
-            return (value as? Map<*, *>)?.mapValues { (_, v) -> coerce(v, valueType) } ?: emptyMap<String, Any?>()
+            return (value as? Map<*, *>)
+                ?.mapValues { (key, v) -> coerce(v, valueType, "$path.$key", onWarning) }
+                ?: emptyMap<String, Any?>()
         }
 
         val klass = type.classifier as? KClass<*> ?: return value
 
         // UUID
         if (klass == UUID::class) {
-            return runCatching { UUID.fromString(value.toString()) }.getOrNull() ?: value
+            return runCatching { UUID.fromString(value.toString()) }.getOrNull()
+                ?: rejected(path, "'$value' is not a valid UUID", onWarning)
         }
 
-        // Enum
+        // Enum — an unknown constant must not crash the load with a reflection error; report the
+        // valid options and let the default apply.
         if (klass.java.isEnum) {
-            @Suppress("UNCHECKED_CAST")
             val enumClass = klass.java as Class<out Enum<*>>
-            return enumClass.enumConstants
-                .firstOrNull { it.name.equals(value.toString(), ignoreCase = true) }
-                ?: value
+            return enumClass.enumConstants.firstOrNull { it.name.equals(value.toString(), ignoreCase = true) }
+                ?: rejected(
+                    path,
+                    "'$value' is not one of ${enumClass.enumConstants.joinToString(", ") { it.name }}",
+                    onWarning,
+                )
         }
 
         return when (klass) {
-            Int::class -> (value as? Number)?.toInt() ?: value
-            Long::class -> (value as? Number)?.toLong() ?: value
-            Double::class -> (value as? Number)?.toDouble() ?: value
-            Float::class -> (value as? Number)?.toFloat() ?: value
-            Boolean::class -> value
+            // Numbers and booleans also accept quoted strings ("5", "true") — SnakeYAML keeps
+            // quoted scalars as strings, and that distinction shouldn't break anyone's config.
+            Int::class -> (value as? Number)?.toInt() ?: value.toString().trim().toIntOrNull()
+                ?: rejected(path, "'$value' is not a whole number", onWarning)
+
+            Long::class -> (value as? Number)?.toLong() ?: value.toString().trim().toLongOrNull()
+                ?: rejected(path, "'$value' is not a whole number", onWarning)
+
+            Double::class -> (value as? Number)?.toDouble() ?: value.toString().trim().toDoubleOrNull()
+                ?: rejected(path, "'$value' is not a number", onWarning)
+
+            Float::class -> (value as? Number)?.toFloat() ?: value.toString().trim().toFloatOrNull()
+                ?: rejected(path, "'$value' is not a number", onWarning)
+
+            Boolean::class -> value as? Boolean ?: value.toString().trim().lowercase().toBooleanStrictOrNull()
+                ?: rejected(path, "'$value' is not true/false", onWarning)
+
             String::class -> substituteEnv(value.toString())
-            else -> if (value is Map<*, *>) fromMap(value as Map<String, Any?>, klass) else value
+
+            else -> when {
+                value is Map<*, *> -> fromMap(value as Map<String, Any?>, klass, path, onWarning)
+                klass.isData -> rejected(path, "expected a section with keys, got '$value'", onWarning)
+                else -> value
+            }
         }
+    }
+
+    /** Reports an unusable value and returns null so the constructor default applies instead. */
+    private fun rejected(path: String, problem: String, onWarning: (String) -> Unit): Any? {
+        onWarning("$path: $problem; using the default value.")
+        return null
+    }
+
+    private fun isAssignable(value: Any, type: KType): Boolean {
+        val klass = type.classifier as? KClass<*> ?: return true
+        return klass.isInstance(value)
+    }
+
+    private fun typeName(type: KType): String = (type.classifier as? KClass<*>)?.simpleName ?: type.toString()
+
+    private fun keyPath(path: String, key: String): String = if (path.isEmpty()) key else "$path.$key"
+
+    /** Plain Levenshtein distance, used only for short config-key did-you-mean suggestions. */
+    private fun levenshtein(a: String, b: String): Int {
+        if (a == b) return 0
+        val previous = IntArray(b.length + 1) { it }
+        val currentRow = IntArray(b.length + 1)
+        for (i in 1..a.length) {
+            currentRow[0] = i
+            for (j in 1..b.length) {
+                val substitutionCost = if (a[i - 1] == b[j - 1]) 0 else 1
+                currentRow[j] = minOf(currentRow[j - 1] + 1, previous[j] + 1, previous[j - 1] + substitutionCost)
+            }
+            currentRow.copyInto(previous)
+        }
+        return previous[b.length]
     }
 
     private val envPattern = Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?}""")
