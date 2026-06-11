@@ -1,7 +1,7 @@
 name: SculkPacketsShowcase
 version: 3.0.0
 main: studio.sculk.example.PacketsPlugin
-api-version: '26.1.2'
+api-version: '1.21.11'
 author: Sculk Studios
 description: Packet backend showcase for Sculk Studio.
 softdepend:
