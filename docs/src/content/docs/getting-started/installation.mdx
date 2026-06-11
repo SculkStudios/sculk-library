@@ -36,7 +36,7 @@ plugins {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
 
     // The only dependency you need — re-exports the whole DSL.
     implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
@@ -70,7 +70,7 @@ plugins {
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:26.1.2.build.+'
+    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
     implementation 'com.github.SculkStudios.sculk-library:sculk-platform:4.0.0'
 }
 
@@ -96,7 +96,7 @@ No special entries are needed in your plugin descriptor for normal Sculk modules
 name: MyPlugin
 version: 1.0.0
 main: com.example.myplugin.MyPlugin
-api-version: '26.1.2'
+api-version: '1.21.11'
 ```
 
 ## Jar size & `minimize()`
@@ -166,8 +166,8 @@ softdepend:
 
 | Requirement | Minimum version |
 | --- | --- |
-| Paper | 26.1.2+ (26.1.2.build.+) |
-| Java | 25 |
+| Paper | 1.21.11+ (1.21.11-R0.1-SNAPSHOT) |
+| Java | 21+ |
 | Kotlin | 2.x (if writing Kotlin plugins) |
 
 ## Verifying the install

@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Sculk Studio. This document cover
 
 - JDK 21+
 - Gradle (use the wrapper — `./gradlew`)
-- A Paper 26.1.2 server for integration testing
+- A Paper 1.21.11 server for integration testing
 
 ## Project Structure
 
