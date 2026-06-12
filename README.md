@@ -40,7 +40,7 @@ dependencyResolutionManagement {
 ```kotlin
 // build.gradle.kts
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     // One dependency — sculk-platform re-exports the whole DSL.
     implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
 }
@@ -148,8 +148,8 @@ For existing plugins, start with the migration guide:
 
 ## Requirements
 
-- Paper 26.1.2+
-- Java 25+
+- Paper 1.21.11+
+- Java 21+
 - Kotlin JVM
 
 ## License

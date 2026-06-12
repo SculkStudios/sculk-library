@@ -3,7 +3,7 @@ kotlin            = "2.4.0"
 coroutines        = "1.11.0"
 serialization     = "1.11.0"
 lettuce           = "7.6.0.RELEASE"
-paper             = "26.1.2.build.+"
+paper             = "1.21.11-R0.1-SNAPSHOT"
 adventure         = "5.1.1"
 minimessage       = "5.1.1"
 hikari            = "7.0.2"
@@ -53,7 +53,7 @@ snakeyaml         = { module = "org.yaml:snakeyaml",                   version.r
 # Test
 junit-jupiter     = { module = "org.junit.jupiter:junit-jupiter",       version.ref = "junit" }
 mockito-kotlin    = { module = "org.mockito.kotlin:mockito-kotlin",     version.ref = "mockito-kotlin" }
-mockbukkit        = { module = "org.mockbukkit.mockbukkit:mockbukkit-v26.1.2", version.ref = "mockbukkit" }
+mockbukkit        = { module = "org.mockbukkit.mockbukkit:mockbukkit-v1.21", version.ref = "mockbukkit" }
 
 # Packet backends (optional adapters only)
 packetevents-spigot = { module = "com.github.retrooper:packetevents-spigot", version.ref = "packetevents" }

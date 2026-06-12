@@ -136,6 +136,6 @@ with a first-class Java surface so Java plugin authors get the same ergonomics a
 - Every public Kotlin DSL has a paired Java builder in a `*.java` sub-package
 
 ### Requirements
-- Paper 26.1.2+
+- Paper 1.21.11+
 - Java 21+
 - Kotlin 2.x (for Kotlin plugins)

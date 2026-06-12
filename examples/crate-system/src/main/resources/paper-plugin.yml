@@ -2,7 +2,7 @@ name: CrateSystem
 version: '${version}'
 main: studio.sculk.example.CrateSystemPlugin
 description: Sculk Studio crate system recipe example
-api-version: '26.1.2'
+api-version: '1.21.11'
 authors:
   - SculkStudios
 folia-supported: true

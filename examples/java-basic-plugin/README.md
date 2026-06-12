@@ -22,4 +22,4 @@ so any regression that breaks Java ergonomics fails CI.
 
 ## Supported version
 
-Paper 26.1.2+ (Java 25). Build with `./gradlew :examples:java-basic-plugin:shadowJar`.
+Paper 1.21.11+ (Java 21). Build with `./gradlew :examples:java-basic-plugin:shadowJar`.

@@ -2,7 +2,7 @@ name: KitsPlugin
 version: '${version}'
 main: studio.sculk.example.KitsPlugin
 description: Sculk Studio kits recipe example
-api-version: '26.1.2'
+api-version: '1.21.11'
 authors:
   - SculkStudios
 folia-supported: true
