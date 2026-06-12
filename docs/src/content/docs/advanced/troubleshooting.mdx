@@ -17,10 +17,10 @@ repositories {
 
 ## Paper Or Java Version Errors
 
-Sculk Studio targets Paper 26.1.2+ and Java 25.
+Sculk Studio targets Paper 1.21.11+ and Java 21.
 
 ```kotlin
-compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
 ```
 
 Example `paper-plugin.yml`:
@@ -29,7 +29,7 @@ Example `paper-plugin.yml`:
 name: MyPlugin
 version: 1.0.0
 main: com.example.myplugin.MyPlugin
-api-version: '26.1.2'
+api-version: '1.21.11'
 ```
 
 ## Library Not Found At Runtime
@@ -66,7 +66,7 @@ Java records can use the normal annotation form on record components.
 Check:
 
 - Spelling.
-- Whether the key exists in Paper 26.1.2.
+- Whether the key exists in Paper 1.21.11.
 - Whether you are using a modern Minecraft key, not an old XSeries alias.
 - Whether a fallback should be configured.
 

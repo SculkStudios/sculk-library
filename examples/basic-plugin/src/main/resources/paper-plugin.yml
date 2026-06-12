@@ -2,7 +2,7 @@ name: BasicPlugin
 version: '${version}'
 main: studio.sculk.example.BasicPlugin
 description: Sculk Studio basic plugin — vertical slice example
-api-version: '26.1.2'
+api-version: '1.21.11'
 authors:
   - SculkStudios
 folia-supported: true

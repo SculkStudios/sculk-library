@@ -1,7 +1,7 @@
 # Sculk Studio — Contributor & AI Guide
 
 Sculk Studio is a **Kotlin-first Paper (Minecraft) plugin framework**: coroutine-native, modular,
-Adventure-only. Target: Paper 26.1.2+, Java 25, Kotlin 2.x. Version 4.0 (pre-public).
+Adventure-only. Target: Paper 1.21.11+, Java 21, Kotlin 2.x. Version 4.0 (pre-public).
 
 ## Module map
 
