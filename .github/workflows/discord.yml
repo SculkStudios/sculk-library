@@ -1,21 +1,17 @@
-name: Discord Notifications
+name: DaisyTracker
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+      - master
 
 jobs:
-  build:
+  notify:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
     steps:
-    
-      - name: Push via Gitracker
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        uses: snowypy/Gitracker@master
+      - uses: DaisyCatTs/DaisyTracker@v2
+        with:
+          discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
