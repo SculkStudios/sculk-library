@@ -36,6 +36,7 @@ include(
     ":sculk-packets-api",
     ":sculk-packets-packetevents",
     ":sculk-packets-protocollib",
+    ":sculk-holograms",
     ":sculk-content",
     ":sculk-text",
     ":sculk-tasks",
