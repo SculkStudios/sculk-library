@@ -23,6 +23,7 @@ dependencies {
         api(project(":sculk-packets-api"))
         api(project(":sculk-packets-packetevents"))
         api(project(":sculk-packets-protocollib"))
+        api(project(":sculk-holograms"))
         api(project(":sculk-content"))
         api(project(":sculk-platform"))
     }
