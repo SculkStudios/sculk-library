@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: DaisyCatTs/DaisyTracker@v2
+      - name: Push via DaisyTracker
+        uses: DaisyCatTs/DaisyTracker@master
         with:
           discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
