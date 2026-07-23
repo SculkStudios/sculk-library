@@ -54,7 +54,7 @@ class SculkPacketServicesTest {
     }
 
     @Test
-    fun `missing backend returns failure with install guidance`() {
+    fun `no adapter at all points at the plugin's dependencies`() {
         val result =
             SculkPacketServices.create(
                 plugin = mock(),
@@ -64,7 +64,23 @@ class SculkPacketServicesTest {
             )
 
         assertTrue(result is SculkResult.Failure)
-        assertTrue((result as SculkResult.Failure).message.contains("packet adapter module"))
+        assertTrue((result as SculkResult.Failure).message.contains("sculk-packets-packetevents"))
+    }
+
+    @Test
+    fun `an adapter with no server plugin points at the server instead`() {
+        // The two failures need different fixes, so they must not read the same.
+        val result =
+            SculkPacketServices.create(
+                plugin = mock(),
+                scheduler = ImmediateScheduler(),
+                config = PacketServiceConfig(),
+                providers = listOf(TestProvider(PacketBackend.PacketEvents, available = false)),
+            )
+
+        assertTrue(result is SculkResult.Failure)
+        val message = (result as SculkResult.Failure).message
+        assertTrue(message.contains("Install PacketEvents or ProtocolLib on the server"), message)
     }
 
     @Test

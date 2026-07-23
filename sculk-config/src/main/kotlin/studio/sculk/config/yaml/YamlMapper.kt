@@ -95,12 +95,7 @@ public object YamlMapper {
         val merged = defaults + existing
         file.parentFile?.mkdirs()
 
-        val hasComments =
-            klass.primaryConstructor
-                ?.parameters
-                ?.any { it.annotations.any { a -> a is Comment } } == true
-
-        if (hasComments) {
+        if (hasComments(klass)) {
             file.writeText(buildCommentedYaml(klass, merged))
         } else {
             val writer = StringWriter()
@@ -109,22 +104,38 @@ public object YamlMapper {
         }
     }
 
-    /**
-     * Builds a YAML string that preserves parameter order from the primary constructor
-     * and emits `# comment` lines above any parameter annotated with [@Comment][Comment].
-     *
-     * For each parameter:
-     * - If annotated with [@Comment][Comment], every line of the comment text is written as `# line`
-     * - The key-value pair is serialised using SnakeYAML so all types (nested data classes,
-     *   lists, maps) are handled correctly
-     * - A blank line is inserted after commented entries for readability
-     */
-    private fun <T : Any> buildCommentedYaml(klass: KClass<T>, mergedMap: Map<String, Any?>): String {
-        val constructor =
-            klass.primaryConstructor
-                ?: return yaml.dump(mergedMap)
+    /** True if [klass] or any nested section carries a [Comment]. Guards against cycles. */
+    private fun hasComments(klass: KClass<*>, seen: MutableSet<KClass<*>> = mutableSetOf()): Boolean {
+        if (!seen.add(klass)) return false
+        val parameters = klass.primaryConstructor?.parameters ?: return false
+        return parameters.any { param ->
+            param.annotations.any { it is Comment } ||
+                (param.type.classifier as? KClass<*>)?.takeIf { it.isData }?.let { hasComments(it, seen) } == true
+        }
+    }
 
-        val sb = StringBuilder()
+    /**
+     * Builds a YAML string that preserves parameter order from the primary constructor and emits
+     * `# comment` lines above any parameter annotated with [@Comment][Comment], at every depth.
+     */
+    private fun <T : Any> buildCommentedYaml(klass: KClass<T>, mergedMap: Map<String, Any?>): String =
+        buildString { appendCommented(this, klass, mergedMap, depth = 0) }
+
+    /**
+     * Writes one config section, recursing into nested data classes so their [Comment]s survive
+     * too — a `protection:` or `scan:` block is exactly where an operator wants the explanation.
+     *
+     * Anything that is not a nested data class (lists, maps, scalars) is handed to SnakeYAML and
+     * re-indented, so every type stays correctly serialised.
+     */
+    private fun appendCommented(sb: StringBuilder, klass: KClass<*>, values: Map<String, Any?>, depth: Int) {
+        val constructor = klass.primaryConstructor
+        if (constructor == null) {
+            sb.append(indentBlock(yaml.dump(values), depth))
+            return
+        }
+
+        val indent = "  ".repeat(depth)
         for (param in constructor.parameters) {
             val key = camelToKebab(param.name!!)
             val comment =
@@ -132,24 +143,32 @@ public object YamlMapper {
                     .filterIsInstance<Comment>()
                     .firstOrNull()
                     ?.value
-            val value = mergedMap[key]
+            val value = values[key]
 
-            if (comment != null) {
-                comment.lines().forEach { line -> sb.appendLine("# $line") }
+            comment?.lines()?.forEach { line -> sb.appendLine("$indent# $line") }
+
+            val nested = param.type.classifier as? KClass<*>
+            @Suppress("UNCHECKED_CAST")
+            if (nested != null && nested.isData && value is Map<*, *>) {
+                sb.appendLine("$indent$key:")
+                appendCommented(sb, nested, value as Map<String, Any?>, depth + 1)
+            } else {
+                val writer = StringWriter()
+                yaml.dump(mapOf(key to value), writer)
+                // SnakeYAML may prepend "--- \n" — strip it.
+                sb.appendLine(indentBlock(writer.toString().removePrefix("---\n").trimEnd(), depth))
             }
 
-            // Serialise just this key-value pair via SnakeYAML so we handle all types correctly.
-            val entryYaml =
-                buildString {
-                    val writer = StringWriter()
-                    yaml.dump(mapOf(key to value), writer)
-                    // SnakeYAML may prepend "--- \n" — strip it.
-                    append(writer.toString().removePrefix("---\n").trimEnd())
-                }
-            sb.appendLine(entryYaml)
-            if (comment != null) sb.appendLine() // blank line after commented blocks for readability
+            // Blank line after commented blocks for readability, but not inside a
+            // nested section where it would split the block apart.
+            if (comment != null && depth == 0) sb.appendLine()
         }
-        return sb.toString()
+    }
+
+    private fun indentBlock(text: String, depth: Int): String {
+        if (depth == 0) return text
+        val indent = "  ".repeat(depth)
+        return text.lines().joinToString("\n") { if (it.isEmpty()) it else "$indent$it" }
     }
 
     /** Validates an [instance] against its field annotations. Returns a list of violation messages. */

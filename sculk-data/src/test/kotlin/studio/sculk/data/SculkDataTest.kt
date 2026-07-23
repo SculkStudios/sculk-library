@@ -17,6 +17,16 @@ import java.time.Duration
 @Table("players")
 private data class TestPlayer(@PrimaryKey val id: Int, val name: String, val coins: Long)
 
+@Table("schema_profiles")
+private data class MigratedProfile(
+    @PrimaryKey val uuid: String,
+    val name: String,
+    val totalEarned: Double = 0.0,
+    val level: Int = 1,
+    val xp: Double = 0.0,
+    val prestige: Int = 0,
+)
+
 @OptIn(SculkInternal::class)
 class SculkDataTest {
     private lateinit var sculkData: SculkData
@@ -90,6 +100,35 @@ class SculkDataTest {
                 ).value
 
         assertEquals(listOf(2, 3), rich.map { it.id })
+    }
+
+    @Test
+    fun `repository adds newly mapped columns to existing tables`() = runBlocking {
+        sculkData.transaction { conn ->
+            conn.createStatement().use { stmt ->
+                stmt.execute(
+                    "CREATE TABLE schema_profiles (" +
+                        "uuid VARCHAR(36) PRIMARY KEY, " +
+                        "name TEXT, " +
+                        "total_earned REAL" +
+                        ")",
+                )
+                stmt.execute("INSERT INTO schema_profiles (uuid, name, total_earned) VALUES ('abc', 'Daisy', 25.0)")
+            }
+        }
+
+        val repo = sculkData.repository<MigratedProfile, String>()
+        val loaded = (repo.find("abc") as SculkResult.Success).value
+
+        assertEquals(1, loaded?.level)
+        assertEquals(0.0, loaded?.xp)
+        assertEquals(0, loaded?.prestige)
+
+        repo.save(MigratedProfile("abc", "Daisy", totalEarned = 30.0, level = 7, xp = 80.0, prestige = 2))
+        val saved = (repo.find("abc") as SculkResult.Success).value
+        assertEquals(7, saved?.level)
+        assertEquals(80.0, saved?.xp)
+        assertEquals(2, saved?.prestige)
     }
 
     @Test

@@ -22,12 +22,17 @@ private val parsedTemplateCache: ConcurrentHashMap<String, net.kyori.adventure.t
  * are not supported and will be treated as plain text.
  */
 @SculkStable
-public fun parseMessage(text: String): net.kyori.adventure.text.Component = miniMessage.deserialize(text)
+public fun parseMessage(text: String): net.kyori.adventure.text.Component = SculkTextStyle.apply(miniMessage.deserialize(text))
 
-/** Parses and caches a static MiniMessage string. */
+/**
+ * Parses and caches a static MiniMessage string.
+ *
+ * The cache is keyed on the text alone, so changing [SculkTextStyle] afterwards does not restyle
+ * entries already cached — set your defaults during startup, before anything is rendered.
+ */
 @SculkStable
 public fun cachedMessage(text: String): net.kyori.adventure.text.Component =
-    parsedTemplateCache.computeIfAbsent(text, miniMessage::deserialize)
+    parsedTemplateCache.computeIfAbsent(text) { SculkTextStyle.apply(miniMessage.deserialize(it)) }
 
 /**
  * Sends a MiniMessage-formatted [message] to this [Audience].
