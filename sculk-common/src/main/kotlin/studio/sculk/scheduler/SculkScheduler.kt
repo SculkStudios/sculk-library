@@ -106,6 +106,55 @@ public interface SculkScheduler {
         runSyncRepeating(delayTicks, periodTicks, task)
 
     // -------------------------------------------------------------------------
+    // Immediate sync — run inline when the caller already owns the thread
+    // -------------------------------------------------------------------------
+
+    /**
+     * True when the current thread already owns [entity], so its API may be touched directly.
+     *
+     * Implementations that cannot tell return false, which only ever costs a scheduled task.
+     */
+    public fun ownsThread(entity: Entity): Boolean = false
+
+    /** True when the current thread already owns the region containing [location]. */
+    public fun ownsThread(location: Location): Boolean = false
+
+    /** True when the current thread is the main/global-region thread. */
+    public fun ownsGlobalThread(): Boolean = false
+
+    /**
+     * Runs [task] right now if the caller already owns [entity]'s thread, otherwise schedules it
+     * like [runSync].
+     *
+     * For work that is *already* on the right thread and wants to stay in the same tick — pushing
+     * per-player packets from a tick loop, for instance, where a scheduled task per packet would
+     * mean thousands of tasks and a tick of latency for no benefit. The returned handle cancels
+     * nothing when the task ran inline.
+     */
+    public fun runNow(entity: Entity, task: Runnable): SculkHandle = if (ownsThread(entity)) {
+        task.run()
+        SculkHandle {}
+    } else {
+        runSync(entity, task)
+    }
+
+    /** Runs [task] right now if the caller owns [location]'s region, otherwise schedules it. */
+    public fun runNow(location: Location, task: Runnable): SculkHandle = if (ownsThread(location)) {
+        task.run()
+        SculkHandle {}
+    } else {
+        runSync(location, task)
+    }
+
+    /** Runs [task] right now if the caller is on the main/global-region thread, otherwise schedules it. */
+    public fun runNow(task: Runnable): SculkHandle = if (ownsGlobalThread()) {
+        task.run()
+        SculkHandle {}
+    } else {
+        runSync(task)
+    }
+
+    // -------------------------------------------------------------------------
     // Async — off the main/region thread entirely
     // -------------------------------------------------------------------------
 
