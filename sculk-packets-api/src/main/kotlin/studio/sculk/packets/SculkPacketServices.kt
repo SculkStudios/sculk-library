@@ -12,8 +12,30 @@ public object SculkPacketServices {
         plugin: JavaPlugin,
         scheduler: SculkScheduler,
         config: PacketServiceConfig = PacketServiceConfig(),
-    ): SculkResult<SculkPacketService> =
-        create(plugin, scheduler, config, ServiceLoader.load(SculkPacketServiceProvider::class.java).toList())
+    ): SculkResult<SculkPacketService> = create(plugin, scheduler, config, discoverProviders(plugin))
+
+    /**
+     * Packet backends ship inside the consuming plugin's jar, so discovery has to search that
+     * plugin's class loader.
+     *
+     * The single-argument [ServiceLoader.load] searches the *thread context* class loader, which
+     * during plugin enable belongs to the server — it cannot see the plugin's own jar, so every
+     * backend looks uninstalled. The plugin's loader is tried first, then Sculk's own; the two
+     * differ when Sculk is installed as a shared library rather than shaded.
+     */
+    private fun discoverProviders(plugin: JavaPlugin): List<SculkPacketServiceProvider> {
+        val loaders =
+            listOfNotNull(
+                plugin.javaClass.classLoader,
+                SculkPacketServiceProvider::class.java.classLoader,
+            ).distinct()
+
+        return loaders
+            .flatMap { loader ->
+                runCatching { ServiceLoader.load(SculkPacketServiceProvider::class.java, loader).toList() }
+                    .getOrDefault(emptyList())
+            }.distinctBy { it.javaClass.name }
+    }
 
     internal fun create(
         plugin: JavaPlugin,
@@ -54,12 +76,15 @@ public object SculkPacketServices {
                 PacketBackendMode.ProtocolLib -> "ProtocolLib"
                 PacketBackendMode.Disabled -> "a packet backend"
             }
-        val adapterHint =
-            if (discovered.isEmpty()) {
-                " Add sculk-packets-packetevents or sculk-packets-protocollib to your plugin."
-            } else {
-                ""
-            }
-        return "No available packet backend found for $requested. Install the server plugin and packet adapter module.$adapterHint"
+        // Which of the two halves is missing changes the fix entirely, so say which.
+        return if (discovered.isEmpty()) {
+            "No packet adapter found for $requested. Add sculk-packets-packetevents or " +
+                "sculk-packets-protocollib to your plugin's dependencies. If you shade Sculk, make sure " +
+                "your shadow configuration merges META-INF/services descriptors."
+        } else {
+            "Adapters for ${discovered.joinToString(", ")} are present but none reported the server " +
+                "plugin as available for $requested. Install PacketEvents or ProtocolLib on the server, " +
+                "and make sure it loads before your plugin."
+        }
     }
 }
