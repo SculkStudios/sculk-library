@@ -7,6 +7,7 @@ import studio.sculk.annotation.SculkInternal
 import studio.sculk.data.driver.SqlDialect
 import studio.sculk.data.orm.OrmMapper
 import studio.sculk.data.orm.OrmMapping
+import java.sql.Connection
 import javax.sql.DataSource
 import kotlin.reflect.KClass
 
@@ -31,6 +32,7 @@ public class JdbcRepository<T : Any, ID : Any>(
             conn.createStatement().use { stmt ->
                 stmt.execute(mapping.createTableSql)
             }
+            addMissingColumns(conn)
         }
     }
 
@@ -149,6 +151,47 @@ public class JdbcRepository<T : Any, ID : Any>(
             SqlDialect.SQLITE -> "INSERT OR REPLACE INTO ${mapping.tableName} ($cols) VALUES ($placeholders)"
             SqlDialect.MYSQL -> "REPLACE INTO ${mapping.tableName} ($cols) VALUES ($placeholders)"
         }
+    }
+
+    /**
+     * Keeps existing plugin databases compatible when an entity gains new constructor fields.
+     *
+     * `CREATE TABLE IF NOT EXISTS` is not enough once a table already exists. This lightweight
+     * migration adds any mapped columns that are missing and leaves existing values untouched. Added
+     * columns are nullable so older rows can load through Kotlin constructor defaults.
+     */
+    private fun addMissingColumns(conn: Connection) {
+        val existing = existingColumns(conn)
+        for (column in mapping.columns) {
+            if (column.columnName.lowercase() in existing) continue
+            conn.createStatement().use { stmt ->
+                stmt.execute("ALTER TABLE ${mapping.tableName} ADD COLUMN ${column.columnName} ${column.sqlType}")
+            }
+        }
+    }
+
+    private fun existingColumns(conn: Connection): Set<String> {
+        val fromMetadata = linkedSetOf<String>()
+        fun readMetadata(tableName: String) {
+            conn.metaData.getColumns(null, null, tableName, null).use { rs ->
+                while (rs.next()) fromMetadata += rs.getString("COLUMN_NAME").lowercase()
+            }
+        }
+        readMetadata(mapping.tableName)
+        if (fromMetadata.isEmpty()) readMetadata(mapping.tableName.uppercase())
+        if (fromMetadata.isNotEmpty()) return fromMetadata
+
+        if (dialect == SqlDialect.SQLITE) {
+            conn.createStatement().use { stmt ->
+                stmt.executeQuery("PRAGMA table_info(${mapping.tableName})").use { rs ->
+                    val columns = linkedSetOf<String>()
+                    while (rs.next()) columns += rs.getString("name").lowercase()
+                    if (columns.isNotEmpty()) return columns
+                }
+            }
+        }
+
+        return emptySet()
     }
 
     private suspend inline fun <R> io(operation: String, crossinline body: () -> R): SculkResult<R> = withContext(Dispatchers.IO) {

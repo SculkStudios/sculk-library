@@ -88,7 +88,9 @@ public object OrmMapper {
         val args = mutableMapOf<KParameter, Any?>()
         for (param in constructor.parameters) {
             val col = mapping.columns.first { it.paramName == param.name }
-            args[param] = coerceFromSql(rs.getObject(col.columnName), col.kotlinType)
+            val value = coerceFromSql(rs.getObject(col.columnName), col.kotlinType)
+            if (value == null && param.isOptional) continue
+            args[param] = value
         }
         return constructor.callBy(args)
     }
