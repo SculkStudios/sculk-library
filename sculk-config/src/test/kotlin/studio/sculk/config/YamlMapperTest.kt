@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import studio.sculk.annotation.SculkInternal
+import studio.sculk.config.annotation.Comment
 import studio.sculk.config.annotation.ConfigFile
 import studio.sculk.config.annotation.Max
 import studio.sculk.config.annotation.Min
@@ -106,6 +107,38 @@ class YamlMapperTest {
         assertTrue(violations.any { it.contains("minVal") })
         assertTrue(violations.any { it.contains("maxVal") })
         assertTrue(violations.any { it.contains("name") })
+    }
+
+    @ConfigFile("commented.yml")
+    data class Commented(
+        @param:Comment("How long a claim lasts.")
+        val claimDays: Int = 7,
+        val limits: Limits = Limits(),
+        val worlds: List<String> = listOf("world", "world_nether"),
+    )
+
+    data class Limits(
+        @param:Comment("Claims one player may own.\nSet to 0 for unlimited.")
+        val perPlayer: Int = 3,
+        val perChunk: Int = 1,
+    )
+
+    @Test
+    fun `nested sections keep their comments and still parse back`(@TempDir dir: File) {
+        val file = File(dir, "commented.yml")
+        YamlMapper.writeDefaults(file, Commented::class)
+        val text = file.readText()
+
+        assertTrue(text.contains("# How long a claim lasts."), text)
+        // The point of the change: a comment on a nested section used to be dropped.
+        assertTrue(text.contains("  # Claims one player may own."), text)
+        assertTrue(text.contains("  # Set to 0 for unlimited."), text)
+
+        // Generating YAML that cannot be read back would be worse than no comments.
+        val warnings = mutableListOf<String>()
+        val loaded = YamlMapper.load(file, Commented::class) { warnings += it }
+        assertTrue(warnings.isEmpty(), "round-trip warned: $warnings")
+        assertEquals(Commented(), loaded)
     }
 
     @Test

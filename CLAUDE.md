@@ -30,7 +30,8 @@ Each docs section maps 1:1 to a module. Packages are `studio.sculk.<area>` (flat
 ### Dependency order (acyclic, flat)
 
 ```
-common ← adventure, items, series, config, events, tasks, integrations, packets-api
+common ← adventure, series, config, events, tasks, integrations, packets-api
+items    ← common, adventure
 commands ← common, adventure
 gui      ← common, adventure, items
 effects  ← common, series

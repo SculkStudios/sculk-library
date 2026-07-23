@@ -108,6 +108,28 @@ public class PaperScheduler(private val plugin: Plugin) : SculkScheduler {
         }
 
     // -------------------------------------------------------------------------
+    // Thread ownership — lets runNow skip the scheduler when already in place
+    // -------------------------------------------------------------------------
+
+    override fun ownsThread(entity: Entity): Boolean = if (FoliaDetector.isFolia) {
+        plugin.server.isOwnedByCurrentRegion(entity)
+    } else {
+        plugin.server.isPrimaryThread
+    }
+
+    override fun ownsThread(location: Location): Boolean = if (FoliaDetector.isFolia) {
+        plugin.server.isOwnedByCurrentRegion(location)
+    } else {
+        plugin.server.isPrimaryThread
+    }
+
+    override fun ownsGlobalThread(): Boolean = if (FoliaDetector.isFolia) {
+        plugin.server.isGlobalTickThread
+    } else {
+        plugin.server.isPrimaryThread
+    }
+
+    // -------------------------------------------------------------------------
     // Async — off main/region thread entirely
     // Folia's AsyncScheduler uses real time (ms), not ticks.
     // -------------------------------------------------------------------------
