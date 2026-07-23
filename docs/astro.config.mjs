@@ -123,6 +123,7 @@ export default defineConfig({
 					label: 'Packets',
 					items: [
 						{ label: 'Overview', slug: 'packets/overview' },
+						{ label: 'Client Blocks', slug: 'packets/client-blocks' },
 						{ label: 'PacketEvents', slug: 'packets/packetevents' },
 						{ label: 'ProtocolLib', slug: 'packets/protocollib' },
 						{ label: 'Performance', slug: 'packets/performance' },

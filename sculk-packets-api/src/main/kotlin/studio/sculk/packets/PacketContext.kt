@@ -12,13 +12,20 @@ import studio.sculk.scheduler.SculkScheduler
  * Bukkit/Paper APIs that require a synchronized context.
  */
 @SculkStable
-public class PacketContext(
+public class PacketContext @JvmOverloads constructor(
     public val player: Player?,
     public val direction: PacketDirection,
     public val type: PacketKey,
     private val scheduler: SculkScheduler,
     private val cancelAction: () -> Unit,
     private val markChangedAction: () -> Unit,
+    /**
+     * The backend's own packet, when the adapter can expose one.
+     *
+     * Reading or writing it means depending on that backend, so prefer the high-level services
+     * where they cover the need. Use [packetAs] to narrow it safely.
+     */
+    public val packet: SculkPacket? = null,
 ) {
     public var cancelled: Boolean = false
         private set
@@ -41,6 +48,9 @@ public class PacketContext(
         changed = true
         markChangedAction()
     }
+
+    /** The backend [packet] narrowed to [type], or null if absent or of another type. */
+    public fun <T : SculkPacket> packetAs(type: Class<T>): T? = if (type.isInstance(packet)) type.cast(packet) else null
 
     /**
      * Runs [block] on the safe sync context for the current player when available.
