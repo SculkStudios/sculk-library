@@ -3,9 +3,11 @@ package studio.sculk.example.java;
 import java.util.Map;
 import java.util.UUID;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
 import studio.sculk.config.SculkConfig;
@@ -22,6 +24,9 @@ import studio.sculk.gui.GuiBorderStyle;
 import studio.sculk.gui.SculkGui;
 import studio.sculk.gui.SculkGuiSlots;
 import studio.sculk.items.SculkItems;
+import studio.sculk.packets.BlockDigAction;
+import studio.sculk.packets.PacketPriority;
+import studio.sculk.packets.SculkPacketService;
 import studio.sculk.platform.SculkPlatform;
 import studio.sculk.series.SculkBlocks;
 import studio.sculk.series.SculkSeries;
@@ -137,6 +142,22 @@ final class JavaApiSurface {
         // Raw transaction bridge.
         data.transactionAsync(conn -> null).thenAccept(result -> {
             boolean ok = result.isSuccess();
+        });
+    }
+
+    static void clientBlocks(SculkPacketService packets, Player player, Location location, BlockData data) {
+        packets.getClientBlocks().set(player, location, Material.GOLD_BLOCK);
+        packets.getClientBlocks().set(player, location, data);
+        packets.getClientBlocks().preview(player, location, data, 40L);
+        packets.getClientBlocks().reset(player, location);
+
+        packets.getClientBlocks().onDig(PacketPriority.Normal, dig -> {
+            if (dig.getAction() != BlockDigAction.Start) {
+                return;
+            }
+            dig.intercept(() -> {
+                packets.getClientBlocks().set(dig.getPlayer(), dig.getLocation(), Material.AIR);
+            });
         });
     }
 

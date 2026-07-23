@@ -1,0 +1,114 @@
+---
+title: Client Blocks
+description: Show one player blocks that are not really there, and take over the blocks they dig.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+`sculk.packets.clientBlocks` sends block state to a single player without ever touching the world.
+It is the foundation for private mines, per-player generators, build previews, and any feature where
+two players standing in the same spot should see different blocks.
+
+Everything here needs a packet backend — see [Packets](/packets/overview/) for the install.
+
+## Showing a block
+
+`set` takes a `Material` or, better in a hot path, a prebuilt `BlockData`. Block data can be built
+once and reused; a material is parsed into block data on every send.
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
+
+```kotlin
+val ripe = (Material.WHEAT.createBlockData() as Ageable).apply { age = maximumAge }
+
+sculk.packets.clientBlocks.set(player, location, ripe)
+sculk.packets.clientBlocks.preview(player, location, Material.GOLD_BLOCK, durationTicks = 40)
+sculk.packets.clientBlocks.reset(player, location)
+```
+
+</TabItem>
+<TabItem label="Java">
+
+```java
+BlockData ripe = Material.WHEAT.createBlockData();
+((Ageable) ripe).setAge(((Ageable) ripe).getMaximumAge());
+
+packets.getClientBlocks().set(player, location, ripe);
+packets.getClientBlocks().preview(player, location, Material.GOLD_BLOCK, 40L);
+packets.getClientBlocks().reset(player, location);
+```
+
+</TabItem>
+</Tabs>
+
+## Taking over a dig
+
+`onDig` reports every block a client says it is breaking, normalised across backends. The handler
+runs on the **packet thread** — use `intercept` (or `runSync`) before touching Bukkit.
+
+<Tabs syncKey="lang">
+<TabItem label="Kotlin">
+
+```kotlin
+sculk.packets.clientBlocks.onDig {
+    if (action != BlockDigAction.Start || !mine.owns(world, x, y, z)) return@onDig
+
+    intercept {
+        sculk.packets.clientBlocks.set(player, location, Material.AIR)
+        mine.award(player)
+    }
+}
+```
+
+</TabItem>
+<TabItem label="Java">
+
+```java
+packets.getClientBlocks().onDig(dig -> {
+    if (dig.getAction() != BlockDigAction.Start) {
+        return;
+    }
+    dig.intercept(() -> {
+        packets.getClientBlocks().set(dig.getPlayer(), dig.getLocation(), Material.AIR);
+    });
+});
+```
+
+</TabItem>
+</Tabs>
+
+### Why `intercept` exists
+
+A client predicts the result of its own dig and **refuses to render any server block update at that
+position** until the server acknowledges the dig's sequence number. Vanilla sends that
+acknowledgement when it processes the dig — so cancelling the packet silently leaves the prediction
+open forever. The symptom is distinctive: your block changes appear to be ignored, then everything
+snaps to the real world the moment the player does something unrelated.
+
+`intercept` does the three steps in the only order that works:
+
+1. `cancel()` — the server never touches the real block.
+2. your block on the sync context — the client files it as the new server state.
+3. `acknowledge()` — the prediction retires onto exactly that state.
+
+Call them yourself if you need finer control; `cancel` and `acknowledge` are both idempotent, and a
+negative sequence (a client too old to predict) carries no acknowledgement debt.
+
+## Reference
+
+| Member | Notes |
+| --- | --- |
+| `set(player, location, material \| data)` | Sends a block to one player. |
+| `preview(player, location, material \| data, durationTicks)` | `set`, then `reset` after the delay. |
+| `reset(player, location)` | Sends the real block back. |
+| `onDig(priority?, handler)` | Dig reports on the packet thread. |
+| `acknowledge(player, sequence)` | Retires a prediction by hand. |
+
+`onDig` and `acknowledge` return a `SculkResult.Failure` on backends that cannot read dig packets.
+
+`BlockDigContext` carries `player`, `world`, `x`/`y`/`z` (and a `location` that allocates), `action`,
+and `sequence`.
+
+`BlockDigAction` is one of `Start`, `Abort`, `Finish`, or `Other` — instant-break blocks report only
+`Start`.

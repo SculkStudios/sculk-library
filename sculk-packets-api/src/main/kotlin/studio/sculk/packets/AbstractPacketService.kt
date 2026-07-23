@@ -11,7 +11,16 @@ import studio.sculk.scheduler.SculkScheduler
 @SculkStable
 public abstract class AbstractPacketService(final override val backend: PacketBackend, protected val scheduler: SculkScheduler) :
     SculkPacketService {
-    final override val clientBlocks: ClientBlockService = ClientBlockService(scheduler)
+    /**
+     * Backend capabilities behind [clientBlocks] that plain block changes cannot express.
+     * Adapters that can read dig packets override this; the rest inherit a service whose
+     * [ClientBlockService.onDig] and [ClientBlockService.acknowledge] fail cleanly.
+     *
+     * Resolved lazily so overrides may reference subclass state.
+     */
+    protected open fun clientBlockBackend(): ClientBlockBackend? = null
+
+    final override val clientBlocks: ClientBlockService by lazy { ClientBlockService(scheduler, clientBlockBackend()) }
     final override val debug: PacketDebugService = PacketDebugService(this, scheduler)
 
     override fun send(player: Player, packet: SculkPacket): SculkResult<Unit> =
