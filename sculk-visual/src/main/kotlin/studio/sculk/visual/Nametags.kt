@@ -22,27 +22,13 @@ public data class NametagStyle(
 )
 
 /**
- * Multi-line text above a player's head.
+ * Multi-line text above a player's head, mounted on its wearer so the client interpolates it --
+ * a teleported tag visibly swims behind the player above walking pace.
  *
- * ### Why it rides the player
+ * Tags that animate opt into a faster refresh pass; the rest are re-rendered slowly, and an
+ * unchanged tag sends nothing. A throwing template trips [broken] and logs once.
  *
- * The display is mounted on its wearer rather than teleported to follow them. A teleport loop
- * visibly lags: the tag swims behind the player at anything above walking pace, because it only
- * moves as often as the task runs. A mounted entity is interpolated by the client, so it tracks
- * the player exactly and costs one packet at spawn instead of one per tick.
- *
- * ### Why there are two passes
- *
- * Most tags change rarely — a rank, a name. Those are re-rendered on the slow pass. A tag that
- * animates needs a much faster one, but running *every* tag at that rate is wasted work
- * proportional to the player count. Only wearers that opted into animation are visited on the fast
- * pass.
- *
- * ### The kill switch
- *
- * A template that throws would otherwise produce a stack trace per player per period — thousands
- * of lines a minute, which is a worse outage than the broken tag. The first failure sets [broken],
- * logs once, and stops the renderer until something calls [reset].
+ * See [docs.sculk.studio/visual/nametags](https://docs.sculk.studio/visual/nametags/).
  */
 @SculkStable
 public class Nametags

@@ -15,36 +15,13 @@ import java.time.Duration
 import java.util.logging.Logger
 
 /**
- * A cache shared by every server on the network.
+ * A cache shared by every server on the network, for when two servers must agree about the same
+ * row. [SculkCache] is per-process and is the right default.
  *
- * [SculkCache] is per-process and is the right default. Reach for this one when two servers must
- * agree about the same row — a player hopping from lobby to survival should not arrive with a
- * balance the lobby cached ten minutes ago.
+ * Works against Redis and Valkey alike -- same client, same `redis://` URI. Degrades to the
+ * repository when unreachable rather than failing the read.
  *
- * ### Redis and Valkey
- *
- * Valkey is a fork of Redis and speaks the same protocol, so the same Lettuce client and the same
- * `redis://host:port` URI work against both. There is no `valkey://` scheme — using one is the
- * usual first thing to go wrong. Cluster and sentinel URIs (`redis-sentinel://`) work as Lettuce
- * defines them.
- *
- * ### When the cache is unreachable
- *
- * Every Redis call degrades to the repository rather than failing the read. A cache that takes the
- * server down when it blinks is worse than no cache. Failures are logged, but rate-limited to one
- * line per 30 seconds — a Redis outage otherwise writes one log line per lookup per player, which
- * is its own outage.
- *
- * ```kotlin
- * val players = RedisCache.create(
- *     repository = data.repository<PlayerData, UUID>(),
- *     idOf = PlayerData::uuid,
- *     serializer = PlayerData.serializer(),
- *     uri = "redis://localhost:6379",
- *     keyPrefix = "players",
- *     logger = plugin.logger,
- * )
- * ```
+ * See [docs.sculk.studio/data/backends](https://docs.sculk.studio/data/backends/).
  */
 @SculkStable
 public class RedisCache<T : Any, ID : Any> internal constructor(

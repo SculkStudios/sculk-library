@@ -7,32 +7,15 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
 /**
- * Where a plugin puts the things its own code needs to reach.
- *
- * ### This is deliberately not dependency injection
- *
- * Nothing here is constructed, resolved lazily, or wired by inspecting types. A service exists
- * because [register] was called with it, in an order the reader can see by reading `setup()` top to
- * bottom. That is the whole feature: start-up order stays explicit and debuggable rather than
- * emergent, and there is no framework behaviour to reason about when something is missing at the
- * wrong moment.
- *
- * ### Keyed by type, never by name
- *
- * A string key turns a compile error into a runtime one, and the runtime one arrives on a live
- * server rather than in the IDE.
- *
- * ### Shutdown order
- *
- * Services close in reverse registration order, because registration order is dependency order:
- * whatever was registered last is most likely to still be holding a reference to something
- * registered earlier. `ConcurrentHashMap` iteration order is arbitrary and shutdown order is not,
- * which is why the order is tracked separately rather than read off the map.
+ * A typed store for the things a plugin's own code needs to reach. Not DI: nothing is constructed
+ * or resolved lazily, so start-up order stays readable in `setup()`.
  *
  * ```kotlin
  * services.register(EconomyService(data))
  * val economy = services.get<EconomyService>()
  * ```
+ *
+ * See [docs.sculk.studio/platform/services](https://docs.sculk.studio/platform/services/).
  */
 @SculkStable
 public class ServiceRegistry : SculkHandle {

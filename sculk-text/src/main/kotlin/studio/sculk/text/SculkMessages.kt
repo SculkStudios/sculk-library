@@ -14,31 +14,15 @@ import java.time.Duration
 /**
  * The only place a string becomes a [Component].
  *
- * ### The trust boundary
- *
- * A **template** is trusted. It comes from a config file or the plugin's own source, and it is
- * parsed — that is how it gets its colours, its click events, its theme tags.
- *
- * A **placeholder value** is not trusted. It is a player name, an item name someone typed into an
- * anvil, a value read out of a database. It is inserted with [Placeholder.unparsed], so its
- * contents are text and nothing else.
- *
- * Getting this wrong is not cosmetic. The previous implementation substituted placeholders by
- * `text.replace("<key>", value)` before parsing, in two separate modules, which meant anyone who
- * could influence a value that reached a message could inject `<red>`, a fake staff prefix, or a
- * `<click:run_command:...>` that fires as the *reader*. Routing every value through a resolver
- * closes that by construction rather than by remembering to escape.
- *
- * A placeholder whose name collides with a theme style fails loudly, because the two would
- * silently fight over the same tag and the theme would win — which reads as "the placeholder
- * randomly stopped working".
+ * **Templates are trusted and parsed; values are not and go in via [Placeholder.unparsed].** Never
+ * substitute a value into a template before rendering — that is a markup-injection hole, and it is
+ * why this type is the single entry point rather than one of several.
  *
  * ```kotlin
  * messages.send(player, "<danger>No room for <value><item></value>.", "item" to stack.displayName())
  * ```
  *
- * This is an instance, not a global. Two plugins on one server want different palettes, and the
- * previous server-wide mutable object could not give them one.
+ * See [docs.sculk.studio/text/placeholders](https://docs.sculk.studio/text/placeholders/).
  */
 @SculkStable
 public class SculkMessages(

@@ -6,36 +6,15 @@ import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkStable
 
 /**
- * Where and when work runs. Every task Sculk schedules goes through this.
+ * Where and when work runs. Every task Sculk schedules goes through this, and every method returns
+ * a [SculkHandle] that cancels it.
  *
- * ### Why the region overloads have no defaults
+ * The entity and location overloads are abstract deliberately: on Folia, touching a player from
+ * the wrong region thread is a data race, so a scheduler that has not thought about regions must
+ * fail to compile rather than race. Implementations take `delayTicks <= 0` as "next tick" and
+ * floor `periodTicks` to 1.
  *
- * On Paper there is one main thread and the region overloads collapse onto it. On Folia the
- * server is split into regions that tick on **different threads at the same time**, and touching
- * a player from the wrong one is a data race that surfaces as duplicated items and dropped
- * chunks rather than as an exception.
- *
- * So [runSync] with an [Entity] or [Location], and every `owns…` query, are declared abstract.
- * They previously defaulted to the global thread and to `false`, which meant an implementation
- * that had not thought about regions compiled cleanly and raced in production. Now it does not
- * compile.
- *
- * ### Choosing a target
- *
- * | Work touches… | Use |
- * | --- | --- |
- * | a player, mob, or their inventory | [runSync] with the entity |
- * | a block, chunk, or world position | [runSync] with the location |
- * | server-wide state, nothing positional | [runSync] with no target |
- * | a database, HTTP, files — never the Paper API | [runAsync] |
- *
- * ### Tick arguments
- *
- * Implementations must accept `delayTicks <= 0` as "next tick" and floor `periodTicks` to 1.
- * Folia's schedulers throw on non-positive values, and a caller computing a delay from a config
- * value should get a scheduled task rather than an exception.
- *
- * Every method returns a [SculkHandle] that cancels the task.
+ * See [docs.sculk.studio/core/scheduler](https://docs.sculk.studio/core/scheduler/).
  */
 @SculkStable
 public interface SculkScheduler {

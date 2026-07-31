@@ -19,21 +19,11 @@ private const val SIDEBAR_WIDTH_PIXELS = 180
 /**
  * One player's sidebar.
  *
- * ### Why it does not flicker
+ * Flicker-free: the objective is created once, each row keeps a stable invisible entry, and the
+ * visible text lives in that row's team prefix, so an update is one prefix change with nothing
+ * removed. Rows are only rewritten when their [sidebarSignature] changed.
  *
- * The naive sidebar removes every entry and re-adds it each refresh, and the client renders the
- * gap — a visible strobe four times a second. Here the objective is created once, each row is
- * given a **stable invisible entry** that never changes, and the visible text lives in that row's
- * **team prefix**. Updating a line is then one prefix change with nothing removed.
- *
- * ### Why it only writes what moved
- *
- * A score write is a packet whether or not the value differs, and so is a prefix change. Rows are
- * compared by signature — template *and* resolved values, see [sidebarSignature] — and scores are
- * written only when the layout actually changed, not on every refresh.
- *
- * Centred rows carry one extra rule: a row whose own text is unchanged still needs redrawing when
- * the widest row moved, because that is what its padding is measured against.
+ * See [docs.sculk.studio/hud/sidebar](https://docs.sculk.studio/hud/sidebar/).
  */
 @SculkStable
 public class Sidebar
