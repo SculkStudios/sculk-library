@@ -30,4 +30,7 @@ include(
     ":sculk-common",
     ":sculk-text",
     ":sculk-config",
+    ":sculk-series",
+    ":sculk-items",
+    ":sculk-integrations",
 )

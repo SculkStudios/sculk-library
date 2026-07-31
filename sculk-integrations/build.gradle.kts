@@ -1,12 +1,10 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.module")
 }
 
-description = "Sculk Studio - optional adapters for common Minecraft plugin integrations"
+description = "Sculk Studio — optional PlaceholderAPI, Vault and LuckPerms adapters"
 
 dependencies {
     api(project(":sculk-common"))
-    testImplementation(libs.paper.api)
-    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
 }

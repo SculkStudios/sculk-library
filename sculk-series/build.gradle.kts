@@ -1,18 +1,10 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.module")
 }
 
-description = "Sculk Studio — registry-based cross-version material, sound, particle mapping"
-
-// Allow framework internals within this module.
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
-    }
-}
+description = "Sculk Studio — registry lookups for materials, sounds, particles and the rest, with aliases"
 
 dependencies {
     api(project(":sculk-common"))
-    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
 }

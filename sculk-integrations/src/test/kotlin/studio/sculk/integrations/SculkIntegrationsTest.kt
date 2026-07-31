@@ -10,6 +10,7 @@ import studio.sculk.SculkResult
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 
+@OptIn(studio.sculk.annotation.SculkExperimental::class)
 class SculkIntegrationsTest {
     @Test
     fun `missing PlaceholderAPI returns failure`() {
