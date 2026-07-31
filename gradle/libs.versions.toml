@@ -2,7 +2,7 @@
 kotlin            = "2.4.10"
 coroutines        = "1.11.0"
 serialization     = "1.11.0"
-kaml              = "0.83.0"
+kaml              = "0.104.0"
 lettuce           = "7.6.0.RELEASE"
 paper             = "1.21.11-R0.1-SNAPSHOT"
 adventure         = "5.2.0"
