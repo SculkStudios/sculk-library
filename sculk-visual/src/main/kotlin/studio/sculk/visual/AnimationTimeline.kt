@@ -1,12 +1,11 @@
 @file:JvmName("SculkTimelines")
 
-package studio.sculk.effects
+package studio.sculk.visual
 
 import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkStable
 import studio.sculk.scheduler.SculkScheduler
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.function.Consumer
 
 /**
  * An immutable sequence of timed animation steps.
@@ -82,7 +81,6 @@ public class TimelineBuilder {
         steps += TimelineStep(tick.toLong(), action)
     }
 
-    /** Java-friendly overload of [at] taking a [Runnable]. */
     @SculkStable
     public fun at(tick: Int, action: Runnable) {
         steps += TimelineStep(tick.toLong(), action::run)
@@ -106,7 +104,3 @@ public class TimelineBuilder {
  */
 @SculkStable
 public fun timeline(block: TimelineBuilder.() -> Unit): AnimationTimeline = TimelineBuilder().apply(block).build()
-
-/** Java-friendly overload of [timeline] taking a [Consumer]. */
-@SculkStable
-public fun timeline(block: Consumer<TimelineBuilder>): AnimationTimeline = TimelineBuilder().also { block.accept(it) }.build()

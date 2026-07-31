@@ -39,4 +39,5 @@ include(
     ":sculk-packets-api",
     ":sculk-packets-packetevents",
     ":sculk-packets-protocollib",
+    ":sculk-visual",
 )
