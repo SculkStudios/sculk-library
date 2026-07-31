@@ -21,27 +21,11 @@ private val REVISION_MARKER = Regex("^#\\s*revision:\\s*(\\d+)\\s*$", RegexOptio
 private val ENV_PLACEHOLDER = Regex("""\$\{[A-Za-z_][A-Za-z0-9_]*(?::-[^}]*)?}""")
 
 /**
- * Typed YAML configuration.
+ * Typed YAML configuration, driven by the compiler-generated `SerialDescriptor` rather than
+ * reflection.
  *
- * ### The defaults are the shipped file
- *
- * There is no `config.yml` in the jar's resources. The data class *is* the file: on first load the
- * defaults are rendered out, and on every later load the existing file is merged over them, so a
- * property added in an update appears in the server's file with its comment, in place, without
- * anyone maintaining a second copy that drifts.
- *
- * ### It only writes when something actually changed
- *
- * The merged render is compared against what is on disk and written only if it differs, so an
- * up-to-date server never sees its config file's timestamp move. Line endings are normalised to
- * `\n` first, or a Windows-authored file and a Linux-authored one would differ forever and rewrite
- * each other on every boot.
- *
- * ### Nothing here uses reflection
- *
- * File name, comments, constraints and nesting all come off the compiler-generated
- * `SerialDescriptor`. Renaming a property is a compile error rather than a config key that quietly
- * reverts to its default.
+ * The data class *is* the shipped file: defaults are written on first load, later loads add keys
+ * the file is missing, and nothing you or a server owner put there is ever removed.
  *
  * ```kotlin
  * @Serializable
@@ -53,6 +37,8 @@ private val ENV_PLACEHOLDER = Regex("""\$\{[A-Za-z_][A-Za-z0-9_]*(?::-[^}]*)?}""
  *
  * val settings = config.load<Settings>().getOrThrow()
  * ```
+ *
+ * See [docs.sculk.studio/config/overview](https://docs.sculk.studio/config/overview/).
  */
 @SculkStable
 public class SculkConfig

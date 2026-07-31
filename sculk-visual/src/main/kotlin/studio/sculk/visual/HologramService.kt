@@ -14,25 +14,15 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Floating text that costs the server nothing to keep.
+ * Floating text that costs the server no entities: nothing ticks, nothing persists, and a crash
+ * cannot orphan it.
  *
- * ### Why these are not entities
- *
- * A real `TextDisplay` is ticked, tracked, saved and sent to everyone in range whether or not the
- * plugin wants them to see it. These exist only as packets: no entity is created, so nothing
- * ticks, nothing is persisted, and a crash cannot leave orphaned text floating over spawn.
- *
- * ### Why it costs what it costs
- *
- * The naive reconcile is `players × holograms` every tick, which stops being free at a few hundred
- * of either. Holograms are bucketed by chunk, so a player's visibility check only looks at the
- * chunks near them — the cost becomes `players × nearby chunks`, which does not grow with the
- * number of holograms elsewhere in the world.
- *
- * Text is re-sent only when it actually changed. A hologram showing a timer that updates once a
- * second should not send metadata twenty times a second.
+ * Holograms are bucketed by chunk, so visibility costs `players x nearby chunks` rather than
+ * `players x holograms`, and text is re-sent only when it changed.
  *
  * All public methods expect the main or owning region thread.
+ *
+ * See [docs.sculk.studio/visual/holograms](https://docs.sculk.studio/visual/holograms/).
  */
 @SculkStable
 public class HologramService
