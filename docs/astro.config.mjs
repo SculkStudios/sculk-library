@@ -27,7 +27,7 @@ export default defineConfig({
 					label: 'Introduction',
 					items: [
 						{ label: 'What is Sculk Studio?', slug: 'introduction/overview' },
-						{ label: 'Modules & Architecture', slug: 'introduction/modules' },
+						{ label: 'Modules', slug: 'introduction/modules' },
 						{ label: 'Architecture', slug: 'introduction/architecture' },
 					],
 				},
@@ -41,25 +41,60 @@ export default defineConfig({
 				{
 					label: 'Core',
 					items: [
-						{ label: 'Events', slug: 'core/events' },
 						{ label: 'Scheduler', slug: 'core/scheduler' },
-						{ label: 'Coroutines', slug: 'advanced/coroutines' },
-						{ label: 'Messaging', slug: 'core/messaging' },
+						{ label: 'Events', slug: 'core/events' },
+						{ label: 'Tasks', slug: 'tasks/overview' },
+						{ label: 'Testing', slug: 'core/testing' },
+					],
+				},
+				{
+					label: 'Text',
+					items: [
+						{ label: 'Messages', slug: 'text/overview' },
+						{ label: 'Themes', slug: 'text/theme' },
+						{ label: 'Placeholders', slug: 'text/placeholders' },
+						{ label: 'Measuring Text', slug: 'text/font' },
+						{ label: 'Localisation', slug: 'text/localisation' },
 					],
 				},
 				{
 					label: 'Commands',
 					items: [
-						{ label: 'Overview', slug: 'commands/overview' },
-						{ label: 'Subcommands & Arguments', slug: 'commands/subcommands' },
+						{ label: 'Commands', slug: 'commands/overview' },
+						{ label: 'Subcommands', slug: 'commands/subcommands' },
 					],
 				},
 				{
-					label: 'GUIs',
+					label: 'Menus',
 					items: [
-						{ label: 'Overview', slug: 'gui/overview' },
+						{ label: 'Menus', slug: 'gui/overview' },
 						{ label: 'Pagination', slug: 'gui/pagination' },
-						{ label: 'Animations & Inputs', slug: 'gui/animations' },
+						{ label: 'Animations', slug: 'gui/animations' },
+					],
+				},
+				{
+					label: 'HUD',
+					items: [
+						{ label: 'Overview', slug: 'hud/overview' },
+						{ label: 'Sidebar', slug: 'hud/sidebar' },
+						{ label: 'Action Bar', slug: 'hud/action-bar' },
+						{ label: 'Placeholders', slug: 'hud/placeholders' },
+					],
+				},
+				{
+					label: 'Config',
+					items: [
+						{ label: 'Overview', slug: 'config/overview' },
+						{ label: 'Hot Reload', slug: 'config/hot-reload' },
+					],
+				},
+				{
+					label: 'Data',
+					items: [
+						{ label: 'Overview', slug: 'data/overview' },
+						{ label: 'Queries', slug: 'data/query' },
+						{ label: 'Caching', slug: 'data/caching' },
+						{ label: 'Backends', slug: 'data/backends' },
 					],
 				},
 				{
@@ -72,10 +107,12 @@ export default defineConfig({
 					],
 				},
 				{
-					label: 'Config',
+					label: 'Visual',
 					items: [
-						{ label: 'Overview', slug: 'config/overview' },
-						{ label: 'Hot Reload', slug: 'config/hot-reload' },
+						{ label: 'Particles & Sounds', slug: 'visual/particles-sounds' },
+						{ label: 'Timelines', slug: 'visual/timelines' },
+						{ label: 'Holograms', slug: 'visual/holograms' },
+						{ label: 'Nametags', slug: 'visual/nametags' },
 					],
 				},
 				{
@@ -86,46 +123,21 @@ export default defineConfig({
 					],
 				},
 				{
-					label: 'Effects',
-					items: [
-						{ label: 'Particles & Sounds', slug: 'effects/particles-sounds' },
-						{ label: 'Timelines & Sequences', slug: 'effects/timelines' },
-					],
-				},
-				{
-					label: 'Data',
-					items: [
-						{ label: 'Overview', slug: 'data/overview' },
-						{ label: 'Caching', slug: 'data/caching' },
-						{ label: 'Querying, Transactions & Redis', slug: 'data/query' },
-					],
-				},
-				{
-					label: 'Localization',
-					items: [
-						{ label: 'Overview', slug: 'text/overview' },
-					],
-				},
-				{
-					label: 'Tasks',
-					items: [
-						{ label: 'Tasks & Cron', slug: 'tasks/overview' },
-					],
-				},
-				{
-					label: 'Integrations',
-					items: [
-						{ label: 'Overview', slug: 'integrations/overview' },
-					],
-				},
-				{
 					label: 'Packets',
 					items: [
 						{ label: 'Overview', slug: 'packets/overview' },
 						{ label: 'Client Blocks', slug: 'packets/client-blocks' },
+						{ label: 'Virtual Entities', slug: 'packets/virtual-entities' },
 						{ label: 'PacketEvents', slug: 'packets/packetevents' },
 						{ label: 'ProtocolLib', slug: 'packets/protocollib' },
 						{ label: 'Performance', slug: 'packets/performance' },
+					],
+				},
+				{
+					label: 'Platform',
+					items: [
+						{ label: 'Services', slug: 'platform/services' },
+						{ label: 'Integrations', slug: 'integrations/overview' },
 					],
 				},
 				{
@@ -139,10 +151,11 @@ export default defineConfig({
 				{
 					label: 'Advanced',
 					items: [
-						{ label: 'API Stability', slug: 'advanced/api-stability' },
-						{ label: 'Performance', slug: 'advanced/performance' },
+						{ label: "What's New in 5.0", slug: 'advanced/whats-new-in-5' },
+						{ label: 'Coroutines', slug: 'advanced/coroutines' },
 						{ label: 'Folia & Canvas', slug: 'advanced/folia' },
-						{ label: 'API Design', slug: 'advanced/api-design' },
+						{ label: 'Performance', slug: 'advanced/performance' },
+						{ label: 'API Stability', slug: 'advanced/api-stability' },
 						{ label: 'Troubleshooting', slug: 'advanced/troubleshooting' },
 					],
 				},

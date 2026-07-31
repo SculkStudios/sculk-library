@@ -1,10 +1,10 @@
 ---
 title: Sculk Studio
-description: Kotlin-first Paper utilities for modern Minecraft plugins.
+description: A Kotlin framework for building modern Paper plugins.
 template: splash
 hero:
   title: '<span style="color:#00e5ff">Sculk Studio</span>'
-  tagline: Kotlin-first Paper utilities for commands, GUI menus, items, typed config, data, Adventure text, integrations, and plugin lifecycle work.
+  tagline: A Kotlin framework for commands, menus, items, typed config, data, themed text, HUDs and packet-backed visuals.
   actions:
     - text: Get Started
       link: /getting-started/installation/
@@ -18,55 +18,70 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-Sculk Studio targets Paper 1.21.11+, Java 21, Adventure, and MiniMessage. It is designed for plugin projects that want Kotlin-first APIs without hiding Paper's own model.
+```kotlin
+class MyPlugin : SculkPlugin() {
+    override val theme = SculkTheme(
+        mapOf("value" to ThemeStyle.Gradient(listOf("#8be9fd", "#50fa7b"))),
+    )
+
+    override fun setup() {
+        +command("balance") {
+            player { reply("<value><n></value> coins.", "n" to economy.of(player!!).toString()) }
+        }
+    }
+}
+```
 
 <CardGrid>
-  <Card title="Commands" icon="list-format">
-    Define command trees with sender routing, permissions, arguments, and tab suggestions.
+  <Card title="Kotlin, not Kotlin-flavoured Java" icon="seti:kotlin">
+    Reified generics, default arguments, `suspend` functions and receiver lambdas are the API, not a
+    compromise around a second language.
   </Card>
-  <Card title="GUI Menus" icon="laptop">
-    Build chest menus with per-player sessions, click routing, pagination, and platform cleanup.
+  <Card title="Safe by construction" icon="approve-check">
+    Values reach a message unparsed, so a player-supplied name cannot inject markup. A packet
+    handler that throws cannot disconnect the player. A config rewrite cannot delete a setting.
   </Card>
-  <Card title="Typed Config" icon="setting">
-    Load YAML into Kotlin data classes with defaults, validation, comments, and reload callbacks.
+  <Card title="Testable without a server" icon="puzzle">
+    Command specs, help output and sidebar rules are plain data. `FakeScheduler` ships as a
+    published fixture so your timing tests do not need Bukkit.
   </Card>
-  <Card title="Items" icon="puzzle">
-    Build modern Paper items with MiniMessage names, lore, PDC, skulls, descriptors, and GUI reuse.
-  </Card>
-  <Card title="Data" icon="open-book">
-    Use JDBC repositories, SQLite or MySQL configuration, and Caffeine-backed caches.
-  </Card>
-  <Card title="Effects" icon="star">
-    Compose particles, sounds, timelines, and tick-based visual sequences.
-  </Card>
-  <Card title="Paper Integration" icon="puzzle">
-    Wire commands, events, scheduler, GUI lifecycle, config, and data through `SculkPlatform`.
+  <Card title="Folia-correct" icon="rocket">
+    One scheduling path for both platforms. The region overloads are abstract, so an implementation
+    that has not thought about threads will not compile.
   </Card>
 </CardGrid>
 
-## What is implemented today
+## Start here
 
-- Command DSL and Java command builder.
-- GUI menu DSL, sessions, pagination, confirm menus, and platform cleanup.
-- Item builder APIs with PDC helpers, skulls, and config descriptors.
-- MiniMessage, Adventure messaging helpers, and reusable message templates.
-- Typed YAML config loading, comments, validation annotations, strict mode, and reload results.
-- JDBC repositories, async facades, storage config, ORM mapping, player profile helpers, and cache helpers.
-- Registry-backed lookup helpers, require lookups, validation reports, and curated aliases through `sculk-series`.
-- Particle, sound, descriptor, timeline, and sequence builders.
-- Paper platform bootstrap, events, scheduler, integrations, command registration, and GUI lifecycle.
+- [Installation](/getting-started/installation/) — one dependency, or pick modules with the BOM
+- [Your first plugin](/getting-started/first-plugin/) — a theme, a config, a command and a menu
+- [What's new in 5.0](/advanced/whats-new-in-5/) — if you used 4.x
 
-## Real server workflows
+## Recipes
 
-The docs include compile-checked recipe plugins that show full workflows instead of isolated snippets:
+Complete plugins, each mirroring an example that CI compiles:
 
-- [Economy plugin](/recipes/economy-plugin/) - commands, typed config, cached data, async persistence, top balances, and admin tools.
-- [Player profiles](/recipes/player-profiles/) - join loading, quit saving, profile cache, GUI display, and disable flush.
-- [Server menu](/recipes/server-menu/) - real GUI navigation, config-backed buttons, pagination, teleport confirmation, and profile pages.
-- [Staff tools](/recipes/staff-tools/) - staff mode, freeze, inspect menus, staff chat, effects, logging, and transient state cleanup.
-- [Crate system](/recipes/crate-system/) - config-driven reward tables, key PDC markers, weighted rolls, preview menus, and reward delivery.
-- [Kits plugin](/recipes/kits-plugin/) - config-backed kits, cooldown persistence, preview menus, PDC markers, and safe give/drop behavior.
+- [Economy plugin](/recipes/economy-plugin/) — repositories, a cache, a leaderboard, transactions
+- [Server menu](/recipes/server-menu/) — borders, click types, pagination
+- [Staff tools](/recipes/staff-tools/) — subcommands, permissions, cooldowns, client-side blocks
 
-## Migrating an existing plugin
+## Reference
 
-When you are moving an older plugin onto Sculk, start with the [Migration to Sculk 3](/advanced/migration-to-sculk-3/) guide and keep the [Migration Checklist](/advanced/migration-checklist/) open during testing. The migration path is designed around one subsystem at a time: platform lifecycle, text, items, GUI, config, commands, data, events, and optional integrations.
+<CardGrid>
+  <Card title="Text" icon="pencil">
+    [Messages](/text/overview/) · [Themes](/text/theme/) ·
+    [Placeholders](/text/placeholders/) · [Localisation](/text/localisation/)
+  </Card>
+  <Card title="Interface" icon="laptop">
+    [Menus](/gui/overview/) · [HUD](/hud/overview/) · [Items](/items/overview/) ·
+    [Visual](/visual/holograms/)
+  </Card>
+  <Card title="Behaviour" icon="setting">
+    [Commands](/commands/overview/) · [Config](/config/overview/) · [Data](/data/overview/) ·
+    [Scheduler](/core/scheduler/)
+  </Card>
+  <Card title="Depth" icon="open-book">
+    [Testing](/core/testing/) · [Services](/platform/services/) · [Packets](/packets/overview/) ·
+    [Folia](/advanced/folia/)
+  </Card>
+</CardGrid>

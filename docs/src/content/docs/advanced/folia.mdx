@@ -66,11 +66,11 @@ All async methods work the same on both platforms. Folia's `AsyncScheduler` uses
 
 ## GUIs
 
-`Gui.openFor(player)` auto-dispatches `player.openInventory()` to the entity scheduler on Folia. You call it the same way on both platforms:
+`sculk.menus.open(menu, player)` dispatches `player.openInventory()` to the thread that owns the player, so the same call is correct on both platforms:
 
 ```kotlin
 player {
-    val session = shopMenu.openFor(player!!)
+    sculk.menus.open(shopMenu, player!!)
     session.setEntries(shopItems())   // safe — operates on in-memory Inventory object
 }
 ```
@@ -95,6 +95,6 @@ Canvas advantages you can use immediately in your plugins:
 | What you need to do | What Sculk handles |
 | --- | --- |
 | Add `folia-supported: true` to `paper-plugin.yml` | Folia detection at startup |
-| Use `scheduler.runSync(player)` for player-specific tasks from async | `Gui.openFor()` entity scheduler dispatch |
+| Use `scheduler.runSync(player)` for player-specific tasks from async | `sculk.menus.open()` entity-scheduler dispatch |
 | Use async tasks for DB/file/HTTP work | Scheduler API routing (BukkitScheduler → Folia scheduler backend) |
 | — | Tick-to-millisecond conversion for async delayed/repeating tasks |

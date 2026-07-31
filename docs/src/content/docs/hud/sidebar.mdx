@@ -1,0 +1,61 @@
+---
+title: Sidebar
+description: Flicker-free rows, and the redraw rule that is easiest to get wrong.
+---
+
+```kotlin
+sculk.hud.sidebar(player, "<value>My Server</value>") {
+    listOf(
+        HudRow("<center><dim>— stats —</dim>"),
+        HudRow(""),
+        HudRow("Balance <value><coins></value>"),
+        HudRow("Rank <value><rank></value>"),
+    )
+}
+```
+
+The lambda runs on every refresh, so the rows can change freely. Returning a different number of
+rows is fine.
+
+## Why it does not flicker
+
+The naive sidebar removes every entry and re-adds it each refresh. The client renders the gap — a
+visible strobe four times a second.
+
+Here the objective is created **once**, each row keeps a **stable invisible entry** that never
+changes, and the visible text lives in that row's **team prefix**. Updating a line is one prefix
+change with nothing removed, so there is no frame where the row does not exist.
+
+## Only what moved
+
+Rows are compared by a signature covering the template **and its resolved values**. A row that did
+not change is not rewritten, and scores are only written when the layout actually moved — a
+`setScore` is a packet whether or not the value differs.
+
+## The centring rule
+
+A row starting with `<center>` is padded using [real glyph widths](/text/font/):
+
+```kotlin
+HudRow("<center><value>Season 3</value>")
+```
+
+There is one non-obvious consequence. A centred row's padding is measured against the **widest**
+row, so when a neighbour grows or shrinks, an untouched centred row still has to be redrawn — or it
+drifts out of alignment while its own text never changed.
+
+That rule is easy to leave out and hard to notice, so it is a named function with its own test.
+
+## Fifteen lines
+
+```kotlin
+MAX_SIDEBAR_LINES  // 15
+```
+
+Rows beyond that are dropped by Sculk rather than silently by the client. The limit comes from the
+sixteen distinct invisible entries available to hold row slots.
+
+## Blank lines
+
+An empty `HudRow("")` renders as a spacer. Each still occupies a row, so it counts toward the
+fifteen.
