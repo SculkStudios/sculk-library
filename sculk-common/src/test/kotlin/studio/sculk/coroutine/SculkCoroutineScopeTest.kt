@@ -2,13 +2,12 @@ package studio.sculk.coroutine
 
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
-import org.bukkit.Location
-import org.bukkit.entity.Entity
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import studio.sculk.SculkHandle
+import studio.sculk.scheduler.FakeScheduler
 import studio.sculk.scheduler.SculkScheduler
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -58,33 +57,22 @@ class SculkCoroutineScopeTest {
         assertFalse(job.isActive)
     }
 
-    /** Scheduler that runs every task inline and records which surface dispatched it. */
-    private class RecordingScheduler : SculkScheduler {
+    /**
+     * Counts which surface a dispatch went through, delegating the actual behaviour to
+     * [FakeScheduler] so this test only states the part it cares about.
+     */
+    private class RecordingScheduler(private val delegate: FakeScheduler = FakeScheduler()) : SculkScheduler by delegate {
         val syncCount = AtomicInteger(0)
         val asyncCount = AtomicInteger(0)
 
         override fun runSync(task: Runnable): SculkHandle {
             syncCount.incrementAndGet()
-            task.run()
-            return SculkHandle {}
+            return delegate.runSync(task)
         }
-
-        override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
 
         override fun runAsync(task: Runnable): SculkHandle {
             asyncCount.incrementAndGet()
-            task.run()
-            return SculkHandle {}
+            return delegate.runAsync(task)
         }
-
-        override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runAsync(task)
-
-        override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runAsync(task)
     }
 }
