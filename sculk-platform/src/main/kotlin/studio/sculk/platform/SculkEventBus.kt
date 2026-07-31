@@ -1,4 +1,4 @@
-package studio.sculk.event
+package studio.sculk.platform
 
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
@@ -8,14 +8,15 @@ import org.bukkit.plugin.Plugin
 import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkStable
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Consumer
-import java.util.function.Predicate
 
 /**
- * Manages event listener registrations on behalf of a plugin.
+ * Bukkit event listeners with a handle each.
  *
- * All listeners registered through this bus are automatically unregistered
- * when [close] is called — no manual cleanup needed.
+ * Every listener registered here is unregistered when [close] is called, so a plugin never has to
+ * track them itself. Registering one also hands back a handle for undoing just that one.
+ *
+ * Not a coroutine bus, whatever the old documentation said: handlers run on whatever thread Bukkit
+ * fires the event on, which for most events is the one that matters.
  *
  * Example:
  * ```kotlin
@@ -27,7 +28,9 @@ import java.util.function.Predicate
 @SculkStable
 public class SculkEventBus(@PublishedApi internal val plugin: Plugin) : SculkHandle {
     @PublishedApi
-    internal val listeners: MutableList<Listener> = mutableListOf()
+    // Copy-on-write because registration and handle-close both mutate this, and the second can
+    // happen from any thread a plugin closes a handle on.
+    internal val listeners: MutableList<Listener> = java.util.concurrent.CopyOnWriteArrayList()
 
     /**
      * Registers a listener for event type [T].
@@ -79,21 +82,15 @@ public class SculkEventBus(@PublishedApi internal val plugin: Plugin) : SculkHan
     }
 
     /**
-     * Java-friendly overload of [listen] taking a [Class] token, a [Predicate] filter, and a
-     * [Consumer] handler.
-     *
-     * ```java
-     * sculk.getEvents().listen(PlayerJoinEvent.class, EventPriority.NORMAL, false,
-     *     e -> e.getPlayer().isOp(), e -> e.getPlayer().sendMessage("Welcome, admin"));
-     * ```
+     * Registers a listener for [type], for callers that have a class rather than a reified type.
      */
     @SculkStable
     public fun <T : Event> listen(
         type: Class<T>,
-        priority: EventPriority,
-        ignoreCancelled: Boolean,
-        filter: Predicate<T>,
-        handler: Consumer<T>,
+        priority: EventPriority = EventPriority.NORMAL,
+        ignoreCancelled: Boolean = false,
+        filter: (T) -> Boolean = { true },
+        handler: (T) -> Unit,
     ): SculkHandle {
         val listener = object : Listener {}
         plugin.server.pluginManager.registerEvent(
@@ -103,7 +100,7 @@ public class SculkEventBus(@PublishedApi internal val plugin: Plugin) : SculkHan
             { _, event ->
                 if (type.isInstance(event)) {
                     val typed = type.cast(event)
-                    if (filter.test(typed)) handler.accept(typed)
+                    if (filter(typed)) handler(typed)
                 }
             },
             plugin,
@@ -119,26 +116,25 @@ public class SculkEventBus(@PublishedApi internal val plugin: Plugin) : SculkHan
         }
     }
 
-    /** Java-friendly convenience overload of [listen] at [NORMAL][EventPriority.NORMAL] priority. */
-    @SculkStable
-    public fun <T : Event> listen(type: Class<T>, handler: Consumer<T>): SculkHandle =
-        listen(type, EventPriority.NORMAL, false, Predicate { true }, handler)
-
-    /** Java-friendly overload of [once] taking a [Class] token and a [Consumer] handler. */
-    @SculkStable
-    public fun <T : Event> once(type: Class<T>, handler: Consumer<T>): SculkHandle {
-        var handle: SculkHandle? = null
-        handle =
-            listen(type, EventPriority.NORMAL, false, Predicate { true }) {
-                handler.accept(it)
-                handle?.close()
-            }
-        return handle
-    }
-
     /** Unregisters all listeners registered through this bus. */
     override fun close() {
         listeners.forEach { HandlerList.unregisterAll(it) }
         listeners.clear()
+    }
+}
+
+/**
+ * Registers an already-written [Listener] class, returning a handle that unregisters just it.
+ *
+ * For listeners with several `@EventHandler` methods, where the per-event DSL would mean splitting
+ * one cohesive class into unrelated lambdas.
+ */
+@SculkStable
+public fun SculkEventBus.listen(listener: Listener): SculkHandle {
+    plugin.server.pluginManager.registerEvents(listener, plugin)
+    listeners += listener
+    return SculkHandle {
+        HandlerList.unregisterAll(listener)
+        listeners -= listener
     }
 }
