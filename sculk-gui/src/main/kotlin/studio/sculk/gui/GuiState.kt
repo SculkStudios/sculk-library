@@ -33,22 +33,12 @@ public class GuiState {
      * ```kotlin
      * val category: String? = session.state.get<String>("category")
      * ```
+     *
+     * The @JvmName is not Java interop -- it resolves a real JVM signature clash with the
+     * `operator get` above, which erases to the same descriptor. Without it this does not compile.
      */
     @JvmName("getTyped")
     public inline fun <reified T> get(key: String): T? = this[key] as? T
-
-    /**
-     * Java-friendly typed getter. Returns the value for [key] cast to [type], or null.
-     *
-     * ```java
-     * String category = session.getState().get("category", String.class);
-     * ```
-     */
-    @SculkStable
-    public fun <T> get(key: String, type: Class<T>): T? {
-        val value = backing[key] ?: return null
-        return if (type.isInstance(value)) type.cast(value) else null
-    }
 
     /** Stores [value] under [key]. */
     public operator fun set(key: String, value: Any?) {

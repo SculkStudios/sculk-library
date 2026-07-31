@@ -188,7 +188,6 @@ public open class ItemBuilder public constructor(private var material: Material,
      * For tool, equippable, consumable, or any other component without a dedicated method, use the
      * generic [component] escape hatch with the matching [DataComponentTypes] value.
      */
-    @JvmOverloads
     public fun food(nutrition: Int, saturation: Float, canAlwaysEat: Boolean = false) {
         componentEdits += {
             setData(

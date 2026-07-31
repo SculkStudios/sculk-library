@@ -20,7 +20,6 @@ public final class studio/sculk/gui/GuiAnimation {
 
 public final class studio/sculk/gui/GuiAnimationBuilder {
 	public fun <init> ()V
-	public final fun frame (Lorg/bukkit/Material;)V
 	public final fun frame (Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;)V
 	public final fun frame (Lorg/bukkit/inventory/ItemStack;)V
 	public static synthetic fun frame$default (Lstudio/sculk/gui/GuiAnimationBuilder;Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
@@ -35,10 +34,8 @@ public final class studio/sculk/gui/GuiBorderStyle : java/lang/Enum {
 }
 
 public final class studio/sculk/gui/GuiBuilder {
-	public final fun border (Lorg/bukkit/Material;)V
 	public final fun border (Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun border$default (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public final fun fill (Lorg/bukkit/Material;)V
 	public final fun fill (Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun fill$default (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public final fun getSize ()I
@@ -85,7 +82,6 @@ public final class studio/sculk/gui/GuiItemBuilder {
 	public final fun getLore ()Ljava/util/List;
 	public final fun getMaterial ()Lorg/bukkit/Material;
 	public final fun getName ()Ljava/lang/String;
-	public final fun interactive ()V
 	public final fun interactive (Z)V
 	public static synthetic fun interactive$default (Lstudio/sculk/gui/GuiItemBuilder;ZILjava/lang/Object;)V
 	public final fun lore ([Ljava/lang/String;)V
@@ -126,9 +122,9 @@ public final class studio/sculk/gui/GuiSession {
 
 public final class studio/sculk/gui/GuiSlots {
 	public static final field INSTANCE Lstudio/sculk/gui/GuiSlots;
-	public static final fun horizontalBorder (I)Ljava/util/List;
-	public static final fun outerRing (I)Ljava/util/List;
-	public static final fun row (II)Ljava/util/List;
+	public final fun horizontalBorder (I)Ljava/util/List;
+	public final fun outerRing (I)Ljava/util/List;
+	public final fun row (II)Ljava/util/List;
 }
 
 public final class studio/sculk/gui/GuiState {
@@ -136,7 +132,6 @@ public final class studio/sculk/gui/GuiState {
 	public final fun clear ()V
 	public final fun contains (Ljava/lang/String;)Z
 	public final fun get (Ljava/lang/String;)Ljava/lang/Object;
-	public final fun get (Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
 	public final fun set (Ljava/lang/String;Ljava/lang/Object;)V
 }
 
@@ -162,8 +157,6 @@ public final class studio/sculk/gui/SculkGui {
 }
 
 public final class studio/sculk/gui/SculkGuiSlots {
-	public static final fun border (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lstudio/sculk/gui/GuiBorderStyle;)V
-	public static final fun border (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lstudio/sculk/gui/GuiBorderStyle;Ljava/util/Set;)V
 	public static final fun border (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lstudio/sculk/gui/GuiBorderStyle;Ljava/util/Set;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun border$default (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lstudio/sculk/gui/GuiBorderStyle;Ljava/util/Set;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 }

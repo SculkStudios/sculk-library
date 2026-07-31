@@ -160,7 +160,6 @@ constructor(private val title: String) {
      * }
      * ```
      */
-    @JvmOverloads
     public fun fill(material: Material, block: GuiItemBuilder.() -> Unit = {}) {
         for (slot in 0 until size) {
             if (slot !in items) {
@@ -181,7 +180,6 @@ constructor(private val title: String) {
      * }
      * ```
      */
-    @JvmOverloads
     public fun border(material: Material, block: GuiItemBuilder.() -> Unit = {}) {
         val rows = size / 9
         for (slot in 0 until size) {
@@ -282,9 +280,7 @@ public class ConfirmMenuBuilder internal constructor(private val title: String) 
     }
 }
 
-// ---------------------------------------------------------------------------
 // Pagination
-// ---------------------------------------------------------------------------
 
 /** Defines which slots are occupied by paginated entries in a [Gui]. */
 @SculkStable

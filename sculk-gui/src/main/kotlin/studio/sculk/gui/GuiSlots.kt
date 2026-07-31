@@ -11,7 +11,6 @@ import studio.sculk.annotation.SculkStable
 @SculkStable
 public object GuiSlots {
     /** Returns all slots in [row], where row 0 is the top row. */
-    @JvmStatic
     public fun row(row: Int, size: Int): List<Int> {
         require(size % 9 == 0 && size in 9..54) { "GUI size must be a multiple of 9 between 9 and 54." }
         val rows = size / 9
@@ -21,14 +20,12 @@ public object GuiSlots {
     }
 
     /** Returns the top and bottom rows only. Useful for subtle menu borders. */
-    @JvmStatic
     public fun horizontalBorder(size: Int): List<Int> {
         require(size % 9 == 0 && size in 9..54) { "GUI size must be a multiple of 9 between 9 and 54." }
         return (row(0, size) + row((size / 9) - 1, size)).distinct()
     }
 
     /** Returns the full outer ring: top, bottom, left, and right columns. */
-    @JvmStatic
     public fun outerRing(size: Int): List<Int> {
         require(size % 9 == 0 && size in 9..54) { "GUI size must be a multiple of 9 between 9 and 54." }
         val rows = size / 9
@@ -50,7 +47,6 @@ public enum class GuiBorderStyle {
 /**
  * Fills a common border shape while skipping reserved control slots.
  */
-@JvmOverloads
 @SculkStable
 public fun GuiBuilder.border(
     material: Material,
