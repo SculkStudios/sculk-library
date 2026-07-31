@@ -33,7 +33,7 @@ val shopMenu = gui("<green><bold>Shop") {
 
 ```kotlin
 player {
-    val session = shopMenu.openFor(player!!)
+    val session = sculk.menus.open(shopMenu, player!!)
     session.setEntries(getShopItems())
 }
 ```

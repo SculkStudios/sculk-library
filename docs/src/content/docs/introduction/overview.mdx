@@ -42,7 +42,7 @@ fun homeCommand(sculk: SculkPlatform) = command("home") {
 
     sub("menu") {
         player {
-            homeMenu.openFor(player!!)
+            sculk.menus.open(homeMenu, player!!)
         }
     }
 }

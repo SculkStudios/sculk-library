@@ -1,0 +1,68 @@
+---
+title: Localisation
+description: Per-player language bundles that inherit the theme and the placeholder boundary.
+---
+
+Bundles live in `<dataFolder>/lang/<language>.yml` and resolve in each player's client language.
+
+```yaml
+# lang/en.yml
+shop:
+  bought: "<success>Bought <value><item></value> for <value><cost></value>."
+  too-poor: "<danger>You need <value><missing></value> more."
+welcome: "<value>Welcome, <name>!</value>"
+```
+
+```kotlin
+sculk.bundles.send(player, "shop.bought", "item" to stack.type.name, "cost" to price.toString())
+```
+
+Nested keys are flattened with dots, so either shape works and a translator can group related
+strings however they like.
+
+## Resolution order
+
+1. the player's client language (`player.locale().language`)
+2. the default language (`en` unless you say otherwise)
+3. **the key itself**
+
+That last step is deliberate. A missing key renders as a visible `shop.bought` in chat, which gets
+reported. An empty line does not.
+
+## Rendering
+
+```kotlin
+sculk.bundles.component(player, "welcome", "name" to player.name)
+sculk.bundles.component("de", "welcome", "name" to player.name)
+sculk.bundles.template("en", "welcome")   // the raw string, or null
+```
+
+Everything renders through [`SculkMessages`](/text/overview/), so bundle text gets the theme and
+the unparsed-value boundary without doing anything. That matters more here than anywhere else: a
+translated string is the likeliest place for a `<name>` placeholder to meet a hostile value.
+
+## Plurals
+
+```yaml
+kills:
+  one: "<value><count></value> kill"
+  other: "<value><count></value> kills"
+```
+
+```kotlin
+sculk.bundles.plural(player, "kills", count)
+```
+
+`<count>` is provided for you. There are deliberately only two forms — languages with more (Polish,
+Arabic) need a real plural-rule engine, and half of one that silently picks the wrong form is worse
+than a translator writing the awkward-but-correct string into `other`.
+
+## Reloading
+
+```kotlin
+sculk.bundles.reload()
+sculk.bundles.languages   // what actually loaded
+```
+
+A bundle that fails to parse is skipped with a warning and the others still load. A server adding a
+half-finished translation loses that language, not all of them.

@@ -1,0 +1,79 @@
+---
+title: Nametags
+description: Multi-line tags that track the player exactly.
+---
+
+```kotlin
+sculk.nametags.start()
+
+sculk.nametags.show(player) { viewer ->
+    listOf(
+        "<value>${viewer.name}</value>",
+        "<dim>${ranks.of(viewer)}</dim>",
+    )
+}
+
+sculk.nametags.hide(player)
+```
+
+The lambda runs on each refresh, so the lines can change freely.
+
+## Why it rides the player
+
+The display is **mounted on** its wearer rather than teleported to follow them.
+
+A teleport loop visibly lags: the tag swims behind the player at anything above walking pace,
+because it only moves as often as the task runs. A mounted entity is interpolated by the client, so
+it tracks the player exactly — and costs one packet at spawn instead of one per tick.
+
+## Two refresh rates
+
+Most tags change rarely — a name, a rank. Those are re-rendered on a slow pass.
+
+A tag that *animates* needs a much faster one, but running every tag at that rate is waste
+proportional to your player count. So animation is opt-in per wearer:
+
+```kotlin
+sculk.nametags.show(player, animate = true) { viewer -> rainbow(viewer.name) }
+```
+
+Only animated wearers are visited on the fast pass.
+
+```kotlin
+sculk.nametags.start(slowPeriodTicks = 4, fastPeriodTicks = 1)
+```
+
+One tick is the ceiling anyway — metadata cannot be flushed to a client more often than that, so a
+smaller number would only burn CPU.
+
+## Nothing is sent when nothing changed
+
+Rendered lines are cached per wearer. An unchanged tag sends no packets at all.
+
+Components are compared with `equals`, never `toString()` — the latter is expensive enough to show
+up in a profile, and it loses click and hover data, so two genuinely different components can
+serialise identically and be wrongly treated as unchanged.
+
+## The kill switch
+
+If your line supplier throws, nametags stop and log **once**:
+
+```kotlin
+if (sculk.nametags.broken) {
+    // fix the template, then:
+    sculk.nametags.reset()
+}
+```
+
+Without this, a throwing template produces a stack trace per player per period — thousands of lines
+a minute, which is a worse outage than the broken tag.
+
+## Diagnosing
+
+```kotlin
+sculk.nametags.describe(player).forEach { logger.info(it) }
+```
+
+"My nametag animates about once a second" and "my nametag does not animate" look identical from a
+chair. This tells you the entity id, whether the wearer is on the fast pass, whether the kill
+switch tripped, and the last lines rendered.

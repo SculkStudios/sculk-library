@@ -1,0 +1,81 @@
+---
+title: HUD
+description: Sidebar, action bar, tab list and boss bars, driven by one task.
+---
+
+Everything drawn on a player's screen that is not chat.
+
+```kotlin
+sculk.hud.sidebar(player, "<value>My Server</value>") {
+    listOf(
+        HudRow("<center><dim>— stats —</dim>"),
+        HudRow("Balance <value><coins></value>"),
+        HudRow("Ping <value><ping>ms</value>"),
+    )
+}
+```
+
+The HUD starts itself the first time you touch `sculk.hud`. A plugin that never uses it pays
+nothing.
+
+## One task, not one per element
+
+The whole HUD — every element, for every player — runs on a **single** repeating task at five
+ticks.
+
+The obvious alternative is a task per element per player. At a few hundred players that is
+thousands of callbacks a second, but the cost is not the real problem: independent tasks *drift*,
+so the sidebar and the action bar end up disagreeing about the same number in the same frame. One
+driver means everything on screen was computed from the same instant.
+
+Four refreshes a second is fast enough that no player perceives lag in a counter, and slow enough
+to be nearly free.
+
+## Rows
+
+A `HudRow` is a template plus the values it references, kept apart all the way to the renderer:
+
+```kotlin
+HudRow("Balance <value><coins></value>", listOf("coins" to balance.toString()))
+```
+
+Two reasons, and both matter:
+
+1. Values reach the renderer **unparsed** — see [the trust boundary](/text/placeholders/). Much of
+   what a sidebar shows is player-influenced, so this is a prime spot for injection.
+2. Change detection compares the **resolved** row. A template of `Balance: <coins>` never changes,
+   so comparing templates would draw the row once and freeze the number for the session.
+
+Most of the time you will not build values by hand — [placeholders](/hud/placeholders/) do it.
+
+## The elements
+
+```kotlin
+sculk.hud.sidebar(player, title) { rows }
+sculk.hud.clearSidebar(player)
+
+sculk.hud.actionBar(player, "<danger>Careful</danger>", ActionBarPriority.ALERT)
+
+sculk.hud.tabList(player, "<value>My Server</value>", "<dim>have fun</dim>")
+
+sculk.hud.bossBar(player, BossBar.bossBar(text, 1.0f, Color.RED, Overlay.PROGRESS))
+sculk.hud.clearBossBar(player)
+```
+
+## Cleaning up
+
+```kotlin
+@EventHandler
+fun onQuit(event: PlayerQuitEvent) {
+    sculk.hud.forget(event.player)
+}
+```
+
+Without this, the sidebar, tab-list entry and action-bar messages of every player who has **ever**
+joined are held for the server's uptime.
+
+## Next
+
+- [Sidebar](/hud/sidebar/) — why it does not flicker, and the centring rule
+- [Action bar](/hud/action-bar/) — priority and expiry
+- [Placeholders](/hud/placeholders/) — per-viewer values

@@ -1,0 +1,133 @@
+---
+title: Testing
+description: The fakes Sculk ships, and how to test a plugin without a server.
+---
+
+Sculk publishes its test doubles. A module that hands out an interface should hand out something to
+test against it with — otherwise every consumer writes the same fake again, slightly differently,
+and their idea of "one tick passed" stops agreeing with Sculk's.
+
+```kotlin
+dependencies {
+    testImplementation(testFixtures("com.github.SculkStudios.sculk-library:sculk-common"))
+    testImplementation(testFixtures("com.github.SculkStudios.sculk-library:sculk-packets-api"))
+}
+```
+
+## FakeScheduler
+
+A scheduler on a tick counter you control.
+
+```kotlin
+val scheduler = FakeScheduler()
+val service = MyService(scheduler)
+
+service.start()
+
+assertEquals(1, scheduler.pending.size)
+
+scheduler.advance(20)
+assertEquals(4, service.ticksRun)
+```
+
+Undelayed work runs **inline**, so you can act on its effects immediately. Anything with a delay or
+a period is queued and fires only from `advance`, so "nothing has happened yet" is assertable:
+
+```kotlin
+service.scheduleSave(delayTicks = 100)
+
+scheduler.advance(99)
+assertFalse(repository.saved)
+
+scheduler.advance(1)
+assertTrue(repository.saved)
+```
+
+| | |
+| --- | --- |
+| `advance(ticks)` | steps the clock one tick at a time, running what falls due |
+| `pending` | queued tasks, in scheduling order |
+| `executions` | how many task bodies have run |
+| `currentTick` | the clock |
+| `ownsGlobal` / `ownsRegions` | flip to exercise the "wrong thread" branch |
+| `clear()` | reset everything |
+
+Ticks are stepped rather than jumped, so a task with a period of 5 fires **twice** over 10 ticks
+rather than once.
+
+## FakeVirtualEntityService
+
+Records what would have been sent instead of sending it.
+
+```kotlin
+val entities = FakeVirtualEntityService()
+val holograms = HologramService(entities, messages, scheduler)
+
+holograms.create(location, listOf("hi"))
+scheduler.advance(10)
+
+assertEquals(1, entities.sent.count { it is Sent.Spawn })
+
+entities.clear()
+scheduler.advance(50)
+assertEquals(0, entities.sent.size, "an unchanged hologram sends nothing")
+```
+
+That last assertion is the whole point of the dirty tracking, and there is no way to make it
+against a real backend without a server.
+
+Set `available = false` to test how your code behaves with no packet backend at all.
+
+## Testing without any of it
+
+Much of Sculk is deliberately free of Bukkit types so it needs no fake:
+
+```kotlin
+val spec = command("kit") {
+    sub("give") { player("target"); executes { } }
+}
+
+assertEquals("/kit give <target>", spec.usageAt("kit give"))
+assertEquals(listOf("kit give"), spec.flatten().map { it.first })
+```
+
+Permission filtering takes a `(String) -> Boolean` rather than a `CommandSender`, so help output
+tests with no server — and an admin tool can preview what a given rank would see:
+
+```kotlin
+val visible = CommandHelp().entries(specs) { it == "myplugin.basic" }
+```
+
+## When you do need a server
+
+[MockBukkit](https://github.com/MockBukkit/MockBukkit) covers inventories, players and events.
+
+:::caution
+Do not add an explicit `adventure-api` test dependency alongside MockBukkit. It conflicts with the
+copy bundled in Paper and breaks MockBukkit's static initialiser, with an error
+(`NoSuchElementException` during init) that looks nothing like a version conflict. Take Adventure
+transitively from `paper-api`.
+:::
+
+## Testing your data layer
+
+Use a real engine, not a mocked `DataSource`. A string-compared query is a query nobody has parsed.
+
+```kotlin
+val source = HikariDataSource(
+    HikariConfig().apply {
+        jdbcUrl = "jdbc:h2:mem:test;MODE=MySQL;DATABASE_TO_LOWER=TRUE"
+        driverClassName = "org.h2.Driver"
+    },
+)
+val data = SculkData.using(source, SqlDialect.MYSQL, logger)
+```
+
+H2's MySQL mode implements `ON DUPLICATE KEY UPDATE`, and a temp-file SQLite database implements
+`ON CONFLICT … DO UPDATE`, so both upsert paths are exercised by something that actually parses SQL.
+
+:::note
+H2 implements `ON CONFLICT … DO UPDATE` in **neither** its PostgreSQL nor its default mode. Sculk's
+own Postgres coverage is generated-SQL assertions plus an integration test gated on a real server
+(`SCULK_POSTGRES_URL`). If you target Postgres, test against Postgres.
+:::

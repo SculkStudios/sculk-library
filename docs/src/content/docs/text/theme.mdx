@@ -1,0 +1,87 @@
+---
+title: Themes
+description: Write messages against meaning rather than colour.
+---
+
+A theme is a palette of named styles. Messages reference the name, not the colour.
+
+```kotlin
+class MyPlugin : SculkPlugin() {
+    override val theme = SculkTheme(
+        mapOf(
+            "value" to ThemeStyle.Gradient(listOf("#8be9fd", "#50fa7b")),
+            "danger" to ThemeStyle.Solid("#ff5f5f"),
+            "dim" to ThemeStyle.Solid("#6272a4"),
+        ),
+    )
+}
+```
+
+```kotlin
+messages.send(player, "<danger>Not enough <value>coins</value>.")
+```
+
+## Why not just write the colour?
+
+Because `<red>` is a fact about pixels and `<danger>` is a fact about meaning. Changing what danger
+looks like is then one edit in one place, rather than finding every red string and deciding, one at
+a time, whether *this* red meant "error" or "the colour red".
+
+It also makes a seasonal palette or a per-server look a config change instead of a rewrite.
+
+## Styles
+
+### Solid
+
+```kotlin
+ThemeStyle.Solid("#ff5f5f")
+```
+
+### Gradient
+
+```kotlin
+ThemeStyle.Gradient(listOf("#8be9fd", "#50fa7b", "#f1fa8c"))
+```
+
+A gradient needs at least two stops. It expands to a **scoped** `<gradient>` tag, which is why a
+theme has to be expanded before MiniMessage parses rather than being a tag substitution — a
+gradient colours everything up to its closing tag, so it cannot be expressed as a single tag.
+
+### Shader
+
+```kotlin
+ThemeStyle.Shader("#ff5fa3", effect = "pulse")
+```
+
+A flat colour a resource pack's core shader recognises by exact value and animates client-side.
+The server sends a static colour and does no work; without the pack the text renders as that
+colour rather than breaking.
+
+:::tip
+Keep a shader sentinel one step away in one channel from any static colour beside it, or the pack
+will animate text you meant to keep still.
+:::
+
+## Swatches
+
+Every style can report a single representative colour, for places that cannot render the full
+thing — a dyed menu icon, a boss-bar colour, a log line:
+
+```kotlin
+val icon = Dyes.nearest(theme.get("danger")!!.swatchHex)
+```
+
+A gradient reports a middle stop, which reads closer to the whole than either end does.
+
+## Reloading
+
+`with` returns a copy with overrides layered on, leaving the original alone:
+
+```kotlin
+val seasonal = theme.with(mapOf("value" to ThemeStyle.Solid("#ff79c6")))
+```
+
+## Unknown names pass through
+
+A tag the theme does not define is left for MiniMessage to handle, so `<red>` and `<bold>` keep
+working exactly as they always did. A theme adds vocabulary; it does not take any away.
