@@ -1,4 +1,4 @@
-package studio.sculk.effects
+package studio.sculk.visual
 
 import org.bukkit.Location
 import studio.sculk.annotation.SculkStable

@@ -1,4 +1,4 @@
-package studio.sculk.holograms
+package studio.sculk.visual
 
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.ceil

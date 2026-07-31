@@ -1,4 +1,4 @@
-package studio.sculk.holograms
+package studio.sculk.visual
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
