@@ -3,29 +3,17 @@ plugins {
     `maven-publish`
 }
 
-description = "Sculk Studio — Bill of Materials (BOM) for à-la-carte module version alignment"
+description = "Sculk Studio — version alignment for picking modules à la carte"
 
 dependencies {
     constraints {
-        api(project(":sculk-common"))
-        api(project(":sculk-adventure"))
-        api(project(":sculk-commands"))
-        api(project(":sculk-gui"))
-        api(project(":sculk-events"))
-        api(project(":sculk-config"))
-        api(project(":sculk-series"))
-        api(project(":sculk-items"))
-        api(project(":sculk-effects"))
-        api(project(":sculk-data"))
-        api(project(":sculk-text"))
-        api(project(":sculk-tasks"))
-        api(project(":sculk-integrations"))
-        api(project(":sculk-packets-api"))
-        api(project(":sculk-packets-packetevents"))
-        api(project(":sculk-packets-protocollib"))
-        api(project(":sculk-holograms"))
-        api(project(":sculk-content"))
-        api(project(":sculk-platform"))
+        // Generated from the modules that actually apply sculk.module, so the BOM cannot drift
+        // from the build the way a hand-maintained list does — the previous one still listed
+        // sculk-content months after it was relevant.
+        rootProject.subprojects
+            .filter { it.name != "sculk-bom" && it.name.startsWith("sculk-") }
+            .sortedBy { it.name }
+            .forEach { api(project(it.path)) }
     }
 }
 
