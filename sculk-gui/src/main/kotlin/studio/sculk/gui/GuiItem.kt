@@ -148,7 +148,6 @@ constructor(private val slot: Int) {
      * Marks this slot as interactive — the player may take from and place into it freely.
      * Use for input slots (e.g. an item-deposit GUI). Non-interactive slots are click-locked.
      */
-    @JvmOverloads
     public fun interactive(value: Boolean = true) {
         interactive = value
     }
@@ -280,7 +279,6 @@ public class GuiAnimationBuilder {
     }
 
     /** Adds a frame built from a [Material] via the Sculk item builder. */
-    @JvmOverloads
     public fun frame(material: Material, block: ItemBuilder.() -> Unit = {}) {
         frames += studio.sculk.items.item(material, block)
     }

@@ -12,7 +12,7 @@ import studio.sculk.scheduler.SculkScheduler
  * Bukkit/Paper APIs that require a synchronized context.
  */
 @SculkStable
-public class PacketContext @JvmOverloads constructor(
+public class PacketContext constructor(
     public val player: Player?,
     public val direction: PacketDirection,
     public val type: PacketKey,

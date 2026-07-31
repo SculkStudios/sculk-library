@@ -175,9 +175,7 @@ public object SculkSeries {
         )
     }
 
-    // ---------------------------------------------------------------------------
     // Custom registries
-    // ---------------------------------------------------------------------------
 
     private val customRegistries: ConcurrentHashMap<Class<*>, SculkRegistry<*>> = ConcurrentHashMap()
 
@@ -222,9 +220,7 @@ public object SculkSeries {
     @SculkStable
     public inline fun <reified T : Any> lookup(key: String): T? = lookup(T::class.java, key)
 
-    // ---------------------------------------------------------------------------
     // Public API — built-in registries
-    // ---------------------------------------------------------------------------
 
     /** Resolves a [Material] by [key]. Keys are case-insensitive. Returns null for unknown keys. */
 

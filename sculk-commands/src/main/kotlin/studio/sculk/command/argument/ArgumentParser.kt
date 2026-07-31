@@ -45,9 +45,7 @@ public interface ArgumentParser<T> {
     public fun suggest(input: String): List<String> = emptyList()
 }
 
-// ---------------------------------------------------------------------------
 // Built-in parsers
-// ---------------------------------------------------------------------------
 
 @SculkInternal
 public object StringParser : ArgumentParser<String> {
