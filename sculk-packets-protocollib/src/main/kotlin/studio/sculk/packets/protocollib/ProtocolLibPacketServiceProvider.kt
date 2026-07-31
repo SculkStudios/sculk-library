@@ -10,6 +10,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
 import studio.sculk.packets.AbstractPacketService
 import studio.sculk.packets.PacketBackend
 import studio.sculk.packets.PacketContext
@@ -21,12 +22,14 @@ import studio.sculk.packets.SculkPacketService
 import studio.sculk.packets.SculkPacketServiceProvider
 import studio.sculk.scheduler.SculkScheduler
 
+@SculkStable
 public class ProtocolLibPacket(
     public val container: PacketContainer,
     override val direction: PacketDirection,
     override val type: PacketKey,
 ) : SculkPacket
 
+@SculkStable
 public class ProtocolLibPacketServiceProvider : SculkPacketServiceProvider {
     override val backend: PacketBackend = PacketBackend.ProtocolLib
 

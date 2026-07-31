@@ -18,6 +18,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkStable
 import studio.sculk.packets.AbstractPacketService
 import studio.sculk.packets.BlockDigAction
 import studio.sculk.packets.BlockDigContext
@@ -34,6 +35,7 @@ import studio.sculk.packets.SculkPacketService
 import studio.sculk.packets.SculkPacketServiceProvider
 import studio.sculk.scheduler.SculkScheduler
 
+@SculkStable
 public class PacketEventsPacket(
     public val wrapper: PacketWrapper<*>,
     override val direction: PacketDirection,
@@ -51,12 +53,14 @@ public class PacketEventsPacket(
  *
  * Valid only for the duration of the callback; PacketEvents recycles the event afterwards.
  */
+@SculkStable
 public class PacketEventsEvent(
     public val event: ProtocolPacketEvent,
     override val direction: PacketDirection,
     override val type: PacketKey,
 ) : SculkPacket
 
+@SculkStable
 public class PacketEventsPacketServiceProvider : SculkPacketServiceProvider {
     override val backend: PacketBackend = PacketBackend.PacketEvents
 

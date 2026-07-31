@@ -189,7 +189,6 @@ public object SculkSeries {
      * val value = SculkSeries.lookup<MyType>("my_key")
      * ```
      */
-
     @SculkStable
     public fun <T : Any> register(type: Class<T>, resolver: (String) -> T?) {
         customRegistries[type] =
@@ -211,7 +210,6 @@ public object SculkSeries {
      *
      * Returns null if no registry is registered for [type] or the key is unknown.
      */
-
     @SculkStable
     @Suppress("UNCHECKED_CAST")
     public fun <T : Any> lookup(type: Class<T>, key: String): T? = (customRegistries[type] as? SculkRegistry<T>)?.resolve(key)
@@ -223,12 +221,16 @@ public object SculkSeries {
     // Public API — built-in registries
 
     /** Resolves a [Material] by [key]. Keys are case-insensitive. Returns null for unknown keys. */
-
     @SculkStable
     public fun material(key: String): Material? = materialRegistry.resolve(key)
 
-    /** Resolves a [Material] by [key] or throws with a clear error. */
-
+    /**
+     * Resolves a [Material] by [key], or throws.
+     *
+     * For keys **you** control -- a constant in your own source. A key that came from a config
+     * file is a user error, not a programmer error, so use [material] and report the bad value,
+     * or [studio.sculk.items.item] which does that for you.
+     */
     @SculkStable
     public fun requireMaterial(key: String): Material = material(key) ?: throw unknown("material", key)
 
@@ -236,32 +238,26 @@ public object SculkSeries {
      * Resolves a [Sound] by [key].
      * Accepts both `ENTITY_PLAYER_LEVELUP` and `entity.player.levelup` forms.
      */
-
     @SculkStable
     public fun sound(key: String): Sound? = soundRegistry.resolve(key)
 
-    /** Resolves a [Sound] by [key] or throws with a clear error. */
-
+    /** As the nullable lookup, but throws. For keys you control, not for config values. */
     @SculkStable
     public fun requireSound(key: String): Sound = sound(key) ?: throw unknown("sound", key)
 
     /** Resolves a [Particle] by [key]. */
-
     @SculkStable
     public fun particle(key: String): Particle? = particleRegistry.resolve(key)
 
-    /** Resolves a [Particle] by [key] or throws with a clear error. */
-
+    /** As the nullable lookup, but throws. For keys you control, not for config values. */
     @SculkStable
     public fun requireParticle(key: String): Particle = particle(key) ?: throw unknown("particle", key)
 
     /** Resolves an [EntityType] by [key]. */
-
     @SculkStable
     public fun entityType(key: String): EntityType? = entityTypeRegistry.resolve(key)
 
-    /** Resolves an [EntityType] by [key] or throws with a clear error. */
-
+    /** As the nullable lookup, but throws. For keys you control, not for config values. */
     @SculkStable
     public fun requireEntityType(key: String): EntityType = entityType(key) ?: throw unknown("entity type", key)
 
@@ -269,12 +265,10 @@ public object SculkSeries {
      * Resolves an [Enchantment] by [key].
      * Accepts keys like `sharpness`, `fire_aspect`, `protection`.
      */
-
     @SculkStable
     public fun enchantment(key: String): Enchantment? = enchantmentRegistry.resolve(key)
 
-    /** Resolves an [Enchantment] by [key] or throws with a clear error. */
-
+    /** As the nullable lookup, but throws. For keys you control, not for config values. */
     @SculkStable
     public fun requireEnchantment(key: String): Enchantment = enchantment(key) ?: throw unknown("enchantment", key)
 
@@ -282,12 +276,10 @@ public object SculkSeries {
      * Resolves a [PotionEffectType] by [key].
      * Accepts keys like `speed`, `strength`, `night_vision`.
      */
-
     @SculkStable
     public fun potionEffect(key: String): PotionEffectType? = potionEffectRegistry.resolve(key)
 
-    /** Resolves a [PotionEffectType] by [key] or throws with a clear error. */
-
+    /** As the nullable lookup, but throws. For keys you control, not for config values. */
     @SculkStable
     public fun requirePotionEffect(key: String): PotionEffectType = potionEffect(key) ?: throw unknown("potion effect", key)
 
@@ -295,12 +287,10 @@ public object SculkSeries {
      * Resolves a [Biome] by [key].
      * Accepts keys like `plains`, `desert`, `ocean`, `the_nether`.
      */
-
     @SculkStable
     public fun biome(key: String): Biome? = biomeRegistry.resolve(key)
 
-    /** Resolves a [Biome] by [key] or throws with a clear error. */
-
+    /** As the nullable lookup, but throws. For keys you control, not for config values. */
     @SculkStable
     public fun requireBiome(key: String): Biome = biome(key) ?: throw unknown("biome", key)
 
@@ -308,7 +298,6 @@ public object SculkSeries {
      * Resolves a [GameMode] by [key].
      * Accepts `survival`, `creative`, `adventure`, `spectator`.
      */
-
     @SculkStable
     public fun gameMode(key: String): GameMode? = gameModeRegistry.resolve(key)
 
@@ -316,34 +305,28 @@ public object SculkSeries {
      * Resolves a [Difficulty] by [key].
      * Accepts `peaceful`, `easy`, `normal`, `hard`.
      */
-
     @SculkStable
     public fun difficulty(key: String): Difficulty? = difficultyRegistry.resolve(key)
 
     /** Returns all known [Material] key names. */
-
     @SculkStable
     public fun materialKeys(): Set<String> = materialRegistry.keys()
 
     /** Returns all known [Sound] key names. */
-
     @SculkStable
     public fun soundKeys(): Set<String> = soundRegistry.keys()
 
     /** Returns all known [Enchantment] key names. */
-
     @SculkStable
     public fun enchantmentKeys(): Set<String> = enchantmentRegistry.keys()
 
     /** Returns all known [PotionEffectType] key names. */
-
     @SculkStable
     public fun potionEffectKeys(): Set<String> = potionEffectRegistry.keys()
 
     /**
      * Validates config-driven registry keys during startup.
      */
-
     @SculkStable
     public fun validateKeys(
         materials: Iterable<String> = emptyList(),
