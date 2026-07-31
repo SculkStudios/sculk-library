@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "release/**"]
   pull_request:
-    branches: [main]
+    branches: [main, "release/**"]
 
 jobs:
   build:
@@ -25,17 +25,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # `build` already depends on `test` and `ktlintCheck`; running them as separate steps
+      # re-ran the whole task graph three times per job.
       - name: Build
         run: ./gradlew build --no-daemon
 
-      - name: Test
-        run: ./gradlew test --no-daemon
-
-      - name: Lint (ktlint)
-        run: ./gradlew ktlintCheck --no-daemon
-
       - name: Upload test reports
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: test-reports
