@@ -32,4 +32,6 @@ dependencies {
     testRuntimeOnly(libs.postgresql)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.coroutines.test)
+    // RedisCache is tested against a stub backend, but the Lettuce types must still resolve.
+    testImplementation(libs.lettuce)
 }
