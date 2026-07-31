@@ -1,187 +1,183 @@
 package studio.sculk
 
 import studio.sculk.annotation.SculkStable
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 /**
- * Represents the outcome of a Sculk Studio operation.
+ * The outcome of a fallible operation.
  *
- * [SculkResult] is used throughout the framework to return either a [Success]
- * value or a [Failure] with a descriptive message and optional cause.
+ * Sculk uses this instead of [kotlin.Result] because the failures worth reporting here are
+ * conditions rather than exceptions — an unknown material name in a config file, an absent
+ * packet backend, a query that found nothing. `kotlin.Result` cannot express those without
+ * inventing an exception per case, and the exception then has to be unwrapped by every caller
+ * that only wanted to know what went wrong.
  *
- * Example:
+ * [Failure.message] is read by a server owner in a console log or a player in chat. Write it as
+ * a complete sentence naming the value that was wrong, not as an error code:
+ * `"No material named 'diamon_sword'; check tools.yml."` rather than `"BAD_MATERIAL"`.
+ *
  * ```kotlin
  * when (val result = repo.find(uuid)) {
- *     is SculkResult.Success -> println(result.value)
+ *     is SculkResult.Success -> player.sendMessage("Coins: ${result.value?.coins}")
  *     is SculkResult.Failure -> logger.warning(result.message)
  * }
  * ```
  */
 @SculkStable
 public sealed interface SculkResult<out T> {
-    /**
-     * A successful result carrying a [value].
-     */
     @SculkStable
     public data class Success<T>(public val value: T) : SculkResult<T>
 
-    /**
-     * A failed result carrying a [message] and an optional [cause].
-     */
     @SculkStable
     public data class Failure(public val message: String, public val cause: Throwable? = null) : SculkResult<Nothing>
 
-    // -------------------------------------------------------------------------
-    // Member accessors — first-class from both Kotlin and Java (no `SculkResultKt`).
-    // -------------------------------------------------------------------------
-
-    /** True if this is a [Success]. */
     @SculkStable
-    public fun isSuccess(): Boolean = this is Success
+    public val isSuccess: Boolean get() = this is Success
 
-    /** True if this is a [Failure]. */
     @SculkStable
-    public fun isFailure(): Boolean = this is Failure
+    public val isFailure: Boolean get() = this is Failure
 
-    /** The success value, or null if this is a [Failure]. */
     @SculkStable
     public fun getOrNull(): T? = (this as? Success)?.value
 
-    /** The success value, or throws [IllegalStateException] (with the failure cause) if this is a [Failure]. */
+    /**
+     * The value, or throws with the failure message.
+     *
+     * Reserved for tests and start-up paths where a failure genuinely cannot be handled. In
+     * ordinary code it converts a described condition back into an exception, which is the thing
+     * this type exists to avoid.
+     */
     @SculkStable
     public fun getOrThrow(): T = when (this) {
         is Success -> value
         is Failure -> throw IllegalStateException(message, cause)
     }
 
-    /**
-     * Runs [action] with the value when this is a [Success]; returns this unchanged.
-     *
-     * ```java
-     * repo.save(data)
-     *     .ifSuccess(v -> player.sendMessage("<green>Saved!"))
-     *     .ifFailure((msg, err) -> getLogger().warning(msg));
-     * ```
-     */
-    @SculkStable
-    public fun ifSuccess(action: java.util.function.Consumer<@UnsafeVariance T>): SculkResult<T> {
-        if (this is Success) action.accept(value)
-        return this
-    }
-
-    /** Runs [action] with the message and cause when this is a [Failure]; returns this unchanged. */
-    @SculkStable
-    public fun ifFailure(action: java.util.function.BiConsumer<String, Throwable?>): SculkResult<T> {
-        if (this is Failure) action.accept(message, cause)
-        return this
-    }
-
     public companion object {
-        /** Wraps [value] in a [Success]. */
+        @SculkStable
         public fun <T> success(value: T): SculkResult<T> = Success(value)
 
-        /** Wraps [message] and optional [cause] in a [Failure]. */
+        /**
+         * A successful result carrying no value.
+         *
+         * Returns a shared instance. Write-shaped operations return `SculkResult<Unit>` far more
+         * often than anything else, and each `Success(Unit)` was otherwise a fresh allocation on
+         * a path that runs per save, per packet, per tick.
+         */
+        @SculkStable
+        public fun ok(): SculkResult<Unit> = UNIT_SUCCESS
+
+        @SculkStable
         public fun failure(message: String, cause: Throwable? = null): SculkResult<Nothing> = Failure(message, cause)
+
+        /**
+         * Runs [block], turning anything it throws into a [Failure] described by [describe].
+         *
+         * The bridge for APIs that report failure by throwing — JDBC, reflection, `URI.create`.
+         * Without it every such call site grows its own `runCatching { }.fold(...)`, which is
+         * how four of them ended up with four different messages for the same condition.
+         *
+         * ```kotlin
+         * SculkResult.catching("read the player row for $uuid") { statement.executeQuery() }
+         * ```
+         *
+         * [describe] completes the sentence "Failed to …", so phrase it as an action.
+         */
+        @SculkStable
+        @OptIn(ExperimentalContracts::class)
+        public inline fun <T> catching(describe: String, block: () -> T): SculkResult<T> {
+            contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
+            return try {
+                Success(block())
+            } catch (error: Exception) {
+                Failure("Failed to $describe: ${error.message ?: error::class.simpleName}", error)
+            }
+        }
+
+        private val UNIT_SUCCESS: SculkResult<Unit> = Success(Unit)
     }
 }
 
 /**
- * Returns the value if this is a [SculkResult.Success], or [default] otherwise.
- *
- * Kotlin convenience (Java callers use `getOrNull()` with a fallback, since a member returning the
- * default value cannot be expressed safely on the `Failure : SculkResult<Nothing>` arm).
- */
-@SculkStable
-public fun <T> SculkResult<T>.getOrDefault(default: T): T = getOrNull() ?: default
-
-/** Returns true if this is a [SculkResult.Success]. */
-@SculkStable
-public val SculkResult<*>.isSuccess: Boolean get() = this is SculkResult.Success
-
-/** Returns true if this is a [SculkResult.Failure]. */
-@SculkStable
-public val SculkResult<*>.isFailure: Boolean get() = this is SculkResult.Failure
-
-/**
- * Transforms the success value with [transform], leaving failures unchanged.
+ * Transforms the value, leaving a failure unchanged.
  *
  * ```kotlin
- * repo.find(uuid)
- *     .map { it?.coins ?: 0 }
- *     .onSuccess { coins -> player.sendMessage("Coins: $coins") }
+ * repo.find(uuid).map { it?.coins ?: 0 }
  * ```
  */
 @SculkStable
-public fun <T, R> SculkResult<T>.map(transform: (T) -> R): SculkResult<R> = when (this) {
-    is SculkResult.Success -> SculkResult.success(transform(value))
-    is SculkResult.Failure -> this
+@OptIn(ExperimentalContracts::class)
+public inline fun <T, R> SculkResult<T>.map(transform: (T) -> R): SculkResult<R> {
+    contract { callsInPlace(transform, InvocationKind.AT_MOST_ONCE) }
+    return when (this) {
+        is SculkResult.Success -> SculkResult.Success(transform(value))
+        is SculkResult.Failure -> this
+    }
 }
 
-/**
- * Chains an operation that itself returns a [SculkResult], propagating failures short-circuit style.
- *
- * ```kotlin
- * repo.find(uuid)
- *     .flatMap { data -> if (data != null) SculkResult.success(data) else SculkResult.failure("not found") }
- *     .onSuccess { data -> player.sendMessage("Hello, ${data.name}") }
- * ```
- */
+/** Chains an operation that is itself fallible, short-circuiting on the first failure. */
 @SculkStable
-public fun <T, R> SculkResult<T>.flatMap(transform: (T) -> SculkResult<R>): SculkResult<R> = when (this) {
-    is SculkResult.Success -> transform(value)
-    is SculkResult.Failure -> this
+@OptIn(ExperimentalContracts::class)
+public inline fun <T, R> SculkResult<T>.flatMap(transform: (T) -> SculkResult<R>): SculkResult<R> {
+    contract { callsInPlace(transform, InvocationKind.AT_MOST_ONCE) }
+    return when (this) {
+        is SculkResult.Success -> transform(value)
+        is SculkResult.Failure -> this
+    }
 }
 
-/**
- * Runs [action] with the value if this is a [SculkResult.Success]. Returns this unchanged.
- *
- * ```kotlin
- * repo.save(data).onSuccess { player.sendMessage("<green>Saved!") }
- * ```
- */
+/** Runs [action] on success and returns this unchanged, for use in a chain. */
 @SculkStable
-public fun <T> SculkResult<T>.onSuccess(action: (T) -> Unit): SculkResult<T> {
+@OptIn(ExperimentalContracts::class)
+public inline fun <T> SculkResult<T>.onSuccess(action: (T) -> Unit): SculkResult<T> {
+    contract { callsInPlace(action, InvocationKind.AT_MOST_ONCE) }
     if (this is SculkResult.Success) action(value)
     return this
 }
 
-/**
- * Runs [action] with the message and cause if this is a [SculkResult.Failure]. Returns this unchanged.
- *
- * ```kotlin
- * repo.find(uuid).onFailure { msg, _ -> logger.warning(msg) }
- * ```
- */
+/** Runs [action] on failure and returns this unchanged, for use in a chain. */
 @SculkStable
-public fun <T> SculkResult<T>.onFailure(action: (message: String, cause: Throwable?) -> Unit): SculkResult<T> {
+@OptIn(ExperimentalContracts::class)
+public inline fun <T> SculkResult<T>.onFailure(action: (message: String, cause: Throwable?) -> Unit): SculkResult<T> {
+    contract { callsInPlace(action, InvocationKind.AT_MOST_ONCE) }
     if (this is SculkResult.Failure) action(message, cause)
     return this
 }
 
-/**
- * Returns [onSuccess] applied to the value if [SculkResult.Success], or [onFailure] if [SculkResult.Failure].
- *
- * ```kotlin
- * val display = result.fold(
- *     onSuccess = { data -> "<green>${data.name}" },
- *     onFailure = { msg, _ -> "<red>Error: $msg" },
- * )
- * ```
- */
+/** Collapses both arms to a single value. */
 @SculkStable
-public fun <T, R> SculkResult<T>.fold(onSuccess: (T) -> R, onFailure: (message: String, cause: Throwable?) -> R): R = when (this) {
-    is SculkResult.Success -> onSuccess(value)
-    is SculkResult.Failure -> onFailure(message, cause)
+@OptIn(ExperimentalContracts::class)
+public inline fun <T, R> SculkResult<T>.fold(onSuccess: (T) -> R, onFailure: (message: String, cause: Throwable?) -> R): R {
+    contract {
+        callsInPlace(onSuccess, InvocationKind.AT_MOST_ONCE)
+        callsInPlace(onFailure, InvocationKind.AT_MOST_ONCE)
+    }
+    return when (this) {
+        is SculkResult.Success -> onSuccess(value)
+        is SculkResult.Failure -> onFailure(message, cause)
+    }
 }
 
-/**
- * Recovers from a failure by computing a fallback value.
- *
- * ```kotlin
- * val data = repo.find(uuid).recover { _, _ -> PlayerData.default(uuid) }
- * ```
- */
+/** The value, or [fallback] computed from the failure. */
 @SculkStable
-public fun <T> SculkResult<T>.recover(onFailure: (message: String, cause: Throwable?) -> T): SculkResult<T> = when (this) {
-    is SculkResult.Success -> this
-    is SculkResult.Failure -> SculkResult.success(onFailure(message, cause))
+@OptIn(ExperimentalContracts::class)
+public inline fun <T> SculkResult<T>.getOrElse(fallback: (message: String, cause: Throwable?) -> T): T {
+    contract { callsInPlace(fallback, InvocationKind.AT_MOST_ONCE) }
+    return when (this) {
+        is SculkResult.Success -> value
+        is SculkResult.Failure -> fallback(message, cause)
+    }
+}
+
+/** Replaces a failure with a successful fallback value. */
+@SculkStable
+@OptIn(ExperimentalContracts::class)
+public inline fun <T> SculkResult<T>.recover(fallback: (message: String, cause: Throwable?) -> T): SculkResult<T> {
+    contract { callsInPlace(fallback, InvocationKind.AT_MOST_ONCE) }
+    return when (this) {
+        is SculkResult.Success -> this
+        is SculkResult.Failure -> SculkResult.Success(fallback(message, cause))
+    }
 }

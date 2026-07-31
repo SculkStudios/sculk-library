@@ -1,17 +1,9 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.example")
     alias(libs.plugins.shadow)
 }
 
-description = "Sculk Studio — basic plugin example (vertical slice)"
-
-tasks.withType<KotlinCompile> {
-    compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
-    }
-}
+description = "Sculk Studio — basic-plugin example"
 
 dependencies {
     implementation(project(":sculk-platform"))
@@ -21,5 +13,5 @@ tasks.jar { enabled = false }
 
 tasks.shadowJar {
     archiveClassifier = ""
-    archiveFileName = "sculk-example-basic-${project.version}.jar"
+    archiveFileName = "sculk-example-basic-plugin-${project.version}.jar"
 }

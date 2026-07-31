@@ -91,7 +91,6 @@ public abstract class ClientBlockContext(
         }
     }
 
-    /** Java-friendly overload of [intercept] taking a [java.lang.Runnable]. */
     @SculkStable
     public fun intercept(block: Runnable): SculkHandle = intercept { block.run() }
 

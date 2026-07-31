@@ -195,10 +195,26 @@ public object GreedyStringParser : ArgumentParser<String> {
 }
 
 @SculkInternal
-public class ChoiceParser(private val choices: List<String>) : ArgumentParser<String> {
-    override val typeName: String = choices.joinToString("|")
+public class ChoiceParser(override val typeName: String, private val options: () -> Collection<String>) : ArgumentParser<String> {
+    override fun parse(input: String): String? = options().firstOrNull { it.equals(input, ignoreCase = true) }
 
-    override fun parse(input: String): String? = choices.firstOrNull { it.equals(input, ignoreCase = true) }
+    override fun suggest(input: String): List<String> = options().filter { it.startsWith(input, ignoreCase = true) }
+}
 
-    override fun suggest(input: String): List<String> = choices.filter { it.startsWith(input, ignoreCase = true) }
+/**
+ * Accepts one constant of [type], matched case-insensitively on its name.
+ *
+ * enumValueOf throws on a miss rather than returning null, so the constants are matched against a
+ * list instead -- an exception per mistyped argument is a cost paid on the wrong path.
+ */
+@SculkInternal
+public class EnumParser<E : Enum<E>>(private val type: Class<E>) : ArgumentParser<E> {
+    private val constants: List<E> = type.enumConstants.toList()
+
+    override val typeName: String = type.simpleName.lowercase()
+
+    override fun parse(input: String): E? = constants.firstOrNull { it.name.equals(input, ignoreCase = true) }
+
+    override fun suggest(input: String): List<String> =
+        constants.map { it.name.lowercase() }.filter { it.startsWith(input, ignoreCase = true) }
 }

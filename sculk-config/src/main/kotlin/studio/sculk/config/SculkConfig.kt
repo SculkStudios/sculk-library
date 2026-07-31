@@ -1,189 +1,279 @@
 package studio.sculk.config
 
+import com.charleskorn.kaml.SingleLineStringStyle
+import com.charleskorn.kaml.Yaml
+import com.charleskorn.kaml.YamlConfiguration
+import com.charleskorn.kaml.YamlNamingStrategy
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
+import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
-import studio.sculk.config.managed.SculkConfigManager
-import studio.sculk.config.yaml.YamlMapper
+import studio.sculk.io.DirectoryWatcher
+import studio.sculk.onSuccess
 import java.io.File
-import java.util.function.Consumer
+import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
 
+private val REVISION_MARKER = Regex("^#\\s*revision:\\s*(\\d+)\\s*$", RegexOption.MULTILINE)
+private val ENV_PLACEHOLDER = Regex("""\$\{[A-Za-z_][A-Za-z0-9_]*(?::-[^}]*)?}""")
+
 /**
- * Entry point for the Sculk Studio configuration system.
+ * Typed YAML configuration.
  *
- * Obtain an instance via [SculkConfig.create] or through [studio.sculk.platform.SculkPlatform].
+ * ### The defaults are the shipped file
  *
- * Example:
+ * There is no `config.yml` in the jar's resources. The data class *is* the file: on first load the
+ * defaults are rendered out, and on every later load the existing file is merged over them, so a
+ * property added in an update appears in the server's file with its comment, in place, without
+ * anyone maintaining a second copy that drifts.
+ *
+ * ### It only writes when something actually changed
+ *
+ * The merged render is compared against what is on disk and written only if it differs, so an
+ * up-to-date server never sees its config file's timestamp move. Line endings are normalised to
+ * `\n` first, or a Windows-authored file and a Linux-authored one would differ forever and rewrite
+ * each other on every boot.
+ *
+ * ### Nothing here uses reflection
+ *
+ * File name, comments, constraints and nesting all come off the compiler-generated
+ * `SerialDescriptor`. Renaming a property is a compile error rather than a config key that quietly
+ * reverts to its default.
+ *
  * ```kotlin
- * val config = SculkConfig.create(plugin.dataFolder, plugin.logger)
- *
+ * @Serializable
  * @ConfigFile("settings.yml")
- * data class Settings(val maxHomes: Int = 5)
+ * data class Settings(
+ *     @Comment("How many homes a player may set.")
+ *     val maxHomes: Int = 5,
+ * )
  *
- * val settings = config.load<Settings>()
- * config.onReload<Settings> { /* called after /reload */ }
+ * val settings = config.load<Settings>().getOrThrow()
  * ```
  */
 @SculkStable
 public class SculkConfig
 @SculkInternal
-constructor(private val dataFolder: File, private val logger: Logger) {
-    private val managers: MutableMap<Class<*>, SculkConfigManager<*>> = mutableMapOf()
-    private val migrationSteps: MutableMap<Class<*>, List<ConfigMigrationStep>> = mutableMapOf()
+constructor(
+    private val dataFolder: File,
+    private val logger: Logger,
+    private val environment: (String) -> String? = System::getenv,
+) {
+    private val yaml = Yaml(
+        configuration = YamlConfiguration(
+            // What makes "the defaults are the file" work at all.
+            encodeDefaults = true,
+            // A key left over from an older version must not stop the server booting.
+            strictMode = false,
+            singleLineStringStyle = SingleLineStringStyle.PlainExceptAmbiguous,
+            sequenceBlockIndent = 2,
+            // Config files are read and edited by server owners, not by Kotlin: max-homes, not
+            // maxHomes. This is also the format every previously generated Sculk config used.
+            yamlNamingStrategy = YamlNamingStrategy.KebabCase,
+        ),
+    )
 
-    /**
-     * Loads the config for [T], creating defaults on disk if the file doesn't exist.
-     *
-     * Returns the current value. Call [reload] or the platform reload command to refresh.
-     */
-    public inline fun <reified T : Any> load(): T = load(T::class.java)
+    private val cache = ConcurrentHashMap<String, Any>()
+    private val loaders = ConcurrentHashMap<String, () -> Unit>()
+    private val listeners = ConcurrentHashMap<String, MutableList<() -> Unit>>()
+    private val migrations = ConcurrentHashMap<String, List<ConfigMigrationStep>>()
 
-    /** Loads the config with explicit mode metadata for future strict-mode behavior. */
-    public inline fun <reified T : Any> load(mode: ConfigLoadMode): T = load(T::class.java, mode)
+    // The type argument on serializer<T>() is not decoration: where T does not appear in the
+    // return type, inference resolves it against the KSerializer<T> parameter, finds nothing to
+    // pin it to, and settles on the upper bound — producing "Serializer for class 'kotlin.Any'
+    // is not found" at runtime rather than a compile error.
 
-    /**
-     * Registers a [callback] to run after [T]'s config is reloaded.
-     */
-    public inline fun <reified T : Any> onReload(noinline callback: () -> Unit): Unit = onReload(T::class.java, callback)
+    @SculkStable
+    public inline fun <reified T : Any> load(): SculkResult<T> = load(serializer<T>())
 
-    /** Registers versioned migrations for config [T]. Register these before [load]. */
+    @SculkStable
+    public inline fun <reified T : Any> reload(): SculkResult<T> = reload(serializer<T>())
+
+    @SculkStable
+    public inline fun <reified T : Any> save(value: T): SculkResult<Unit> = save(serializer<T>(), value)
+
+    @SculkStable
+    public inline fun <reified T : Any> violations(): List<String> = violations(serializer<T>())
+
+    @SculkStable
+    public inline fun <reified T : Any> onReload(noinline listener: () -> Unit): Unit = onReload(serializer<T>(), listener)
+
+    /** Registers migrations for [T]. Must happen before the first [load]. */
+    @SculkStable
     public inline fun <reified T : Any> migrations(noinline block: ConfigMigrationBuilder.() -> Unit): Unit =
-        migrations(T::class.java, block)
+        migrations(serializer<T>(), block)
+
+    /** Loads [serializer]'s config, returning the cached instance if it is already loaded. */
+    @Suppress("UNCHECKED_CAST")
+    @SculkStable
+    public fun <T : Any> load(serializer: KSerializer<T>): SculkResult<T> {
+        val name = fileName(serializer)
+        cache[name]?.let { return SculkResult.success(it as T) }
+        loaders[name] = { reload(serializer) }
+        return read(serializer).onSuccess { cache[name] = it }
+    }
+
+    /** Rereads [serializer]'s config from disk and notifies its reload listeners. */
+    @SculkStable
+    public fun <T : Any> reload(serializer: KSerializer<T>): SculkResult<T> {
+        val name = fileName(serializer)
+        return read(serializer).onSuccess { value ->
+            cache[name] = value
+            listeners[name]?.forEach { listener ->
+                runCatching(listener).onFailure { logger.warning("[SculkConfig] A reload listener for $name failed: ${it.message}") }
+            }
+        }
+    }
+
+    /** Writes [value] out, replacing whatever is on disk. */
+    @SculkStable
+    public fun <T : Any> save(serializer: KSerializer<T>, value: T): SculkResult<Unit> {
+        val name = fileName(serializer)
+        return SculkResult.catching("write $name") {
+            val file = File(dataFolder, name)
+            file.parentFile?.mkdirs()
+            file.writeText(render(serializer, value))
+            cache[name] = value
+        }
+    }
 
     /**
-     * Reloads all registered configs.
+     * The constraint violations in [serializer]'s *shipped defaults*.
+     *
+     * Public so a test can assert the values a plugin ships are inside their own limits. Catching
+     * that in CI is the difference between a warning nobody reads and a value nobody ever set.
      */
+    @SculkStable
+    public fun <T : Any> violations(serializer: KSerializer<T>): List<String> {
+        val defaults = runCatching { yaml.decodeFromString(serializer, "{}") }.getOrNull() ?: return emptyList()
+        val node = yaml.parseToYamlNode(yaml.encodeToString(serializer, defaults))
+        return ConfigValidation.violations(node, serializer.descriptor)
+    }
+
+    @SculkStable
+    public fun <T : Any> onReload(serializer: KSerializer<T>, listener: () -> Unit) {
+        listeners.getOrPut(fileName(serializer)) { mutableListOf() } += listener
+    }
+
+    @SculkInternal
+    public fun <T : Any> migrations(serializer: KSerializer<T>, block: ConfigMigrationBuilder.() -> Unit) {
+        val name = fileName(serializer)
+        require(!cache.containsKey(name)) { "Register migrations for $name before loading it." }
+        migrations[name] = ConfigMigrationBuilder().apply(block).steps.sortedBy { it.from }
+    }
+
+    /** Rereads every config that has been loaded. */
+    @SculkStable
     public fun reloadAll() {
-        managers.values.forEach { it.reload() }
+        loaders.values.forEach { it() }
     }
 
     /**
-     * Starts watching the data folder and auto-reloads each currently-loaded config when its
-     * file changes on disk. Call this after loading your configs.
+     * Watches the data folder and reloads a config when its file changes.
      *
-     * Reloads (and their `onReload` callbacks) are marshalled through [dispatch] — pass
-     * `{ sculk.scheduler.runSync(it) }` so they run on the main thread. Returns a
-     * [studio.sculk.SculkHandle]; close it (or the platform) to stop watching.
+     * Pass `{ scheduler.runSync(it) }` so listeners run on the main thread; the watch itself is on
+     * a daemon thread.
      */
-    @JvmOverloads
     @SculkStable
-    public fun watch(dispatch: (Runnable) -> Unit = Runnable::run): studio.sculk.SculkHandle {
-        val reloaders: Map<String, () -> Unit> =
-            managers.values.associate { manager ->
-                File(manager.configPath).name to { manager.reload() }
+    public fun watch(dispatch: (Runnable) -> Unit = Runnable::run): SculkHandle =
+        DirectoryWatcher(dataFolder, loaders.mapValues { (_, reload) -> reload }, logger, "SculkConfig", dispatch)
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun fileName(serializer: KSerializer<*>): String =
+        serializer.descriptor.annotations.filterIsInstance<ConfigFile>().firstOrNull()?.name
+            ?: (serializer.descriptor.serialName.substringAfterLast('.').replaceFirstChar { it.lowercase() } + ".yml")
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun declaredRevision(serializer: KSerializer<*>): Int =
+        serializer.descriptor.annotations.filterIsInstance<ConfigFile>().firstOrNull()?.revision ?: 1
+
+    private fun <T : Any> read(serializer: KSerializer<T>): SculkResult<T> {
+        val name = fileName(serializer)
+        val file = File(dataFolder, name)
+
+        val defaults = runCatching { yaml.decodeFromString(serializer, "{}") }.getOrElse { error ->
+            // Every config property must have a default, or there is nothing to ship.
+            return SculkResult.failure(
+                "Config $name cannot be generated because a property has no default value: ${error.message}",
+                error,
+            )
+        }
+
+        if (!file.exists()) {
+            return SculkResult.catching("create $name") {
+                file.parentFile?.mkdirs()
+                file.writeText(render(serializer, defaults))
+                defaults
             }
-        return studio.sculk.config.managed
-            .ConfigWatcher(dataFolder, reloaders, logger, dispatch)
-    }
+        }
 
-    /**
-     * Java-friendly overload of [watch] taking a [Consumer] dispatcher.
-     *
-     * Pass `r -> sculk.getScheduler().runSync(r)` so reloads run on the main thread.
-     */
-    @SculkStable
-    public fun watch(dispatch: Consumer<Runnable>): studio.sculk.SculkHandle = watch { dispatch.accept(it) }
+        return SculkResult.catching("read $name") {
+            val original = file.readText().replace("\r\n", "\n")
 
-    /** Reloads one registered config and returns a structured result. */
-    public inline fun <reified T : Any> reload(): SculkResult<T> = reload(T::class.java)
-
-    // ---------------------------------------------------------------------------
-    // Class-token overloads — the Java-facing surface (also back the inline reified API)
-    // ---------------------------------------------------------------------------
-
-    /**
-     * Java-friendly overload of [load]. Loads the config for [javaClass], creating defaults on disk
-     * if the file doesn't exist.
-     *
-     * ```java
-     * Settings settings = config.load(Settings.class);
-     * ```
-     */
-    @SculkStable
-    @Suppress("UNCHECKED_CAST")
-    public fun <T : Any> load(javaClass: Class<T>): T {
-        val manager =
-            managers.getOrPut(javaClass) {
-                SculkConfigManager(javaClass.kotlin, dataFolder, logger, migrationSteps[javaClass].orEmpty())
-            } as SculkConfigManager<T>
-        return manager.value
-    }
-
-    /** Java-friendly overload of [load] with explicit [ConfigLoadMode]. */
-    @SculkStable
-    public fun <T : Any> load(javaClass: Class<T>, mode: ConfigLoadMode): T = load(javaClass).also {
-        if (mode == ConfigLoadMode.Strict) {
-            val violations = YamlMapper.validate(it)
-            require(violations.isEmpty()) {
-                "Config ${javaClass.simpleName} failed strict validation: ${violations.joinToString("; ")}"
+            val declared = declaredRevision(serializer)
+            val onDisk = REVISION_MARKER.find(original)?.groupValues?.get(1)?.toIntOrNull() ?: 1
+            if (onDisk < declared) {
+                val backup = File(dataFolder, "$name.$onDisk.bak")
+                file.copyTo(backup, overwrite = true)
+                file.writeText(render(serializer, defaults))
+                logger.info("[SculkConfig] $name was revision $onDisk, now $declared; the old file is at ${backup.name}.")
+                return@catching defaults
             }
+
+            val substituted = substituteEnvironment(original, environment)
+            val migrated = applyMigrations(name, substituted)
+            val node = yaml.parseToYamlNode(migrated)
+
+            ConfigValidation.violations(node, serializer.descriptor).forEach {
+                logger.warning("[SculkConfig] $name: $it")
+            }
+
+            val value = yaml.decodeFromString(serializer, migrated)
+
+            // Never rewrite a file that reads from the environment: the render is built from
+            // substituted text, so writing it back would bake the resolved secret into the file on
+            // disk. The cost is that such a file does not gain new keys automatically.
+            if (!ENV_PLACEHOLDER.containsMatchIn(original)) {
+                // Append-only. The render is a source of keys the file is missing, never a
+                // replacement for it -- see ConfigMerge for what a full rewrite destroys.
+                val merged = ConfigMerge.appendMissing(original, render(serializer, value))
+                if (merged != original) file.writeText(merged)
+            }
+
+            value
         }
     }
 
-    /** Java-friendly overload of [reload]. Reloads one config and returns a structured result. */
-    @SculkStable
-    @Suppress("UNCHECKED_CAST")
-    public fun <T : Any> reload(javaClass: Class<T>): SculkResult<T> {
-        val manager =
-            managers.getOrPut(javaClass) {
-                SculkConfigManager(javaClass.kotlin, dataFolder, logger, migrationSteps[javaClass].orEmpty())
-            } as SculkConfigManager<T>
-        return manager.reloadResult()
-    }
+    private fun applyMigrations(name: String, text: String): String {
+        val steps = migrations[name].orEmpty()
+        if (steps.isEmpty()) return text
 
-    @SculkInternal
-    public fun <T : Any> migrations(javaClass: Class<T>, block: ConfigMigrationBuilder.() -> Unit) {
-        require(javaClass !in managers) {
-            "Register migrations for ${javaClass.simpleName} before loading the config."
+        val plain = PlainYaml.toPlain(yaml.parseToYamlNode(text))
+
+        @Suppress("UNCHECKED_CAST")
+        val values = (plain as? Map<String, Any?>)?.toMutableMap() ?: return text
+
+        var version = (values["config-version"] as? String)?.toIntOrNull() ?: 1
+        for (step in steps) {
+            if (step.from != version) continue
+            ConfigDocument(values).apply(step.block)
+            version = step.to
         }
-        val builder = ConfigMigrationBuilder().apply(block)
-        migrationSteps[javaClass] = builder.steps.sortedBy { it.from }
+        values["config-version"] = version.toString()
+        return PlainYaml.emit(values)
     }
 
-    /**
-     * Java-friendly overload of [migrations]. Registers versioned migrations for [javaClass]
-     * before [load] is called.
-     */
-    @SculkStable
-    public fun <T : Any> migrations(javaClass: Class<T>, block: Consumer<ConfigMigrationBuilder>) {
-        migrations(javaClass) { block.accept(this) }
-    }
-
-    /**
-     * Java-friendly overload of [onReload]. Runs [callback] after [javaClass]'s config is reloaded.
-     */
-    @SculkStable
-    public fun <T : Any> onReload(javaClass: Class<T>, callback: Runnable) {
-        onReload(javaClass) { callback.run() }
-    }
-
-    @SculkInternal
-    @Suppress("UNCHECKED_CAST")
-    public fun <T : Any> onReload(javaClass: Class<T>, callback: () -> Unit) {
-        val manager =
-            managers.getOrPut(javaClass) {
-                SculkConfigManager(javaClass.kotlin, dataFolder, logger, migrationSteps[javaClass].orEmpty())
-            } as SculkConfigManager<T>
-        manager.onReload(callback)
-    }
+    private fun <T : Any> render(serializer: KSerializer<T>, value: T): String = CommentedYaml.decorate(
+        yaml.encodeToString(serializer, value).replace("\r\n", "\n"),
+        serializer.descriptor,
+        declaredRevision(serializer),
+    )
 
     public companion object {
-        /**
-         * Creates a new [SculkConfig] bound to [dataFolder].
-         *
-         * @param dataFolder The plugin's data folder (e.g. `plugin.dataFolder`).
-         * @param logger The plugin's logger for validation warnings.
-         */
-        @JvmStatic
         @SculkStable
         public fun create(dataFolder: File, logger: Logger): SculkConfig = SculkConfig(dataFolder, logger)
     }
-}
-
-/** Config load behavior. */
-@SculkStable
-public enum class ConfigLoadMode {
-    Lenient,
-    Strict,
 }

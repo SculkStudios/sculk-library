@@ -1,20 +1,20 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.module")
+    alias(libs.plugins.kotlin.serialization)
 }
 
-description = "Sculk Studio — typed config, hot reload, message system"
+description = "Sculk Studio — typed YAML config: generated defaults, merge-on-load, validation, migrations"
 
-// Allow framework internals within this module.
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+kotlin {
     compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
+        // The descriptor annotations and element metadata this module is built on are still
+        // marked experimental upstream, and every file here touches them.
+        freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
     }
 }
 
 dependencies {
     api(project(":sculk-common"))
-    implementation(libs.snakeyaml)
-    implementation(kotlin("reflect"))
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockito.kotlin)
+    api(libs.serialization.core)
+    implementation(libs.kaml)
 }

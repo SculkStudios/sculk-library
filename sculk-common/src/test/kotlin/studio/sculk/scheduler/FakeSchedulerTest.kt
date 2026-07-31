@@ -1,106 +1,131 @@
 package studio.sculk.scheduler
 
-import org.bukkit.Location
 import org.bukkit.entity.Entity
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import studio.sculk.SculkHandle
+import org.mockito.kotlin.mock
 
 class FakeSchedulerTest {
     @Test
-    fun `runAsyncResult completes with task value`() {
-        val scheduler = ImmediateScheduler()
+    fun `undelayed work runs inline`() {
+        val scheduler = FakeScheduler()
+        var ran = false
 
-        val value = scheduler.runAsyncResult { "loaded" }.join()
+        scheduler.runSync { ran = true }
 
-        assertEquals("loaded", value)
+        assertTrue(ran)
+        assertEquals(0, scheduler.pending.size)
     }
 
     @Test
-    fun `asyncThenSync hands result back to sync context`() {
-        val scheduler = ImmediateScheduler()
-        var result = ""
+    fun `a delayed task does not run until the clock reaches it`() {
+        val scheduler = FakeScheduler()
+        var ran = false
 
-        scheduler.asyncThenSync(entity = org.mockito.kotlin.mock<Entity>(), async = { "profile" }, sync = { result = it })
+        scheduler.runSyncDelayed(5) { ran = true }
 
-        assertEquals("profile", result)
+        scheduler.advance(4)
+        assertEquals(false, ran, "four ticks is not five")
+
+        scheduler.advance(1)
+        assertTrue(ran)
+        assertEquals(0, scheduler.pending.size, "a one-shot task is dropped after it fires")
     }
 
     @Test
-    fun `runNow schedules when the caller does not own the thread`() {
-        val scheduler = CountingScheduler(owns = false)
+    fun `a repeating task fires once per period rather than once per advance`() {
+        val scheduler = FakeScheduler()
+        var runs = 0
 
-        scheduler.runNow { }
-        scheduler.runNow(org.mockito.kotlin.mock<Entity>()) { }
+        scheduler.runSyncRepeating(delayTicks = 0, periodTicks = 5) { runs++ }
 
-        assertEquals(2, scheduler.scheduled)
+        scheduler.advance(10)
+
+        assertEquals(2, runs)
+        assertEquals(1, scheduler.pending.size, "a repeating task stays queued")
+    }
+
+    @Test
+    fun `closing a handle stops a repeating task`() {
+        val scheduler = FakeScheduler()
+        var runs = 0
+
+        val handle = scheduler.runSyncRepeating(delayTicks = 0, periodTicks = 1) { runs++ }
+        scheduler.advance(2)
+        handle.close()
+        scheduler.advance(5)
+
+        assertEquals(2, runs)
+        assertEquals(0, scheduler.pending.size)
+    }
+
+    @Test
+    fun `a non-positive delay still lands on the next tick rather than never`() {
+        val scheduler = FakeScheduler()
+        var runs = 0
+
+        scheduler.runSyncDelayed(0) { runs++ }
+        scheduler.runSyncDelayed(-5) { runs++ }
+
+        scheduler.advance(1)
+
+        assertEquals(2, runs)
+    }
+
+    @Test
+    fun `a zero period is floored to one tick`() {
+        val scheduler = FakeScheduler()
+        var runs = 0
+
+        scheduler.runSyncRepeating(delayTicks = 0, periodTicks = 0) { runs++ }
+
+        scheduler.advance(3)
+
+        assertEquals(3, runs)
     }
 
     @Test
     fun `runNow runs inline when the caller already owns the thread`() {
-        val scheduler = CountingScheduler(owns = true)
+        val scheduler = FakeScheduler().apply {
+            ownsGlobal = true
+            ownsRegions = true
+        }
         var ran = 0
 
         scheduler.runNow { ran++ }
-        scheduler.runNow(org.mockito.kotlin.mock<Entity>()) { ran++ }
+        scheduler.runNow(mock<Entity>()) { ran++ }
 
         assertEquals(2, ran)
-        assertEquals(0, scheduler.scheduled)
     }
 
-    private class CountingScheduler(private val owns: Boolean) : SculkScheduler {
-        var scheduled: Int = 0
-            private set
-
-        override fun ownsGlobalThread(): Boolean = owns
-
-        override fun ownsThread(entity: Entity): Boolean = owns
-
-        override fun runSync(task: Runnable): SculkHandle {
-            scheduled++
-            return SculkHandle {}
+    @Test
+    fun `runNow schedules when the caller does not own the thread`() {
+        val scheduler = FakeScheduler().apply {
+            ownsGlobal = false
+            ownsRegions = false
         }
+        var ran = 0
 
-        override fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
+        scheduler.runNow { ran++ }
+        scheduler.runNow(mock<Entity>()) { ran++ }
 
-        override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runAsync(task: Runnable): SculkHandle = runSync(task)
-
-        override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runSync(task)
+        // FakeScheduler runs undelayed sync work inline, so the effect is the same; what this
+        // pins is that runNow consults owns* rather than always taking the inline path.
+        assertEquals(2, ran)
+        assertEquals(2, scheduler.executions, "both went through runSync rather than running directly")
     }
 
-    private class ImmediateScheduler : SculkScheduler {
-        override fun runSync(task: Runnable): SculkHandle {
-            task.run()
-            return SculkHandle {}
-        }
+    @Test
+    fun `clear resets the clock and the queue`() {
+        val scheduler = FakeScheduler()
+        scheduler.runSyncDelayed(5) { }
+        scheduler.advance(2)
 
-        override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle {
-            task.run()
-            return SculkHandle {}
-        }
+        scheduler.clear()
 
-        override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle {
-            task.run()
-            return SculkHandle {}
-        }
-
-        override fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runAsync(task: Runnable): SculkHandle {
-            task.run()
-            return SculkHandle {}
-        }
-
-        override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runAsync(task)
-
-        override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runAsync(task)
+        assertEquals(0, scheduler.currentTick)
+        assertEquals(0, scheduler.executions)
+        assertEquals(0, scheduler.pending.size)
     }
 }

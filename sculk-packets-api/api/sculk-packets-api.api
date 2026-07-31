@@ -1,0 +1,266 @@
+public abstract class studio/sculk/packets/AbstractPacketService : studio/sculk/packets/SculkPacketService {
+	public fun <init> (Lstudio/sculk/packets/PacketBackend;Lstudio/sculk/scheduler/SculkScheduler;)V
+	protected fun clientBlockBackend ()Lstudio/sculk/packets/ClientBlockBackend;
+	public fun close ()V
+	public final fun getBackend ()Lstudio/sculk/packets/PacketBackend;
+	public final fun getClientBlocks ()Lstudio/sculk/packets/ClientBlockService;
+	public final fun getDebug ()Lstudio/sculk/packets/PacketDebugService;
+	protected final fun getScheduler ()Lstudio/sculk/scheduler/SculkScheduler;
+	public final fun getVirtualEntities ()Lstudio/sculk/packets/VirtualEntityService;
+	public fun send (Lorg/bukkit/entity/Player;Lstudio/sculk/packets/SculkPacket;)Lstudio/sculk/SculkResult;
+	protected fun virtualEntityService ()Lstudio/sculk/packets/VirtualEntityService;
+}
+
+public final class studio/sculk/packets/Billboard : java/lang/Enum {
+	public static final field CENTER Lstudio/sculk/packets/Billboard;
+	public static final field FIXED Lstudio/sculk/packets/Billboard;
+	public static final field HORIZONTAL Lstudio/sculk/packets/Billboard;
+	public static final field VERTICAL Lstudio/sculk/packets/Billboard;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/packets/Billboard;
+	public static fun values ()[Lstudio/sculk/packets/Billboard;
+}
+
+public final class studio/sculk/packets/BlockDigAction : java/lang/Enum {
+	public static final field Abort Lstudio/sculk/packets/BlockDigAction;
+	public static final field Finish Lstudio/sculk/packets/BlockDigAction;
+	public static final field Other Lstudio/sculk/packets/BlockDigAction;
+	public static final field Start Lstudio/sculk/packets/BlockDigAction;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/packets/BlockDigAction;
+	public static fun values ()[Lstudio/sculk/packets/BlockDigAction;
+}
+
+public final class studio/sculk/packets/BlockDigContext : studio/sculk/packets/ClientBlockContext {
+	public fun <init> (Lorg/bukkit/entity/Player;Lorg/bukkit/World;IIILstudio/sculk/packets/BlockDigAction;ILstudio/sculk/scheduler/SculkScheduler;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+	public final fun getAction ()Lstudio/sculk/packets/BlockDigAction;
+}
+
+public final class studio/sculk/packets/BlockUseContext : studio/sculk/packets/ClientBlockContext {
+	public fun <init> (Lorg/bukkit/entity/Player;Lorg/bukkit/World;IIILjava/lang/String;ZILstudio/sculk/scheduler/SculkScheduler;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+	public final fun getFace ()Ljava/lang/String;
+	public final fun getOffHand ()Z
+}
+
+public abstract interface class studio/sculk/packets/ClientBlockBackend {
+	public abstract fun acknowledge (Lorg/bukkit/entity/Player;I)Lstudio/sculk/SculkResult;
+	public abstract fun listenDig (Lstudio/sculk/packets/PacketPriority;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public abstract fun listenUse (Lstudio/sculk/packets/PacketPriority;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+}
+
+public abstract class studio/sculk/packets/ClientBlockContext {
+	public fun <init> (Lorg/bukkit/entity/Player;Lorg/bukkit/World;IIIILstudio/sculk/scheduler/SculkScheduler;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+	public final fun acknowledge ()V
+	public final fun cancel ()V
+	public final fun getAcknowledged ()Z
+	public final fun getCancelled ()Z
+	public final fun getLocation ()Lorg/bukkit/Location;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun getSequence ()I
+	public final fun getWorld ()Lorg/bukkit/World;
+	public final fun getX ()I
+	public final fun getY ()I
+	public final fun getZ ()I
+	public final fun intercept (Ljava/lang/Runnable;)Lstudio/sculk/SculkHandle;
+	public final fun intercept (Lkotlin/jvm/functions/Function0;)Lstudio/sculk/SculkHandle;
+	public final fun runSync (Lkotlin/jvm/functions/Function0;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/packets/ClientBlockService {
+	public static final field UNSUPPORTED Ljava/lang/String;
+	public final fun acknowledge (Lorg/bukkit/entity/Player;I)Lstudio/sculk/SculkResult;
+	public final fun onDig (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public final fun onDig (Lstudio/sculk/packets/PacketPriority;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public final fun onUse (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public final fun onUse (Lstudio/sculk/packets/PacketPriority;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public final fun preview (Lorg/bukkit/entity/Player;Lorg/bukkit/Location;Lorg/bukkit/Material;J)Lstudio/sculk/SculkHandle;
+	public final fun preview (Lorg/bukkit/entity/Player;Lorg/bukkit/Location;Lorg/bukkit/block/data/BlockData;J)Lstudio/sculk/SculkHandle;
+	public final fun reset (Lorg/bukkit/entity/Player;Lorg/bukkit/Location;)V
+	public final fun resetAll (Lorg/bukkit/entity/Player;Ljava/util/Collection;)V
+	public final fun set (Lorg/bukkit/entity/Player;Lorg/bukkit/Location;Lorg/bukkit/Material;)V
+	public final fun set (Lorg/bukkit/entity/Player;Lorg/bukkit/Location;Lorg/bukkit/block/data/BlockData;)V
+	public final fun setAll (Lorg/bukkit/entity/Player;Ljava/util/Map;)V
+}
+
+public final class studio/sculk/packets/PacketBackend : java/lang/Enum {
+	public static final field PacketEvents Lstudio/sculk/packets/PacketBackend;
+	public static final field ProtocolLib Lstudio/sculk/packets/PacketBackend;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/packets/PacketBackend;
+	public static fun values ()[Lstudio/sculk/packets/PacketBackend;
+}
+
+public final class studio/sculk/packets/PacketBackendMode : java/lang/Enum {
+	public static final field Auto Lstudio/sculk/packets/PacketBackendMode;
+	public static final field Disabled Lstudio/sculk/packets/PacketBackendMode;
+	public static final field PacketEvents Lstudio/sculk/packets/PacketBackendMode;
+	public static final field ProtocolLib Lstudio/sculk/packets/PacketBackendMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/packets/PacketBackendMode;
+	public static fun values ()[Lstudio/sculk/packets/PacketBackendMode;
+}
+
+public final class studio/sculk/packets/PacketContext {
+	public fun <init> (Lorg/bukkit/entity/Player;Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;Lstudio/sculk/scheduler/SculkScheduler;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+	public fun <init> (Lorg/bukkit/entity/Player;Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;Lstudio/sculk/scheduler/SculkScheduler;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lstudio/sculk/packets/SculkPacket;)V
+	public synthetic fun <init> (Lorg/bukkit/entity/Player;Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;Lstudio/sculk/scheduler/SculkScheduler;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lstudio/sculk/packets/SculkPacket;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun cancel ()V
+	public final fun getCancelled ()Z
+	public final fun getChanged ()Z
+	public final fun getDirection ()Lstudio/sculk/packets/PacketDirection;
+	public final fun getPacket ()Lstudio/sculk/packets/SculkPacket;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun getType ()Lstudio/sculk/packets/PacketKey;
+	public final fun markChanged ()V
+	public final fun packetAs (Ljava/lang/Class;)Lstudio/sculk/packets/SculkPacket;
+	public final fun runSync (Lkotlin/jvm/functions/Function0;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/packets/PacketDebugBuilder {
+	public fun <init> ()V
+	public final fun getDuration-UwyO8pc ()J
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun incoming (Ljava/lang/String;)V
+	public final fun onPacket (Lkotlin/jvm/functions/Function1;)V
+	public final fun outgoing (Ljava/lang/String;)V
+	public final fun player (Lorg/bukkit/entity/Player;)V
+	public final fun setDuration-LRDsOJo (J)V
+	public final fun setPlayer (Lorg/bukkit/entity/Player;)V
+}
+
+public final class studio/sculk/packets/PacketDebugService {
+	public final fun session (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/packets/PacketDirection : java/lang/Enum {
+	public static final field Clientbound Lstudio/sculk/packets/PacketDirection;
+	public static final field Serverbound Lstudio/sculk/packets/PacketDirection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/packets/PacketDirection;
+	public static fun values ()[Lstudio/sculk/packets/PacketDirection;
+}
+
+public final class studio/sculk/packets/PacketKey {
+	public static final field Companion Lstudio/sculk/packets/PacketKey$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lstudio/sculk/packets/PacketKey;
+	public static synthetic fun copy$default (Lstudio/sculk/packets/PacketKey;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/packets/PacketKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNamespace ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/packets/PacketKey$Companion {
+	public final fun of (Ljava/lang/String;)Lstudio/sculk/packets/PacketKey;
+}
+
+public final class studio/sculk/packets/PacketPriority : java/lang/Enum {
+	public static final field High Lstudio/sculk/packets/PacketPriority;
+	public static final field Highest Lstudio/sculk/packets/PacketPriority;
+	public static final field Low Lstudio/sculk/packets/PacketPriority;
+	public static final field Lowest Lstudio/sculk/packets/PacketPriority;
+	public static final field Monitor Lstudio/sculk/packets/PacketPriority;
+	public static final field Normal Lstudio/sculk/packets/PacketPriority;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/packets/PacketPriority;
+	public static fun values ()[Lstudio/sculk/packets/PacketPriority;
+}
+
+public final class studio/sculk/packets/PacketServiceConfig {
+	public fun <init> ()V
+	public final fun getBackend ()Lstudio/sculk/packets/PacketBackendMode;
+	public final fun getRequired ()Z
+	public final fun setBackend (Lstudio/sculk/packets/PacketBackendMode;)V
+	public final fun setRequired (Z)V
+}
+
+public abstract interface class studio/sculk/packets/SculkPacket {
+	public abstract fun getDirection ()Lstudio/sculk/packets/PacketDirection;
+	public abstract fun getType ()Lstudio/sculk/packets/PacketKey;
+}
+
+public abstract interface class studio/sculk/packets/SculkPacketService : studio/sculk/SculkHandle {
+	public abstract fun getBackend ()Lstudio/sculk/packets/PacketBackend;
+	public abstract fun getClientBlocks ()Lstudio/sculk/packets/ClientBlockService;
+	public abstract fun getDebug ()Lstudio/sculk/packets/PacketDebugService;
+	public abstract fun getVirtualEntities ()Lstudio/sculk/packets/VirtualEntityService;
+	public abstract fun listen (Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;Lstudio/sculk/packets/PacketPriority;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public static synthetic fun listen$default (Lstudio/sculk/packets/SculkPacketService;Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;Lstudio/sculk/packets/PacketPriority;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public abstract fun send (Lorg/bukkit/entity/Player;Lstudio/sculk/packets/SculkPacket;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/packets/SculkPacketService$DefaultImpls {
+	public static synthetic fun listen$default (Lstudio/sculk/packets/SculkPacketService;Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;Lstudio/sculk/packets/PacketPriority;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public abstract interface class studio/sculk/packets/SculkPacketServiceProvider {
+	public abstract fun create (Lorg/bukkit/plugin/java/JavaPlugin;Lstudio/sculk/scheduler/SculkScheduler;)Lstudio/sculk/packets/SculkPacketService;
+	public abstract fun getBackend ()Lstudio/sculk/packets/PacketBackend;
+	public abstract fun isAvailable ()Z
+}
+
+public final class studio/sculk/packets/SculkPacketServices {
+	public static final field INSTANCE Lstudio/sculk/packets/SculkPacketServices;
+	public final fun create (Lorg/bukkit/plugin/java/JavaPlugin;Lstudio/sculk/scheduler/SculkScheduler;Lstudio/sculk/packets/PacketServiceConfig;)Lstudio/sculk/SculkResult;
+	public static synthetic fun create$default (Lstudio/sculk/packets/SculkPacketServices;Lorg/bukkit/plugin/java/JavaPlugin;Lstudio/sculk/scheduler/SculkScheduler;Lstudio/sculk/packets/PacketServiceConfig;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/packets/TextDisplayStyle {
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/packets/Billboard;FIZZIB)V
+	public synthetic fun <init> (Lstudio/sculk/packets/Billboard;FIZZIBILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lstudio/sculk/packets/Billboard;
+	public final fun component2 ()F
+	public final fun component3 ()I
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()I
+	public final fun component7 ()B
+	public final fun copy (Lstudio/sculk/packets/Billboard;FIZZIB)Lstudio/sculk/packets/TextDisplayStyle;
+	public static synthetic fun copy$default (Lstudio/sculk/packets/TextDisplayStyle;Lstudio/sculk/packets/Billboard;FIZZIBILjava/lang/Object;)Lstudio/sculk/packets/TextDisplayStyle;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackground ()Z
+	public final fun getBackgroundArgb ()I
+	public final fun getBillboard ()Lstudio/sculk/packets/Billboard;
+	public final fun getLineWidth ()I
+	public final fun getScale ()F
+	public final fun getSeeThrough ()Z
+	public final fun getShadowed ()Z
+	public final fun getTextOpacity ()B
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/packets/UnavailableVirtualEntityService : studio/sculk/packets/VirtualEntityService {
+	public static final field INSTANCE Lstudio/sculk/packets/UnavailableVirtualEntityService;
+	public fun despawn (Lorg/bukkit/entity/Player;Ljava/util/List;)Lstudio/sculk/SculkResult;
+	public fun getAvailable ()Z
+	public fun mount (Lorg/bukkit/entity/Player;ILjava/util/List;)Lstudio/sculk/SculkResult;
+	public fun reserveEntityId ()I
+	public fun spawnTextDisplay (Lorg/bukkit/entity/Player;ILorg/bukkit/Location;Lnet/kyori/adventure/text/Component;Lstudio/sculk/packets/TextDisplayStyle;)Lstudio/sculk/SculkResult;
+	public fun teleport (Lorg/bukkit/entity/Player;ILorg/bukkit/Location;)Lstudio/sculk/SculkResult;
+	public fun updateTextDisplay (Lorg/bukkit/entity/Player;ILnet/kyori/adventure/text/Component;Lstudio/sculk/packets/TextDisplayStyle;)Lstudio/sculk/SculkResult;
+}
+
+public abstract interface class studio/sculk/packets/VirtualEntityService {
+	public abstract fun despawn (Lorg/bukkit/entity/Player;Ljava/util/List;)Lstudio/sculk/SculkResult;
+	public abstract fun getAvailable ()Z
+	public abstract fun mount (Lorg/bukkit/entity/Player;ILjava/util/List;)Lstudio/sculk/SculkResult;
+	public abstract fun reserveEntityId ()I
+	public abstract fun spawnTextDisplay (Lorg/bukkit/entity/Player;ILorg/bukkit/Location;Lnet/kyori/adventure/text/Component;Lstudio/sculk/packets/TextDisplayStyle;)Lstudio/sculk/SculkResult;
+	public static synthetic fun spawnTextDisplay$default (Lstudio/sculk/packets/VirtualEntityService;Lorg/bukkit/entity/Player;ILorg/bukkit/Location;Lnet/kyori/adventure/text/Component;Lstudio/sculk/packets/TextDisplayStyle;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public abstract fun teleport (Lorg/bukkit/entity/Player;ILorg/bukkit/Location;)Lstudio/sculk/SculkResult;
+	public abstract fun updateTextDisplay (Lorg/bukkit/entity/Player;ILnet/kyori/adventure/text/Component;Lstudio/sculk/packets/TextDisplayStyle;)Lstudio/sculk/SculkResult;
+	public static synthetic fun updateTextDisplay$default (Lstudio/sculk/packets/VirtualEntityService;Lorg/bukkit/entity/Player;ILnet/kyori/adventure/text/Component;Lstudio/sculk/packets/TextDisplayStyle;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/packets/VirtualEntityService$DefaultImpls {
+	public static synthetic fun spawnTextDisplay$default (Lstudio/sculk/packets/VirtualEntityService;Lorg/bukkit/entity/Player;ILorg/bukkit/Location;Lnet/kyori/adventure/text/Component;Lstudio/sculk/packets/TextDisplayStyle;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public static synthetic fun updateTextDisplay$default (Lstudio/sculk/packets/VirtualEntityService;Lorg/bukkit/entity/Player;ILnet/kyori/adventure/text/Component;Lstudio/sculk/packets/TextDisplayStyle;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+

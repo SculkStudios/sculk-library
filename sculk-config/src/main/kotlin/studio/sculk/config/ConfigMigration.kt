@@ -2,48 +2,52 @@ package studio.sculk.config
 
 import studio.sculk.annotation.SculkStable
 
-/** Mutable YAML document passed to config migrations. */
+/**
+ * The keys of a config file, before they are decoded.
+ *
+ * A migration runs on this rather than on the decoded object because the whole point is to fix a
+ * file whose shape no longer matches the class — by then, decoding has already dropped the old key.
+ */
 @SculkStable
 public class ConfigDocument internal constructor(internal val values: MutableMap<String, Any?>) {
-    /** Returns the raw value at [key]. */
+    @SculkStable
     public operator fun get(key: String): Any? = values[key]
 
-    /** Sets [key] to [value]. */
+    @SculkStable
     public operator fun set(key: String, value: Any?) {
         values[key] = value
     }
 
-    /** Removes [key]. */
+    @SculkStable
     public fun remove(key: String): Any? = values.remove(key)
 
-    /** Renames [from] to [to] when the old key exists and the new key does not. */
+    /** Moves [from] to [to], leaving an existing [to] alone so a rerun cannot clobber it. */
+    @SculkStable
     public fun rename(from: String, to: String) {
-        if (from in values && to !in values) {
-            values[to] = values.remove(from)
-        }
+        if (from in values && to !in values) values[to] = values.remove(from)
     }
 
-    /** Sets [key] only when missing. */
+    /** Sets [key] only when it is absent. */
+    @SculkStable
     public fun default(key: String, value: Any?) {
         values.putIfAbsent(key, value)
     }
 }
 
-/** Builder for versioned config migrations. */
+/** Declares the versioned migrations for one config file. */
 @SculkStable
 public class ConfigMigrationBuilder internal constructor() {
     internal val steps: MutableList<ConfigMigrationStep> = mutableListOf()
 
-    /** Starts a migration at config version [version]. */
+    @SculkStable
     public fun from(version: Int): ConfigMigrationFrom = ConfigMigrationFrom(version, steps)
 }
 
-/** Intermediate migration builder. */
 @SculkStable
 public class ConfigMigrationFrom internal constructor(private val fromVersion: Int, private val steps: MutableList<ConfigMigrationStep>) {
-    /** Adds a migration from the source version to [version]. */
+    @SculkStable
     public fun to(version: Int, block: ConfigDocument.() -> Unit) {
-        require(version > fromVersion) { "Config migration target version must be greater than source version." }
+        require(version > fromVersion) { "A migration must move forwards: $fromVersion to $version." }
         steps += ConfigMigrationStep(fromVersion, version, block)
     }
 }

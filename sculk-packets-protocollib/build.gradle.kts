@@ -1,11 +1,14 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.module")
 }
 
-description = "Sculk Studio - ProtocolLib packet backend adapter"
+description = "Sculk Studio — ProtocolLib backend for the packet API"
 
 dependencies {
     api(project(":sculk-packets-api"))
     compileOnly(libs.protocollib)
-    testImplementation(libs.junit.jupiter)
+
+    testImplementation(testFixtures(project(":sculk-common")))
+    testImplementation(libs.protocollib)
+    testImplementation(libs.mockito.kotlin)
 }

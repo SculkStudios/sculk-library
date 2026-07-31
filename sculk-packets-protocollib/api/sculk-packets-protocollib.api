@@ -1,0 +1,14 @@
+public final class studio/sculk/packets/protocollib/ProtocolLibPacket : studio/sculk/packets/SculkPacket {
+	public fun <init> (Lcom/comphenix/protocol/events/PacketContainer;Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;)V
+	public final fun getContainer ()Lcom/comphenix/protocol/events/PacketContainer;
+	public fun getDirection ()Lstudio/sculk/packets/PacketDirection;
+	public fun getType ()Lstudio/sculk/packets/PacketKey;
+}
+
+public final class studio/sculk/packets/protocollib/ProtocolLibPacketServiceProvider : studio/sculk/packets/SculkPacketServiceProvider {
+	public fun <init> ()V
+	public fun create (Lorg/bukkit/plugin/java/JavaPlugin;Lstudio/sculk/scheduler/SculkScheduler;)Lstudio/sculk/packets/SculkPacketService;
+	public fun getBackend ()Lstudio/sculk/packets/PacketBackend;
+	public fun isAvailable ()Z
+}
+

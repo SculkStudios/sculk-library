@@ -11,6 +11,7 @@ import org.mockito.kotlin.mock
 import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkInternal
+import studio.sculk.scheduler.FakeScheduler
 import studio.sculk.scheduler.SculkScheduler
 
 @OptIn(SculkInternal::class)
@@ -20,7 +21,7 @@ class SculkPacketServicesTest {
         val result =
             SculkPacketServices.create(
                 plugin = mock(),
-                scheduler = ImmediateScheduler(),
+                scheduler = FakeScheduler(),
                 config = PacketServiceConfig(),
                 providers =
                 listOf(
@@ -40,7 +41,7 @@ class SculkPacketServicesTest {
         val result =
             SculkPacketServices.create(
                 plugin = mock(),
-                scheduler = ImmediateScheduler(),
+                scheduler = FakeScheduler(),
                 config = config,
                 providers =
                 listOf(
@@ -58,7 +59,7 @@ class SculkPacketServicesTest {
         val result =
             SculkPacketServices.create(
                 plugin = mock(),
-                scheduler = ImmediateScheduler(),
+                scheduler = FakeScheduler(),
                 config = PacketServiceConfig(),
                 providers = emptyList(),
             )
@@ -73,7 +74,7 @@ class SculkPacketServicesTest {
         val result =
             SculkPacketServices.create(
                 plugin = mock(),
-                scheduler = ImmediateScheduler(),
+                scheduler = FakeScheduler(),
                 config = PacketServiceConfig(),
                 providers = listOf(TestProvider(PacketBackend.PacketEvents, available = false)),
             )
@@ -90,7 +91,7 @@ class SculkPacketServicesTest {
         val result =
             SculkPacketServices.create(
                 plugin = mock(),
-                scheduler = ImmediateScheduler(),
+                scheduler = FakeScheduler(),
                 config = config,
                 providers = listOf(TestProvider(PacketBackend.PacketEvents, available = true)),
             )
@@ -114,26 +115,5 @@ class SculkPacketServicesTest {
         ): SculkResult<SculkHandle> = SculkResult.success(SculkHandle {})
 
         override fun send(player: Player, packet: SculkPacket): SculkResult<Unit> = SculkResult.success(Unit)
-    }
-
-    private class ImmediateScheduler : SculkScheduler {
-        override fun runSync(task: Runnable): SculkHandle {
-            task.run()
-            return SculkHandle {}
-        }
-
-        override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runAsync(task: Runnable): SculkHandle = runSync(task)
-
-        override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runAsync(task)
-
-        override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runAsync(task)
     }
 }

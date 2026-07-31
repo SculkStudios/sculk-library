@@ -1,0 +1,140 @@
+public final class studio/sculk/items/Dyes {
+	public static final field INSTANCE Lstudio/sculk/items/Dyes;
+	public final fun nearest (I)Lorg/bukkit/Material;
+	public final fun nearest (Ljava/lang/String;)Lorg/bukkit/Material;
+}
+
+public final class studio/sculk/items/InventoryDeliveryKt {
+	public static final fun giveOrDrop (Lorg/bukkit/entity/Player;Ljava/lang/Iterable;)Lstudio/sculk/items/ItemDeliveryResult;
+	public static final fun giveOrDrop (Lorg/bukkit/entity/Player;[Lorg/bukkit/inventory/ItemStack;)Lstudio/sculk/items/ItemDeliveryResult;
+}
+
+public class studio/sculk/items/ItemBuilder {
+	public fun <init> (Lorg/bukkit/Material;Lstudio/sculk/text/SculkMessages;)V
+	public synthetic fun <init> (Lorg/bukkit/Material;Lstudio/sculk/text/SculkMessages;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun amount (I)V
+	public fun build ()Lorg/bukkit/inventory/ItemStack;
+	public final fun component (Lio/papermc/paper/datacomponent/DataComponentType$NonValued;)V
+	public final fun component (Lio/papermc/paper/datacomponent/DataComponentType$Valued;Ljava/lang/Object;)V
+	public final fun customModelData (I)V
+	public final fun damage (I)V
+	public final fun enchant (Ljava/lang/String;I)V
+	public final fun enchant (Lorg/bukkit/enchantments/Enchantment;I)V
+	public final fun food (IF)V
+	public final fun food (IFZ)V
+	public static synthetic fun food$default (Lstudio/sculk/items/ItemBuilder;IFZILjava/lang/Object;)V
+	public final fun glint (Z)V
+	public static synthetic fun glint$default (Lstudio/sculk/items/ItemBuilder;ZILjava/lang/Object;)V
+	public final fun hideVanillaTooltip ()V
+	public final fun itemName (Ljava/lang/String;[Lkotlin/Pair;)V
+	public final fun lore (Ljava/lang/Iterable;)V
+	public final fun lore ([Ljava/lang/String;)V
+	public final fun lore ([Lnet/kyori/adventure/text/Component;)V
+	public final fun material (Lorg/bukkit/Material;)V
+	public final fun maxDamage (I)V
+	public final fun maxStackSize (I)V
+	public final fun meta (Lkotlin/jvm/functions/Function1;)V
+	public final fun model (Ljava/lang/String;)V
+	public final fun name (Ljava/lang/String;[Lkotlin/Pair;)V
+	public final fun name (Lnet/kyori/adventure/text/Component;)V
+	public final fun pdc (Ljava/lang/String;D)V
+	public final fun pdc (Ljava/lang/String;I)V
+	public final fun pdc (Ljava/lang/String;J)V
+	public final fun pdc (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun pdc (Ljava/lang/String;Lorg/bukkit/persistence/PersistentDataType;Ljava/lang/Object;)V
+	public final fun pdc (Ljava/lang/String;Z)V
+	public final fun pdc (Lorg/bukkit/NamespacedKey;D)V
+	public final fun pdc (Lorg/bukkit/NamespacedKey;I)V
+	public final fun pdc (Lorg/bukkit/NamespacedKey;J)V
+	public final fun pdc (Lorg/bukkit/NamespacedKey;Ljava/lang/String;)V
+	public final fun pdc (Lorg/bukkit/NamespacedKey;Lorg/bukkit/persistence/PersistentDataType;Ljava/lang/Object;)V
+	public final fun pdc (Lorg/bukkit/NamespacedKey;Z)V
+	public final fun rarity (Lorg/bukkit/inventory/ItemRarity;)V
+	public final fun unbreakable (Z)V
+	public static synthetic fun unbreakable$default (Lstudio/sculk/items/ItemBuilder;ZILjava/lang/Object;)V
+	public final fun unsetComponent (Lio/papermc/paper/datacomponent/DataComponentType;)V
+}
+
+public final class studio/sculk/items/ItemDeliveryResult {
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;Ljava/util/List;)Lstudio/sculk/items/ItemDeliveryResult;
+	public static synthetic fun copy$default (Lstudio/sculk/items/ItemDeliveryResult;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/items/ItemDeliveryResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDropped ()Ljava/util/List;
+	public final fun getGiven ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/items/ItemDescriptor {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/util/Map;ZLjava/lang/String;Ljava/lang/Integer;ZZLjava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/util/Map;ZLjava/lang/String;Ljava/lang/Integer;ZZLjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Z
+	public final fun component11 ()Ljava/util/Map;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()I
+	public final fun component5 ()Ljava/util/Map;
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/Integer;
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/util/Map;ZLjava/lang/String;Ljava/lang/Integer;ZZLjava/util/Map;)Lstudio/sculk/items/ItemDescriptor;
+	public static synthetic fun copy$default (Lstudio/sculk/items/ItemDescriptor;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/util/Map;ZLjava/lang/String;Ljava/lang/Integer;ZZLjava/util/Map;ILjava/lang/Object;)Lstudio/sculk/items/ItemDescriptor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmount ()I
+	public final fun getCustomModelData ()Ljava/lang/Integer;
+	public final fun getData ()Ljava/util/Map;
+	public final fun getEnchantments ()Ljava/util/Map;
+	public final fun getGlint ()Z
+	public final fun getHideVanillaTooltip ()Z
+	public final fun getLore ()Ljava/util/List;
+	public final fun getMaterial ()Ljava/lang/String;
+	public final fun getModel ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getUnbreakable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/items/ItemDescriptorKt {
+	public static final fun toDescriptor (Lorg/bukkit/inventory/ItemStack;)Lstudio/sculk/items/ItemDescriptor;
+	public static final fun toItemStack (Lstudio/sculk/items/ItemDescriptor;Lstudio/sculk/text/SculkMessages;)Lstudio/sculk/SculkResult;
+	public static synthetic fun toItemStack$default (Lstudio/sculk/items/ItemDescriptor;Lstudio/sculk/text/SculkMessages;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/items/ItemDslKt {
+	public static final fun item (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public static final fun item (Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;)Lorg/bukkit/inventory/ItemStack;
+	public static final fun item (Lstudio/sculk/text/SculkMessages;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public static final fun item (Lstudio/sculk/text/SculkMessages;Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;)Lorg/bukkit/inventory/ItemStack;
+	public static synthetic fun item$default (Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public static synthetic fun item$default (Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/bukkit/inventory/ItemStack;
+	public static synthetic fun item$default (Lstudio/sculk/text/SculkMessages;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public static synthetic fun item$default (Lstudio/sculk/text/SculkMessages;Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/bukkit/inventory/ItemStack;
+}
+
+public final class studio/sculk/items/ItemKeys {
+	public static final field DEFAULT_NAMESPACE Ljava/lang/String;
+	public static final field INSTANCE Lstudio/sculk/items/ItemKeys;
+	public final fun of (Ljava/lang/String;)Lorg/bukkit/NamespacedKey;
+}
+
+public final class studio/sculk/items/SculkItems {
+	public static final fun skull ()Lorg/bukkit/inventory/ItemStack;
+	public static final fun skull (Ljava/util/function/Consumer;)Lorg/bukkit/inventory/ItemStack;
+	public static final fun skull (Lkotlin/jvm/functions/Function1;)Lorg/bukkit/inventory/ItemStack;
+	public static synthetic fun skull$default (Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/bukkit/inventory/ItemStack;
+}
+
+public final class studio/sculk/items/SkullItemBuilder : studio/sculk/items/ItemBuilder {
+	public fun <init> ()V
+	public fun build ()Lorg/bukkit/inventory/ItemStack;
+	public final fun owner (Ljava/lang/String;)V
+	public final fun owner (Ljava/util/UUID;)V
+	public final fun owner (Lorg/bukkit/OfflinePlayer;)V
+}
+

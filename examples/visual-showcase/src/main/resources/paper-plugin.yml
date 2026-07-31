@@ -1,0 +1,5 @@
+name: SculkExampleVisualShowcasePlugin
+version: '${version}'
+main: studio.sculk.example.visual.VisualShowcasePlugin
+api-version: '1.21'
+authors: [Sculk Studios]

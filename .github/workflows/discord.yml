@@ -13,6 +13,9 @@ jobs:
       contents: read
     steps:
       - name: Push via DaisyTracker
-        uses: DaisyCatTs/DaisyTracker@master
+        # Pinned to a commit rather than @master so a push to DaisyTracker cannot silently change
+        # what runs here with DISCORD_WEBHOOK_URL in scope. This is master as of 2026-07-05, one
+        # docs-only commit ahead of v2.0.2. Bump deliberately.
+        uses: DaisyCatTs/DaisyTracker@ac4fa1b02c98ae5c45b3b070b1d92a24d105b70a
         with:
           discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}

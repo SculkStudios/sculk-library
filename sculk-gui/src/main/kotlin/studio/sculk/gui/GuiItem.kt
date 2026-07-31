@@ -7,8 +7,6 @@ import org.bukkit.inventory.ItemStack
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
 import studio.sculk.items.ItemBuilder
-import java.util.function.BiConsumer
-import java.util.function.Consumer
 
 /**
  * An immutable definition of a single slot in a [Gui].
@@ -131,21 +129,9 @@ constructor(private val slot: Int) {
         clickHandler = block
     }
 
-    /** Java-friendly overload of [onClick] taking a [Consumer]. */
-    @SculkStable
-    public fun onClick(block: Consumer<GuiContext>) {
-        clickHandler = { block.accept(this) }
-    }
-
     /** Registers a handler that runs only on left-click. */
     public fun onLeftClick(block: GuiContext.() -> Unit) {
         leftClickHandler = block
-    }
-
-    /** Java-friendly overload of [onLeftClick] taking a [Consumer]. */
-    @SculkStable
-    public fun onLeftClick(block: Consumer<GuiContext>) {
-        leftClickHandler = { block.accept(this) }
     }
 
     /** Registers a handler that runs only on right-click. */
@@ -153,21 +139,9 @@ constructor(private val slot: Int) {
         rightClickHandler = block
     }
 
-    /** Java-friendly overload of [onRightClick] taking a [Consumer]. */
-    @SculkStable
-    public fun onRightClick(block: Consumer<GuiContext>) {
-        rightClickHandler = { block.accept(this) }
-    }
-
     /** Registers a handler that runs only on shift-click. */
     public fun onShiftClick(block: GuiContext.() -> Unit) {
         shiftClickHandler = block
-    }
-
-    /** Java-friendly overload of [onShiftClick] taking a [Consumer]. */
-    @SculkStable
-    public fun onShiftClick(block: Consumer<GuiContext>) {
-        shiftClickHandler = { block.accept(this) }
     }
 
     /**
@@ -201,11 +175,6 @@ constructor(private val slot: Int) {
         animation = GuiAnimation(frames, intervalTicks)
     }
 
-    /** Java-friendly overload of [animate] taking a [Consumer]. */
-    @JvmOverloads
-    @SculkStable
-    public fun animate(intervalTicks: Long = 20, block: Consumer<GuiAnimationBuilder>): Unit = animate(intervalTicks) { block.accept(this) }
-
     /**
      * Registers a per-player content builder that is evaluated when the GUI opens.
      *
@@ -227,12 +196,6 @@ constructor(private val slot: Int) {
         dynamicBuilder = block
     }
 
-    /** Java-friendly overload of [dynamicContent] taking a [BiConsumer] of the builder and player. */
-    @SculkStable
-    public fun dynamicContent(block: BiConsumer<GuiItemBuilder, Player>) {
-        dynamicBuilder = { player -> block.accept(this, player) }
-    }
-
     /** Adds lore lines. */
     public fun lore(vararg lines: String) {
         lore.addAll(lines)
@@ -246,12 +209,6 @@ constructor(private val slot: Int) {
      */
     public fun stack(block: ItemBuilder.() -> Unit) {
         stackBuilder = block
-    }
-
-    /** Java-friendly overload of [stack] taking a [Consumer]. */
-    @SculkStable
-    public fun stack(block: Consumer<ItemBuilder>) {
-        stackBuilder = { block.accept(this) }
     }
 
     /**
@@ -325,12 +282,6 @@ public class GuiAnimationBuilder {
     /** Adds a frame built from a [Material] via the Sculk item builder. */
     @JvmOverloads
     public fun frame(material: Material, block: ItemBuilder.() -> Unit = {}) {
-        frames += studio.sculk.items.item(material, block)
-    }
-
-    /** Java-friendly overload of [frame] taking a [Consumer]. */
-    @SculkStable
-    public fun frame(material: Material, block: Consumer<ItemBuilder>) {
         frames += studio.sculk.items.item(material, block)
     }
 }

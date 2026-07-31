@@ -1,0 +1,5 @@
+name: SculkExampleHudShowcasePlugin
+version: '${version}'
+main: studio.sculk.example.hud.HudShowcasePlugin
+api-version: '1.21'
+authors: [Sculk Studios]

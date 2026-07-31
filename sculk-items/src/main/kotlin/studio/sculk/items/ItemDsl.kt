@@ -1,42 +1,35 @@
-@file:JvmName("SculkItems")
-@file:JvmMultifileClass
-
 package studio.sculk.items
 
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
+import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
-import java.util.function.Consumer
+import studio.sculk.series.SculkSeries
+import studio.sculk.text.SculkMessages
 
 /** Builds an [ItemStack] from a [Material]. */
-@JvmOverloads
 @SculkStable
 public fun item(material: Material, block: ItemBuilder.() -> Unit = {}): ItemStack = ItemBuilder(material).apply(block).build()
 
 /**
- * Builds an [ItemStack] from a modern material key.
+ * Builds an [ItemStack] from a material key, reporting an unknown key rather than returning null.
  *
- * Returns null if [material] is unknown.
- */
-@JvmOverloads
-@SculkStable
-public fun item(material: String, block: ItemBuilder.() -> Unit = {}): ItemStack? =
-    materialByKey(material)?.let { ItemBuilder(it).apply(block).build() }
-
-/**
- * Java-friendly overload of [item] taking a [Consumer].
- *
- * ```java
- * ItemStack sword = SculkItems.item(Material.DIAMOND_SWORD, b -> {
- *     b.name("<red>Excalibur");
- *     b.amount(1);
- * });
- * ```
+ * The key almost always comes from a config file, so the caller wants the name that was wrong in
+ * their log, not a null to trace back. This used to return null while `ItemBuilder.material(String)`
+ * threw for the identical failure, in the same module.
  */
 @SculkStable
-public fun item(material: Material, block: Consumer<ItemBuilder>): ItemStack = ItemBuilder(material).also { block.accept(it) }.build()
+public fun item(material: String, block: ItemBuilder.() -> Unit = {}): SculkResult<ItemStack> = SculkSeries.material(material)
+    ?.let { SculkResult.success(ItemBuilder(it).apply(block).build()) }
+    ?: SculkResult.failure("No material named '$material'.")
 
-/** Java-friendly overload of [item] from a material key, taking a [Consumer]. Returns null if unknown. */
+/** Builds an [ItemStack] whose name and lore render with this renderer's theme. */
 @SculkStable
-public fun item(material: String, block: Consumer<ItemBuilder>): ItemStack? =
-    materialByKey(material)?.let { mat -> ItemBuilder(mat).also { block.accept(it) }.build() }
+public fun SculkMessages.item(material: Material, block: ItemBuilder.() -> Unit = {}): ItemStack =
+    ItemBuilder(material, this).apply(block).build()
+
+/** Builds an [ItemStack] from a material key, with theme-rendered text. */
+@SculkStable
+public fun SculkMessages.item(material: String, block: ItemBuilder.() -> Unit = {}): SculkResult<ItemStack> = SculkSeries.material(material)
+    ?.let { SculkResult.success(ItemBuilder(it, this).apply(block).build()) }
+    ?: SculkResult.failure("No material named '$material'.")

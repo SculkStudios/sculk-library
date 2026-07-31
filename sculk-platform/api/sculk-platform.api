@@ -1,0 +1,61 @@
+public final class studio/sculk/platform/SculkEventBus : studio/sculk/SculkHandle {
+	public fun <init> (Lorg/bukkit/plugin/Plugin;)V
+	public fun close ()V
+	public final fun getListeners ()Ljava/util/List;
+	public final fun getPlugin ()Lorg/bukkit/plugin/Plugin;
+	public final fun listen (Ljava/lang/Class;Lorg/bukkit/event/EventPriority;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
+	public static synthetic fun listen$default (Lstudio/sculk/platform/SculkEventBus;Ljava/lang/Class;Lorg/bukkit/event/EventPriority;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/platform/SculkEventBusKt {
+	public static final fun listen (Lstudio/sculk/platform/SculkEventBus;Lorg/bukkit/event/Listener;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/platform/SculkPlatform : studio/sculk/SculkHandle {
+	public fun close ()V
+	public final fun getBundles ()Lstudio/sculk/text/SculkBundles;
+	public final fun getConfig ()Lstudio/sculk/config/SculkConfig;
+	public final fun getCooldowns ()Lstudio/sculk/command/CommandCooldowns;
+	public final fun getData ()Lstudio/sculk/data/SculkData;
+	public final fun getEvents ()Lstudio/sculk/platform/SculkEventBus;
+	public final fun getHolograms ()Lstudio/sculk/visual/HologramService;
+	public final fun getHud ()Lstudio/sculk/hud/HudService;
+	public final fun getMenus ()Lstudio/sculk/gui/MenuRegistry;
+	public final fun getMessages ()Lstudio/sculk/text/SculkMessages;
+	public final fun getNametags ()Lstudio/sculk/visual/Nametags;
+	public final fun getPackets ()Lstudio/sculk/SculkResult;
+	public final fun getScheduler ()Lstudio/sculk/scheduler/SculkScheduler;
+	public final fun getScope ()Lstudio/sculk/coroutine/SculkCoroutineScope;
+	public final fun getServices ()Lstudio/sculk/platform/ServiceRegistry;
+	public final fun getTasks ()Lstudio/sculk/task/SculkTasks;
+	public final fun getTheme ()Lstudio/sculk/text/SculkTheme;
+}
+
+public abstract class studio/sculk/platform/SculkPlugin : org/bukkit/plugin/java/JavaPlugin {
+	public fun <init> ()V
+	protected fun bannerFacts ()Ljava/util/List;
+	protected final fun commands ([Lstudio/sculk/command/CommandSpec;)V
+	protected fun getBuiltInHelp ()Z
+	public final fun getDeclaredCommands ()Ljava/util/List;
+	public final fun getSculk ()Lstudio/sculk/platform/SculkPlatform;
+	protected fun getShadow ()Ljava/lang/Integer;
+	protected fun getTheme ()Lstudio/sculk/text/SculkTheme;
+	protected final fun keep (Lstudio/sculk/SculkHandle;)V
+	protected final fun listen (Lorg/bukkit/event/Listener;)V
+	public final fun onDisable ()V
+	public final fun onEnable ()V
+	protected abstract fun setup ()V
+	protected fun shutdown ()V
+	protected final fun unaryPlus (Lstudio/sculk/command/CommandSpec;)V
+}
+
+public final class studio/sculk/platform/ServiceRegistry : studio/sculk/SculkHandle {
+	public fun <init> ()V
+	public fun close ()V
+	public final fun find (Lkotlin/reflect/KClass;)Ljava/lang/Object;
+	public final fun get (Lkotlin/reflect/KClass;)Ljava/lang/Object;
+	public final fun getRegistered ()Ljava/util/List;
+	public final fun has (Lkotlin/reflect/KClass;)Z
+	public final fun register (Lkotlin/reflect/KClass;Ljava/lang/Object;)Ljava/lang/Object;
+}
+
