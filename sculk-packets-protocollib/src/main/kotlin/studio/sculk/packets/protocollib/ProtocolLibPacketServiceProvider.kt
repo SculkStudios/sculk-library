@@ -30,7 +30,16 @@ public class ProtocolLibPacket(
 public class ProtocolLibPacketServiceProvider : SculkPacketServiceProvider {
     override val backend: PacketBackend = PacketBackend.ProtocolLib
 
-    override fun isAvailable(): Boolean = classExists("com.comphenix.protocol.ProtocolLibrary")
+    /**
+     * Present *and* initialised.
+     *
+     * A class-presence check alone is not enough: ProtocolLib can be on the classpath while its
+     * plugin is disabled or still loading, and the provider would then be chosen and throw on the
+     * first getProtocolManager() call. The PacketEvents backend has always checked both; this one
+     * did not, which made backend selection depend on load order.
+     */
+    override fun isAvailable(): Boolean = classExists("com.comphenix.protocol.ProtocolLibrary") &&
+        runCatching { ProtocolLibrary.getProtocolManager() != null }.getOrDefault(false)
 
     override fun create(plugin: JavaPlugin, scheduler: SculkScheduler): SculkPacketService = ProtocolLibPacketService(plugin, scheduler)
 

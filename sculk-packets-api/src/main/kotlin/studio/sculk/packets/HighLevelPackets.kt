@@ -23,37 +23,47 @@ import kotlin.time.Duration.Companion.seconds
  */
 @SculkStable
 public class ClientBlockService internal constructor(private val scheduler: SculkScheduler, private val backend: ClientBlockBackend?) {
-    public fun set(player: Player, location: Location, material: Material): SculkResult<Unit> =
-        set(player, location, material.createBlockData())
+    public fun set(player: Player, location: Location, material: Material): Unit = set(player, location, material.createBlockData())
 
     /**
      * Sends [data] to [player] at [location]. Prefer this over the [Material] overload in hot
      * paths: block data can be built once and reused, where a material is parsed on every send.
      */
-    public fun set(player: Player, location: Location, data: BlockData): SculkResult<Unit> {
+    public fun set(player: Player, location: Location, data: BlockData) {
+        scheduler.runNow(player) { player.sendBlockChange(location, data) }
+    }
+
+    /**
+     * Sends many blocks at once, packed into as few packets as the client allows.
+     *
+     * Use this wherever more than a handful of blocks change together. `set` is one packet per
+     * block: a field of 200 visible crops costs 200 packets every time the player loads the chunk,
+     * joins, or respawns. Paper groups these by chunk section, so the same 200 blocks become a
+     * handful of packets.
+     */
+    public fun setAll(player: Player, blocks: Map<Location, BlockData>) {
+        if (blocks.isEmpty()) return
+        scheduler.runNow(player) { player.sendMultiBlockChange(blocks) }
+    }
+
+    public fun reset(player: Player, location: Location) {
+        scheduler.runNow(location) { player.sendBlockChange(location, location.block.blockData) }
+    }
+
+    /** Restores the real blocks at [locations] in one batch. */
+    public fun resetAll(player: Player, locations: Collection<Location>) {
+        if (locations.isEmpty()) return
         scheduler.runNow(player) {
-            player.sendBlockChange(location, data)
+            player.sendMultiBlockChange(locations.associateWith { it.block.blockData })
         }
-        return SculkResult.success(Unit)
     }
 
-    public fun reset(player: Player, location: Location): SculkResult<Unit> {
-        scheduler.runNow(location) {
-            player.sendBlockChange(location, location.block.blockData)
-        }
-        return SculkResult.success(Unit)
-    }
-
-    public fun preview(player: Player, location: Location, material: Material, durationTicks: Long): SculkResult<SculkHandle> =
+    public fun preview(player: Player, location: Location, material: Material, durationTicks: Long): SculkHandle =
         preview(player, location, material.createBlockData(), durationTicks)
 
-    public fun preview(player: Player, location: Location, data: BlockData, durationTicks: Long): SculkResult<SculkHandle> {
+    public fun preview(player: Player, location: Location, data: BlockData, durationTicks: Long): SculkHandle {
         set(player, location, data)
-        val handle =
-            scheduler.runSyncDelayed(player, durationTicks) {
-                reset(player, location)
-            }
-        return SculkResult.success(handle)
+        return scheduler.runSyncDelayed(player, durationTicks) { reset(player, location) }
     }
 
     /**
@@ -74,7 +84,7 @@ public class ClientBlockService internal constructor(private val scheduler: Scul
     public fun onDig(priority: PacketPriority, handler: BlockDigContext.() -> Unit): SculkResult<SculkHandle> =
         backend?.listenDig(priority, handler) ?: SculkResult.failure(UNSUPPORTED)
 
-    public fun onDig(handler: BlockDigContext.() -> Unit): SculkResult<SculkHandle> = onDig(PacketPriority.Normal, handler)
+    public fun onDig(handler: BlockDigContext.() -> Unit): SculkResult<SculkHandle> = onDig(PacketPriority.Low, handler)
 
     /**
      * Listens to every block a client right-clicks. The handler runs on the packet thread.
@@ -85,27 +95,7 @@ public class ClientBlockService internal constructor(private val scheduler: Scul
     public fun onUse(priority: PacketPriority, handler: BlockUseContext.() -> Unit): SculkResult<SculkHandle> =
         backend?.listenUse(priority, handler) ?: SculkResult.failure(UNSUPPORTED)
 
-    public fun onUse(handler: BlockUseContext.() -> Unit): SculkResult<SculkHandle> = onUse(PacketPriority.Normal, handler)
-
-    /** Java-friendly overload of [onUse] taking a [java.util.function.Consumer]. */
-    @SculkStable
-    public fun onUse(priority: PacketPriority, handler: java.util.function.Consumer<BlockUseContext>): SculkResult<SculkHandle> =
-        onUse(priority) { handler.accept(this) }
-
-    /** Java-friendly convenience overload of [onUse] at [Normal][PacketPriority.Normal] priority. */
-    @SculkStable
-    public fun onUse(handler: java.util.function.Consumer<BlockUseContext>): SculkResult<SculkHandle> =
-        onUse(PacketPriority.Normal) { handler.accept(this) }
-
-    /** Java-friendly overload of [onDig] taking a [java.util.function.Consumer]. */
-    @SculkStable
-    public fun onDig(priority: PacketPriority, handler: java.util.function.Consumer<BlockDigContext>): SculkResult<SculkHandle> =
-        onDig(priority) { handler.accept(this) }
-
-    /** Java-friendly convenience overload of [onDig] at [Normal][PacketPriority.Normal] priority. */
-    @SculkStable
-    public fun onDig(handler: java.util.function.Consumer<BlockDigContext>): SculkResult<SculkHandle> =
-        onDig(PacketPriority.Normal) { handler.accept(this) }
+    public fun onUse(handler: BlockUseContext.() -> Unit): SculkResult<SculkHandle> = onUse(PacketPriority.Low, handler)
 
     private companion object {
         const val UNSUPPORTED = "The active packet backend does not support client block digging."
@@ -114,9 +104,6 @@ public class ClientBlockService internal constructor(private val scheduler: Scul
 
 @SculkStable
 public class PacketDebugService internal constructor(private val service: SculkPacketService, private val scheduler: SculkScheduler) {
-    /** Java-friendly overload of [session] taking a [java.util.function.Consumer]. */
-    @SculkStable
-    public fun session(block: java.util.function.Consumer<PacketDebugBuilder>): SculkResult<SculkHandle> = session { block.accept(this) }
 
     public fun session(block: PacketDebugBuilder.() -> Unit): SculkResult<SculkHandle> {
         val request = PacketDebugBuilder().apply(block)
@@ -180,11 +167,5 @@ public class PacketDebugBuilder {
 
     public fun onPacket(block: PacketContext.() -> Unit) {
         onPacket = block
-    }
-
-    /** Java-friendly overload of [onPacket] taking a [java.util.function.Consumer]. */
-    @SculkStable
-    public fun onPacket(block: java.util.function.Consumer<PacketContext>) {
-        onPacket = { block.accept(this) }
     }
 }

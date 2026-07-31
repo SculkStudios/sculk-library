@@ -26,6 +26,7 @@ import studio.sculk.packets.ClientBlockBackend
 import studio.sculk.packets.PacketBackend
 import studio.sculk.packets.PacketContext
 import studio.sculk.packets.PacketDirection
+import studio.sculk.packets.PacketGuard
 import studio.sculk.packets.PacketKey
 import studio.sculk.packets.PacketPriority
 import studio.sculk.packets.SculkPacket
@@ -84,6 +85,11 @@ private class PacketEventsPacketService(private val plugin: JavaPlugin, schedule
     AbstractPacketService(PacketBackend.PacketEvents, scheduler) {
     private val handles = mutableListOf<SculkHandle>()
 
+    // Every handler goes through this. PacketEvents treats an exception escaping a listener as a
+    // malformed packet and kicks the player, so a bug in a plugin handler would otherwise surface
+    // as mass disconnects with a protocol error rather than as a stack trace.
+    private val guard = PacketGuard(plugin.logger)
+
     override fun clientBlockBackend(): ClientBlockBackend = object : ClientBlockBackend {
         override fun acknowledge(player: Player, sequence: Int): SculkResult<Unit> {
             if (sequence < 0) return SculkResult.success(Unit)
@@ -117,7 +123,7 @@ private class PacketEventsPacketService(private val plugin: JavaPlugin, schedule
                             scheduler = scheduler,
                             cancelAction = { event.isCancelled = true },
                             acknowledgeAction = { acknowledge(player, sequence) },
-                        ).handler()
+                        ).let { context -> guard.run("block dig") { context.handler() } }
                     }
                 }
 
@@ -147,7 +153,7 @@ private class PacketEventsPacketService(private val plugin: JavaPlugin, schedule
                             scheduler = scheduler,
                             cancelAction = { event.isCancelled = true },
                             acknowledgeAction = { acknowledge(player, sequence) },
-                        ).handler()
+                        ).let { context -> guard.run("block use") { context.handler() } }
                     }
                 }
 
@@ -169,13 +175,15 @@ private class PacketEventsPacketService(private val plugin: JavaPlugin, schedule
             object : PacketListenerAbstract(priority.toPacketEvents()) {
                 override fun onPacketReceive(event: PacketReceiveEvent) {
                     if (direction == PacketDirection.Serverbound && event.packetType == packetType) {
-                        event.toContext(direction, type).handler()
+                        val context = event.toContext(direction, type)
+                        guard.run("$type") { context.handler() }
                     }
                 }
 
                 override fun onPacketSend(event: PacketSendEvent) {
                     if (direction == PacketDirection.Clientbound && event.packetType == packetType) {
-                        event.toContext(direction, type).handler()
+                        val context = event.toContext(direction, type)
+                        guard.run("$type") { context.handler() }
                     }
                 }
             }

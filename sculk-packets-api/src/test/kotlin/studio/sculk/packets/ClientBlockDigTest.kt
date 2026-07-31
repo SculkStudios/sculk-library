@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
-import studio.sculk.scheduler.SculkScheduler
+import studio.sculk.scheduler.FakeScheduler
 
 class ClientBlockDigTest {
     @Test
@@ -85,7 +85,7 @@ class ClientBlockDigTest {
         z = 3,
         action = BlockDigAction.Start,
         sequence = sequence,
-        scheduler = ImmediateScheduler(),
+        scheduler = FakeScheduler(),
         cancelAction = { order += "cancel" },
         acknowledgeAction = { order += "acknowledge" },
     )
@@ -112,7 +112,7 @@ class ClientBlockDigTest {
     }
 
     private class TestPacketService(private val blocks: ClientBlockBackend?) :
-        AbstractPacketService(PacketBackend.PacketEvents, ImmediateScheduler()) {
+        AbstractPacketService(PacketBackend.PacketEvents, FakeScheduler()) {
         override fun clientBlockBackend(): ClientBlockBackend? = blocks
 
         override fun listen(
@@ -123,26 +123,5 @@ class ClientBlockDigTest {
         ): SculkResult<SculkHandle> = SculkResult.success(SculkHandle {})
 
         override fun send(player: Player, packet: SculkPacket): SculkResult<Unit> = SculkResult.success(Unit)
-    }
-
-    private class ImmediateScheduler : SculkScheduler {
-        override fun runSync(task: Runnable): SculkHandle {
-            task.run()
-            return SculkHandle {}
-        }
-
-        override fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
-
-        override fun runAsync(task: Runnable): SculkHandle = runSync(task)
-
-        override fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle = runAsync(task)
-
-        override fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle = runAsync(task)
     }
 }

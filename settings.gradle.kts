@@ -36,4 +36,7 @@ include(
     ":sculk-commands",
     ":sculk-gui",
     ":sculk-data",
+    ":sculk-packets-api",
+    ":sculk-packets-packetevents",
+    ":sculk-packets-protocollib",
 )
