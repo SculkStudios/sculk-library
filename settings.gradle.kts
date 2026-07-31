@@ -40,4 +40,5 @@ include(
     ":sculk-packets-packetevents",
     ":sculk-packets-protocollib",
     ":sculk-visual",
+    ":sculk-hud",
 )
