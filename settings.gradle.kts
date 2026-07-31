@@ -29,4 +29,5 @@ rootProject.name = "sculk-studio"
 include(
     ":sculk-common",
     ":sculk-text",
+    ":sculk-config",
 )
