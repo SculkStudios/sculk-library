@@ -3,11 +3,9 @@ package studio.sculk.gui
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.ClickType
 import org.bukkit.event.inventory.InventoryClickEvent
-import studio.sculk.adventure.actionbar
-import studio.sculk.adventure.reply
-import studio.sculk.adventure.title
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
+import studio.sculk.text.SculkMessages
 
 /**
  * Context available inside a `onClick { }` handler.
@@ -31,17 +29,21 @@ constructor(
     /** The slot that was clicked. */
     public val slot: Int get() = event.slot
 
-    /** Sends a MiniMessage-formatted [message] to the player. */
-    public fun reply(message: String): Unit = player.reply(message)
+    /** The renderer this menu was opened with, so replies pick up the plugin theme. */
+    public val messages: SculkMessages get() = session.messages
 
-    /** Sends a title to the player. */
-    @JvmOverloads
-    public fun title(title: String, subtitle: String = "", fadeIn: Int = 10, stay: Int = 70, fadeOut: Int = 20) {
-        player.title(title, subtitle, fadeIn, stay, fadeOut)
+    /** Renders [template] through the theme and sends it to the player. */
+    public fun reply(template: String, vararg values: Pair<String, String>) {
+        messages.send(player, template, *values)
     }
 
-    /** Sends an action bar message to the player. */
-    public fun actionbar(message: String): Unit = player.actionbar(message)
+    public fun title(title: String, subtitle: String = "", vararg values: Pair<String, String>) {
+        messages.title(player, title, subtitle, values = values)
+    }
+
+    public fun actionBar(template: String, vararg values: Pair<String, String>) {
+        messages.actionBar(player, template, *values)
+    }
 
     /** Closes this GUI for the player. */
     public fun close(): Unit = session.close()

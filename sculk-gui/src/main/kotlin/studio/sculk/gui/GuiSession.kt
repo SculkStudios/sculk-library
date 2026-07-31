@@ -4,10 +4,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
+import studio.sculk.coroutine.SculkCoroutineScope
+import studio.sculk.text.SculkMessages
 
 /**
  * Per-player mutable session for an open [Gui].
@@ -25,6 +28,9 @@ constructor(
     public val player: Player,
     /** The GUI definition this session is displaying. */
     public val gui: Gui,
+    private val scope: SculkCoroutineScope,
+    /** The renderer this menu was opened with. */
+    public val messages: SculkMessages,
 ) {
     /** Mutable state bag for this session. */
     public val state: GuiState = GuiState()
@@ -90,7 +96,6 @@ constructor(
      */
     @SculkInternal
     public fun startAnimations() {
-        val scope = GuiRegistry.scope ?: return
         for ((slot, item) in gui.items) {
             val animation = item.animation ?: continue
             val job =
@@ -168,8 +173,7 @@ constructor(
      */
     public fun nextPage() {
         val slots = gui.pagination?.slots ?: return
-        val totalPages = if (pageEntries.isEmpty()) 1 else (pageEntries.size + slots.size - 1) / slots.size
-        if (currentPage < totalPages - 1) {
+        if (currentPage < pageCount(pageEntries.size, slots.size) - 1) {
             currentPage++
             refreshPagination()
         }
@@ -225,7 +229,7 @@ constructor(
     public val totalPages: Int
         get() {
             val slots = gui.pagination?.slots ?: return 1
-            return if (pageEntries.isEmpty()) 1 else (pageEntries.size + slots.size - 1) / slots.size
+            return pageCount(pageEntries.size, slots.size)
         }
 
     /** True if there is a page after [currentPage]. */
@@ -233,4 +237,18 @@ constructor(
 
     /** True if there is a page before [currentPage]. */
     public val hasPreviousPage: Boolean get() = currentPage > 0
+}
+
+/**
+ * Runs the handler for a click in this menu.
+ *
+ * Called by [MenuListener] *after* the event has been cancelled, so a handler that throws cannot
+ * leave the click applied.
+ */
+@SculkInternal
+public fun GuiSession.handleClick(player: Player, event: InventoryClickEvent) {
+    val item = gui.items[event.slot] ?: return
+    val handler = item.resolveHandler(event.click) ?: return
+    @OptIn(SculkInternal::class)
+    handler(GuiContext(player, event.click, event, this))
 }

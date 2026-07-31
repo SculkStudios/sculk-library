@@ -34,4 +34,5 @@ include(
     ":sculk-items",
     ":sculk-integrations",
     ":sculk-commands",
+    ":sculk-gui",
 )
