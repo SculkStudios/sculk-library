@@ -28,4 +28,5 @@ rootProject.name = "sculk-studio"
 // packets-*, visual, hud, platform/bom, examples, benchmarks.
 include(
     ":sculk-common",
+    ":sculk-text",
 )
