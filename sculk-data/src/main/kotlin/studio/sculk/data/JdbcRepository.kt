@@ -5,6 +5,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkInternal
+import studio.sculk.map
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -92,12 +93,12 @@ public class JdbcRepository<T : Any, ID : Any>(
     }
 
     override suspend fun save(value: T): SculkResult<Unit> = io("save a row") { connection ->
+        val row = RowCodec.encode(serializer, value, schema)
         connection.prepareStatement(upsertSql()).use { statement ->
-            bind(statement, RowCodec.encode(serializer, value, schema).let { row -> schema.columnNames.map { row[it] } })
+            bind(statement, schema.columnNames.map { row[it] })
             statement.executeUpdate()
         }
-        Unit
-    }
+    }.map { }
 
     override suspend fun saveAll(values: Collection<T>): SculkResult<Unit> = io("save ${values.size} rows") { connection ->
         if (values.isEmpty()) return@io Unit
@@ -112,8 +113,7 @@ public class JdbcRepository<T : Any, ID : Any>(
                 statement.executeBatch()
             }
         }
-        Unit
-    }
+    }.map { }
 
     override suspend fun delete(id: ID): SculkResult<Unit> = io("delete $id") { connection ->
         val sql = "DELETE FROM ${dialect.quote(schema.table)} WHERE ${dialect.quote(schema.key.name)} = ?"
@@ -121,8 +121,7 @@ public class JdbcRepository<T : Any, ID : Any>(
             statement.setObject(1, id)
             statement.executeUpdate()
         }
-        Unit
-    }
+    }.map { }
 
     override suspend fun deleteWhere(query: Query.() -> Unit): SculkResult<Int> = io("delete matching rows") { connection ->
         val built = Query().apply(query)

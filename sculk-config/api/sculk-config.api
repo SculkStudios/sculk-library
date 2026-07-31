@@ -1,0 +1,78 @@
+public abstract interface annotation class studio/sculk/config/Comment : java/lang/annotation/Annotation {
+	public abstract fun lines ()[Ljava/lang/String;
+}
+
+public final synthetic class studio/sculk/config/Comment$Impl : studio/sculk/config/Comment {
+	public fun <init> ([Ljava/lang/String;)V
+	public final synthetic fun lines ()[Ljava/lang/String;
+}
+
+public final class studio/sculk/config/ConfigDocument {
+	public final fun default (Ljava/lang/String;Ljava/lang/Object;)V
+	public final fun get (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun remove (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun rename (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun set (Ljava/lang/String;Ljava/lang/Object;)V
+}
+
+public abstract interface annotation class studio/sculk/config/ConfigFile : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
+	public abstract fun revision ()I
+}
+
+public final synthetic class studio/sculk/config/ConfigFile$Impl : studio/sculk/config/ConfigFile {
+	public fun <init> (Ljava/lang/String;I)V
+	public synthetic fun <init> (Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final synthetic fun name ()Ljava/lang/String;
+	public final synthetic fun revision ()I
+}
+
+public final class studio/sculk/config/ConfigMigrationBuilder {
+	public final fun from (I)Lstudio/sculk/config/ConfigMigrationFrom;
+}
+
+public final class studio/sculk/config/ConfigMigrationFrom {
+	public final fun to (ILkotlin/jvm/functions/Function1;)V
+}
+
+public abstract interface annotation class studio/sculk/config/Max : java/lang/annotation/Annotation {
+	public abstract fun value ()J
+}
+
+public final synthetic class studio/sculk/config/Max$Impl : studio/sculk/config/Max {
+	public fun <init> (J)V
+	public final synthetic fun value ()J
+}
+
+public abstract interface annotation class studio/sculk/config/Min : java/lang/annotation/Annotation {
+	public abstract fun value ()J
+}
+
+public final synthetic class studio/sculk/config/Min$Impl : studio/sculk/config/Min {
+	public fun <init> (J)V
+	public final synthetic fun value ()J
+}
+
+public abstract interface annotation class studio/sculk/config/NotEmpty : java/lang/annotation/Annotation {
+}
+
+public final synthetic class studio/sculk/config/NotEmpty$Impl : studio/sculk/config/NotEmpty {
+	public fun <init> ()V
+}
+
+public final class studio/sculk/config/SculkConfig {
+	public static final field Companion Lstudio/sculk/config/SculkConfig$Companion;
+	public final fun load (Lkotlinx/serialization/KSerializer;)Lstudio/sculk/SculkResult;
+	public final fun onReload (Lkotlinx/serialization/KSerializer;Lkotlin/jvm/functions/Function0;)V
+	public final fun reload (Lkotlinx/serialization/KSerializer;)Lstudio/sculk/SculkResult;
+	public final fun reloadAll ()V
+	public final fun save (Lkotlinx/serialization/KSerializer;Ljava/lang/Object;)Lstudio/sculk/SculkResult;
+	public final fun violations (Lkotlinx/serialization/KSerializer;)Ljava/util/List;
+	public final fun watch (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
+	public static synthetic fun watch$default (Lstudio/sculk/config/SculkConfig;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/config/SculkConfig$Companion {
+	public final fun create (Ljava/io/File;Ljava/util/logging/Logger;)Lstudio/sculk/config/SculkConfig;
+}
+

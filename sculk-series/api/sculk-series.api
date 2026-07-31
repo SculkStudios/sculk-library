@@ -1,0 +1,63 @@
+public final class studio/sculk/series/SculkBlocks {
+	public static final fun calibratedSculkSensorAt (Lorg/bukkit/Location;)Lorg/bukkit/block/CalibratedSculkSensor;
+	public static final fun getSCULK_BLOCKS ()Ljava/util/Set;
+	public static final fun isSculkBlock (Lorg/bukkit/Material;)Z
+	public static final fun isSculkBlock (Lorg/bukkit/block/Block;)Z
+	public static final fun sculkCatalystAt (Lorg/bukkit/Location;)Lorg/bukkit/block/SculkCatalyst;
+	public static final fun sculkSensorAt (Lorg/bukkit/Location;)Lorg/bukkit/block/SculkSensor;
+	public static final fun sculkShriekerAt (Lorg/bukkit/Location;)Lorg/bukkit/block/SculkShrieker;
+}
+
+public final class studio/sculk/series/SculkSeries {
+	public static final field INSTANCE Lstudio/sculk/series/SculkSeries;
+	public final fun biome (Ljava/lang/String;)Lorg/bukkit/block/Biome;
+	public final fun difficulty (Ljava/lang/String;)Lorg/bukkit/Difficulty;
+	public final fun enchantment (Ljava/lang/String;)Lorg/bukkit/enchantments/Enchantment;
+	public final fun enchantmentKeys ()Ljava/util/Set;
+	public final fun entityType (Ljava/lang/String;)Lorg/bukkit/entity/EntityType;
+	public final fun gameMode (Ljava/lang/String;)Lorg/bukkit/GameMode;
+	public final fun lookup (Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Object;
+	public final fun material (Ljava/lang/String;)Lorg/bukkit/Material;
+	public final fun materialKeys ()Ljava/util/Set;
+	public final fun particle (Ljava/lang/String;)Lorg/bukkit/Particle;
+	public final fun potionEffect (Ljava/lang/String;)Lorg/bukkit/potion/PotionEffectType;
+	public final fun potionEffectKeys ()Ljava/util/Set;
+	public final fun register (Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)V
+	public final fun requireBiome (Ljava/lang/String;)Lorg/bukkit/block/Biome;
+	public final fun requireEnchantment (Ljava/lang/String;)Lorg/bukkit/enchantments/Enchantment;
+	public final fun requireEntityType (Ljava/lang/String;)Lorg/bukkit/entity/EntityType;
+	public final fun requireMaterial (Ljava/lang/String;)Lorg/bukkit/Material;
+	public final fun requireParticle (Ljava/lang/String;)Lorg/bukkit/Particle;
+	public final fun requirePotionEffect (Ljava/lang/String;)Lorg/bukkit/potion/PotionEffectType;
+	public final fun requireSound (Ljava/lang/String;)Lorg/bukkit/Sound;
+	public final fun sound (Ljava/lang/String;)Lorg/bukkit/Sound;
+	public final fun soundKeys ()Ljava/util/Set;
+	public final fun validateKeys (Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;)Lstudio/sculk/series/SeriesValidationReport;
+	public static synthetic fun validateKeys$default (Lstudio/sculk/series/SculkSeries;Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;Ljava/lang/Iterable;ILjava/lang/Object;)Lstudio/sculk/series/SeriesValidationReport;
+}
+
+public final class studio/sculk/series/SeriesMissingKey {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lstudio/sculk/series/SeriesMissingKey;
+	public static synthetic fun copy$default (Lstudio/sculk/series/SeriesMissingKey;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/series/SeriesMissingKey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/series/SeriesValidationReport {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lstudio/sculk/series/SeriesValidationReport;
+	public static synthetic fun copy$default (Lstudio/sculk/series/SeriesValidationReport;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/series/SeriesValidationReport;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMissing ()Ljava/util/List;
+	public final fun getValid ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
