@@ -45,7 +45,6 @@ public class SoundBuilder private constructor(private val soundType: Sound?, pri
          * val builder = SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP)
          * ```
          */
-
         @SculkStable
         public fun of(type: Sound): SoundBuilder = SoundBuilder(type, null)
 
@@ -59,7 +58,6 @@ public class SoundBuilder private constructor(private val soundType: Sound?, pri
          * val builder = SoundBuilder.ofKey("myplugin:ui.click")
          * ```
          */
-
         @SculkStable
         public fun ofKey(key: String): SoundBuilder = SoundBuilder(null, key)
     }

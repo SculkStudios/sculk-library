@@ -1,6 +1,7 @@
 package studio.sculk.data
 
 import kotlinx.serialization.Serializable
+import studio.sculk.annotation.SculkStable
 import studio.sculk.config.Comment
 import studio.sculk.config.ConfigFile
 import studio.sculk.config.Max
@@ -11,6 +12,7 @@ import studio.sculk.config.NotEmpty
 @Serializable
 @ConfigFile("storage.yml")
 @Comment("Where this plugin keeps its data.", "Edit while the server is stopped.")
+@SculkStable
 public data class StorageSettings(
     @Comment("One of: sqlite, mysql, postgres.")
     @NotEmpty
@@ -29,6 +31,7 @@ public data class StorageSettings(
 )
 
 @Serializable
+@SculkStable
 public data class RemoteSettings(
     public val host: String = "localhost",
     @Min(1)

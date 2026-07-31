@@ -22,4 +22,5 @@ package studio.sculk.annotation
 )
 @Retention(AnnotationRetention.BINARY)
 @MustBeDocumented
+@SculkStable
 public annotation class SculkInternal
