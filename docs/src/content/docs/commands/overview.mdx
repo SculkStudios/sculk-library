@@ -1,180 +1,175 @@
 ---
-title: Commands Overview
-description: DSL-first command system with sender routing, typed arguments, and tab-completion — Kotlin or Java.
+title: Commands
+description: A command tree as data, compiled to Brigadier by one adapter.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
-Commands are defined with the `command {}` DSL (`SculkCommands.command(...)` in Java) and registered
-via `sculk.commands.registerAll()`. Each command lives in its own file and returns a `CommandBuilder`.
-
-> **Java note:** executors (`player`/`console`/`executes`) are `suspend` on the Kotlin side, which Java
-> cannot target — so the `Consumer` overloads are the only ones Java sees. No ambiguity, even for
-> one-liners.
-
-## Defining a command
-
-<Tabs syncKey="lang">
-<TabItem label="Kotlin">
-
 ```kotlin
-// commands/AdminCommand.kt
-fun adminCommand() = command("sculk") {
-    description = "Sculk admin commands."
-    permission = "sculk.admin"
+override fun setup() {
+    +command("kit") {
+        description = "Claim a kit."
+        permission = "myplugin.kit"
+        aliases = listOf("kits")
 
-    sub("reload") {
+        choice("kit", options = { kits.names() })
+        cooldown(Duration.ofMinutes(5))
+
         player {
-            sculk.config.reloadAll()
-            reply("<green>Config reloaded.")
-        }
-    }
-
-    sub("ping") {
-        executes {
-            reply("<gray>Pong!")
+            val name: String = argument("kit")
+            kits.give(player!!, name)
+            reply("<value>Claimed <k>.</value>", "k" to name)
         }
     }
 }
 ```
 
-</TabItem>
-<TabItem label="Java">
+`+command(…)` registers it. Declare commands anywhere in `setup()` — the order does not matter.
 
-```java
-// commands/AdminCommand.java
-CommandBuilder adminCommand() {
-    return SculkCommands.command("sculk", cmd -> {
-        cmd.setDescription("Sculk admin commands.");
-        cmd.setPermission("sculk.admin");
+## Spec first, Brigadier second
 
-        cmd.sub("reload", sub -> sub.player(ctx -> {
-            getSculk().getConfig().reloadAll();
-            ctx.reply("<green>Config reloaded.");
-        }));
+`command { }` produces a **`CommandSpec`**: an immutable data class with no Brigadier and no Bukkit
+types in its shape. One adapter turns it into Paper's command tree.
 
-        cmd.sub("ping", sub -> sub.executes(ctx -> {
-            ctx.reply("<gray>Pong!");
-        }));
-    });
+That split is why usage strings, permission filtering and `/help` are all testable with no server:
+
+```kotlin
+val spec = command("kit") { sub("give") { player("target"); executes { } } }
+
+spec.usageAt("kit give")     // "/kit give <target>"
+spec.flatten()               // every executable leaf with its full path
+```
+
+## Senders
+
+```kotlin
+player { /* players only */ }
+console { /* console and command blocks only */ }
+executes { /* anyone */ }
+```
+
+A node may declare **both** `player` and `console`, and each sender reaches its own:
+
+```kotlin
++command("seen") {
+    player { reply("<value>You are online.</value>") }
+    console { reply("Run this in game to see yourself.") }
 }
 ```
 
-</TabItem>
-</Tabs>
+## Arguments
 
-## Registering commands
-
-<Tabs syncKey="lang">
-<TabItem label="Kotlin">
+Resolved by name, so inserting one does not shift every later read:
 
 ```kotlin
-sculk.commands.registerAll(
-    adminCommand(),
-    homeCommand(),
-    shopCommand(),
-)
-```
++command("give") {
+    player("target")
+    material("item")
+    int("amount", min = 1, max = 64)
+    string("reason", optional = true)
 
-</TabItem>
-<TabItem label="Java">
-
-```java
-getSculk().getCommands().registerAll(adminCommand(), homeCommand(), shopCommand());
-```
-
-</TabItem>
-</Tabs>
-
-## Sender-type routing
-
-| Block | Who runs it | Rejects |
-| --- | --- | --- |
-| `player { }` | Online player | Console (auto error) |
-| `console { }` | Server console | Players (auto error) |
-| `executes { }` | Anyone | — |
-
-`player` is non-null inside a `player { }` block — no null checks needed (`ctx.getPlayer()` in Java).
-
-## Aliases
-
-Commands can have aliases — additional names that trigger the same handler:
-
-<Tabs syncKey="lang">
-<TabItem label="Kotlin">
-
-```kotlin
-fun teleportCommand() = command("teleport") {
-    aliases = listOf("tp", "tele")
-    player {
-        // /teleport, /tp, and /tele all work
+    executes {
+        val target: Player = argument("target")
+        val amount: Int = argument("amount")
+        val reason: String? = argumentOrNull("reason")
     }
 }
 ```
 
-</TabItem>
-<TabItem label="Java">
+| | |
+| --- | --- |
+| `string` `greedy` | a word, or the rest of the line |
+| `int` `long` `double` | with optional `min`/`max` |
+| `boolean` | |
+| `player` `world` `material` | resolved for you |
+| `uuid` `duration` | |
+| `enum(name, MyEnum::class.java)` | matched case-insensitively |
+| `choice(name) { … }` | one of a set |
+| `argument(name, parser)` | your own |
 
-```java
-CommandBuilder teleportCommand() {
-    return SculkCommands.command("teleport", cmd -> {
-        cmd.setAliases(java.util.List.of("tp", "tele"));
-        cmd.player(ctx -> {
-            // /teleport, /tp, and /tele all work
-        });
-    });
+An optional argument makes the preceding node executable. A required one cannot follow an optional
+one — that is rejected when the spec is built.
+
+## Suggestions that do not go stale
+
+`choice` takes a **lambda**, not a list:
+
+```kotlin
+choice("kit", options = { kits.names() })
+```
+
+A snapshot captured at registration stops matching the moment a config reload changes the set, and
+tab-completion then stays wrong until the next restart. The lambda is resolved per keystroke.
+
+## Subcommands
+
+```kotlin
++command("guild") {
+    permission = "myplugin.guild"
+
+    sub("create") {
+        string("name")
+        player { … }
+    }
+    sub("disband") {
+        permission = "myplugin.guild.admin"
+        player { … }
+    }
 }
 ```
 
-</TabItem>
-</Tabs>
+A child inherits its parent's permission unless it declares its own.
 
-## Auto tab-completion
+## Missing arguments
 
-Generated from the subcommand tree and registered argument names. Add explicit suggestions on arguments when a command needs dynamic values such as online players, worlds, or config keys.
+A sender who omits a required argument gets the **usage line** — `/kit give <target> <kit>` — rather
+than Brigadier's red caret, which says where parsing stopped but never what was wanted.
 
-## Permission checks
+## Cooldowns
 
-Set `permission` on any node. Players without the permission get a clean error message automatically.
-Root-level permissions cascade — a player denied at the root never reaches subcommands.
+```kotlin
+cooldown(Duration.ofSeconds(30))
+```
 
-## Feedback helpers
+Per sender, per command path. The check and the record are one atomic operation, so two commands
+sent in the same tick cannot both pass.
 
-Inside any executor block the context (`this` in Kotlin, `ctx` in Java) is a `CommandContext` with
-helpers beyond `reply()`:
+## Middleware
 
-<Tabs syncKey="lang">
-<TabItem label="Kotlin">
+Runs before the executor; returning false aborts. It is responsible for saying why, since only it
+knows:
+
+```kotlin
+middleware { context ->
+    if (arena.isRunning) {
+        context.reply("<danger>Not during a match.</danger>")
+        false
+    } else {
+        true
+    }
+}
+```
+
+## Suspending
+
+Handlers are `suspend`, launched in the plugin scope:
 
 ```kotlin
 player {
-    reply("<green>Operation complete.")        // chat message
-    actionbar("<gray>Processing…")             // above hotbar
-    title("<aqua>Welcome!", "<gray>to the server")  // full-screen title
-    playSound(Sound.ENTITY_PLAYER_LEVELUP)     // sound at player location
+    val profile = repository.find(player!!.uniqueId).getOrNull()
+    reply("<value><n></value> wins.", "n" to (profile?.wins ?: 0).toString())
 }
 ```
 
-</TabItem>
-<TabItem label="Java">
+## Generated help
 
-```java
-cmd.player(ctx -> {
-    ctx.reply("<green>Operation complete.");        // chat message
-    ctx.actionbar("<gray>Processing…");             // above hotbar
-    ctx.title("<aqua>Welcome!", "<gray>to the server");  // full-screen title
-    ctx.playSound(Sound.ENTITY_PLAYER_LEVELUP);     // sound at player location
-});
+`/help` is built from the same specs Brigadier was given and filtered by the same permissions, so
+what a player sees cannot drift from what the server accepts. Turn it off with:
+
+```kotlin
+override val builtInHelp = false
 ```
 
-</TabItem>
-</Tabs>
+## Framework messages
 
-`title` and `actionbar` are no-ops when the sender is console. `playSound` defaults to `volume = 1.0, pitch = 1.0`.
-
-## Best practices
-
-- One command per file, returning a `CommandBuilder`.
-- Register everything in `setup()` with `registerAll`.
-- Use `executes { }` when behaviour is identical for players and console.
-- Keep handlers thin — delegate heavy logic to a service class.
+Every string the framework emits is overridable — no-permission, on-cooldown, bad-usage, and the
+rest — via `CommandText`, so a fully localised plugin does not still say
+"This command can only be used by players." in English.

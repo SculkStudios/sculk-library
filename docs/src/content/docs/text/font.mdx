@@ -1,0 +1,52 @@
+---
+title: Measuring text
+description: Real glyph widths, so centred text is actually centred.
+---
+
+Minecraft's default font is proportional. `i` is two pixels wide and `@` is seven, so centring by
+character count is visibly wrong exactly where centring matters — sidebars, holograms, GUI titles,
+anything inside a fixed frame.
+
+```kotlin
+MinecraftFont.width("Hello")          // pixels
+MinecraftFont.width("Hello", bold = true)
+```
+
+## Centring
+
+`centre` returns the **padding**, not the padded string:
+
+```kotlin
+val padding = MinecraftFont.centre("Scoreboard", availableWidth = 180)
+val line = padding + "Scoreboard"
+```
+
+Returning the padding is deliberate: a caller usually needs to know whether the padding *changed*,
+because a row whose own text is unchanged still has to be redrawn when the widest row beside it
+moved. The [sidebar](/hud/sidebar/) does exactly that.
+
+## Components, not strings
+
+```kotlin
+MinecraftFont.width(component)
+```
+
+Measuring a component walks its children and honours bold **per part**. Measuring the flattened
+string instead under-measures anything with a bold word in it — which is the common case, a bold
+label beside a plain value.
+
+```kotlin
+val row = Component.text("Balance: ")
+    .append(Component.text("1,240").decoration(TextDecoration.BOLD, true))
+
+MinecraftFont.width(row)   // counts the bold pixels
+```
+
+## Where this is approximate
+
+Widths are for the default font and ASCII. Anything outside that range is assumed to be six pixels,
+which is right for most Latin glyphs and wrong for CJK (those are eight). A resource pack that
+replaces the font invalidates all of it.
+
+For a sidebar that is fine — the failure is a row a few pixels off centre. Do not use it to decide
+whether something fits inside a strict limit.

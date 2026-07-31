@@ -1,0 +1,106 @@
+---
+title: Backends
+description: SQLite, MySQL/MariaDB, PostgreSQL, and Redis or Valkey for a shared cache.
+---
+
+The backend is a config value. Nothing in your code changes when it does.
+
+```yaml
+# storage.yml
+backend: sqlite       # sqlite | mysql | postgres
+file: data.db
+remote:
+  host: localhost
+  port: 3306
+  database: minecraft
+  username: root
+  password: "${DB_PASSWORD:-}"
+  use-ssl: false
+pool-size: 10
+```
+
+`${DB_PASSWORD:-}` reads from the environment, so the shipped file stays a working example and the
+real secret never lands in a config anyone might paste into a support channel. A file containing a
+placeholder is never rewritten, so the placeholder cannot be replaced by the resolved value on disk.
+
+## Which to use
+
+| | |
+| --- | --- |
+| **SQLite** | The default, and right for a single server. One file: a backup is a copy, and any tool can open it during an incident. One writer, so the pool is fixed at one connection. |
+| **MySQL / MariaDB** | For several servers sharing data. `mariadb` and `mysql` both select the MySQL dialect and the MariaDB driver, which speaks to both. |
+| **PostgreSQL** | Also for several servers. Stricter types, better concurrency. |
+
+`mariadb` is an alias for `mysql`, not a separate dialect — the SQL Sculk generates is identical.
+
+## What differs between them
+
+You should not have to care, but for the record:
+
+- **Identifier quoting** — backticks on MySQL, double quotes elsewhere. Applied always, so an
+  entity with a column called `order`, `key` or `group` works everywhere.
+- **Upserts** — `ON DUPLICATE KEY UPDATE` on MySQL, `ON CONFLICT … DO UPDATE` on SQLite and
+  Postgres. Both **update in place**. `REPLACE INTO` is never generated: it is a delete and an
+  insert, so it wipes columns outside the statement, fires `ON DELETE` cascades and burns
+  auto-increment values.
+- **Column types** — SQLite has no boolean and stores 0/1; Postgres has a real one.
+
+## Failing at boot, not at first login
+
+Opening the database takes a connection immediately and validates it. A wrong password fails at
+start-up, next to the config that caused it, rather than twenty minutes later on the first player
+lookup.
+
+If `storage.yml` names a backend that cannot be opened, Sculk logs it and falls back to SQLite. A
+server that boots with the wrong backend and says so is recoverable; one that refuses to start is a
+support ticket at midnight.
+
+## Drivers
+
+SQLite ships bundled. MariaDB and PostgreSQL are `compileOnly` in Sculk — add the driver you use so
+your shaded jar does not carry two you do not:
+
+```kotlin
+runtimeOnly("org.postgresql:postgresql:42.7.12")
+// or
+runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.5.10")
+```
+
+## Redis and Valkey
+
+For a cache shared across servers, so a player hopping from lobby to survival does not arrive with
+a balance the lobby cached ten minutes ago:
+
+```kotlin
+val players = RedisCache.create(
+    repository = sculk.data.repository<PlayerData, UUID>(),
+    idOf = PlayerData::uuid,
+    serializer = PlayerData.serializer(),
+    uri = "redis://localhost:6379",
+    keyPrefix = "players",
+    logger = logger,
+)
+```
+
+**Valkey works through the same client and the same `redis://` URI.** There is no `valkey://`
+scheme, and reaching for one is the usual first thing to go wrong. Sentinel and cluster URIs work
+as Lettuce defines them.
+
+Add the client yourself:
+
+```kotlin
+runtimeOnly("io.lettuce:lettuce-core:7.6.0.RELEASE")
+```
+
+### When it is unreachable
+
+Every call degrades to the database rather than failing the read — a cache that takes the server
+down when it blinks is worse than no cache. Failures are logged once per 30 seconds, because an
+outage would otherwise write a line per lookup per player and become its own outage.
+
+```kotlin
+players.available   // false while the last call failed
+```
+
+An entry that no longer decodes — a shape written by an older version of your plugin — is dropped
+and refilled from the database rather than failing the lookup.

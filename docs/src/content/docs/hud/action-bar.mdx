@@ -1,0 +1,61 @@
+---
+title: Action bar
+description: One slot, several writers, and how they take turns.
+---
+
+There is exactly one action bar and everything wants it.
+
+```kotlin
+sculk.hud.actionBar(player, "<value>+5 coins</value>")
+sculk.hud.actionBar(player, "<danger>Your claim expires in 60s</danger>", ActionBarPriority.ALERT)
+```
+
+## Priority
+
+Without an order, the **most frequent** writer wins by accident — because the last write is the one
+on screen. A `+$5` on every mob kill would bury a warning the player genuinely needs.
+
+| Priority | For |
+| --- | --- |
+| `FEEDBACK` | routine confirmation of something the player just did |
+| `ACTIVITY` | ongoing state — a progress bar, a countdown |
+| `ALERT` | something they must see |
+
+The highest live priority is shown. When it expires, whatever is underneath comes back:
+
+```kotlin
+sculk.hud.actionBar(player, "<dim>mining…</dim>", ActionBarPriority.ACTIVITY, durationTicks = 200)
+sculk.hud.actionBar(player, "<danger>watch out</danger>", ActionBarPriority.ALERT, durationTicks = 40)
+// alert for 2s, then back to "mining…" for the remaining 8s
+```
+
+## Expiry, not clearing
+
+Messages expire on their own:
+
+```kotlin
+sculk.hud.actionBar(player, "…", durationTicks = 40)
+```
+
+Nothing has to clear them. A system that sets an action bar and then throws before clearing it
+would otherwise pin its text on screen for the rest of the session, and that failure looks like a
+stuck HUD rather than like the bug it is.
+
+## Same priority replaces
+
+A second message at the same priority replaces the first rather than queueing behind it — a
+progress bar should update, not wait for its own previous frame to expire.
+
+## Values
+
+Like everything else, values are placeholders and reach the renderer unparsed:
+
+```kotlin
+sculk.hud.actionBar(
+    player,
+    "<value><n></value> blocks left",
+    ActionBarPriority.ACTIVITY,
+    durationTicks = 40,
+    "n" to remaining.toString(),
+)
+```

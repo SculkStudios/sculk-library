@@ -29,7 +29,7 @@ class MyPlugin : SculkPlugin({ gui(); config(); data() }) {
 ```
 
 `SculkPlugin` creates the `SculkPlatform` (exposed as `sculk`) and closes it on disable. Extend
-`JavaPlugin` and call `SculkPlatform.create(this) { … }` yourself only if you need to own the
+`JavaPlugin` directly only if you need to own the
 enable/disable sequence.
 
 ## Threading model

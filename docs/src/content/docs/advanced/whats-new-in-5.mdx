@@ -1,0 +1,89 @@
+---
+title: What's new in 5.0
+description: What changed, and why it changed.
+---
+
+5.0 is a rebuild rather than a release. The same ideas, rewritten with the benefit of having used
+them. Every module was touched, six were merged or removed, and two were added.
+
+There is no migration guide, because 4.x was never public.
+
+## Three things that were broken
+
+### Placeholder values could inject markup
+
+Two separate modules substituted values into templates with `replace()` *before* parsing. Anything
+that could influence a value reaching a message — a player name, an anvil-typed item name, a
+database string — could inject formatting, a fake staff prefix, or a `<click:run_command:…>` that
+fires as whoever **reads** the message.
+
+`SculkMessages` is now the only place a `String` becomes a `Component`, and every value enters
+through `Placeholder.unparsed`. See [the trust boundary](/text/placeholders/).
+
+### A packet handler that threw kicked the player
+
+PacketEvents treats an exception escaping a listener as a malformed packet and disconnects the
+client. All four handler call sites were unguarded, so a null-pointer in a dig handler surfaced as
+players dropping with a protocol error — which sends everyone looking at the network layer.
+
+Handlers are now guarded, the packet is left alone, and logging is rate-limited.
+
+### Config rewrites deleted things
+
+Writing the rendered config over the file silently removed keys the data class does not model and
+comments a server owner had written. Rolling a plugin back would eat the newer version's settings.
+
+A rewrite now only ever **adds**.
+
+## Kotlin only
+
+Every Java-parity overload, `@JvmStatic`/`@JvmOverloads` facade and `CompletableFuture` bridge is
+gone. In exchange the API can use reified generics, default arguments, `suspend` functions and
+receiver lambdas without hedging.
+
+One survivor: `CompletableFuture.await()`, because Paper hands *Kotlin* callers futures.
+
+## Module changes
+
+| Was | Now |
+| --- | --- |
+| `sculk-adventure` | merged into `sculk-text` |
+| `sculk-effects`, `sculk-holograms` | merged into `sculk-visual` |
+| `sculk-events` | folded into `sculk-platform` |
+| `sculk-tasks` | folded into `sculk-common` as `studio.sculk.task` |
+| `sculk-content` | deleted — it was pure delegation |
+| — | **`sculk-hud`** added |
+
+## Things that moved
+
+| 4.x | 5.0 |
+| --- | --- |
+| `gui.openFor(player)` | `sculk.menus.open(gui, player)` |
+| `parseMessage(text)` | `sculk.messages.render(text)` |
+| `sculk.text.send(...)` | `sculk.bundles.send(...)` |
+| `SculkPlatform.create(this) { … }` | nothing — subsystems are lazy |
+| `cache.findTopBy(10) { … }` | `repository.topBy("column", 10)` |
+| `item(String)` returning null | returns `SculkResult` |
+| `ItemFlag` | `hideVanillaTooltip()` |
+| `QueryBuilder` | `Query`, with OR/IN/OFFSET |
+| `SculkTextStyle` global | per-plugin `theme` and `shadow` |
+
+## New
+
+- [**HUD**](/hud/overview/) — sidebar, action bar, tab list, boss bars, on one task.
+- [**Themes**](/text/theme/) — messages written against meaning rather than colour.
+- [**Services**](/platform/services/) — a typed registry with defined shutdown order.
+- [**Holograms**](/visual/holograms/) and [**nametags**](/visual/nametags/) — packet-only, so the
+  server ticks nothing.
+- [**Test fixtures**](/core/testing/) — `FakeScheduler` and `FakeVirtualEntityService` are
+  published.
+- **PostgreSQL** alongside SQLite and MySQL/MariaDB; the Redis cache works against Valkey.
+
+## Quieter, but worth knowing
+
+- Subsystems are **lazy**. Touching `sculk.data` opens the pool; never touching it costs nothing.
+  There is no opt-in flag to forget.
+- `onEnable`/`onDisable` are **final**.
+- The scheduler's region overloads are abstract, so an implementation that has not thought about
+  Folia will not compile. Non-positive delays and periods are normalised.
+- Public API changes are gated by committed `.api` dumps.

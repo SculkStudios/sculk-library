@@ -1,0 +1,104 @@
+---
+title: Placeholders & the trust boundary
+description: Why values go into a message unparsed, and what happens when they do not.
+---
+
+This is the most important page in the text section. It is short, and it is about a security
+boundary rather than a feature.
+
+## Two kinds of string
+
+Sculk treats every message as two things that must never be mixed:
+
+- A **template** is trusted. It comes from your source or a config file you control. It is
+  **parsed**, which is how it gets colour, click events and theme tags.
+- A **value** is not trusted. It is a player name, an item renamed in an anvil, a row out of a
+  database, a string from another plugin. It is inserted **unparsed**, so it is text and nothing
+  else.
+
+```kotlin
+messages.send(player, "<danger><name> left the arena.", "name" to victim.name)
+```
+
+`<name>` is replaced with the value as literal text. If `victim.name` were
+`<click:run_command:/op me>free rank</click>`, the reader sees exactly that string — not a
+clickable link that runs a command **as them**.
+
+## What goes wrong without it
+
+The obvious implementation substitutes values into the template first:
+
+```kotlin
+// Never do this.
+val text = template.replace("<name>", victim.name)
+messages.send(player, text)
+```
+
+Now the value is parsed along with the template. Anyone who can influence that value can:
+
+- forge formatting — `<red>[ADMIN]</red>` in front of their own name;
+- inject a `<click:run_command:…>` that executes **as whoever reads the message**, not as them;
+- inject a `<hover:show_text:…>` carrying anything at all.
+
+The value does not need to come from chat. A crop name, a warp title, a kit description, a shop
+listing — anything a player can set and another player can be shown is a route in.
+
+:::caution
+Sculk shipped this bug twice: once in `SculkMessenger`, once in `SculkText`. Both times it was
+written independently, and both times it read like ordinary string handling. That is why
+`SculkMessages` is now the only place a `String` becomes a `Component` — so the safe path is the
+only path, rather than the one you have to remember.
+:::
+
+## Values with structure
+
+Values are strings, so a number or a component needs converting at the call site:
+
+```kotlin
+messages.send(
+    player,
+    "<value><amount></value> coins from <value><source></value>.",
+    "amount" to balance.toString(),
+    "source" to shop.displayName,
+)
+```
+
+## Naming
+
+A placeholder may not share a name with a theme style. If it did, the theme would win and the
+placeholder would silently stop working — so it fails loudly instead:
+
+```kotlin
+val theme = SculkTheme(mapOf("value" to ThemeStyle.Solid("#8be9fd")))
+
+// Throws: "Placeholder 'value' collides with the theme style of the same name"
+messages.render("<value>", "value" to "oops")
+```
+
+That is a wiring bug, not a runtime condition, so it fails at the point you can still fix it.
+
+## Custom tags
+
+For tags that depend on **who is looking** — an icon glyph for players with your resource pack, a
+word for those without — pass a resolver alongside the values:
+
+```kotlin
+val icons = TagResolver.resolver(
+    Placeholder.component("coin", if (viewer.hasPack) coinGlyph else Component.text("coins")),
+)
+
+messages.render("<amount> <coin>", icons, "amount" to balance.toString())
+```
+
+The template is still trusted; the extra resolver is yours; the values are still unparsed. The
+boundary does not move.
+
+## In a HUD
+
+The same rule applies to sidebars, which is where it is easiest to forget — much of what a sidebar
+shows is player-influenced. [`HudRow`](/hud/overview/) carries the template and its values
+separately all the way to the renderer for exactly this reason:
+
+```kotlin
+HudRow("Top player: <name>", listOf("name" to leaderboard.first().name))
+```

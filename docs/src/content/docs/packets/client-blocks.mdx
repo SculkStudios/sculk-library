@@ -3,8 +3,6 @@ title: Client Blocks
 description: Show one player blocks that are not really there, and take over the blocks they dig.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 `sculk.packets.clientBlocks` sends block state to a single player without ever touching the world.
 It is the foundation for private mines, per-player generators, build previews, and any feature where
 two players standing in the same spot should see different blocks.
@@ -16,8 +14,6 @@ Everything here needs a packet backend — see [Packets](/packets/overview/) for
 `set` takes a `Material` or, better in a hot path, a prebuilt `BlockData`. Block data can be built
 once and reused; a material is parsed into block data on every send.
 
-<Tabs syncKey="lang">
-<TabItem label="Kotlin">
 
 ```kotlin
 val ripe = (Material.WHEAT.createBlockData() as Ageable).apply { age = maximumAge }
@@ -27,28 +23,12 @@ sculk.packets.clientBlocks.preview(player, location, Material.GOLD_BLOCK, durati
 sculk.packets.clientBlocks.reset(player, location)
 ```
 
-</TabItem>
-<TabItem label="Java">
-
-```java
-BlockData ripe = Material.WHEAT.createBlockData();
-((Ageable) ripe).setAge(((Ageable) ripe).getMaximumAge());
-
-packets.getClientBlocks().set(player, location, ripe);
-packets.getClientBlocks().preview(player, location, Material.GOLD_BLOCK, 40L);
-packets.getClientBlocks().reset(player, location);
-```
-
-</TabItem>
-</Tabs>
 
 ## Taking over a dig
 
 `onDig` reports every block a client says it is breaking, normalised across backends. The handler
 runs on the **packet thread** — use `intercept` (or `runSync`) before touching Bukkit.
 
-<Tabs syncKey="lang">
-<TabItem label="Kotlin">
 
 ```kotlin
 sculk.packets.clientBlocks.onDig {
@@ -61,22 +41,6 @@ sculk.packets.clientBlocks.onDig {
 }
 ```
 
-</TabItem>
-<TabItem label="Java">
-
-```java
-packets.getClientBlocks().onDig(dig -> {
-    if (dig.getAction() != BlockDigAction.Start) {
-        return;
-    }
-    dig.intercept(() -> {
-        packets.getClientBlocks().set(dig.getPlayer(), dig.getLocation(), Material.AIR);
-    });
-});
-```
-
-</TabItem>
-</Tabs>
 
 ### Why `intercept` exists
 

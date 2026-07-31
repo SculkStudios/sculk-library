@@ -1,0 +1,60 @@
+---
+title: HUD placeholders
+description: Per-viewer values, resolved only where they are used.
+---
+
+Register a resolver once; reference it in any HUD template.
+
+```kotlin
+sculk.hud.placeholders.register("coins") { economy.balanceOf(it.uniqueId).toString() }
+sculk.hud.placeholders.register("ping") { it.ping.toString() }
+sculk.hud.placeholders.register("world") { it.world.name }
+```
+
+```kotlin
+sculk.hud.sidebar(player, "<value>Server</value>") {
+    listOf(
+        HudRow("Balance <value><coins></value>"),
+        HudRow("Ping <value><ping>ms</value>"),
+    )
+}
+```
+
+The resolver receives the **viewer**, so every player sees their own values from one shared
+template.
+
+## Only what a row mentions
+
+A row is scanned for the tokens it contains, and only those resolvers run. Registering an expensive
+placeholder does not make every other row slower — a leaderboard lookup is paid for by the rows
+that ask for it, and by nothing else.
+
+```kotlin
+sculk.hud.placeholders.register("leaderboard") { expensiveQuery() }   // only runs where used
+```
+
+Even so: a resolver runs per row per player per refresh, four times a second. Cache anything that
+is not a field read.
+
+## A broken resolver
+
+```kotlin
+sculk.hud.placeholders.register("bad") { error("boom") }
+```
+
+That placeholder renders as `?`. It does not throw, it does not stop the other placeholders in the
+same row, and it does not take the frame down. A broken placeholder should be one visibly wrong
+value, not a sidebar that quietly stops updating — which is far harder to notice and to report.
+
+## Values are still unparsed
+
+Resolved values are carried alongside the template and inserted as placeholders, never substituted
+into it. A placeholder returning a player-chosen nickname cannot inject markup into everyone's
+sidebar. See [the trust boundary](/text/placeholders/).
+
+## Managing them
+
+```kotlin
+sculk.hud.placeholders.unregister("coins")
+sculk.hud.placeholders.names
+```

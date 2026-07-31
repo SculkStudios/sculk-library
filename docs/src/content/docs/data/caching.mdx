@@ -107,21 +107,21 @@ sculk.events.listen<PlayerJoinEvent> { event ->
 
 The factory lambda is **only called if no record exists** in either the cache or the database. The new entity is saved and cached atomically before the result is returned.
 
-## findTopBy
+## topBy
 
 Returns the top `n` entities from the underlying repository sorted by any field. Always hits the database — cache is bypassed so leaderboards are always fresh:
 
 ```kotlin
 sculk.scope.launchAsync {
-    val topShards = shardsCache.findTopBy(10, { it.shards })
+    val topShards = repository.topBy("shards", rows = 10).getOrThrow()
     // topShards is List<PlayerShards>, descending by default
 
-    val bottomHearts = heartsCache.findTopBy(5, { it.hearts }, descending = false)
+    val bottomHearts = repository.topBy("hearts", rows = 5, ascending = true).getOrThrow()
 }
 ```
 
 :::note
-`findTopBy` loads all rows then sorts in memory. For tables with tens of thousands of rows, consider a dedicated SQL query via the raw `DataSource` instead.
+`topBy` sorts and limits **in SQL**, so it stays cheap on a table with a million rows. The previous cache-side version loaded the whole table and sorted it in memory, which is survivable at a thousand rows and not at a million.
 :::
 
 ## Batch saves
@@ -145,7 +145,7 @@ sculk.scope.launchAsync {
 
 - **One cache per entity type** — create it at startup and share it everywhere.
 - **Use `findOrCreate` on join** — eliminates the exists-check boilerplate and guarantees a valid entity is always in cache.
-- **Use `findTopBy` for leaderboards** — it's always fresh since it bypasses the cache.
+- **Use `topBy` for leaderboards** — it is always fresh, and the database does the sorting.
 - **Use `saveAll` for bulk shutdown flushes** — one transaction is faster than N individual saves.
 - **Set `maxSize` to a sensible multiple of max-players** — for a 100-player server, 200–500 is plenty for player-scoped data.
 - **Keep `ttl` short for externally-mutable data** — longer (30–60 min) is fine for data only your plugin writes.
