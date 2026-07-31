@@ -21,26 +21,9 @@ public interface SculkPacketService : SculkHandle {
     public fun listen(
         direction: PacketDirection,
         type: PacketKey,
-        priority: PacketPriority = PacketPriority.Normal,
+        priority: PacketPriority = PacketPriority.Low,
         handler: PacketContext.() -> Unit,
     ): SculkResult<SculkHandle>
-
-    /** Java-friendly overload of [listen] taking a [java.util.function.Consumer]. */
-    @SculkStable
-    public fun listen(
-        direction: PacketDirection,
-        type: PacketKey,
-        priority: PacketPriority,
-        handler: java.util.function.Consumer<PacketContext>,
-    ): SculkResult<SculkHandle> = listen(direction, type, priority) { handler.accept(this) }
-
-    /** Java-friendly convenience overload of [listen] at [Normal][PacketPriority.Normal] priority. */
-    @SculkStable
-    public fun listen(
-        direction: PacketDirection,
-        type: PacketKey,
-        handler: java.util.function.Consumer<PacketContext>,
-    ): SculkResult<SculkHandle> = listen(direction, type, PacketPriority.Normal) { handler.accept(this) }
 
     public fun send(player: Player, packet: SculkPacket): SculkResult<Unit>
 }
