@@ -81,7 +81,7 @@ packets.clientBlocks.preview(player, targetBlock.location, Material.EMERALD_BLOC
 packets.clientBlocks.reset(player, targetBlock.location)
 ```
 
-The public packet contracts also include debug sessions, low-level listener registration, and packet sending. `sculk-content` currently keeps the higher-level client block facade separate from the packet contracts; backend-specific packet wrappers remain isolated to adapter modules so the core jar stays small.
+The public packet contracts also include debug sessions, low-level listener registration, and packet sending. `sculk-packets-api` currently keeps the higher-level client block facade separate from the packet contracts; backend-specific packet wrappers remain isolated to adapter modules so the core jar stays small.
 
 ## Threading
 

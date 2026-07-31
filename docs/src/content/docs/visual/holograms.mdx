@@ -1,0 +1,77 @@
+---
+title: Holograms
+description: Floating text that costs the server no entities.
+---
+
+```kotlin
+val hologram = sculk.holograms.create(
+    location,
+    listOf("<value>Diamond Mine</value>", "<dim>right-click to enter</dim>"),
+    HologramOptions(viewRangeBlocks = 32.0, yOffset = 1.5),
+)
+
+hologram.setLines(listOf("<value>Diamond Mine</value>", "<dim>full</dim>"))
+hologram.teleport(newLocation)
+hologram.remove()
+```
+
+## Why these are not entities
+
+A real `TextDisplay` is ticked, tracked, saved to the region file, and sent to everyone in range
+whether or not you wanted them to see it.
+
+These exist **only as packets**. No entity is created, so nothing ticks, nothing is persisted, and
+a crash cannot leave orphaned text floating over spawn — a failure mode every hologram plugin built
+on real entities eventually produces.
+
+The cost is that a hologram exists only while your plugin is running. Recreate them on enable.
+
+## What it costs to run
+
+The naive reconcile is `players × holograms`, every tick. That stops being free at a few hundred of
+either.
+
+Holograms are bucketed by chunk, so a player's visibility check only looks at the chunks near
+them. Cost becomes `players × nearby chunks`, which does not grow with the number of holograms
+elsewhere in the world.
+
+Text is re-sent **only when it changed**. A hologram showing a timer that updates once a second
+does not send metadata twenty times a second.
+
+## Requires a packet backend
+
+```kotlin
+if (!sculk.holograms.available) {
+    logger.warning("No packet backend; holograms are disabled.")
+}
+```
+
+Without [PacketEvents or ProtocolLib](/packets/overview/), `available` is false and every call
+reports why it did nothing. Your plugin still enables — a missing optional dependency should not
+stop a server booting.
+
+## Options
+
+```kotlin
+HologramOptions(
+    viewRangeBlocks = 48.0,
+    billboard = Billboard.CENTER,
+    backgroundArgb = 0,       // fully transparent — see below
+    lineWidthPixels = 200,
+    shadowed = false,
+    seeThrough = false,
+    scale = 1.0f,
+    yOffset = 0.0,
+)
+```
+
+:::note
+`backgroundArgb = 0` is how you get *no* dark plate behind the text. Turning off a "default
+background" flag is not enough on its own — the client still draws the plate unless the colour's
+alpha is also zero, which is why the two are one setting here.
+:::
+
+## Threading
+
+Create, move and remove from the main or owning region thread. The reconcile loop that decides who
+can see what runs on its own schedule and needs no help from you.

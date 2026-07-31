@@ -1,0 +1,84 @@
+---
+title: Services
+description: Where a plugin puts the things its own code needs to reach.
+---
+
+```kotlin
+override fun setup() {
+    val economy = sculk.services.register(EconomyService(sculk.data))
+    sculk.services.register(ShopService(economy))
+}
+```
+
+```kotlin
+val economy = sculk.services.get<EconomyService>()
+val optional = sculk.services.find<ShopService>()
+if (sculk.services.has<EconomyService>()) { … }
+```
+
+## This is deliberately not dependency injection
+
+Nothing here is constructed for you, resolved lazily, or wired by inspecting types. A service
+exists because `register` was called with it, in an order you can see by reading `setup()` top to
+bottom.
+
+That is the whole feature. Start-up order stays **explicit and debuggable** rather than emergent,
+and when something is missing there is no framework behaviour to reason about — you look at
+`setup()` and the answer is there.
+
+If you want a container that constructs your object graph, use one. This is a typed map with a
+defined shutdown order.
+
+## Keyed by type
+
+```kotlin
+sculk.services.register(EconomyService(...))
+sculk.services.get<EconomyService>()
+```
+
+Never by string. A string key turns a compile error into a runtime one, and the runtime one arrives
+on a live server rather than in your editor.
+
+## Registering twice fails
+
+```kotlin
+sculk.services.register(EconomyService(...))
+sculk.services.register(EconomyService(...))   // throws
+```
+
+Silently replacing would leave half your plugin holding the previous instance and half the new one,
+which is close to impossible to diagnose from the symptoms. If you genuinely need to swap one out,
+that is a restart or a method on the service itself.
+
+## Shutdown order
+
+Services implementing `SculkHandle` are closed automatically, **newest first**:
+
+```kotlin
+class EconomyService(private val data: SculkData) : SculkHandle {
+    override fun close() { flushPending() }
+}
+```
+
+Registration order is dependency order — whatever was registered last is most likely to still hold
+a reference to something registered earlier, so it must let go first.
+
+Every service is closed even if one throws; the first failure is rethrown with the rest attached as
+suppressed.
+
+## Keeping other things alive
+
+Not everything is a service. For a handle you want closed on disable:
+
+```kotlin
+keep(sculk.tasks.repeating(intervalTicks = 20) { tick() })
+keep(sculk.config.watch { sculk.scheduler.runSync(it) })
+```
+
+And for listeners:
+
+```kotlin
+listen(MyListener())
+```
+
+Both are unregistered for you.

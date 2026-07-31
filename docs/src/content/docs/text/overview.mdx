@@ -1,54 +1,77 @@
 ---
-title: Localization
-description: Per-player localized messages with YAML bundles, MiniMessage templates, placeholders, and pluralization.
+title: Messages
+description: Rendering text, and the one place a String becomes a Component.
 ---
 
-The `sculk-text` module resolves messages in each player's client language. Enable it with `text()`
-and access it via `sculk.text`.
+`SculkMessages` is the renderer. It is the only place in Sculk where a `String` becomes a
+`Component`, which is what makes the [trust boundary](/text/placeholders/) enforceable rather than
+a convention you have to remember.
+
+You get one from the platform:
 
 ```kotlin
-class MyPlugin : SculkPlugin({ text() }) {
-    override fun setup() { /* sculk.text.* */ }
+sculk.messages.send(player, "<value>Welcome back.</value>")
+```
+
+Inside a command handler it is already there:
+
+```kotlin
++command("hello") {
+    player { reply("<value>Hello, <name>.</value>", "name" to player!!.name) }
 }
 ```
 
-## Message bundles
-
-Bundles live in `<dataFolder>/lang/<language>.yml` as flat `key: "<minimessage>"` entries:
-
-```yaml
-# lang/en.yml
-welcome: "<green>Welcome, <name>!"
-apples:
-  one: "<count> apple"
-  other: "<count> apples"
-```
-
-```yaml
-# lang/es.yml
-welcome: "<green>Bienvenido, <name>!"
-```
-
-## Sending messages
-
-Messages resolve in the player's language, falling back to the default language and finally to the
-key itself. Placeholders use MiniMessage tag style (`<name>`):
+## Rendering
 
 ```kotlin
-sculk.text.send(player, "welcome", "name" to player.name)
-
-val component = sculk.text.component(player, "welcome", "name" to player.name)
+val component = messages.render("<danger>Denied.")
 ```
-
-## Pluralization
-
-`plural(player, key, count)` returns a Component, picking `key.one` / `key.other` and substituting
-`<count>`:
 
 ```kotlin
-player.sendMessage(sculk.text.plural(player, "apples", count = 3))  // "3 apples"
+messages.send(audience, "<value>Saved.</value>")
+messages.send(audience, listOf("<value>Line one</value>", "<dim>Line two</dim>"))
+messages.actionBar(player, "<danger>Low health</danger>")
+messages.title(player, "<value>Round 2</value>", "<dim>fight</dim>")
 ```
 
-## Reloading
+Every one takes placeholder values as trailing pairs:
 
-`sculk.text.reload()` re-reads every bundle from disk — wire it into your reload command.
+```kotlin
+messages.send(player, "<value><n></value> players online.", "n" to online.toString())
+```
+
+## Item text
+
+Item names and lore are italic by default in vanilla, which quietly undoes careful formatting:
+
+```kotlin
+messages.renderItemText("<value>Cursed Blade</value>")
+```
+
+This turns italics off unless the template asks for them. The item builders use it already, so
+`name(…)` and `lore(…)` are handled for you.
+
+## Server-wide defaults
+
+A drop shadow is set once, on the plugin:
+
+```kotlin
+class MyPlugin : SculkPlugin() {
+    override val shadow = 0x99000000.toInt()
+}
+```
+
+It is applied *if absent*, so a message that sets its own shadow always wins.
+
+## An instance, not a global
+
+`SculkMessages` is constructed per plugin and carries that plugin's [theme](/text/theme/). Two
+plugins on one server can have entirely different palettes and neither can change the other's —
+which the previous server-wide mutable object could not offer.
+
+## Where to go next
+
+- [Themes](/text/theme/) — named styles instead of raw colours
+- [Placeholders](/text/placeholders/) — the trust boundary, and why it matters
+- [Measuring text](/text/font/) — real glyph widths for centring
+- [Localisation](/text/localisation/) — per-player language bundles
