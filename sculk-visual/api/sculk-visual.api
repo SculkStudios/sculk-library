@@ -1,0 +1,182 @@
+public final class studio/sculk/visual/AnimationSequence {
+	public final fun start (Lstudio/sculk/scheduler/SculkScheduler;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/visual/AnimationTimeline {
+	public final fun start (Lstudio/sculk/scheduler/SculkScheduler;)Lstudio/sculk/SculkHandle;
+}
+
+public abstract interface class studio/sculk/visual/Hologram {
+	public abstract fun remove ()V
+	public abstract fun setLines (Ljava/util/List;)V
+	public abstract fun teleport (Lorg/bukkit/Location;)V
+}
+
+public final class studio/sculk/visual/HologramOptions {
+	public fun <init> ()V
+	public fun <init> (DLstudio/sculk/packets/Billboard;IIZZFD)V
+	public synthetic fun <init> (DLstudio/sculk/packets/Billboard;IIZZFDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()Lstudio/sculk/packets/Billboard;
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun component7 ()F
+	public final fun component8 ()D
+	public final fun copy (DLstudio/sculk/packets/Billboard;IIZZFD)Lstudio/sculk/visual/HologramOptions;
+	public static synthetic fun copy$default (Lstudio/sculk/visual/HologramOptions;DLstudio/sculk/packets/Billboard;IIZZFDILjava/lang/Object;)Lstudio/sculk/visual/HologramOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackgroundArgb ()I
+	public final fun getBillboard ()Lstudio/sculk/packets/Billboard;
+	public final fun getLineWidthPixels ()I
+	public final fun getScale ()F
+	public final fun getSeeThrough ()Z
+	public final fun getShadowed ()Z
+	public final fun getViewRangeBlocks ()D
+	public final fun getYOffset ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/visual/HologramService : studio/sculk/SculkHandle {
+	public fun close ()V
+	public final fun create (Lorg/bukkit/Location;Ljava/util/List;Lstudio/sculk/visual/HologramOptions;)Lstudio/sculk/visual/Hologram;
+	public static synthetic fun create$default (Lstudio/sculk/visual/HologramService;Lorg/bukkit/Location;Ljava/util/List;Lstudio/sculk/visual/HologramOptions;ILjava/lang/Object;)Lstudio/sculk/visual/Hologram;
+	public final fun getAvailable ()Z
+}
+
+public final class studio/sculk/visual/NametagStyle {
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/packets/TextDisplayStyle;Z)V
+	public synthetic fun <init> (Lstudio/sculk/packets/TextDisplayStyle;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lstudio/sculk/packets/TextDisplayStyle;
+	public final fun component2 ()Z
+	public final fun copy (Lstudio/sculk/packets/TextDisplayStyle;Z)Lstudio/sculk/visual/NametagStyle;
+	public static synthetic fun copy$default (Lstudio/sculk/visual/NametagStyle;Lstudio/sculk/packets/TextDisplayStyle;ZILjava/lang/Object;)Lstudio/sculk/visual/NametagStyle;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getStyle ()Lstudio/sculk/packets/TextDisplayStyle;
+	public final fun getVisibleToSelf ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/visual/Nametags : studio/sculk/SculkHandle {
+	public fun close ()V
+	public final fun describe (Lorg/bukkit/entity/Player;)Ljava/util/List;
+	public final fun getBroken ()Z
+	public final fun hide (Lorg/bukkit/entity/Player;)V
+	public final fun reset ()V
+	public final fun show (Lorg/bukkit/entity/Player;ZLkotlin/jvm/functions/Function1;)V
+	public static synthetic fun show$default (Lstudio/sculk/visual/Nametags;Lorg/bukkit/entity/Player;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun start (JJ)V
+	public static synthetic fun start$default (Lstudio/sculk/visual/Nametags;JJILjava/lang/Object;)V
+}
+
+public final class studio/sculk/visual/ParticleBuilder {
+	public fun <init> (Lorg/bukkit/Particle;)V
+	public final fun getCount ()I
+	public final fun getLocation ()Lorg/bukkit/Location;
+	public final fun getOffsetX ()D
+	public final fun getOffsetY ()D
+	public final fun getOffsetZ ()D
+	public final fun getSpeed ()D
+	public final fun getType ()Lorg/bukkit/Particle;
+	public final fun offset (DDD)V
+	public final fun receivers ([Lorg/bukkit/entity/Player;)V
+	public final fun setCount (I)V
+	public final fun setLocation (Lorg/bukkit/Location;)V
+	public final fun setOffsetX (D)V
+	public final fun setOffsetY (D)V
+	public final fun setOffsetZ (D)V
+	public final fun setSpeed (D)V
+	public final fun spawn ()V
+}
+
+public final class studio/sculk/visual/ParticleEffectDescriptor {
+	public fun <init> (Ljava/lang/String;IDDDD)V
+	public synthetic fun <init> (Ljava/lang/String;IDDDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun component5 ()D
+	public final fun component6 ()D
+	public final fun copy (Ljava/lang/String;IDDDD)Lstudio/sculk/visual/ParticleEffectDescriptor;
+	public static synthetic fun copy$default (Lstudio/sculk/visual/ParticleEffectDescriptor;Ljava/lang/String;IDDDDILjava/lang/Object;)Lstudio/sculk/visual/ParticleEffectDescriptor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()I
+	public final fun getOffsetX ()D
+	public final fun getOffsetY ()D
+	public final fun getOffsetZ ()D
+	public final fun getParticle ()Ljava/lang/String;
+	public final fun getSpeed ()D
+	public fun hashCode ()I
+	public final fun spawn (Lorg/bukkit/Location;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/visual/SculkParticles {
+	public static final fun particle (Lorg/bukkit/Particle;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/ParticleBuilder;
+}
+
+public final class studio/sculk/visual/SculkSequences {
+	public static final fun sequence (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/AnimationSequence;
+}
+
+public final class studio/sculk/visual/SculkSounds {
+	public static final fun sound (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/SoundBuilder;
+	public static final fun sound (Lorg/bukkit/Sound;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/SoundBuilder;
+}
+
+public final class studio/sculk/visual/SculkTimelines {
+	public static final fun timeline (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/AnimationTimeline;
+}
+
+public final class studio/sculk/visual/SequenceBuilder {
+	public fun <init> ()V
+	public final fun delay (I)V
+	public final fun step (Ljava/lang/Runnable;)V
+	public final fun step (Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class studio/sculk/visual/SoundBuilder {
+	public static final field Companion Lstudio/sculk/visual/SoundBuilder$Companion;
+	public synthetic fun <init> (Lorg/bukkit/Sound;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getPitch ()F
+	public final fun getVolume ()F
+	public final fun playAt (Lorg/bukkit/Location;)V
+	public final fun playTo (Lorg/bukkit/entity/Player;)V
+	public final fun setPitch (F)V
+	public final fun setVolume (F)V
+}
+
+public final class studio/sculk/visual/SoundBuilder$Companion {
+	public final fun of (Lorg/bukkit/Sound;)Lstudio/sculk/visual/SoundBuilder;
+	public final fun ofKey (Ljava/lang/String;)Lstudio/sculk/visual/SoundBuilder;
+}
+
+public final class studio/sculk/visual/SoundEffectDescriptor {
+	public fun <init> (Ljava/lang/String;FF)V
+	public synthetic fun <init> (Ljava/lang/String;FFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()F
+	public final fun component3 ()F
+	public final fun copy (Ljava/lang/String;FF)Lstudio/sculk/visual/SoundEffectDescriptor;
+	public static synthetic fun copy$default (Lstudio/sculk/visual/SoundEffectDescriptor;Ljava/lang/String;FFILjava/lang/Object;)Lstudio/sculk/visual/SoundEffectDescriptor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPitch ()F
+	public final fun getSound ()Ljava/lang/String;
+	public final fun getVolume ()F
+	public fun hashCode ()I
+	public final fun playAt (Lorg/bukkit/Location;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/visual/TimelineBuilder {
+	public fun <init> ()V
+	public final fun at (ILjava/lang/Runnable;)V
+	public final fun at (ILkotlin/jvm/functions/Function0;)V
+	public final fun loop (I)V
+}
+

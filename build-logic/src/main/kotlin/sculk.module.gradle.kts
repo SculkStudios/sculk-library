@@ -34,6 +34,9 @@ java {
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
+        // Enabled only once the rebuild was finished. Turning it on earlier would have made every
+        // phase a fight with warnings from modules that had not been touched yet.
+        allWarningsAsErrors.set(name.contains("Test").not())
     }
 }
 

@@ -30,6 +30,11 @@ jobs:
       - name: Build
         run: ./gradlew build --no-daemon
 
+      # The committed .api files are the public surface. A change to them has to be deliberate and
+      # visible in the diff, which is the only thing that makes a stability marker mean anything.
+      - name: Check public API
+        run: ./gradlew apiCheck --no-daemon
+
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@v7

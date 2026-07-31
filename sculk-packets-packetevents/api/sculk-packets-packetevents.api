@@ -1,0 +1,21 @@
+public final class studio/sculk/packets/packetevents/PacketEventsEvent : studio/sculk/packets/SculkPacket {
+	public fun <init> (Lcom/github/retrooper/packetevents/event/ProtocolPacketEvent;Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;)V
+	public fun getDirection ()Lstudio/sculk/packets/PacketDirection;
+	public final fun getEvent ()Lcom/github/retrooper/packetevents/event/ProtocolPacketEvent;
+	public fun getType ()Lstudio/sculk/packets/PacketKey;
+}
+
+public final class studio/sculk/packets/packetevents/PacketEventsPacket : studio/sculk/packets/SculkPacket {
+	public fun <init> (Lcom/github/retrooper/packetevents/wrapper/PacketWrapper;Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;)V
+	public fun getDirection ()Lstudio/sculk/packets/PacketDirection;
+	public fun getType ()Lstudio/sculk/packets/PacketKey;
+	public final fun getWrapper ()Lcom/github/retrooper/packetevents/wrapper/PacketWrapper;
+}
+
+public final class studio/sculk/packets/packetevents/PacketEventsPacketServiceProvider : studio/sculk/packets/SculkPacketServiceProvider {
+	public fun <init> ()V
+	public fun create (Lorg/bukkit/plugin/java/JavaPlugin;Lstudio/sculk/scheduler/SculkScheduler;)Lstudio/sculk/packets/SculkPacketService;
+	public fun getBackend ()Lstudio/sculk/packets/PacketBackend;
+	public fun isAvailable ()Z
+}
+
