@@ -6,7 +6,9 @@ public abstract class studio/sculk/packets/AbstractPacketService : studio/sculk/
 	public final fun getClientBlocks ()Lstudio/sculk/packets/ClientBlockService;
 	public final fun getDebug ()Lstudio/sculk/packets/PacketDebugService;
 	protected final fun getScheduler ()Lstudio/sculk/scheduler/SculkScheduler;
+	public final fun getVirtualEntities ()Lstudio/sculk/packets/VirtualEntityService;
 	public fun send (Lorg/bukkit/entity/Player;Lstudio/sculk/packets/SculkPacket;)Lstudio/sculk/SculkResult;
+	protected fun virtualEntityService ()Lstudio/sculk/packets/VirtualEntityService;
 }
 
 public final class studio/sculk/packets/Billboard : java/lang/Enum {
@@ -186,6 +188,7 @@ public abstract interface class studio/sculk/packets/SculkPacketService : studio
 	public abstract fun getBackend ()Lstudio/sculk/packets/PacketBackend;
 	public abstract fun getClientBlocks ()Lstudio/sculk/packets/ClientBlockService;
 	public abstract fun getDebug ()Lstudio/sculk/packets/PacketDebugService;
+	public abstract fun getVirtualEntities ()Lstudio/sculk/packets/VirtualEntityService;
 	public abstract fun listen (Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;Lstudio/sculk/packets/PacketPriority;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
 	public static synthetic fun listen$default (Lstudio/sculk/packets/SculkPacketService;Lstudio/sculk/packets/PacketDirection;Lstudio/sculk/packets/PacketKey;Lstudio/sculk/packets/PacketPriority;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
 	public abstract fun send (Lorg/bukkit/entity/Player;Lstudio/sculk/packets/SculkPacket;)Lstudio/sculk/SculkResult;

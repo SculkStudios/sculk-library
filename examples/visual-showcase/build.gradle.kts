@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.shadow)
 }
 
-description = "Sculk Studio — basic-plugin example"
+description = "Sculk Studio — visual-showcase example"
 
 dependencies {
     implementation(project(":sculk-platform"))
@@ -13,5 +13,5 @@ tasks.jar { enabled = false }
 
 tasks.shadowJar {
     archiveClassifier = ""
-    archiveFileName = "sculk-example-basic-plugin-${project.version}.jar"
+    archiveFileName = "sculk-example-visual-showcase-${project.version}.jar"
 }

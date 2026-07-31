@@ -21,6 +21,17 @@ public abstract class AbstractPacketService(final override val backend: PacketBa
     protected open fun clientBlockBackend(): ClientBlockBackend? = null
 
     final override val clientBlocks: ClientBlockService by lazy { ClientBlockService(scheduler, clientBlockBackend()) }
+
+    /**
+     * The backend's virtual entity support, if it has any.
+     *
+     * Defaults to unavailable so a backend that has not implemented it still compiles and still
+     * degrades by name -- ProtocolLib is in exactly that position, because its entity-metadata
+     * serialisation is where version fragility lives.
+     */
+    protected open fun virtualEntityService(): VirtualEntityService = UnavailableVirtualEntityService
+
+    final override val virtualEntities: VirtualEntityService by lazy { virtualEntityService() }
     final override val debug: PacketDebugService = PacketDebugService(this, scheduler)
 
     override fun send(player: Player, packet: SculkPacket): SculkResult<Unit> =

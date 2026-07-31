@@ -44,3 +44,13 @@ include(
     ":sculk-platform",
     ":sculk-bom",
 )
+
+// Examples. Compile gates for the public API, never published.
+include(
+    ":examples:basic-plugin",
+    ":examples:economy-plugin",
+    ":examples:server-menu",
+    ":examples:staff-tools",
+    ":examples:hud-showcase",
+    ":examples:visual-showcase",
+)

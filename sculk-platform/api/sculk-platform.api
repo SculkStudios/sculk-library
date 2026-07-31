@@ -18,9 +18,11 @@ public final class studio/sculk/platform/SculkPlatform : studio/sculk/SculkHandl
 	public final fun getCooldowns ()Lstudio/sculk/command/CommandCooldowns;
 	public final fun getData ()Lstudio/sculk/data/SculkData;
 	public final fun getEvents ()Lstudio/sculk/platform/SculkEventBus;
+	public final fun getHolograms ()Lstudio/sculk/visual/HologramService;
 	public final fun getHud ()Lstudio/sculk/hud/HudService;
 	public final fun getMenus ()Lstudio/sculk/gui/MenuRegistry;
 	public final fun getMessages ()Lstudio/sculk/text/SculkMessages;
+	public final fun getNametags ()Lstudio/sculk/visual/Nametags;
 	public final fun getPackets ()Lstudio/sculk/SculkResult;
 	public final fun getScheduler ()Lstudio/sculk/scheduler/SculkScheduler;
 	public final fun getScope ()Lstudio/sculk/coroutine/SculkCoroutineScope;

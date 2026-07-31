@@ -1,8 +1,5 @@
-name: EconomyPlugin
+name: SculkExampleEconomyPlugin
 version: '${version}'
-main: studio.sculk.example.EconomyPlugin
-description: Sculk Studio economy recipe example
-api-version: '1.21.11'
-authors:
-  - SculkStudios
-folia-supported: true
+main: studio.sculk.example.economy.EconomyPlugin
+api-version: '1.21'
+authors: [Sculk Studios]
