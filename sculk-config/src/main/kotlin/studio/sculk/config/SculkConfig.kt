@@ -233,11 +233,13 @@ constructor(
 
             val value = yaml.decodeFromString(serializer, migrated)
 
-            // Never rewrite a file that reads from the environment: the merged render is built
-            // from substituted text, so writing it back would bake the resolved secret into the
-            // file on disk. The cost is that such a file does not gain new keys automatically.
+            // Never rewrite a file that reads from the environment: the render is built from
+            // substituted text, so writing it back would bake the resolved secret into the file on
+            // disk. The cost is that such a file does not gain new keys automatically.
             if (!ENV_PLACEHOLDER.containsMatchIn(original)) {
-                val merged = render(serializer, value)
+                // Append-only. The render is a source of keys the file is missing, never a
+                // replacement for it -- see ConfigMerge for what a full rewrite destroys.
+                val merged = ConfigMerge.appendMissing(original, render(serializer, value))
                 if (merged != original) file.writeText(merged)
             }
 
