@@ -17,11 +17,15 @@ import studio.sculk.hud.HudService
 import studio.sculk.packets.PacketServiceConfig
 import studio.sculk.packets.SculkPacketService
 import studio.sculk.packets.SculkPacketServices
+import studio.sculk.packets.UnavailableVirtualEntityService
+import studio.sculk.packets.VirtualEntityService
 import studio.sculk.scheduler.SculkScheduler
 import studio.sculk.task.SculkTasks
 import studio.sculk.text.SculkBundles
 import studio.sculk.text.SculkMessages
 import studio.sculk.text.SculkTheme
+import studio.sculk.visual.HologramService
+import studio.sculk.visual.Nametags
 import java.io.File
 
 /**
@@ -114,7 +118,31 @@ constructor(
         SculkPacketServices.create(plugin, scheduler, PacketServiceConfig())
     }
 
+    /**
+     * Floating text, if a packet backend is loaded.
+     *
+     * Falls back to an unavailable virtual-entity service rather than being absent, so a plugin
+     * that uses holograms still enables on a server without a backend and the calls say why they
+     * did nothing.
+     */
+    @SculkStable
+    public val holograms: HologramService by lazy {
+        hologramsStarted = true
+        HologramService(virtualEntities(), messages, scheduler)
+    }
+
+    /** Nametags, on the same terms as [holograms]. */
+    @SculkStable
+    public val nametags: Nametags by lazy {
+        nametagsStarted = true
+        Nametags(virtualEntities(), messages, scheduler, plugin.logger)
+    }
+
+    private fun virtualEntities(): VirtualEntityService = packets.getOrNull()?.virtualEntities ?: UnavailableVirtualEntityService
+
     private var dataOpened = false
+    private var hologramsStarted = false
+    private var nametagsStarted = false
     private var hudStarted = false
 
     internal fun start() {
@@ -128,6 +156,8 @@ constructor(
         // The scope first: nothing should be part-way through touching a subsystem while it is
         // being torn down.
         scope.close()
+        if (nametagsStarted) nametags.close()
+        if (hologramsStarted) holograms.close()
         if (hudStarted) hud.close()
         menus.close()
         events.close()

@@ -17,6 +17,8 @@ subprojects {
 // visible line in a pull request rather than something noticed after it shipped, which is the only
 // way a stability marker means anything.
 apiValidation {
-    ignoredProjects += listOf("sculk-bom")
+    // Examples are compile gates, not products: they have no API to keep stable, and sculk-bom
+    // has no code at all.
+    ignoredProjects += listOf("sculk-bom", "basic-plugin", "economy-plugin", "server-menu", "staff-tools", "hud-showcase", "visual-showcase")
     nonPublicMarkers += "studio.sculk.annotation.SculkInternal"
 }

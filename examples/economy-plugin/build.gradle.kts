@@ -1,19 +1,17 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.example")
     alias(libs.plugins.shadow)
 }
 
-description = "Sculk Studio example - economy command, config, and profile workflow"
+description = "Sculk Studio — economy-plugin example"
 
 dependencies {
     implementation(project(":sculk-platform"))
-    implementation(project(":sculk-items"))
-    testImplementation(libs.junit.jupiter)
 }
 
 tasks.jar { enabled = false }
 
 tasks.shadowJar {
     archiveClassifier = ""
-    archiveFileName = "sculk-example-economy-${project.version}.jar"
+    archiveFileName = "sculk-example-economy-plugin-${project.version}.jar"
 }

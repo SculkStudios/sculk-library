@@ -1,5 +1,0 @@
-name: GuiShowcase
-version: 1.0.0
-main: studio.sculk.example.GuiPlugin
-api-version: '1.21.11'
-folia-supported: true

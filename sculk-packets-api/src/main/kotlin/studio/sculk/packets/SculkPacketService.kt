@@ -16,6 +16,14 @@ import studio.sculk.annotation.SculkStable
 public interface SculkPacketService : SculkHandle {
     public val backend: PacketBackend
     public val clientBlocks: ClientBlockService
+
+    /**
+     * Display entities that exist only in a client's view.
+     *
+     * Backends that cannot do this return an unavailable service whose calls fail by name, rather
+     * than the property being absent and the caller having to know which backend they are on.
+     */
+    public val virtualEntities: VirtualEntityService
     public val debug: PacketDebugService
 
     public fun listen(
