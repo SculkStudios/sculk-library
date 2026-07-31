@@ -2,9 +2,9 @@ plugins {
     `kotlin-dsl`
 }
 
-// Hardcoded here intentionally — build-logic is bootstrap code that runs
-// before the version catalog is fully available. Keep in sync with libs.versions.toml.
+// build-logic/settings.gradle.kts imports the root catalog, so these can reference it rather
+// than being hardcoded and drifting — which is what happened to the Kotlin version previously.
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0")
-    implementation("org.jlleitschuh.gradle:ktlint-gradle:14.2.0")
+    implementation(libs.build.kotlin.plugin)
+    implementation(libs.build.ktlint.plugin)
 }
