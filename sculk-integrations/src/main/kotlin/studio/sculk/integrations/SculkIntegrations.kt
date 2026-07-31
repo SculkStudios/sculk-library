@@ -5,21 +5,31 @@ import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import studio.sculk.SculkResult
-import studio.sculk.annotation.SculkStable
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.flatMap
 import studio.sculk.map
+import java.lang.reflect.Method
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
-/** Optional adapters for common server plugins. */
-@SculkStable
+/**
+ * Adapters for plugins Sculk does not depend on.
+ *
+ * Every call goes through reflection so none of these become hard dependencies — a server without
+ * Vault should not fail to load a plugin that merely supports it. An adapter is handed out only
+ * once its plugin is present and enabled, so the reflection is reached only on a path already
+ * proven to work.
+ *
+ * Experimental because it is untyped reflection against third-party APIs on their own release
+ * cadence: an upstream signature change surfaces as a failed [SculkResult] at runtime, and Sculk
+ * cannot promise otherwise across its own versions.
+ */
+@SculkExperimental
 public class SculkIntegrations public constructor(private val plugin: Plugin) {
-    /** Returns a PlaceholderAPI adapter if PlaceholderAPI is installed. */
     public fun placeholderApi(): SculkResult<PlaceholderApiIntegration> = requirePlugin("PlaceholderAPI").map { PlaceholderApiIntegration }
 
-    /** Returns a Vault economy adapter if Vault and an economy provider are installed. */
     public fun vaultEconomy(): SculkResult<VaultEconomyIntegration> = requirePlugin("Vault").flatMap { VaultEconomyIntegration.create() }
 
-    /** Returns a LuckPerms adapter if LuckPerms is installed. */
     public fun luckPerms(): SculkResult<LuckPermsIntegration> = requirePlugin("LuckPerms").map { LuckPermsIntegration }
 
     private fun requirePlugin(name: String): SculkResult<Plugin> {
@@ -32,47 +42,61 @@ public class SculkIntegrations public constructor(private val plugin: Plugin) {
     }
 }
 
-/** PlaceholderAPI adapter. */
-@SculkStable
+/**
+ * Resolved reflective lookups.
+ *
+ * `Class.forName` and `getMethod` both walk and copy on every call. The placeholder adapter is
+ * called per sidebar line per player per refresh, which is exactly where that cost lands.
+ */
+private object Reflect {
+    private val methods = ConcurrentHashMap<String, Method>()
+
+    fun method(owner: String, name: String, vararg parameters: Class<*>): Method = methods.getOrPut("$owner#$name/${parameters.size}") {
+        Class.forName(owner).getMethod(name, *parameters)
+    }
+}
+
+/** Runs text through PlaceholderAPI, returning it unchanged if anything goes wrong. */
+@SculkExperimental
 public object PlaceholderApiIntegration {
-    @JvmStatic
     public fun parse(player: Player?, text: String): String = runCatching {
-        val clazz = Class.forName("me.clip.placeholderapi.PlaceholderAPI")
-        clazz.getMethod("setPlaceholders", OfflinePlayer::class.java, String::class.java).invoke(null, player, text) as String
+        Reflect
+            .method("me.clip.placeholderapi.PlaceholderAPI", "setPlaceholders", OfflinePlayer::class.java, String::class.java)
+            .invoke(null, player, text) as String
     }.getOrElse { text }
 }
 
-/** Vault economy adapter. */
-@SculkStable
+/** Vault's economy service, if a provider is registered. */
+@SculkExperimental
 public class VaultEconomyIntegration private constructor(private val economy: Any) {
-    public fun deposit(player: OfflinePlayer, amount: Double): SculkResult<Unit> = invoke("depositPlayer", player, amount)
+    public fun deposit(player: OfflinePlayer, amount: Double): SculkResult<Unit> = call("depositPlayer", player, amount)
 
-    public fun withdraw(player: OfflinePlayer, amount: Double): SculkResult<Unit> = invoke("withdrawPlayer", player, amount)
-
-    public fun balance(player: OfflinePlayer): SculkResult<Double> = runCatching {
-        economy.javaClass.getMethod("getBalance", OfflinePlayer::class.java).invoke(economy, player) as Double
-    }.fold(
-        onSuccess = { SculkResult.success(it) },
-        onFailure = { SculkResult.failure("Vault balance lookup failed.", it) },
-    )
+    public fun withdraw(player: OfflinePlayer, amount: Double): SculkResult<Unit> = call("withdrawPlayer", player, amount)
 
     public fun deposit(uuid: UUID, amount: Double): SculkResult<Unit> = deposit(Bukkit.getOfflinePlayer(uuid), amount)
 
-    private fun invoke(method: String, player: OfflinePlayer, amount: Double): SculkResult<Unit> = runCatching {
-        economy.javaClass.getMethod(method, OfflinePlayer::class.java, Double::class.javaPrimitiveType).invoke(economy, player, amount)
-    }.fold(
-        onSuccess = { SculkResult.success(Unit) },
-        onFailure = { SculkResult.failure("Vault economy call '$method' failed.", it) },
-    )
+    public fun withdraw(uuid: UUID, amount: Double): SculkResult<Unit> = withdraw(Bukkit.getOfflinePlayer(uuid), amount)
+
+    public fun balance(player: OfflinePlayer): SculkResult<Double> = SculkResult.catching("read the Vault balance") {
+        economy.javaClass.getMethod("getBalance", OfflinePlayer::class.java).invoke(economy, player) as Double
+    }
+
+    public fun balance(uuid: UUID): SculkResult<Double> = balance(Bukkit.getOfflinePlayer(uuid))
+
+    private fun call(method: String, player: OfflinePlayer, amount: Double): SculkResult<Unit> =
+        SculkResult.catching("call Vault's $method") {
+            economy.javaClass
+                .getMethod(method, OfflinePlayer::class.java, Double::class.javaPrimitiveType)
+                .invoke(economy, player, amount)
+            @Suppress("UNUSED_EXPRESSION")
+            Unit
+        }
 
     public companion object {
         internal fun create(): SculkResult<VaultEconomyIntegration> {
-            val registration =
-                runCatching {
-                    val economyClass = Class.forName("net.milkbowl.vault.economy.Economy")
-                    Bukkit.getServicesManager().getRegistration(economyClass)
-                }.getOrNull()
-            val provider = registration?.provider
+            val provider = runCatching {
+                Bukkit.getServicesManager().getRegistration(Class.forName("net.milkbowl.vault.economy.Economy"))
+            }.getOrNull()?.provider
             return if (provider != null) {
                 SculkResult.success(VaultEconomyIntegration(provider))
             } else {
@@ -82,17 +106,13 @@ public class VaultEconomyIntegration private constructor(private val economy: An
     }
 }
 
-/** LuckPerms adapter for common metadata lookups. */
-@SculkStable
+/** LuckPerms metadata lookups. */
+@SculkExperimental
 public object LuckPermsIntegration {
-    @JvmStatic
-    public fun primaryGroup(uuid: UUID): SculkResult<String?> = runCatching {
-        val provider = Class.forName("net.luckperms.api.LuckPermsProvider").getMethod("get").invoke(null)
+    public fun primaryGroup(uuid: UUID): SculkResult<String?> = SculkResult.catching("read the LuckPerms primary group") {
+        val provider = Reflect.method("net.luckperms.api.LuckPermsProvider", "get").invoke(null)
         val userManager = provider.javaClass.getMethod("getUserManager").invoke(provider)
         val user = userManager.javaClass.getMethod("getUser", UUID::class.java).invoke(userManager, uuid)
         user?.javaClass?.getMethod("getPrimaryGroup")?.invoke(user) as? String
-    }.fold(
-        onSuccess = { SculkResult.success(it) },
-        onFailure = { SculkResult.failure("LuckPerms primary group lookup failed.", it) },
-    )
+    }
 }

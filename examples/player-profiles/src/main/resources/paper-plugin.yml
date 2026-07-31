@@ -1,8 +1,0 @@
-name: PlayerProfiles
-version: '${version}'
-main: studio.sculk.example.PlayerProfilesPlugin
-description: Sculk Studio player profile recipe example
-api-version: '1.21.11'
-authors:
-  - SculkStudios
-folia-supported: true

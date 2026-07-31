@@ -1,12 +1,15 @@
 package studio.sculk.items
 
 import net.kyori.adventure.text.Component
-import org.bukkit.inventory.ItemFlag
+import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.inventory.ItemStack
+import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
+import studio.sculk.text.SculkMessages
 
 /**
- * Config-friendly item representation for common plugin items.
+ * A config-shaped item: everything a server owner would reasonably write in YAML, and nothing that
+ * only makes sense in code.
  */
 @SculkStable
 public data class ItemDescriptor(
@@ -15,62 +18,50 @@ public data class ItemDescriptor(
     public val lore: List<String> = emptyList(),
     public val amount: Int = 1,
     public val enchantments: Map<String, Int> = emptyMap(),
-    public val flags: List<String> = emptyList(),
     public val glint: Boolean = false,
+    public val model: String? = null,
     public val customModelData: Int? = null,
+    public val hideVanillaTooltip: Boolean = false,
     public val unbreakable: Boolean = false,
     public val data: Map<String, String> = emptyMap(),
 )
 
-/** Converts this descriptor to an [ItemStack], or null if its material is unknown. */
+/** Builds the described item, reporting an unknown material by name. */
 @SculkStable
-public fun ItemDescriptor.toItemStack(): ItemStack? = item(material) {
-    amount(amount)
-    name?.let { name(it) }
+public fun ItemDescriptor.toItemStack(messages: SculkMessages = SculkMessages()): SculkResult<ItemStack> = messages.item(material) {
+    amount(this@toItemStack.amount)
+    this@toItemStack.name?.let { name(it) }
     if (lore.isNotEmpty()) lore(lore)
-    enchantments.forEach { (key, level) ->
-        enchantmentByKey(key)?.let { enchant(it, level) }
-    }
-    flags
-        .mapNotNull { flag -> ItemFlag.entries.firstOrNull { it.name.equals(flag, ignoreCase = true) } }
-        .takeIf { it.isNotEmpty() }
-        ?.let { flag(*it.toTypedArray()) }
+    enchantments.forEach { (key, level) -> enchantmentByKey(key)?.let { enchant(it, level) } }
     if (glint) glint()
+    model?.let { model(it) }
     customModelData?.let { customModelData(it) }
+    if (hideVanillaTooltip) hideVanillaTooltip()
     unbreakable(unbreakable)
     data.forEach { (key, value) -> pdc(key, value) }
 }
 
-/** Converts an [ItemStack] into a compact [ItemDescriptor]. */
+/** Describes an existing stack in the same shape a config would use. */
 @SculkStable
 public fun ItemStack.toDescriptor(): ItemDescriptor {
     val meta = itemMeta
-    val name = meta?.displayName()?.let(::serializeComponentOrNull)
-    val lore = meta?.lore()?.mapNotNull(::serializeComponentOrNull).orEmpty()
-    val enchantments =
-        enchantments
-            .mapKeys { it.key.key.key }
-            .mapValues { it.value }
-    val flags = meta?.itemFlags?.map { it.name.lowercase() }.orEmpty()
-    val customModelData =
-        meta
+    return ItemDescriptor(
+        material = type.key.key,
+        name = meta?.displayName()?.let(::serializeOrNull),
+        lore = meta?.lore()?.mapNotNull(::serializeOrNull).orEmpty(),
+        amount = amount,
+        enchantments = enchantments.mapKeys { it.key.key.key },
+        glint = meta?.enchantmentGlintOverride == true,
+        customModelData = meta
             ?.customModelDataComponent
             ?.floats
             ?.firstOrNull()
             ?.toInt()
-            ?.takeIf { it > 0 }
-
-    return ItemDescriptor(
-        material = type.key.key,
-        name = name,
-        lore = lore,
-        amount = amount,
-        enchantments = enchantments,
-        flags = flags,
-        glint = meta?.enchantmentGlintOverride == true,
-        customModelData = customModelData,
+            ?.takeIf { it > 0 },
         unbreakable = meta?.isUnbreakable == true,
     )
 }
 
-private fun serializeComponentOrNull(component: Component): String? = serializeItemText(component).takeIf { it.isNotBlank() }
+private val miniMessage = MiniMessage.miniMessage()
+
+private fun serializeOrNull(component: Component): String? = miniMessage.serialize(component).takeIf { it.isNotBlank() }

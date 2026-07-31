@@ -1,35 +1,37 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.module")
     alias(libs.plugins.kotlin.serialization)
 }
 
-description = "Sculk Studio — async database abstraction, caching layer, ORM support"
+description = "Sculk Studio — suspend repositories, query DSL, schema migration and caching"
 
-// Allow framework internals within this module.
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+kotlin {
     compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
+        freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
     }
 }
 
 dependencies {
     api(project(":sculk-common"))
     api(project(":sculk-config"))
-    implementation(kotlin("reflect"))
+    api(libs.serialization.core)
+    api(libs.serialization.json)
     implementation(libs.hikari)
     implementation(libs.caffeine)
-    // SQLite is the default backend, so it ships bundled. The MySQL/MariaDB driver is referenced
-    // only by class name (see ConnectionPool), so it stays opt-in — plugins that use MySQL add
-    // `org.mariadb.jdbc:mariadb-java-client` themselves, keeping the shaded jar small.
+    // SQLite is the default backend, so it ships bundled. The remote drivers are referenced only
+    // by class name, so they stay opt-in and the shaded jar stays small.
     implementation(libs.sqlite.jdbc)
     compileOnly(libs.mariadb.jdbc)
-    // Distributed cache: serialization is part of the API (entities are @Serializable);
-    // Lettuce is opt-in — plugins that use the Redis backend add it themselves.
-    api(libs.serialization.json)
+    compileOnly(libs.postgresql)
     compileOnly(libs.lettuce)
-    testImplementation(libs.paper.api)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockito.kotlin)
+
+    testImplementation(testFixtures(project(":sculk-common")))
+    // Speaks both the MySQL and the Postgres dialect, so the generated SQL is exercised by a real
+    // engine rather than asserted as a string.
     testImplementation(libs.h2)
+    testRuntimeOnly(libs.postgresql)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(libs.coroutines.test)
+    // RedisCache is tested against a stub backend, but the Lettuce types must still resolve.
+    testImplementation(libs.lettuce)
 }

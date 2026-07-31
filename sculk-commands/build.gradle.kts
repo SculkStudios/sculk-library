@@ -1,20 +1,14 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.module")
 }
 
-description = "Sculk Studio — Brigadier-native command DSL with typed arguments and cooldowns"
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
-    }
-}
+description = "Sculk Studio — command specs as data, a Brigadier adapter, and generated help"
 
 dependencies {
     api(project(":sculk-common"))
-    api(project(":sculk-adventure"))
-    testImplementation(libs.paper.api)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockito.kotlin)
+    api(project(":sculk-text"))
+    compileOnly(libs.adventure.api)
+    testImplementation(libs.adventure.api)
+    testImplementation(libs.adventure.mini)
     testImplementation(libs.coroutines.test)
 }

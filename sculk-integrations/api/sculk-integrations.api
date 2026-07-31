@@ -1,0 +1,31 @@
+public final class studio/sculk/integrations/LuckPermsIntegration {
+	public static final field INSTANCE Lstudio/sculk/integrations/LuckPermsIntegration;
+	public final fun primaryGroup (Ljava/util/UUID;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/integrations/PlaceholderApiIntegration {
+	public static final field INSTANCE Lstudio/sculk/integrations/PlaceholderApiIntegration;
+	public final fun parse (Lorg/bukkit/entity/Player;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class studio/sculk/integrations/SculkIntegrations {
+	public fun <init> (Lorg/bukkit/plugin/Plugin;)V
+	public final fun luckPerms ()Lstudio/sculk/SculkResult;
+	public final fun placeholderApi ()Lstudio/sculk/SculkResult;
+	public final fun vaultEconomy ()Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/integrations/VaultEconomyIntegration {
+	public static final field Companion Lstudio/sculk/integrations/VaultEconomyIntegration$Companion;
+	public synthetic fun <init> (Ljava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun balance (Ljava/util/UUID;)Lstudio/sculk/SculkResult;
+	public final fun balance (Lorg/bukkit/OfflinePlayer;)Lstudio/sculk/SculkResult;
+	public final fun deposit (Ljava/util/UUID;D)Lstudio/sculk/SculkResult;
+	public final fun deposit (Lorg/bukkit/OfflinePlayer;D)Lstudio/sculk/SculkResult;
+	public final fun withdraw (Ljava/util/UUID;D)Lstudio/sculk/SculkResult;
+	public final fun withdraw (Lorg/bukkit/OfflinePlayer;D)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/integrations/VaultEconomyIntegration$Companion {
+}
+

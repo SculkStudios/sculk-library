@@ -36,7 +36,6 @@ export default defineConfig({
 					items: [
 						{ label: 'Installation', slug: 'getting-started/installation' },
 						{ label: 'Your First Plugin', slug: 'getting-started/first-plugin' },
-						{ label: 'Java Guide', slug: 'getting-started/java' },
 					],
 				},
 				{
@@ -133,11 +132,8 @@ export default defineConfig({
 					label: 'Recipes',
 					items: [
 						{ label: 'Economy Plugin', slug: 'recipes/economy-plugin' },
-						{ label: 'Player Profiles', slug: 'recipes/player-profiles' },
 						{ label: 'Server Menu', slug: 'recipes/server-menu' },
 						{ label: 'Staff Tools', slug: 'recipes/staff-tools' },
-						{ label: 'Crate System', slug: 'recipes/crate-system' },
-						{ label: 'Kits Plugin', slug: 'recipes/kits-plugin' },
 					],
 				},
 				{
@@ -147,12 +143,6 @@ export default defineConfig({
 						{ label: 'Performance', slug: 'advanced/performance' },
 						{ label: 'Folia & Canvas', slug: 'advanced/folia' },
 						{ label: 'API Design', slug: 'advanced/api-design' },
-						{ label: 'XSeries Migration', slug: 'advanced/xseries-migration' },
-						{ label: 'Java Interop & Limitations', slug: 'advanced/java-interop' },
-						{ label: 'Migrating to Sculk 4.5 (Java)', slug: 'advanced/migration-to-sculk-4-5' },
-						{ label: 'Migrating to Sculk 4.0', slug: 'advanced/migration-to-sculk-4' },
-						{ label: 'Migration to Sculk 3', slug: 'advanced/migration-to-sculk-3' },
-						{ label: 'Migration Checklist', slug: 'advanced/migration-checklist' },
 						{ label: 'Troubleshooting', slug: 'advanced/troubleshooting' },
 					],
 				},

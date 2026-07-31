@@ -4,7 +4,6 @@ package studio.sculk.gui
 
 import org.bukkit.Material
 import studio.sculk.annotation.SculkStable
-import java.util.function.Consumer
 
 /**
  * Common chest-inventory slot calculations for stable menu layouts.
@@ -69,12 +68,3 @@ public fun GuiBuilder.border(
         block()
     }
 }
-
-/**
- * Java-friendly overload of the styled [border] extension taking a [Consumer].
- *
- * From Java: `SculkGuiSlots.border(builder, material, style, skip, slot -> { ... })`.
- */
-@SculkStable
-public fun GuiBuilder.border(material: Material, style: GuiBorderStyle, skip: Set<Int>, block: Consumer<GuiItemBuilder>): Unit =
-    border(material, style, skip) { block.accept(this) }

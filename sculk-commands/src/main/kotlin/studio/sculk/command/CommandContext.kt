@@ -2,109 +2,58 @@ package studio.sculk.command
 
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import studio.sculk.adventure.actionbar
-import studio.sculk.adventure.playSound
-import studio.sculk.adventure.reply
-import studio.sculk.adventure.title
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
+import studio.sculk.text.SculkMessages
 
 /**
- * Execution context available inside every command handler.
+ * What a command handler is given.
  *
- * Provides access to the sender, parsed arguments, and convenience
- * messaging helpers sourced from the Adventure wrapper.
+ * Arguments are resolved by name rather than by position, so adding one in front of another does
+ * not silently shift every later read.
  */
 @SculkStable
 public class CommandContext
 @SculkInternal
 constructor(
-    /** The entity or console that executed the command. */
     public val sender: CommandSender,
-    /** The raw argument tokens passed to the command. */
-    @SculkInternal public val rawArgs: Array<String>,
-    @SculkInternal public val parsedArgs: MutableMap<String, Any?> = mutableMapOf(),
+    public val messages: SculkMessages,
+    @SculkInternal public val arguments: Map<String, Any?>,
 ) {
-    /**
-     * The sender as a [Player], or null if this is a console execution.
-     * Only non-null inside `player { }` blocks.
-     */
+    /** The sender as a player, or null from the console. Never null inside a `player { }` block. */
     public val player: Player? get() = sender as? Player
 
-    /**
-     * Sends a MiniMessage-formatted [message] to the command sender.
-     *
-     * Works for both players and console.
-     */
-    public fun reply(message: String): Unit = sender.reply(message)
-
-    /**
-     * Sends a title to the player executing this command.
-     * No-op if the sender is the console.
-     */
-    @JvmOverloads
-    public fun title(title: String, subtitle: String = "", fadeIn: Int = 10, stay: Int = 70, fadeOut: Int = 20) {
-        player?.title(title, subtitle, fadeIn, stay, fadeOut)
-    }
-
-    /**
-     * Sends an action bar message to the player executing this command.
-     * No-op if the sender is the console.
-     */
-    public fun actionbar(message: String) {
-        player?.actionbar(message)
-    }
-
-    /**
-     * Plays a sound to the player executing this command.
-     * No-op if the sender is the console.
-     */
-    @JvmOverloads
-    public fun playSound(sound: org.bukkit.Sound, volume: Float = 1.0f, pitch: Float = 1.0f) {
-        player?.playSound(sound, volume, pitch)
-    }
-
-    /**
-     * Retrieves a parsed argument by [name].
-     *
-     * Throws [IllegalArgumentException] if the argument was not registered
-     * or could not be parsed.
-     *
-     * Use `argument<Player>("target")` to get a typed argument value.
-     */
-    public inline fun <reified T> argument(name: String): T {
-        val value =
-            parsedArgs[name]
-                ?: error("Argument '$name' not found. Make sure it is registered on the command.")
-        return value as? T
-            ?: error("Argument '$name' is not of type ${T::class.simpleName}.")
-    }
-
-    /**
-     * Returns a parsed argument by [name], or null if not present or wrong type.
-     */
-    public inline fun <reified T> argumentOrNull(name: String): T? = parsedArgs[name] as? T
-
-    /**
-     * Java-friendly overload of [argument] taking a [Class] token.
-     *
-     * ```java
-     * Player target = ctx.argument("target", Player.class);
-     * int amount = ctx.argument("amount", Integer.class);
-     * ```
-     */
+    /** A required argument. Throws if the name was never declared — that is a wiring bug. */
+    @Suppress("UNCHECKED_CAST")
     @SculkStable
-    public fun <T> argument(name: String, type: Class<T>): T {
-        val value =
-            parsedArgs[name]
-                ?: error("Argument '$name' not found. Make sure it is registered on the command.")
-        return if (type.isInstance(value)) type.cast(value) else error("Argument '$name' is not of type ${type.simpleName}.")
+    public fun <T> argument(name: String): T = (arguments[name] ?: error("Command argument '$name' was not declared on this node.")) as T
+
+    /** An optional argument, or null if it was not supplied. */
+    @Suppress("UNCHECKED_CAST")
+    @SculkStable
+    public fun <T> argumentOrNull(name: String): T? = arguments[name] as T?
+
+    @SculkStable
+    public fun has(name: String): Boolean = arguments[name] != null
+
+    /** Renders [template] through the plugin's theme and sends it to the sender. */
+    @SculkStable
+    public fun reply(template: String, vararg values: Pair<String, String>) {
+        messages.send(sender, template, *values)
     }
 
-    /** Java-friendly overload of [argumentOrNull] taking a [Class] token. */
     @SculkStable
-    public fun <T> argumentOrNull(name: String, type: Class<T>): T? {
-        val value = parsedArgs[name] ?: return null
-        return if (type.isInstance(value)) type.cast(value) else null
+    public fun reply(lines: List<String>, vararg values: Pair<String, String>) {
+        messages.send(sender, lines, *values)
+    }
+
+    @SculkStable
+    public fun actionBar(template: String, vararg values: Pair<String, String>) {
+        player?.let { messages.actionBar(it, template, *values) }
+    }
+
+    @SculkStable
+    public fun title(title: String, subtitle: String = "", vararg values: Pair<String, String>) {
+        player?.let { messages.title(it, title, subtitle, values = values) }
     }
 }

@@ -19,45 +19,38 @@ dependencyResolutionManagement {
 
 rootProject.name = "sculk-studio"
 
+// The 5.0 rebuild adds modules back one phase at a time. Deleting the Java-parity surface from
+// sculk-common turns every downstream module red at once, so rather than carry compatibility
+// shims until the end — which are exactly the thing being deleted — the build is narrowed to
+// what has actually been rebuilt. `./gradlew build` then means something at every phase boundary.
+//
+// Restore order: common, text, config, series/items/integrations, commands, gui, data,
+// packets-*, visual, hud, platform/bom, examples, benchmarks.
 include(
-    ":sculk-bom",
     ":sculk-common",
-    ":sculk-adventure",
-    ":sculk-commands",
-    ":sculk-gui",
-    ":sculk-events",
+    ":sculk-text",
     ":sculk-config",
     ":sculk-series",
     ":sculk-items",
-    ":sculk-effects",
-    ":sculk-data",
-    ":sculk-platform",
     ":sculk-integrations",
+    ":sculk-commands",
+    ":sculk-gui",
+    ":sculk-data",
     ":sculk-packets-api",
     ":sculk-packets-packetevents",
     ":sculk-packets-protocollib",
-    ":sculk-holograms",
-    ":sculk-content",
-    ":sculk-text",
-    ":sculk-tasks",
+    ":sculk-visual",
+    ":sculk-hud",
+    ":sculk-platform",
+    ":sculk-bom",
 )
 
-// Examples (not published)
+// Examples. Compile gates for the public API, never published.
 include(
     ":examples:basic-plugin",
-    ":examples:java-basic-plugin",
-    ":examples:commands-showcase",
-    ":examples:gui-showcase",
-    ":examples:config-showcase",
-    ":examples:items-showcase",
-    ":examples:packets-showcase",
     ":examples:economy-plugin",
-    ":examples:player-profiles",
     ":examples:server-menu",
     ":examples:staff-tools",
-    ":examples:crate-system",
-    ":examples:kits-plugin",
+    ":examples:hud-showcase",
+    ":examples:visual-showcase",
 )
-
-// Benchmarks (not published)
-include(":benchmarks")

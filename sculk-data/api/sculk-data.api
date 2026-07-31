@@ -1,0 +1,359 @@
+public abstract interface annotation class studio/sculk/data/Column : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
+}
+
+public final synthetic class studio/sculk/data/Column$Impl : studio/sculk/data/Column {
+	public fun <init> (Ljava/lang/String;)V
+	public final synthetic fun name ()Ljava/lang/String;
+}
+
+public final class studio/sculk/data/ColumnSchema {
+	public fun <init> (Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZI)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lstudio/sculk/data/SqlType;
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()I
+	public final fun copy (Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZI)Lstudio/sculk/data/ColumnSchema;
+	public static synthetic fun copy$default (Lstudio/sculk/data/ColumnSchema;Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZIILjava/lang/Object;)Lstudio/sculk/data/ColumnSchema;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getElementIndex ()I
+	public final fun getIndexed ()Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getNullable ()Z
+	public final fun getPrimaryKey ()Z
+	public final fun getType ()Lstudio/sculk/data/SqlType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class studio/sculk/data/Condition {
+}
+
+public final class studio/sculk/data/Condition$And : studio/sculk/data/Condition {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lstudio/sculk/data/Condition$And;
+	public static synthetic fun copy$default (Lstudio/sculk/data/Condition$And;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/data/Condition$And;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getParts ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/data/Condition$Compare : studio/sculk/data/Condition {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)Lstudio/sculk/data/Condition$Compare;
+	public static synthetic fun copy$default (Lstudio/sculk/data/Condition$Compare;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Lstudio/sculk/data/Condition$Compare;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColumn ()Ljava/lang/String;
+	public final fun getOperator ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/data/Condition$In : studio/sculk/data/Condition {
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/util/List;)Lstudio/sculk/data/Condition$In;
+	public static synthetic fun copy$default (Lstudio/sculk/data/Condition$In;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/data/Condition$In;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColumn ()Ljava/lang/String;
+	public final fun getValues ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/data/Condition$Or : studio/sculk/data/Condition {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lstudio/sculk/data/Condition$Or;
+	public static synthetic fun copy$default (Lstudio/sculk/data/Condition$Or;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/data/Condition$Or;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getParts ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class studio/sculk/data/Id : java/lang/annotation/Annotation {
+}
+
+public final synthetic class studio/sculk/data/Id$Impl : studio/sculk/data/Id {
+	public fun <init> ()V
+}
+
+public abstract interface annotation class studio/sculk/data/Index : java/lang/annotation/Annotation {
+}
+
+public final synthetic class studio/sculk/data/Index$Impl : studio/sculk/data/Index {
+	public fun <init> ()V
+}
+
+public final class studio/sculk/data/InstantSerializer : kotlinx/serialization/KSerializer {
+	public static final field INSTANCE Lstudio/sculk/data/InstantSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/time/Instant;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/time/Instant;)V
+}
+
+public abstract interface annotation class studio/sculk/data/Json : java/lang/annotation/Annotation {
+}
+
+public final synthetic class studio/sculk/data/Json$Impl : studio/sculk/data/Json {
+	public fun <init> ()V
+}
+
+public final class studio/sculk/data/LettuceRedisBackend : studio/sculk/data/RedisBackend {
+	public fun <init> (Ljava/lang/String;)V
+	public fun close ()V
+	public fun delete (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun deleteByPrefix (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun get (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun set (Ljava/lang/String;Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/data/Query {
+	public final fun any (Lkotlin/jvm/functions/Function1;)V
+	public final fun atLeast (Lkotlin/reflect/KProperty1;Ljava/lang/Comparable;)V
+	public final fun atMost (Lkotlin/reflect/KProperty1;Ljava/lang/Comparable;)V
+	public final fun eq (Lkotlin/reflect/KProperty1;Ljava/lang/Object;)V
+	public final fun greaterThan (Lkotlin/reflect/KProperty1;Ljava/lang/Comparable;)V
+	public final fun isIn (Lkotlin/reflect/KProperty1;Ljava/util/Collection;)V
+	public final fun lessThan (Lkotlin/reflect/KProperty1;Ljava/lang/Comparable;)V
+	public final fun like (Lkotlin/reflect/KProperty1;Ljava/lang/String;)V
+	public final fun notEq (Lkotlin/reflect/KProperty1;Ljava/lang/Object;)V
+	public final fun orderBy (Lkotlin/reflect/KProperty1;)V
+	public final fun orderByDescending (Lkotlin/reflect/KProperty1;)V
+	public final fun skip (I)V
+	public final fun take (I)V
+}
+
+public abstract interface class studio/sculk/data/RedisBackend : studio/sculk/SculkHandle {
+	public abstract fun delete (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteByPrefix (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun get (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun set (Ljava/lang/String;Ljava/lang/String;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/data/RedisCache : studio/sculk/SculkHandle {
+	public static final field Companion Lstudio/sculk/data/RedisCache$Companion;
+	public final fun clear (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun close ()V
+	public final fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun find (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun findOrCreate (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun forget (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getAvailable ()Z
+	public final fun save (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/data/RedisCache$Companion {
+	public final fun create (Lstudio/sculk/data/SculkRepository;Lkotlin/jvm/functions/Function1;Lkotlinx/serialization/KSerializer;Ljava/lang/String;Ljava/lang/String;Ljava/util/logging/Logger;Ljava/time/Duration;)Lstudio/sculk/data/RedisCache;
+	public static synthetic fun create$default (Lstudio/sculk/data/RedisCache$Companion;Lstudio/sculk/data/SculkRepository;Lkotlin/jvm/functions/Function1;Lkotlinx/serialization/KSerializer;Ljava/lang/String;Ljava/lang/String;Ljava/util/logging/Logger;Ljava/time/Duration;ILjava/lang/Object;)Lstudio/sculk/data/RedisCache;
+	public final fun using (Lstudio/sculk/data/SculkRepository;Lkotlin/jvm/functions/Function1;Lkotlinx/serialization/KSerializer;Lstudio/sculk/data/RedisBackend;Ljava/lang/String;Ljava/util/logging/Logger;Ljava/time/Duration;)Lstudio/sculk/data/RedisCache;
+	public static synthetic fun using$default (Lstudio/sculk/data/RedisCache$Companion;Lstudio/sculk/data/SculkRepository;Lkotlin/jvm/functions/Function1;Lkotlinx/serialization/KSerializer;Lstudio/sculk/data/RedisBackend;Ljava/lang/String;Ljava/util/logging/Logger;Ljava/time/Duration;ILjava/lang/Object;)Lstudio/sculk/data/RedisCache;
+}
+
+public final class studio/sculk/data/RemoteSettings {
+	public static final field Companion Lstudio/sculk/data/RemoteSettings$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Z
+	public final fun copy (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lstudio/sculk/data/RemoteSettings;
+	public static synthetic fun copy$default (Lstudio/sculk/data/RemoteSettings;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lstudio/sculk/data/RemoteSettings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDatabase ()Ljava/lang/String;
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getPassword ()Ljava/lang/String;
+	public final fun getPort ()I
+	public final fun getUseSsl ()Z
+	public final fun getUsername ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class studio/sculk/data/RemoteSettings$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lstudio/sculk/data/RemoteSettings$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lstudio/sculk/data/RemoteSettings;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lstudio/sculk/data/RemoteSettings;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class studio/sculk/data/RemoteSettings$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class studio/sculk/data/SculkCache {
+	public final fun clear ()V
+	public final fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun find (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun findOrCreate (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun forget (Ljava/lang/Object;)V
+	public final fun getSize ()J
+	public final fun peek (Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun save (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/data/SculkCacheKt {
+	public static final fun cached (Lstudio/sculk/data/SculkRepository;Lkotlin/jvm/functions/Function1;JLjava/time/Duration;Ljava/time/Duration;)Lstudio/sculk/data/SculkCache;
+	public static synthetic fun cached$default (Lstudio/sculk/data/SculkRepository;Lkotlin/jvm/functions/Function1;JLjava/time/Duration;Ljava/time/Duration;ILjava/lang/Object;)Lstudio/sculk/data/SculkCache;
+}
+
+public final class studio/sculk/data/SculkData : studio/sculk/SculkHandle {
+	public static final field Companion Lstudio/sculk/data/SculkData$Companion;
+	public fun close ()V
+	public final fun getBackend ()Ljava/lang/String;
+	public final fun getDialect ()Lstudio/sculk/data/SqlDialect;
+	public final fun repository (Lkotlinx/serialization/KSerializer;)Lstudio/sculk/data/SculkRepository;
+	public final fun transaction (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/data/SculkData$Companion {
+}
+
+public abstract interface class studio/sculk/data/SculkRepository {
+	public abstract fun count (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun count$default (Lstudio/sculk/data/SculkRepository;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun delete (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun deleteWhere (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun exists (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun find (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun findAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun findFirst (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getTable ()Ljava/lang/String;
+	public abstract fun query (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun save (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun saveAll (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun topBy (Ljava/lang/String;IZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun topBy$default (Lstudio/sculk/data/SculkRepository;Ljava/lang/String;IZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/data/SculkRepository$DefaultImpls {
+	public static synthetic fun count$default (Lstudio/sculk/data/SculkRepository;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun topBy$default (Lstudio/sculk/data/SculkRepository;Ljava/lang/String;IZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/data/SqlDialect : java/lang/Enum {
+	public static final field Companion Lstudio/sculk/data/SqlDialect$Companion;
+	public static final field MYSQL Lstudio/sculk/data/SqlDialect;
+	public static final field POSTGRES Lstudio/sculk/data/SqlDialect;
+	public static final field SQLITE Lstudio/sculk/data/SqlDialect;
+	public final fun columnType (Lstudio/sculk/data/SqlType;)Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun quote (Ljava/lang/String;)Ljava/lang/String;
+	public final fun upsert (Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/data/SqlDialect;
+	public static fun values ()[Lstudio/sculk/data/SqlDialect;
+}
+
+public final class studio/sculk/data/SqlDialect$Companion {
+	public final fun of (Ljava/lang/String;)Lstudio/sculk/data/SqlDialect;
+}
+
+public final class studio/sculk/data/SqlType : java/lang/Enum {
+	public static final field BIGINT Lstudio/sculk/data/SqlType;
+	public static final field BOOLEAN Lstudio/sculk/data/SqlType;
+	public static final field DOUBLE Lstudio/sculk/data/SqlType;
+	public static final field INTEGER Lstudio/sculk/data/SqlType;
+	public static final field JSON Lstudio/sculk/data/SqlType;
+	public static final field TEXT Lstudio/sculk/data/SqlType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/data/SqlType;
+	public static fun values ()[Lstudio/sculk/data/SqlType;
+}
+
+public final class studio/sculk/data/StorageSettings {
+	public static final field Companion Lstudio/sculk/data/StorageSettings$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/data/RemoteSettings;I)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/data/RemoteSettings;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lstudio/sculk/data/RemoteSettings;
+	public final fun component4 ()I
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/data/RemoteSettings;I)Lstudio/sculk/data/StorageSettings;
+	public static synthetic fun copy$default (Lstudio/sculk/data/StorageSettings;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/data/RemoteSettings;IILjava/lang/Object;)Lstudio/sculk/data/StorageSettings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackend ()Ljava/lang/String;
+	public final fun getFile ()Ljava/lang/String;
+	public final fun getPoolSize ()I
+	public final fun getRemote ()Lstudio/sculk/data/RemoteSettings;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class studio/sculk/data/StorageSettings$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lstudio/sculk/data/StorageSettings$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lstudio/sculk/data/StorageSettings;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lstudio/sculk/data/StorageSettings;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class studio/sculk/data/StorageSettings$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface annotation class studio/sculk/data/Table : java/lang/annotation/Annotation {
+	public abstract fun name ()Ljava/lang/String;
+}
+
+public final synthetic class studio/sculk/data/Table$Impl : studio/sculk/data/Table {
+	public fun <init> (Ljava/lang/String;)V
+	public final synthetic fun name ()Ljava/lang/String;
+}
+
+public final class studio/sculk/data/TableSchema {
+	public static final field Companion Lstudio/sculk/data/TableSchema$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun get (Ljava/lang/String;)Lstudio/sculk/data/ColumnSchema;
+	public final fun getColumnNames ()Ljava/util/List;
+	public final fun getColumns ()Ljava/util/List;
+	public final fun getKey ()Lstudio/sculk/data/ColumnSchema;
+	public final fun getTable ()Ljava/lang/String;
+}
+
+public final class studio/sculk/data/TableSchema$Companion {
+	public final fun of (Lkotlinx/serialization/descriptors/SerialDescriptor;)Lstudio/sculk/data/TableSchema;
+}
+
+public final class studio/sculk/data/UuidSerializer : kotlinx/serialization/KSerializer {
+	public static final field INSTANCE Lstudio/sculk/data/UuidSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/util/UUID;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/util/UUID;)V
+}
+
+public final class studio/sculk/data/WriteBehindStore {
+	public fun <init> (Lstudio/sculk/data/SculkRepository;Lkotlin/jvm/functions/Function1;)V
+	public final fun clear ()V
+	public final fun flush (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun flushBlocking ()Lstudio/sculk/SculkResult;
+	public final fun getPending ()I
+	public final fun markDirty (Ljava/lang/Object;)V
+	public final fun remove (Ljava/lang/Object;)V
+}
+

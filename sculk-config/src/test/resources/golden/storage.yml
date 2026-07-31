@@ -1,0 +1,21 @@
+# Where player data is kept.
+# Edit while the server is stopped.
+
+# Which backend to use: sqlite, mysql or postgres.
+backend: sqlite
+
+# Connection details for the remote backends.
+mysql:
+  # Host name or IP of the database server.
+  host: localhost
+
+  # The port MySQL is listening on.
+  port: 3306
+  username: root
+  password: ""
+
+# How many connections to keep open.
+pool-size: 10
+tables:
+  - players
+  - homes

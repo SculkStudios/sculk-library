@@ -1,159 +1,133 @@
 # Sculk Studio
 
-> Kotlin-first Paper utilities for building modern Minecraft plugins.
+> A Kotlin framework for building modern Paper plugins.
 
 [![CI](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml/badge.svg)](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml)
 [![JitPack](https://jitpack.io/v/SculkStudios/sculk-library.svg)](https://jitpack.io/#SculkStudios/sculk-library)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Sculk Studio is the shared Kotlin library used by Sculk Studios plugins. It provides small, composable APIs for commands, GUI menus, item stacks, typed config, data access, Adventure text, localization, scheduling, effects, optional integrations, and Paper lifecycle integration. Sculk is Kotlin-first and coroutine-based throughout — and as of **4.5.0**, every stable API is equally first-class from **Java**.
+Sculk Studio is the shared library behind Sculk Studios plugins: commands, menus, items, typed
+config, a data layer, themed text, a HUD, packet-backed visuals and Paper lifecycle wiring.
 
-**Writing a plugin in Java?** Start with the [Java Guide](https://docs.sculk.studio/getting-started/java/) — `@JvmStatic` factories, `java.util.function` overloads, a `CompletableFuture` bridge, and a complete all-Java example. See also the [4.0 → 4.5 migration guide](https://docs.sculk.studio/advanced/migration-to-sculk-4-5/) and [Java Interop & Limitations](https://docs.sculk.studio/advanced/java-interop/).
+**Kotlin-only.** Reified generics, default arguments, `suspend` functions and receiver lambdas are
+the API, not a compromise around a second language. Target: Paper 1.21.11+, Java 21, Kotlin 2.x.
 
 ## Features
 
-- **Coroutines** - A plugin-scoped `SculkCoroutineScope` with Folia-aware dispatchers powers every async API.
-- **Commands** - Brigadier-native: the `command { }` DSL compiles to Paper's command tree for real client-side completion, with suspend executors, middleware, and stateful cooldowns.
-- **GUI menus** - Chest & container GUIs, click routing, per-click-type handlers, pagination, animated slots, interactive input slots, and platform-managed cleanup.
-- **Items** - Data-component item builders (1.20.5+), typed/nested PDC, food/rarity/model-data helpers, and a generic component escape hatch.
-- **Typed config** - Data class YAML configs with defaults, validation, strict load mode, env-var substitution, and file-watch auto-reload.
-- **Data** - Suspend JDBC repositories, a type-safe query DSL, transactions, ORM mapping, and Caffeine + Redis caching.
-- **Localization** - Per-player message bundles, MiniMessage templates, placeholders, and pluralization.
-- **Tasks** - Coroutine scheduling with cron expressions, debounce, and throttle.
-- **Series / Effects / Packets / Integrations** - Registry helpers, particle/sound builders, optional PacketEvents/ProtocolLib adapters, and PlaceholderAPI/Vault/LuckPerms bridges.
-- **Platform** - Paper bootstrap wiring commands, events, GUI lifecycle, config, data, text, tasks, integrations, and scheduling.
+- **Text** — a theme of named styles (`<danger>`, `<value>`) expanded before parse, so messages are
+  written against meaning rather than colour. Values always enter as unparsed placeholders, so a
+  player-supplied name cannot inject markup. Real glyph-width measurement for centred text.
+- **Commands** — the command tree is an immutable `CommandSpec`, free of Brigadier and Bukkit, so
+  usage, permission filtering and help all test without a server. One adapter compiles it to
+  Paper's tree for real client-side completion. Suspend executors, middleware, cooldowns, and a
+  generated permission-filtered `/help`.
+- **Config** — data-class YAML on kotlinx-serialization, no reflection. The defaults *are* the
+  shipped file. A rewrite only ever adds: keys you did not model and comments you wrote are kept.
+  Validation reports a path (`storage.mysql.port`), env-var substitution, migrations, hot reload.
+- **Data** — suspend repositories over SQLite, MySQL/MariaDB and PostgreSQL, with quoted
+  identifiers, real upserts, additive schema migration, `@Index`, and a query DSL with OR/IN/paging.
+  Caffeine cache with negative caching; Redis/Valkey for a cache shared across servers.
+- **Menus** — chest and container GUIs, per-click-type handlers, dynamic content, animated slots,
+  pagination, interactive input slots, and cancel-before-dispatch click routing.
+- **HUD** — sidebar, action bar, tab list and boss bars, driven by a single task. Flicker-free
+  sidebar; action-bar messages arbitrate by priority and expire on their own.
+- **Visual** — particles, sounds, timelines, packet-only holograms that cost the server no entities,
+  and nametags ridden as a passenger so the client interpolates them.
+- **Packets** — a backend-neutral API over PacketEvents or ProtocolLib, with client-side blocks,
+  virtual entities, and a guard so a handler that throws cannot disconnect the player.
+- **Testing** — `FakeScheduler` and `FakeVirtualEntityService` ship as test fixtures, because a
+  module that hands out an interface should hand out something to test against it with.
 
 ## Installation
 
 ```kotlin
 // settings.gradle.kts
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
-        maven("https://jitpack.io")
         maven("https://repo.papermc.io/repository/maven-public/")
+        maven("https://jitpack.io")
     }
 }
 ```
 
 ```kotlin
-// build.gradle.kts
+// build.gradle.kts — one dependency gets the whole framework
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    // One dependency — sculk-platform re-exports the whole DSL.
-    implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-platform:5.0.0")
 }
 ```
 
-Shade and relocate the library into your plugin jar:
+Picking modules à la carte? Use the BOM so versions cannot drift:
 
 ```kotlin
-plugins {
-    id("com.gradleup.shadow") version "9.4.1"
-}
-
-tasks.shadowJar {
-    archiveClassifier = ""
-    relocate("studio.sculk", "your.plugin.libs.sculk")
+dependencies {
+    implementation(platform("com.github.SculkStudios.sculk-library:sculk-bom:5.0.0"))
+    implementation("com.github.SculkStudios.sculk-library:sculk-commands")
+    implementation("com.github.SculkStudios.sculk-library:sculk-gui")
 }
 ```
 
-## Quick Start
-
-Extend `SculkPlugin` — it creates the platform, exposes it as `sculk`, and closes it on disable.
-No lifecycle boilerplate:
+## A plugin
 
 ```kotlin
-import studio.sculk.command.command
-import studio.sculk.platform.SculkPlugin
+class MyPlugin : SculkPlugin() {
+    override val theme = SculkTheme(
+        mapOf(
+            "value" to ThemeStyle.Gradient(listOf("#8be9fd", "#50fa7b")),
+            "danger" to ThemeStyle.Solid("#ff5f5f"),
+        ),
+    )
 
-class MyPlugin : SculkPlugin({ gui(); config() }) {
     override fun setup() {
-        sculk.commands.register(
-            command("hello") {
-                player { reply("<green>Hello, <yellow>${player.name}</yellow>!") }
-            },
-        )
+        val settings = sculk.config.load<Settings>().getOrThrow()
+        val economy = sculk.services.register(EconomyService(sculk.data))
+
+        +command("balance") {
+            description = "Shows your balance."
+            player {
+                val balance = economy.balanceOf(player!!.uniqueId)
+                reply("<value><coins></value> coins.", "coins" to balance.toString())
+            }
+        }
     }
 }
 ```
 
-Prefer full control? Extend `JavaPlugin` and call `SculkPlatform.create(this) { … }` in `onEnable`
-yourself.
+`onEnable` and `onDisable` are final: the framework starts and stops itself, and everything you
+register is closed in reverse order.
 
 ## Modules
 
-You only ever depend on **`sculk-platform`** — it transitively re-exports the entire DSL. The table
-below is for reference; à-la-carte use is possible for minimal builds.
-
-| Module | Description |
-|---|---|
-| `sculk-common` | Base: `SculkResult`/`SculkHandle`, coroutines, scheduler, version parsing, annotations |
-| `sculk-adventure` | MiniMessage messaging helpers and templates |
-| `sculk-commands` | Brigadier-native command DSL, typed arguments, cooldowns |
-| `sculk-gui` | Chest/container GUI menus, animations, pagination |
-| `sculk-events` | Coroutine-friendly auto-cleaned event bus |
-| `sculk-config` | Typed configs, hot reload, validation, env-var substitution, file-watch reload |
-| `sculk-series` | Registry-based compatibility helpers |
-| `sculk-items` | Data-component item builders, typed PDC, skulls, descriptors |
-| `sculk-effects` | Particle and sound builders, animation timelines |
-| `sculk-data` | Suspend JDBC repositories, query DSL, transactions, Caffeine + Redis caching |
-| `sculk-text` | Per-player localization with bundles, placeholders, and pluralization |
-| `sculk-tasks` | Coroutine scheduling: cron, repeating, debounce, throttle |
-| `sculk-integrations` | Optional PlaceholderAPI, Vault, and LuckPerms adapters |
-| `sculk-packets-api` | Backend-neutral packet contracts and high-level packet services |
-| `sculk-packets-packetevents` | Optional PacketEvents packet backend adapter |
-| `sculk-packets-protocollib` | Optional ProtocolLib compatibility backend adapter |
-| `sculk-content` | High-level client block helpers over packet services |
-| `sculk-platform` | The single dependency — `SculkPlugin` + wires and re-exports the full DSL |
-| `sculk-bom` | Bill of materials for à-la-carte version alignment |
-
-## Recipe Examples
-
-Compile-checked example plugins live in `examples/` and the matching guides live in the docs:
-
-- `economy-plugin`: cached accounts, async persistence, payments, admin balance tools, and top balances.
-- `player-profiles`: join load, quit save, profile cache, GUI display, and shutdown flush.
-- `server-menu`: config-backed menu buttons, pagination, profile pages, and confirm flows.
-- `staff-tools`: staff mode, freeze, inspect menus, staff chat, effects, and transient state cleanup.
-- `crate-system`: key items, PDC markers, weighted rewards, preview menus, and reward delivery.
-- `kits-plugin`: item descriptors, kit cooldown persistence, preview menus, permissions, and safe give/drop handling.
-
-## Stability Notes
-
-| Area | Current status |
-|---|---|
-| Commands | Stable DSL for Bukkit command-map registration, typed arguments, cooldowns, help, permissions, and suggestions. |
-| Configs | Data class YAML configs with defaults, validation, comments, migrations, strict mode, and reload results. |
-| Data | Blocking JDBC repositories plus async facades, player profile helpers, cache layer, SQLite/MySQL configuration, and ORM mapping. |
-| GUI | Chest GUI sessions, click routing, pagination, confirm menus, dynamic items, and platform-managed cleanup. |
-| Items | Standalone item builders, descriptors, PDC helpers, skulls, modern custom model data, glint override, and Java builders. |
-| Text | MiniMessage, Adventure helpers, message templates, titles, action bars, sounds, and broadcasts. |
-| Scheduler | Paper/Folia-aware scheduler contract with sync, async, delayed, repeating, and async-to-sync handoff helpers. |
-| Events | Disposable listeners, once listeners, filters, priority, ignore-cancelled support, and platform lifecycle cleanup. |
-| Series | Modern Paper registry lookups, require helpers, validation reports, and curated aliases. |
-| Integrations | Optional PlaceholderAPI, Vault, and LuckPerms adapters with failure results for missing plugins. |
-| Packets | Optional backend-neutral packet contracts with PacketEvents preferred, ProtocolLib compatibility, client block previews, and debug sessions. |
-| Docs | Public manual with feature pages and compile-checked real server recipe examples. |
+| Module | Purpose |
+| --- | --- |
+| `sculk-platform` | The one-line install — re-exports everything below |
+| `sculk-common` | Result and handle types, coroutine scope, scheduler, tasks |
+| `sculk-text` | Theme, message rendering, text measurement, localisation |
+| `sculk-config` | Typed YAML: generated defaults, validation, migrations |
+| `sculk-commands` | Command specs as data, Brigadier adapter, generated help |
+| `sculk-gui` | Chest and container menus |
+| `sculk-data` | Repositories, query DSL, schema migration, caching |
+| `sculk-hud` | Sidebar, action bar, tab list, boss bars |
+| `sculk-visual` | Particles, sounds, holograms, nametags |
+| `sculk-items` | Data-component item builders, PDC, descriptors |
+| `sculk-series` | Registry lookups with aliases |
+| `sculk-packets-api` | Backend-neutral packets (`-packetevents`, `-protocollib`) |
+| `sculk-integrations` | Optional PlaceholderAPI, Vault, LuckPerms adapters |
+| `sculk-bom` | Version alignment |
 
 ## Documentation
 
-Full docs: [docs.sculk.studio](https://docs.sculk.studio)
+[docs.sculk.studio](https://docs.sculk.studio)
 
-For existing plugins, start with the migration guide:
+## Building
 
-- [Migration to Sculk 3](https://docs.sculk.studio/advanced/migration-to-sculk-3/)
-- [Migration Checklist](https://docs.sculk.studio/advanced/migration-checklist/)
+```
+./gradlew build      # compile + test + ktlint, all modules and examples
+./gradlew apiCheck   # public surface matches the committed .api dumps
+```
 
-## Requirements
+## Licence
 
-- Paper 1.21.11+
-- Java 21+
-- Kotlin JVM
-
-## License
-
-MIT - see [LICENSE](LICENSE).
-
-Built by [Sculk Studios](https://sculk.studio).
+MIT. PacketEvents is GPL-3.0 and stays `compileOnly`, confined to `sculk-packets-packetevents`, so
+it is never redistributed.

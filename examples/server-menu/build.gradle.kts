@@ -1,14 +1,12 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.example")
     alias(libs.plugins.shadow)
 }
 
-description = "Sculk Studio example - production-style server menu"
+description = "Sculk Studio — server-menu example"
 
 dependencies {
     implementation(project(":sculk-platform"))
-    implementation(project(":sculk-items"))
-    testImplementation(libs.junit.jupiter)
 }
 
 tasks.jar { enabled = false }

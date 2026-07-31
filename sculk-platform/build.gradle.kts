@@ -1,35 +1,26 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.module")
 }
 
-description = "Sculk Studio — Paper platform integration: command registration, event DSL, GUI lifecycle"
-
-// Allow framework internals within this module.
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
-    }
-}
+description = "Sculk Studio — the plugin base class, service registry and bootstrap that wires everything together"
 
 dependencies {
+    // The one-line install: depending on sculk-platform gets the whole framework.
     api(project(":sculk-common"))
-    api(project(":sculk-adventure"))
-    api(project(":sculk-commands"))
-    api(project(":sculk-gui"))
-    api(project(":sculk-events"))
+    api(project(":sculk-text"))
     api(project(":sculk-config"))
     api(project(":sculk-series"))
     api(project(":sculk-items"))
-    api(project(":sculk-effects"))
-    api(project(":sculk-content"))
+    api(project(":sculk-commands"))
+    api(project(":sculk-gui"))
     api(project(":sculk-data"))
+    api(project(":sculk-visual"))
+    api(project(":sculk-hud"))
     api(project(":sculk-integrations"))
     api(project(":sculk-packets-api"))
-    api(project(":sculk-text"))
-    api(project(":sculk-tasks"))
-    implementation(kotlin("reflect"))
-    testImplementation(libs.paper.api)
-    testImplementation(libs.junit.jupiter)
+    compileOnly(libs.adventure.api)
+
+    testImplementation(testFixtures(project(":sculk-common")))
     testImplementation(libs.mockbukkit)
     testImplementation(libs.mockito.kotlin)
 }

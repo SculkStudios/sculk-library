@@ -6,18 +6,19 @@ import io.papermc.paper.datacomponent.item.CustomModelData
 import io.papermc.paper.datacomponent.item.FoodProperties
 import io.papermc.paper.datacomponent.item.ItemEnchantments
 import io.papermc.paper.datacomponent.item.ItemLore
+import io.papermc.paper.datacomponent.item.TooltipDisplay
 import io.papermc.paper.registry.RegistryAccess
 import io.papermc.paper.registry.RegistryKey
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.enchantments.Enchantment
-import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemRarity
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
 import studio.sculk.annotation.SculkStable
+import studio.sculk.text.SculkMessages
 
 /**
  * Kotlin-first builder for modern Paper item stacks.
@@ -37,57 +38,59 @@ import studio.sculk.annotation.SculkStable
  * ```
  */
 @SculkStable
-public open class ItemBuilder public constructor(private var material: Material) {
+public open class ItemBuilder public constructor(private var material: Material, private val messages: SculkMessages = SculkMessages()) {
     private var displayName: Component? = null
     private var itemName: Component? = null
     private val lore: MutableList<Component> = mutableListOf()
     private var amount: Int = 1
     private var glint: Boolean? = null
     private var customModelData: Int? = null
+    private var model: NamespacedKey? = null
+    private var hideVanillaTooltip: Boolean = false
     private var unbreakable: Boolean? = null
     private var damage: Int? = null
     private var maxDamage: Int? = null
     private var maxStackSize: Int? = null
     private var rarity: ItemRarity? = null
     private val enchantments: MutableMap<Enchantment, Int> = linkedMapOf()
-    private val flags: MutableSet<ItemFlag> = linkedSetOf()
     private val persistentData: MutableList<ItemMeta.() -> Unit> = mutableListOf()
     private val metaEdits: MutableList<ItemMeta.() -> Unit> = mutableListOf()
     private val componentEdits: MutableList<ItemStack.() -> Unit> = mutableListOf()
 
-    /** Replaces this item's material. */
+    /**
+     * Replaces this item's material.
+     *
+     * There is deliberately no `String` overload. Resolving a key can fail, and a setter inside a
+     * builder block has nowhere to report that — the previous one threw while [item] returned null
+     * for the identical failure. Resolve the key with [item] instead and handle the result there.
+     */
     public fun material(material: Material) {
         this.material = material
     }
 
-    /** Replaces this item's material from a modern Minecraft key. */
-    public fun material(key: String) {
-        material = requireMaterial(key)
+    /** Sets the display name — the anvil-style custom name, rendered through the theme. */
+    public fun name(value: String, vararg values: Pair<String, String>) {
+        displayName = messages.renderItemText(value, *values)
     }
 
-    /** Sets the MiniMessage display name (the anvil-style custom name). */
-    public fun name(value: String) {
-        displayName = parseItemText(value)
-    }
-
-    /** Sets the Adventure display name. */
+    /** Sets the display name from an already-built component. */
     public fun name(component: Component) {
         displayName = component
     }
 
-    /** Sets the MiniMessage item name (the non-italic base name shown when there is no custom name). */
-    public fun itemName(value: String) {
-        itemName = parseItemText(value)
+    /** Sets the item name: the base name shown when there is no custom name. */
+    public fun itemName(value: String, vararg values: Pair<String, String>) {
+        itemName = messages.renderItemText(value, *values)
     }
 
-    /** Adds MiniMessage lore lines. */
+    /** Adds lore lines, rendered through the theme. */
     public fun lore(vararg lines: String) {
-        lore.addAll(lines.map(::parseItemText))
+        lore.addAll(lines.map { messages.renderItemText(it) })
     }
 
-    /** Adds MiniMessage lore lines. */
+    /** Adds lore lines, rendered through the theme. */
     public fun lore(lines: Iterable<String>) {
-        lore.addAll(lines.map(::parseItemText))
+        lore.addAll(lines.map { messages.renderItemText(it) })
     }
 
     /** Adds Adventure lore lines. */
@@ -112,21 +115,39 @@ public open class ItemBuilder public constructor(private var material: Material)
         enchant(requireEnchantment(key), level)
     }
 
-    /** Adds item flags (hides tooltip sections such as enchantments or attributes). */
-    public fun flag(vararg flags: ItemFlag) {
-        this.flags += flags
+    /**
+     * Hides the vanilla tooltip sections — enchantments, attribute modifiers, the "Unbreakable"
+     * line — without hiding a custom name or lore.
+     *
+     * Replaces the old `flag(ItemFlag…)` surface. `ItemFlag` predates data components and Paper
+     * now models this as `TOOLTIP_DISPLAY`; mixing the two produces items where half the tooltip
+     * obeys one mechanism and half the other.
+     */
+    public fun hideVanillaTooltip() {
+        hideVanillaTooltip = true
     }
 
     /** Sets whether this item is unbreakable. */
-    @JvmOverloads
     public fun unbreakable(value: Boolean = true) {
         unbreakable = value
     }
 
     /** Sets Paper's enchantment glint override without fake enchantments. */
-    @JvmOverloads
     public fun glint(value: Boolean = true) {
         glint = value
+    }
+
+    /**
+     * Points at a resource-pack item model by key, e.g. `sculk:scythe/bone`.
+     *
+     * Prefer this to [customModelData]. Two packs can each define their own namespaced models and
+     * coexist; two packs picking custom-model-data integers have to negotiate a shared numbering.
+     *
+     * A malformed key is dropped rather than thrown — model ids arrive from config, and one typo
+     * should cost the model, not the item.
+     */
+    public fun model(id: String) {
+        model = NamespacedKey.fromString(id.trim().lowercase())
     }
 
     /**
@@ -234,21 +255,14 @@ public open class ItemBuilder public constructor(private var material: Material)
         metaEdits += block
     }
 
-    /** Java-friendly overload of [meta] taking a [java.util.function.Consumer]. */
-    @SculkStable
-    public fun meta(block: java.util.function.Consumer<ItemMeta>) {
-        metaEdits += { block.accept(this) }
-    }
-
     /** Builds the final [ItemStack]. */
     public open fun build(): ItemStack {
         val stack = ItemStack(material, amount)
 
         // Persistent data + escape-hatch meta edits go through ItemMeta (the PDC carrier).
-        if (persistentData.isNotEmpty() || metaEdits.isNotEmpty() || flags.isNotEmpty()) {
+        if (persistentData.isNotEmpty() || metaEdits.isNotEmpty()) {
             val meta = stack.itemMeta
             if (meta != null) {
-                if (flags.isNotEmpty()) meta.addItemFlags(*flags.toTypedArray())
                 persistentData.forEach { meta.it() }
                 metaEdits.forEach { meta.it() }
                 stack.itemMeta = meta
@@ -271,6 +285,19 @@ public open class ItemBuilder public constructor(private var material: Material)
         glint?.let { stack.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, it) }
         customModelData?.let {
             stack.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addFloat(it.toFloat()).build())
+        }
+        model?.let { stack.setData(DataComponentTypes.ITEM_MODEL, it) }
+        if (hideVanillaTooltip) {
+            stack.setData(
+                DataComponentTypes.TOOLTIP_DISPLAY,
+                TooltipDisplay
+                    .tooltipDisplay()
+                    .addHiddenComponents(
+                        DataComponentTypes.ENCHANTMENTS,
+                        DataComponentTypes.ATTRIBUTE_MODIFIERS,
+                        DataComponentTypes.UNBREAKABLE,
+                    ).build(),
+            )
         }
         unbreakable?.let { if (it) stack.setData(DataComponentTypes.UNBREAKABLE) else stack.unsetData(DataComponentTypes.UNBREAKABLE) }
         maxStackSize?.let { stack.setData(DataComponentTypes.MAX_STACK_SIZE, it) }

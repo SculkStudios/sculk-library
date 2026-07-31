@@ -1,12 +1,11 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.module")
 }
 
-description = "Sculk Studio - lightweight packet abstraction and high-level packet UX contracts"
+description = "Sculk Studio — backend-neutral packet contracts, client blocks and virtual entities"
 
 dependencies {
     api(project(":sculk-common"))
-    testImplementation(libs.paper.api)
-    testImplementation(libs.junit.jupiter)
+    testImplementation(testFixtures(project(":sculk-common")))
     testImplementation(libs.mockito.kotlin)
 }

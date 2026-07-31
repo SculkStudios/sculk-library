@@ -1,267 +1,141 @@
 package studio.sculk.data
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
-import studio.sculk.config.yaml.YamlMapper
-import studio.sculk.data.cache.CacheBuilder
-import studio.sculk.data.cache.JavaCache
-import studio.sculk.data.cache.SculkCache
-import studio.sculk.data.driver.ConnectionPool
-import studio.sculk.data.driver.StorageConfig
-import studio.sculk.data.repository.JavaProfileStore
-import studio.sculk.data.repository.JavaRepository
-import studio.sculk.data.repository.JdbcRepository
-import studio.sculk.data.repository.PlayerProfileStore
-import studio.sculk.data.repository.SculkRepository
-import studio.sculk.data.repository.jdbcRepository
 import java.io.File
-import java.util.concurrent.CompletableFuture
-import java.util.function.Consumer
-import java.util.function.Function
+import java.sql.Connection
+import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
 import javax.sql.DataSource
-import kotlin.reflect.KClass
 
 /**
- * Entry point for Sculk Studio's data layer.
+ * The database, and the repositories over it.
  *
- * Enabled via `data()` on `SculkPlatform`; plugin code accesses it through `sculk.data`.
- *
- * Direct instantiation:
  * ```kotlin
- * val data = SculkData.create(dataFolder, logger)
- * val repo = data.repository<PlayerData, UUID>()
- * val cached = data.cached(repo, { it.uuid }) { ttl = Duration.ofMinutes(10) }
- * // on disable:
- * data.close()
+ * val players = data.repository<PlayerData, UUID>()
+ * val profile = players.find(uuid).getOrNull()
  * ```
  */
 @SculkStable
-public class SculkData private constructor(private val dataSource: DataSource, private val config: StorageConfig) : SculkHandle {
-    // Distributed caches hold open Redis connections; close them when the data layer shuts down.
-    private val managedHandles = java.util.concurrent.CopyOnWriteArrayList<SculkHandle>()
+public class SculkData
+@SculkInternal
+constructor(
+    private val dataSource: DataSource,
+    public val dialect: SqlDialect,
+    private val logger: Logger,
+    private val owned: Boolean = true,
+) : SculkHandle {
+    private val repositories = ConcurrentHashMap<String, SculkRepository<*, *>>()
+
+    /** Which backend is in use, for the start-up banner and for support questions. */
+    public val backend: String get() = dialect.name.lowercase()
+
+    @SculkStable
+    public inline fun <reified T : Any, ID : Any> repository(): SculkRepository<T, ID> = repository(serializer<T>())
+
+    /** The repository for [serializer]'s entity, migrating its table on first use. */
+    @Suppress("UNCHECKED_CAST")
+    @SculkStable
+    public fun <T : Any, ID : Any> repository(serializer: KSerializer<T>): SculkRepository<T, ID> =
+        repositories.getOrPut(serializer.descriptor.serialName) {
+            JdbcRepository<T, ID>(dataSource, serializer, dialect, logger).also { it.migrate() }
+        } as SculkRepository<T, ID>
 
     /**
-     * Creates a [JdbcRepository] for entity class [T] with primary key type [ID].
-     * The table is created if it does not exist.
+     * Runs [block] inside one transaction, rolling back if it throws.
+     *
+     * Public because a plugin moving money between two accounts needs both writes to land or
+     * neither, and no repository method can express that across two tables.
      */
     @SculkStable
-    public fun <T : Any, ID : Any> repository(klass: KClass<T>, idClass: KClass<ID>): SculkRepository<T, ID> =
-        jdbcRepository(dataSource, klass, config.dialect())
-
-    /**
-     * Java-friendly overload of [repository] taking [Class] tokens.
-     *
-     * ```java
-     * SculkRepository<PlayerData, UUID> repo = data.repository(PlayerData.class, UUID.class);
-     * ```
-     */
-    @SculkStable
-    public fun <T : Any, ID : Any> repository(klass: Class<T>, idClass: Class<ID>): SculkRepository<T, ID> =
-        repository(klass.kotlin, idClass.kotlin)
-
-    /**
-     * Kotlin reified convenience — creates a [JdbcRepository] for [T]/[ID].
-     */
-    @SculkStable
-    public inline fun <reified T : Any, reified ID : Any> repository(): SculkRepository<T, ID> = repository(T::class, ID::class)
-
-    /**
-     * Java-friendly repository whose suspend operations are exposed as [java.util.concurrent.CompletableFuture]s.
-     *
-     * ```java
-     * JavaRepository<PlayerData, UUID> repo = data.javaRepository(PlayerData.class, UUID.class);
-     * repo.find(id).thenAccept(result -> { ... });
-     * ```
-     */
-    @SculkStable
-    public fun <T : Any, ID : Any> javaRepository(klass: Class<T>, idClass: Class<ID>): JavaRepository<T, ID> =
-        JavaRepository(repository(klass.kotlin, idClass.kotlin))
-
-    /**
-     * Wraps [delegate] in a Caffeine-backed [SculkCache].
-     *
-     * [idExtractor] must return the primary key value from an entity instance.
-     *
-     * ```kotlin
-     * val cached = data.cached(repo, { it.uuid }) {
-     *     ttl     = Duration.ofMinutes(10)
-     *     maxSize = 500
-     * }
-     * ```
-     */
-    @SculkStable
-    public fun <T : Any, ID : Any> cached(
-        delegate: SculkRepository<T, ID>,
-        idExtractor: (T) -> ID,
-        block: CacheBuilder<T, ID>.() -> Unit = {},
-    ): SculkCache<T, ID> = CacheBuilder(delegate, idExtractor).apply(block).build()
-
-    /**
-     * Java-friendly overload of [cached] with a [Consumer] tuning block. The id-extractor is a plain
-     * function, so a Java method reference works directly:
-     *
-     * ```java
-     * SculkCache<PlayerData, UUID> cached = data.cached(repo, PlayerData::uuid, b -> {
-     *     b.setTtl(Duration.ofMinutes(10));
-     *     b.setMaxSize(500);
-     * });
-     * ```
-     */
-    @SculkStable
-    public fun <T : Any, ID : Any> cached(
-        delegate: SculkRepository<T, ID>,
-        idExtractor: (T) -> ID,
-        block: Consumer<CacheBuilder<T, ID>>,
-    ): SculkCache<T, ID> = cached(delegate, idExtractor) { block.accept(this) }
-
-    /**
-     * Wraps a [SculkCache] in a Java-friendly [JavaCache] (CompletableFuture-based).
-     *
-     * ```java
-     * JavaCache<PlayerData, UUID> cache = data.javaCache(data.cached(repo, PlayerData::uuid, b -> {}));
-     * ```
-     */
-    @SculkStable
-    public fun <T : Any, ID : Any> javaCache(cache: SculkCache<T, ID>): JavaCache<T, ID> = JavaCache(cache)
-
-    /**
-     * Wraps [delegate] in a distributed [studio.sculk.data.cache.RedisCache] for multi-server setups.
-     *
-     * Entities must be `@Serializable`. Requires `io.lettuce:lettuce-core` on the runtime classpath.
-     *
-     * ```kotlin
-     * val cache = data.distributedCache(repo, PlayerData::uuid, PlayerData.serializer(), "redis://localhost", "players")
-     * ```
-     */
-    @SculkStable
-    public fun <T : Any, ID : Any> distributedCache(
-        delegate: SculkRepository<T, ID>,
-        idExtractor: (T) -> ID,
-        serializer: kotlinx.serialization.KSerializer<T>,
-        redisUri: String,
-        keyPrefix: String,
-        ttl: java.time.Duration = java.time.Duration.ofMinutes(10),
-    ): studio.sculk.data.cache.RedisCache<T, ID> = studio.sculk.data.cache.RedisCache
-        .create(delegate, idExtractor, serializer, redisUri, keyPrefix, ttl)
-        .also { managedHandles += it }
-
-    /**
-     * Creates a UUID-first player profile workflow around a repository.
-     *
-     * [create] is a plain function, so Java passes a lambda directly:
-     * `data.playerProfiles(repo, id -> new PlayerData(id, 0))`.
-     */
-    @SculkStable
-    public fun <T : Any, ID : Any> playerProfiles(repository: SculkRepository<T, ID>, create: (ID) -> T): PlayerProfileStore<T, ID> =
-        PlayerProfileStore(repository, create)
-
-    /**
-     * Java-friendly player-profile workflow whose `getOrCreate`/`save` are exposed as
-     * [java.util.concurrent.CompletableFuture]s.
-     *
-     * ```java
-     * JavaProfileStore<PlayerData, UUID> profiles = data.javaPlayerProfiles(repo, id -> new PlayerData(id, 0));
-     * profiles.getOrCreate(id).thenAccept(result -> { ... });
-     * ```
-     */
-    @SculkStable
-    public fun <T : Any, ID : Any> javaPlayerProfiles(repository: SculkRepository<T, ID>, create: (ID) -> T): JavaProfileStore<T, ID> =
-        JavaProfileStore(PlayerProfileStore(repository, create))
-
-    /**
-     * Runs [block] inside a single database transaction on [Dispatchers.IO].
-     *
-     * The block receives a [java.sql.Connection] with auto-commit disabled. Returning normally
-     * commits; throwing rolls back. The result is wrapped in a [SculkResult].
-     *
-     * ```kotlin
-     * sculk.scope.launchAsync {
-     *     sculk.data.transaction { conn ->
-     *         conn.prepareStatement("UPDATE accounts SET coins = coins - ? WHERE id = ?").use { ... }
-     *         conn.prepareStatement("UPDATE accounts SET coins = coins + ? WHERE id = ?").use { ... }
-     *     }
-     * }
-     * ```
-     */
-    @SculkStable
-    public suspend fun <R> transaction(block: (java.sql.Connection) -> R): SculkResult<R> =
-        withContext(Dispatchers.IO) { runTransaction(block) }
-
-    /**
-     * Java bridge for [transaction]: runs [block] in a transaction on a background thread and
-     * completes the returned [CompletableFuture] with the [SculkResult].
-     *
-     * The future never completes exceptionally — failures are captured as [SculkResult.Failure].
-     *
-     * ```java
-     * data.transactionAsync(conn -> {
-     *     try (var ps = conn.prepareStatement("UPDATE accounts SET coins = coins - ? WHERE id = ?")) { ... }
-     *     return null;
-     * }).thenAccept(result -> { if (!result.isSuccess()) getLogger().warning(result.toString()); });
-     * ```
-     */
-    @SculkStable
-    public fun <R> transactionAsync(block: Function<java.sql.Connection, R>): CompletableFuture<SculkResult<R>> =
-        CompletableFuture.supplyAsync { runTransaction { block.apply(it) } }
-
-    private fun <R> runTransaction(block: (java.sql.Connection) -> R): SculkResult<R> = runCatching {
-        dataSource.connection.use { conn ->
-            val previousAutoCommit = conn.autoCommit
-            conn.autoCommit = false
-            try {
-                val result = block(conn)
-                conn.commit()
-                result
-            } catch (e: Throwable) {
-                conn.rollback()
-                throw e
-            } finally {
-                conn.autoCommit = previousAutoCommit
+    public suspend fun <T> transaction(block: (Connection) -> T): SculkResult<T> = withContext(Dispatchers.IO) {
+        SculkResult.catching("run a transaction") {
+            dataSource.connection.use { connection ->
+                val previous = connection.autoCommit
+                connection.autoCommit = false
+                try {
+                    val result = block(connection)
+                    connection.commit()
+                    result
+                } catch (error: Exception) {
+                    connection.rollback()
+                    throw error
+                } finally {
+                    connection.autoCommit = previous
+                }
             }
         }
-    }.fold(
-        onSuccess = { SculkResult.success(it) },
-        onFailure = { SculkResult.failure("transaction failed: ${it.message}", it) },
-    )
+    }
 
-    /** Closes distributed caches and the underlying connection pool. Call from your plugin's `onDisable`. */
     override fun close() {
-        managedHandles.forEach { runCatching { it.close() } }
-        managedHandles.clear()
-        if (dataSource is AutoCloseable) dataSource.close()
+        if (owned) (dataSource as? HikariDataSource)?.close()
     }
 
     public companion object {
-        /**
-         * Creates a [SculkData] instance, loading storage config from [dataFolder]/storage.yml.
-         * The file is written with defaults if it does not exist.
-         */
-        @JvmStatic
-        @SculkStable
-        public fun create(dataFolder: File, logger: Logger): SculkData {
-            val configFile = File(dataFolder, "storage.yml")
-            YamlMapper.writeDefaults(configFile, StorageConfig::class)
-            val config = YamlMapper.load(configFile, StorageConfig::class)
-            val violations = YamlMapper.validate(config)
-            if (violations.isNotEmpty()) {
-                violations.forEach { logger.warning("[SculkData] storage.yml: $it") }
+        /** Opens the backend described by [settings]. */
+        @SculkInternal
+        public fun open(settings: StorageSettings, dataFolder: File, logger: Logger): SculkResult<SculkData> {
+            val dialect = runCatching { SqlDialect.of(settings.backend) }.getOrElse {
+                return SculkResult.failure("storage.yml names an unknown backend '${settings.backend}'.", it)
             }
-            val dataSource = ConnectionPool.create(config, dataFolder)
-            logger.info("[SculkData] Connected (${config.type})")
-            return SculkData(dataSource, config)
+
+            return SculkResult.catching("open the ${settings.backend} database") {
+                val config = HikariConfig().apply {
+                    jdbcUrl = urlFor(dialect, settings, dataFolder)
+                    // Naming the driver is not optional however redundant it looks. Paper loads a
+                    // plugin's libraries into an isolated classloader, and DriverManager discovers
+                    // drivers through a ServiceLoader that cannot see into it — so a driver that
+                    // is present and downloaded still yields "No suitable driver". Given the class
+                    // name, Hikari instantiates it directly and skips DriverManager entirely.
+                    driverClassName = driverFor(dialect)
+                    // SQLite is a single file with a single writer; more connections only produce
+                    // lock contention.
+                    maximumPoolSize = if (dialect == SqlDialect.SQLITE) 1 else settings.poolSize
+                    if (dialect != SqlDialect.SQLITE) {
+                        username = settings.remote.username
+                        password = settings.remote.password
+                    }
+                    poolName = "sculk-data"
+                }
+
+                val source = HikariDataSource(config)
+                // Taking a connection now means a wrong password fails at boot, next to the config
+                // that caused it, rather than on the first player login twenty minutes later.
+                source.connection.use { require(it.isValid(5)) { "the database did not answer" } }
+                SculkData(source, dialect, logger)
+            }
         }
 
-        /**
-         * Creates a [SculkData] instance with a pre-configured [DataSource].
-         * Useful for testing with an H2 in-memory database.
-         */
-        @JvmStatic
-        @SculkStable
-        public fun withDataSource(dataSource: DataSource, dialect: studio.sculk.data.driver.SqlDialect): SculkData =
-            SculkData(dataSource, StorageConfig(type = dialect.name.lowercase()))
+        /** Wraps an existing [dataSource]. For tests, and for plugins that own their own pool. */
+        @SculkInternal
+        public fun using(dataSource: DataSource, dialect: SqlDialect, logger: Logger): SculkData =
+            SculkData(dataSource, dialect, logger, owned = false)
+
+        private fun urlFor(dialect: SqlDialect, settings: StorageSettings, dataFolder: File): String {
+            val remote = settings.remote
+            return when (dialect) {
+                SqlDialect.SQLITE -> "jdbc:sqlite:${File(dataFolder, settings.file).absolutePath}"
+
+                SqlDialect.MYSQL ->
+                    "jdbc:mariadb://${remote.host}:${remote.port}/${remote.database}?useSSL=${remote.useSsl}"
+
+                SqlDialect.POSTGRES ->
+                    "jdbc:postgresql://${remote.host}:${remote.port}/${remote.database}?ssl=${remote.useSsl}"
+            }
+        }
+
+        private fun driverFor(dialect: SqlDialect): String = when (dialect) {
+            SqlDialect.SQLITE -> "org.sqlite.JDBC"
+            SqlDialect.MYSQL -> "org.mariadb.jdbc.Driver"
+            SqlDialect.POSTGRES -> "org.postgresql.Driver"
+        }
     }
 }
