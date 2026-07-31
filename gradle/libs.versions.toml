@@ -20,7 +20,7 @@ h2                = "2.4.240"
 # The ktlint CLI/engine version, distinct from the Gradle plugin that drives it.
 ktlint            = "1.8.0"
 ktlint-gradle     = "14.2.0"
-binary-compat     = "0.17.0"
+binary-compat     = "0.18.1"
 jmh               = "1.37"
 jmh-plugin        = "0.7.3"
 shadow            = "9.6.1"
