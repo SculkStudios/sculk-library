@@ -1,4 +1,4 @@
-package studio.sculk.tasks
+package studio.sculk.task
 
 import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkStable

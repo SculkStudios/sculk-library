@@ -1,4 +1,4 @@
-package studio.sculk.tasks
+package studio.sculk.task
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows

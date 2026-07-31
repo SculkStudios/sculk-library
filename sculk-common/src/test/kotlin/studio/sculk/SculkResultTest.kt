@@ -3,103 +3,99 @@ package studio.sculk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class SculkResultTest {
     @Test
-    fun `success holds value`() {
-        val result = SculkResult.success("hello")
-        assertTrue(result.isSuccess)
-        assertEquals("hello", result.getOrNull())
+    fun `catching turns a thrown exception into a failure describing the action`() {
+        val result = SculkResult.catching("read tools.yml") { error("file is locked") }
+
+        val failure = result as SculkResult.Failure
+        assertEquals("Failed to read tools.yml: file is locked", failure.message)
+        assertTrue(failure.cause is IllegalStateException)
     }
 
     @Test
-    fun `failure holds message`() {
-        val result = SculkResult.failure("something went wrong")
-        assertTrue(result.isFailure)
-        assertFalse(result.isSuccess)
-        assertNull(result.getOrNull())
+    fun `catching describes the exception type when it carries no message`() {
+        val result = SculkResult.catching("parse the id") { throw NullPointerException() }
+
+        assertEquals("Failed to parse the id: NullPointerException", (result as SculkResult.Failure).message)
     }
 
     @Test
-    fun `getOrDefault returns value on success`() {
-        val result = SculkResult.success(42)
-        assertEquals(42, result.getOrDefault(0))
+    fun `catching passes a successful value straight through`() {
+        assertEquals(7, SculkResult.catching("count rows") { 7 }.getOrNull())
     }
 
     @Test
-    fun `getOrDefault returns default on failure`() {
-        val result: SculkResult<Int> = SculkResult.failure("oops")
-        assertEquals(0, result.getOrDefault(0))
+    fun `ok returns the same instance every time`() {
+        assertSame(SculkResult.ok(), SculkResult.ok())
     }
 
     @Test
-    fun `failure carries optional cause`() {
-        val cause = RuntimeException("root cause")
-        val result = SculkResult.failure("failed", cause)
-        assertEquals(cause, (result as SculkResult.Failure).cause)
-    }
+    fun `map is not invoked on a failure`() {
+        var invoked = false
 
-    // --- Java-facing member methods (must be safe on the Failure : SculkResult<Nothing> arm) ---
+        val result: SculkResult<Int> = SculkResult.failure("no row")
+        val mapped = result.map {
+            invoked = true
+            it * 2
+        }
 
-    @Test
-    fun `member isSuccess and isFailure`() {
-        assertTrue(SculkResult.success(1).isSuccess())
-        assertFalse(SculkResult.success(1).isFailure())
-        val failure: SculkResult<Int> = SculkResult.failure("x")
-        assertTrue(failure.isFailure())
-        assertFalse(failure.isSuccess())
+        assertFalse(invoked, "map must not run its transform on a failure")
+        assertEquals("no row", (mapped as SculkResult.Failure).message)
     }
 
     @Test
-    fun `member getOrNull on typed failure returns null`() {
-        val failure: SculkResult<Int> = SculkResult.failure("x")
-        assertNull(failure.getOrNull())
-        assertEquals(7, SculkResult.success(7).getOrNull())
+    fun `flatMap short-circuits on the first failure`() {
+        val result: SculkResult<Int> = SculkResult
+            .success(1)
+            .flatMap { SculkResult.failure("stopped here") }
+            .flatMap { error("must not be reached") }
+
+        assertEquals("stopped here", (result as SculkResult.Failure).message)
     }
 
     @Test
-    fun `getOrThrow returns value on success`() {
-        assertEquals(42, SculkResult.success(42).getOrThrow())
+    fun `getOrElse computes the fallback from the failure message`() {
+        val result: SculkResult<String> = SculkResult.failure("absent")
+
+        assertEquals("fallback for absent", result.getOrElse { message, _ -> "fallback for $message" })
     }
 
     @Test
-    fun `getOrThrow throws on typed failure`() {
-        val failure: SculkResult<Int> = SculkResult.failure("boom")
-        assertThrows(IllegalStateException::class.java) { failure.getOrThrow() }
+    fun `recover replaces a failure with a success`() {
+        val recovered: SculkResult<Int> = SculkResult.failure("no row")
+
+        val value = recovered.recover { _, _ -> 0 }
+
+        assertTrue(value.isSuccess)
+        assertEquals(0, value.getOrNull())
     }
 
     @Test
-    fun `ifSuccess runs only on success and returns this`() {
-        var seen: Int? = null
-        val success = SculkResult.success(5)
-        val returned = success.ifSuccess { seen = it }
-        assertEquals(5, seen)
-        assertEquals(success, returned)
-
-        seen = null
-        val failure: SculkResult<Int> = SculkResult.failure("x")
-        failure.ifSuccess { seen = it }
-        assertNull(seen)
+    fun `fold collapses both arms`() {
+        assertEquals("ok:3", SculkResult.success(3).fold({ "ok:$it" }, { message, _ -> "err:$message" }))
+        assertEquals("err:gone", SculkResult.failure("gone").fold({ "ok:$it" }, { message, _ -> "err:$message" }))
     }
 
     @Test
-    fun `ifFailure runs only on failure with message and cause`() {
-        var message: String? = null
-        val cause = RuntimeException("root")
-        val failure: SculkResult<Int> = SculkResult.failure("nope", cause)
-        val returned =
-            failure.ifFailure { msg, err ->
-                message = msg
-                assertEquals(cause, err)
-            }
-        assertEquals("nope", message)
-        assertEquals(failure, returned)
+    fun `getOrNull is null on a failure`() {
+        assertNull(SculkResult.failure("gone").getOrNull())
+    }
 
-        message = null
-        SculkResult.success(1).ifFailure { msg, _ -> message = msg }
-        assertNull(message)
+    @Test
+    fun `onSuccess and onFailure return the receiver so they can be chained`() {
+        val seen = mutableListOf<String>()
+
+        val result = SculkResult
+            .success("value")
+            .onSuccess { seen += "success" }
+            .onFailure { _, _ -> seen += "failure" }
+
+        assertEquals(listOf("success"), seen)
+        assertEquals("value", result.getOrNull())
     }
 }

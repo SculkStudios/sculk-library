@@ -4,206 +4,126 @@ import org.bukkit.Location
 import org.bukkit.entity.Entity
 import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkStable
-import java.util.concurrent.CompletableFuture
 
 /**
- * Abstraction over Paper's scheduler for testability and Folia compatibility.
+ * Where and when work runs. Every task Sculk schedules goes through this.
  *
- * All scheduling done by Sculk Studio modules goes through this interface.
- * The platform implementation ([studio.sculk.platform.PaperScheduler]) automatically
- * detects whether the server is running Folia (or a Folia fork such as Canvas) and
- * routes every call to the correct scheduler.
+ * ### Why the region overloads have no defaults
  *
- * ### Thread model
+ * On Paper there is one main thread and the region overloads collapse onto it. On Folia the
+ * server is split into regions that tick on **different threads at the same time**, and touching
+ * a player from the wrong one is a data race that surfaces as duplicated items and dropped
+ * chunks rather than as an exception.
  *
- * - **Paper** — `runSync*` runs on the single main thread; entity/location context is ignored.
- * - **Folia / Canvas** — `runSync` runs on the global region thread; `runSync(entity, …)` runs
- *   on the thread owning the entity's chunk; `runSync(location, …)` runs on the thread owning
- *   that chunk. Use the entity/location overloads whenever the task touches a specific player
- *   or world position.
+ * So [runSync] with an [Entity] or [Location], and every `owns…` query, are declared abstract.
+ * They previously defaulted to the global thread and to `false`, which meant an implementation
+ * that had not thought about regions compiled cleanly and raced in production. Now it does not
+ * compile.
+ *
+ * ### Choosing a target
+ *
+ * | Work touches… | Use |
+ * | --- | --- |
+ * | a player, mob, or their inventory | [runSync] with the entity |
+ * | a block, chunk, or world position | [runSync] with the location |
+ * | server-wide state, nothing positional | [runSync] with no target |
+ * | a database, HTTP, files — never the Paper API | [runAsync] |
+ *
+ * ### Tick arguments
+ *
+ * Implementations must accept `delayTicks <= 0` as "next tick" and floor `periodTicks` to 1.
+ * Folia's schedulers throw on non-positive values, and a caller computing a delay from a config
+ * value should get a scheduled task rather than an exception.
+ *
+ * Every method returns a [SculkHandle] that cancels the task.
  */
 @SculkStable
 public interface SculkScheduler {
-    // -------------------------------------------------------------------------
-    // Global sync — "main thread" equivalent
-    // -------------------------------------------------------------------------
-
-    /** Runs [task] on the main/global-region thread on the next available tick. */
+    /** Runs [task] on the main/global-region thread on the next tick. */
+    @SculkStable
     public fun runSync(task: Runnable): SculkHandle
 
-    /** Runs [task] on the main/global-region thread after [delayTicks]. */
+    @SculkStable
     public fun runSyncDelayed(delayTicks: Long, task: Runnable): SculkHandle
 
-    /** Runs [task] on the main/global-region thread every [periodTicks], starting after [delayTicks]. */
+    @SculkStable
     public fun runSyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle
 
-    // -------------------------------------------------------------------------
-    // Entity-region sync — runs on the thread owning the entity's chunk
-    // On Paper, entity context is ignored and falls back to global sync.
-    // -------------------------------------------------------------------------
+    /**
+     * Runs [task] on the thread owning [entity]'s chunk.
+     *
+     * The only safe way to open an inventory, send a packet, or modify entity state for a
+     * specific player from code that is not already on that entity's thread.
+     */
+    @SculkStable
+    public fun runSync(entity: Entity, task: Runnable): SculkHandle
+
+    @SculkStable
+    public fun runSyncDelayed(entity: Entity, delayTicks: Long, task: Runnable): SculkHandle
+
+    @SculkStable
+    public fun runSyncRepeating(entity: Entity, delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle
+
+    /** Runs [task] on the thread owning the chunk at [location]. Use for block and world edits. */
+    @SculkStable
+    public fun runSync(location: Location, task: Runnable): SculkHandle
+
+    @SculkStable
+    public fun runSyncDelayed(location: Location, delayTicks: Long, task: Runnable): SculkHandle
+
+    @SculkStable
+    public fun runSyncRepeating(location: Location, delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle
+
+    /** True when the calling thread already owns [entity] and may touch its API directly. */
+    @SculkStable
+    public fun ownsThread(entity: Entity): Boolean
+
+    /** True when the calling thread already owns the region containing [location]. */
+    @SculkStable
+    public fun ownsThread(location: Location): Boolean
+
+    /** True when the calling thread is the main/global-region thread. */
+    @SculkStable
+    public fun ownsGlobalThread(): Boolean
 
     /**
-     * Runs [task] on the thread owning [entity]'s current chunk.
+     * Runs [task] inline when the caller already owns [entity]'s thread, otherwise schedules it.
      *
-     * On Folia/Canvas this uses the entity scheduler — the only safe way to open inventories,
-     * send packets, or modify entity state from async code.
-     * On Paper this is identical to [runSync].
-     *
-     * ```kotlin
-     * sculk.scheduler.runAsync {
-     *     val result = repo.find(player.uniqueId)
-     *     sculk.scheduler.runSync(player) {
-     *         // safe to call player API here on both Paper and Folia
-     *         player.sendMessage("Coins: ${result.getOrNull()?.coins}")
-     *     }
-     * }
-     * ```
+     * For work already on the right thread that wants to stay in the same tick — pushing
+     * per-player packets from a tick loop, where a scheduled task per packet would mean
+     * thousands of tasks and a tick of latency to achieve nothing.
      */
-    public fun runSync(entity: Entity, task: Runnable): SculkHandle = runSync(task)
-
-    /**
-     * Runs [task] on the thread owning [entity]'s chunk after [delayTicks].
-     *
-     * On Paper this is identical to [runSyncDelayed].
-     */
-    public fun runSyncDelayed(entity: Entity, delayTicks: Long, task: Runnable): SculkHandle = runSyncDelayed(delayTicks, task)
-
-    /**
-     * Runs [task] on the thread owning [entity]'s chunk every [periodTicks], starting after [delayTicks].
-     *
-     * On Paper this is identical to [runSyncRepeating].
-     */
-    public fun runSyncRepeating(entity: Entity, delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle =
-        runSyncRepeating(delayTicks, periodTicks, task)
-
-    // -------------------------------------------------------------------------
-    // Location-region sync — runs on the thread owning the location's chunk
-    // On Paper, location context is ignored and falls back to global sync.
-    // -------------------------------------------------------------------------
-
-    /**
-     * Runs [task] on the thread owning the chunk at [location].
-     *
-     * On Folia/Canvas this uses the region scheduler — the correct choice for block
-     * modifications and location-specific work.
-     * On Paper this is identical to [runSync].
-     */
-    public fun runSync(location: Location, task: Runnable): SculkHandle = runSync(task)
-
-    /**
-     * Runs [task] on the thread owning the chunk at [location] after [delayTicks].
-     *
-     * On Paper this is identical to [runSyncDelayed].
-     */
-    public fun runSyncDelayed(location: Location, delayTicks: Long, task: Runnable): SculkHandle = runSyncDelayed(delayTicks, task)
-
-    /**
-     * Runs [task] on the thread owning the chunk at [location] every [periodTicks], starting after [delayTicks].
-     *
-     * On Paper this is identical to [runSyncRepeating].
-     */
-    public fun runSyncRepeating(location: Location, delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle =
-        runSyncRepeating(delayTicks, periodTicks, task)
-
-    // -------------------------------------------------------------------------
-    // Immediate sync — run inline when the caller already owns the thread
-    // -------------------------------------------------------------------------
-
-    /**
-     * True when the current thread already owns [entity], so its API may be touched directly.
-     *
-     * Implementations that cannot tell return false, which only ever costs a scheduled task.
-     */
-    public fun ownsThread(entity: Entity): Boolean = false
-
-    /** True when the current thread already owns the region containing [location]. */
-    public fun ownsThread(location: Location): Boolean = false
-
-    /** True when the current thread is the main/global-region thread. */
-    public fun ownsGlobalThread(): Boolean = false
-
-    /**
-     * Runs [task] right now if the caller already owns [entity]'s thread, otherwise schedules it
-     * like [runSync].
-     *
-     * For work that is *already* on the right thread and wants to stay in the same tick — pushing
-     * per-player packets from a tick loop, for instance, where a scheduled task per packet would
-     * mean thousands of tasks and a tick of latency for no benefit. The returned handle cancels
-     * nothing when the task ran inline.
-     */
+    @SculkStable
     public fun runNow(entity: Entity, task: Runnable): SculkHandle = if (ownsThread(entity)) {
         task.run()
-        SculkHandle {}
+        SculkHandle.NONE
     } else {
         runSync(entity, task)
     }
 
-    /** Runs [task] right now if the caller owns [location]'s region, otherwise schedules it. */
+    @SculkStable
     public fun runNow(location: Location, task: Runnable): SculkHandle = if (ownsThread(location)) {
         task.run()
-        SculkHandle {}
+        SculkHandle.NONE
     } else {
         runSync(location, task)
     }
 
-    /** Runs [task] right now if the caller is on the main/global-region thread, otherwise schedules it. */
+    @SculkStable
     public fun runNow(task: Runnable): SculkHandle = if (ownsGlobalThread()) {
         task.run()
-        SculkHandle {}
+        SculkHandle.NONE
     } else {
         runSync(task)
     }
 
-    // -------------------------------------------------------------------------
-    // Async — off the main/region thread entirely
-    // -------------------------------------------------------------------------
-
-    /**
-     * Runs [task] asynchronously (off the main thread).
-     * Never interact with the Paper API from an async task.
-     */
+    /** Runs [task] off the main thread. Never touch the Paper API from inside it. */
+    @SculkStable
     public fun runAsync(task: Runnable): SculkHandle
 
-    /** Runs [task] asynchronously after [delayTicks]. */
+    @SculkStable
     public fun runAsyncDelayed(delayTicks: Long, task: Runnable): SculkHandle
 
-    /**
-     * Runs [task] asynchronously on a repeating schedule, starting after [delayTicks]
-     * and repeating every [periodTicks].
-     *
-     * Never interact with the Paper API from inside the task.
-     * Use for background work: database syncs, HTTP calls, heartbeat tasks.
-     *
-     * ```kotlin
-     * val handle = scheduler.runAsyncRepeating(0L, 20L) {
-     *     database.flushPendingWrites()
-     * }
-     * // Stop later:
-     * handle.close()
-     * ```
-     */
+    @SculkStable
     public fun runAsyncRepeating(delayTicks: Long, periodTicks: Long, task: Runnable): SculkHandle
-
-    /** Runs [task] async and completes a [CompletableFuture] with its result. */
-    public fun <T> runAsyncResult(task: () -> T): CompletableFuture<T> {
-        val future = CompletableFuture<T>()
-        runAsync {
-            runCatching(task)
-                .onSuccess(future::complete)
-                .onFailure(future::completeExceptionally)
-        }
-        return future
-    }
-
-    /** Runs [async] off-thread, then hands the result back to the sync context for [entity]. */
-    public fun <T> asyncThenSync(entity: Entity, async: () -> T, sync: (T) -> Unit): SculkHandle = runAsync {
-        val result = async()
-        runSync(entity) { sync(result) }
-    }
-
-    /** Runs [async] off-thread, then hands the result back to the sync context for [location]. */
-    public fun <T> asyncThenSync(location: Location, async: () -> T, sync: (T) -> Unit): SculkHandle = runAsync {
-        val result = async()
-        runSync(location) { sync(result) }
-    }
 }
