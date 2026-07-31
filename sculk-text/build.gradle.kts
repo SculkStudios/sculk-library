@@ -1,21 +1,22 @@
 plugins {
-    id("sculk.paper-plugin")
+    id("sculk.module")
 }
 
-description = "Sculk Studio — localization: per-player locale, message bundles, MiniMessage templates"
-
-// Allow framework internals (YamlMapper) within this module.
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    compilerOptions {
-        freeCompilerArgs.add("-opt-in=studio.sculk.annotation.SculkInternal")
-    }
-}
+description = "Sculk Studio — theme, message rendering, text measurement and per-player localisation"
 
 dependencies {
     api(project(":sculk-common"))
-    api(project(":sculk-adventure"))
-    implementation(project(":sculk-config"))
-    testImplementation(libs.paper.api)
-    testImplementation(libs.junit.jupiter)
+
+    // Adventure ships inside Paper; declared so the module still compiles standalone.
+    compileOnly(libs.adventure.api)
+    compileOnly(libs.adventure.mini)
+
+    // The bundle loader parses YAML directly rather than going through sculk-config: a dependency
+    // that way round would put the whole config system on the compile classpath of gui, items and
+    // commands, none of which want it.
+    implementation(libs.kaml)
+
+    testImplementation(libs.adventure.api)
+    testImplementation(libs.adventure.mini)
     testImplementation(libs.mockito.kotlin)
 }
