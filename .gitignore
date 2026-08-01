@@ -161,3 +161,6 @@ staging/
 
 # JMH results
 benchmarks/results/
+
+# Local test server created by `gradlew runServer`
+examples/*/run/
