@@ -1,6 +1,7 @@
 plugins {
     id("sculk.example")
     alias(libs.plugins.shadow)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 description = "Sculk Studio — economy-plugin example"

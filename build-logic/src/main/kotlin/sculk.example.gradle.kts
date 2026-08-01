@@ -35,3 +35,11 @@ ktlint {
     version = version("ktlint")
     android = false
 }
+
+// paper-plugin.yml carries ${version}; without this the server reports the plugin's version
+// literally as "${version}", which is what a live boot showed.
+tasks.processResources {
+    val props = mapOf("version" to project.version)
+    inputs.properties(props)
+    filesMatching("paper-plugin.yml") { expand(props) }
+}
