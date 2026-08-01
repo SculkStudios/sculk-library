@@ -5,6 +5,7 @@ description: A command tree as data, compiled to Brigadier by one adapter.
 
 ```kotlin
 override fun setup() {
+    // command { } builds the command; the leading + registers it with the plugin.
     +command("kit") {
         description = "Claim a kit."
         permission = "myplugin.kit"
@@ -22,7 +23,22 @@ override fun setup() {
 }
 ```
 
-`+command(…)` registers it. Declare commands anywhere in `setup()` — the order does not matter.
+## The leading `+`
+
+`command("kit") { … }` **builds** a command and hands it back as a `CommandSpec`. It does not
+register anything on its own. The `+` in front is what gives it to the plugin:
+
+```kotlin
+val spec = command("kit") { … }   // built, not registered — nothing happens in game
++spec                             // now the server has it
+```
+
+They are separate so a spec can be built anywhere — in a test with no server, in a helper, or in a
+list assembled from config at runtime — and only registered where a plugin exists to own it. Use
+`commands(a, b, c)` to register several at once, and `declaredCommands` to read back what was
+registered.
+
+Declare commands anywhere in `setup()` — the order does not matter.
 
 ## Spec first, Brigadier second
 

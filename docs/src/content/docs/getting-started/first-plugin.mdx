@@ -12,6 +12,7 @@ which CI compiles against the real API, so it cannot quietly drift.
 ```kotlin
 class MyPlugin : SculkPlugin() {
     override fun setup() {
+        // command { } builds the command; the leading + registers it with the plugin.
         +command("hello") {
             description = "Says hello."
             player { reply("<green>Hello, <name>.", "name" to player!!.name) }
@@ -19,6 +20,12 @@ class MyPlugin : SculkPlugin() {
     }
 }
 ```
+
+:::note[Why the `+`?]
+`command("hello") { … }` builds a command and gives it back to you; the `+` is what registers it.
+Keeping them separate means a command can be built in a test, or from config at runtime, without a
+server anywhere. [More on that](/commands/overview/#the-leading-).
+:::
 
 ```yaml
 # src/main/resources/paper-plugin.yml

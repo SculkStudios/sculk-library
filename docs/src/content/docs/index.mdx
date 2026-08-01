@@ -18,20 +18,6 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-```kotlin
-class MyPlugin : SculkPlugin() {
-    override val theme = SculkTheme(
-        mapOf("value" to ThemeStyle.Gradient(listOf("#8be9fd", "#50fa7b"))),
-    )
-
-    override fun setup() {
-        +command("balance") {
-            player { reply("<value><n></value> coins.", "n" to economy.of(player!!).toString()) }
-        }
-    }
-}
-```
-
 <CardGrid>
   <Card title="Kotlin, not Kotlin-flavoured Java" icon="seti:kotlin">
     Reified generics, default arguments, `suspend` functions and receiver lambdas are the API, not a
@@ -50,6 +36,33 @@ class MyPlugin : SculkPlugin() {
     that has not thought about threads will not compile.
   </Card>
 </CardGrid>
+
+## What it looks like
+
+A theme, a typed config and a command — the whole plugin.
+
+```kotlin
+class MyPlugin : SculkPlugin() {
+    // Messages are written against meaning, not colour: changing what "value" looks like is one
+    // edit here rather than a search for every coloured string.
+    override val theme = SculkTheme(
+        mapOf("value" to ThemeStyle.Gradient(listOf("#8be9fd", "#50fa7b"))),
+    )
+
+    override fun setup() {
+        val settings = sculk.config.load<Settings>().getOrThrow()
+
+        // command { } builds the command; the leading + registers it with the plugin.
+        +command("gifts") {
+            description = "Says how many gifts a player gets."
+            executes {
+                // count goes in as a value, never substituted into the template.
+                reply("<value><count></value> per player.", "count" to settings.giftAmount.toString())
+            }
+        }
+    }
+}
+```
 
 ## Start here
 
