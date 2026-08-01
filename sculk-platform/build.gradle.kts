@@ -23,4 +23,7 @@ dependencies {
     testImplementation(testFixtures(project(":sculk-common")))
     testImplementation(libs.mockbukkit)
     testImplementation(libs.mockito.kotlin)
+    // Stability markers are BINARY-retention, so they exist in the class file but not at runtime.
+    // Reading them needs a class-file reader; StabilityMarkerTest is the only thing that uses this.
+    testImplementation(libs.asm)
 }

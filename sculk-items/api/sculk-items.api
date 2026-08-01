@@ -123,16 +123,16 @@ public final class studio/sculk/items/ItemKeys {
 	public final fun of (Ljava/lang/String;)Lorg/bukkit/NamespacedKey;
 }
 
-public final class studio/sculk/items/SculkItems {
-	public static final fun skull (Lkotlin/jvm/functions/Function1;)Lorg/bukkit/inventory/ItemStack;
-	public static synthetic fun skull$default (Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/bukkit/inventory/ItemStack;
-}
-
 public final class studio/sculk/items/SkullItemBuilder : studio/sculk/items/ItemBuilder {
 	public fun <init> ()V
 	public fun build ()Lorg/bukkit/inventory/ItemStack;
 	public final fun owner (Ljava/lang/String;)V
 	public final fun owner (Ljava/util/UUID;)V
 	public final fun owner (Lorg/bukkit/OfflinePlayer;)V
+}
+
+public final class studio/sculk/items/SkullItemBuilderKt {
+	public static final fun skull (Lkotlin/jvm/functions/Function1;)Lorg/bukkit/inventory/ItemStack;
+	public static synthetic fun skull$default (Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/bukkit/inventory/ItemStack;
 }
 

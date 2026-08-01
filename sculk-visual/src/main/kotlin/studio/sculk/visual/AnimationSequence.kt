@@ -1,5 +1,3 @@
-@file:JvmName("SculkSequences")
-
 package studio.sculk.visual
 
 import studio.sculk.SculkHandle

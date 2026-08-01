@@ -1,5 +1,3 @@
-@file:JvmName("SculkSounds")
-
 package studio.sculk.visual
 
 import org.bukkit.Location

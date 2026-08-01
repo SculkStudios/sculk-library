@@ -41,3 +41,25 @@ jobs:
         with:
           name: test-reports
           path: "**/build/reports/tests/"
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install
+        working-directory: docs
+        run: bun install --frozen-lockfile
+
+      # The docs are a product surface and every page carries compilable snippets. Without this a
+      # page referencing a deleted API stays wrong until a user finds it, which is the worst way to
+      # learn that a rename was incomplete.
+      - name: Build docs
+        working-directory: docs
+        run: bun run build

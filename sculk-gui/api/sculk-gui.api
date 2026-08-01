@@ -98,6 +98,11 @@ public final class studio/sculk/gui/GuiItemBuilder {
 	public final fun stack (Lorg/bukkit/inventory/ItemStack;)V
 }
 
+public final class studio/sculk/gui/GuiKt {
+	public static final fun confirmMenu (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/gui/Gui;
+	public static final fun gui (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/gui/Gui;
+}
+
 public final class studio/sculk/gui/GuiSession {
 	public static final field MILLIS_PER_TICK J
 	public final fun close ()V
@@ -127,6 +132,11 @@ public final class studio/sculk/gui/GuiSlots {
 	public final fun row (II)Ljava/util/List;
 }
 
+public final class studio/sculk/gui/GuiSlotsKt {
+	public static final fun border (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lstudio/sculk/gui/GuiBorderStyle;Ljava/util/Set;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun border$default (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lstudio/sculk/gui/GuiBorderStyle;Ljava/util/Set;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
 public final class studio/sculk/gui/GuiState {
 	public fun <init> ()V
 	public final fun clear ()V
@@ -149,15 +159,5 @@ public final class studio/sculk/gui/PaginationBuilder {
 public final class studio/sculk/gui/PaginationConfig {
 	public fun <init> (Ljava/util/List;)V
 	public final fun getSlots ()Ljava/util/List;
-}
-
-public final class studio/sculk/gui/SculkGui {
-	public static final fun confirmMenu (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/gui/Gui;
-	public static final fun gui (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/gui/Gui;
-}
-
-public final class studio/sculk/gui/SculkGuiSlots {
-	public static final fun border (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lstudio/sculk/gui/GuiBorderStyle;Ljava/util/Set;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun border$default (Lstudio/sculk/gui/GuiBuilder;Lorg/bukkit/Material;Lstudio/sculk/gui/GuiBorderStyle;Ljava/util/Set;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 }
 

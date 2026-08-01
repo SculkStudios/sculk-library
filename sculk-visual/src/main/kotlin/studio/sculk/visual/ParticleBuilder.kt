@@ -1,5 +1,3 @@
-@file:JvmName("SculkParticles")
-
 package studio.sculk.visual
 
 import org.bukkit.Location

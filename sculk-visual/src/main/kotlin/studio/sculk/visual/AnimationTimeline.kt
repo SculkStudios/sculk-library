@@ -1,5 +1,3 @@
-@file:JvmName("SculkTimelines")
-
 package studio.sculk.visual
 
 import studio.sculk.SculkHandle

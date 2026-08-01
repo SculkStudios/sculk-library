@@ -1,5 +1,3 @@
-@file:JvmName("SculkGuiSlots")
-
 package studio.sculk.gui
 
 import org.bukkit.Material
