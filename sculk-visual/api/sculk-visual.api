@@ -2,8 +2,16 @@ public final class studio/sculk/visual/AnimationSequence {
 	public final fun start (Lstudio/sculk/scheduler/SculkScheduler;)Lstudio/sculk/SculkHandle;
 }
 
+public final class studio/sculk/visual/AnimationSequenceKt {
+	public static final fun sequence (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/AnimationSequence;
+}
+
 public final class studio/sculk/visual/AnimationTimeline {
 	public final fun start (Lstudio/sculk/scheduler/SculkScheduler;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/visual/AnimationTimelineKt {
+	public static final fun timeline (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/AnimationTimeline;
 }
 
 public abstract interface class studio/sculk/visual/Hologram {
@@ -93,6 +101,10 @@ public final class studio/sculk/visual/ParticleBuilder {
 	public final fun spawn ()V
 }
 
+public final class studio/sculk/visual/ParticleBuilderKt {
+	public static final fun particle (Lorg/bukkit/Particle;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/ParticleBuilder;
+}
+
 public final class studio/sculk/visual/ParticleEffectDescriptor {
 	public fun <init> (Ljava/lang/String;IDDDD)V
 	public synthetic fun <init> (Ljava/lang/String;IDDDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -116,23 +128,6 @@ public final class studio/sculk/visual/ParticleEffectDescriptor {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class studio/sculk/visual/SculkParticles {
-	public static final fun particle (Lorg/bukkit/Particle;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/ParticleBuilder;
-}
-
-public final class studio/sculk/visual/SculkSequences {
-	public static final fun sequence (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/AnimationSequence;
-}
-
-public final class studio/sculk/visual/SculkSounds {
-	public static final fun sound (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/SoundBuilder;
-	public static final fun sound (Lorg/bukkit/Sound;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/SoundBuilder;
-}
-
-public final class studio/sculk/visual/SculkTimelines {
-	public static final fun timeline (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/AnimationTimeline;
-}
-
 public final class studio/sculk/visual/SequenceBuilder {
 	public fun <init> ()V
 	public final fun delay (I)V
@@ -154,6 +149,11 @@ public final class studio/sculk/visual/SoundBuilder {
 public final class studio/sculk/visual/SoundBuilder$Companion {
 	public final fun of (Lorg/bukkit/Sound;)Lstudio/sculk/visual/SoundBuilder;
 	public final fun ofKey (Ljava/lang/String;)Lstudio/sculk/visual/SoundBuilder;
+}
+
+public final class studio/sculk/visual/SoundBuilderKt {
+	public static final fun sound (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/SoundBuilder;
+	public static final fun sound (Lorg/bukkit/Sound;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/visual/SoundBuilder;
 }
 
 public final class studio/sculk/visual/SoundEffectDescriptor {

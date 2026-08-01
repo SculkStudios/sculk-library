@@ -1,4 +1,4 @@
-public final class studio/sculk/series/SculkBlocks {
+public final class studio/sculk/series/SculkBlocksKt {
 	public static final fun calibratedSculkSensorAt (Lorg/bukkit/Location;)Lorg/bukkit/block/CalibratedSculkSensor;
 	public static final fun getSCULK_BLOCKS ()Ljava/util/Set;
 	public static final fun isSculkBlock (Lorg/bukkit/Material;)Z

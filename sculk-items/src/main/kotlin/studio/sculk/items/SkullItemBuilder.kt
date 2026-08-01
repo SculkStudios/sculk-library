@@ -1,4 +1,3 @@
-@file:JvmName("SculkItems")
 @file:JvmMultifileClass
 
 package studio.sculk.items

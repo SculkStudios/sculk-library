@@ -1,5 +1,3 @@
-@file:JvmName("SculkGui")
-
 package studio.sculk.gui
 
 import org.bukkit.Bukkit

@@ -1,5 +1,3 @@
-@file:JvmName("SculkBlocks")
-
 package studio.sculk.series
 
 import org.bukkit.Location
