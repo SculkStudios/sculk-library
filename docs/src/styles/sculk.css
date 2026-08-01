@@ -1,5 +1,8 @@
-/* Sculk Studio — design system overrides for Starlight
- * Background: #050A0F  Primary surface: #0B1E2D  Accent: #00E5FF
+/* Sculk Studio — theme overrides for Starlight.
+ *
+ * This file is emitted unlayered while Starlight wraps its own CSS in `@layer starlight.*`, and
+ * unlayered declarations beat layered ones whatever the selector specificity. So everything here
+ * wins without `!important`, including against Starlight's `:root[data-theme='light']`.
  */
 
 :root {
@@ -23,57 +26,120 @@
   --sl-color-gray-6:          #0b1e2d;
   --sl-color-black:           #050a0f;
 
-  /* Subtle glow on the accent */
   --sl-shadow-sm: 0 0 8px 0 rgba(0, 229, 255, 0.08);
   --sl-shadow-md: 0 0 16px 0 rgba(0, 229, 255, 0.12);
+
+  /* A glow reads as a lit surface on near-black and as a smudge on white, so light mode turns it
+     off rather than re-tuning the same rgba for a surface it was not designed for. */
+  --sl-glow-link: 0 0 8px rgba(0, 229, 255, 0.35);
+  --sl-surface-card: #0b1e2d;
 }
 
-/* Accent glow on links and interactive elements */
-a:hover,
-a:focus-visible {
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+/* Light mode was never written, so every colour above stayed pinned no matter what the theme
+ * picker said — the toggle flipped `data-theme` and nothing moved. #00e5ff cannot be the accent
+ * here (~1.5:1 on white); #005965 is the same hue darkened, ~8:1 on the page and ~7:1 on the
+ * active-item tint.
+ */
+:root[data-theme='light'] {
+  --sl-color-accent:          #005965;
+  --sl-color-accent-low:      #d9f4f8;
+  --sl-color-accent-high:     #00a6c0;
+
+  --sl-color-bg:              #f7fcfd;
+  --sl-color-bg-nav:          #eef8fa;
+  --sl-color-bg-sidebar:      #eef8fa;
+  --sl-color-hairline:        #cfe8ec;
+  --sl-color-hairline-light:  #e2f2f4;
+  --sl-color-hairline-shade:  #dcedf0;
+
+  --sl-color-white:           #0c1f27;
+  --sl-color-gray-1:          #16323d;
+  --sl-color-gray-2:          #33505c;
+  --sl-color-gray-3:          #4d6e7a;
+  --sl-color-gray-4:          #8fb0ba;
+  --sl-color-gray-5:          #c7dfe4;
+  --sl-color-gray-6:          #e4f2f4;
+  --sl-color-black:           #ffffff;
+
+  --sl-shadow-sm: 0 1px 2px 0 rgba(12, 45, 55, 0.08);
+  --sl-shadow-md: 0 4px 14px 0 rgba(12, 45, 55, 0.10);
+  --sl-glow-link: none;
+  --sl-surface-card: #ffffff;
 }
 
-/* Sidebar active item glow */
-[aria-current='page'],
-[aria-current='page']:hover {
-  color: var(--sl-color-accent) !important;
-  text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+/* The browser default ring is blue and fights the accent. */
+:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
 }
 
-/* Code blocks — slightly lighter surface */
+/* Prose links only. As a bare `a:hover` this glowed on every sidebar, footer and pagination link —
+   fifteen-odd per page — which makes the accent mean nothing. */
+.sl-markdown-content a:hover,
+.sl-markdown-content a:focus-visible,
+.sl-link-button:hover,
+.sl-link-button:focus-visible {
+  text-shadow: var(--sl-glow-link);
+}
+
+/* Starlight fills the current page's row with `--sl-color-text-accent`, which resolves through
+   accent-high to a near-white cyan slab; the old override recoloured only the text, leaving
+   #00e5ff on #66f2ff at 1.15:1. A tint plus an inset marker instead — inset so it cannot shift the
+   row — reads at a glance and keeps the accent on the text where it is legible. */
+#starlight__sidebar [aria-current='page'] {
+  color: var(--sl-color-accent);
+  background-color: var(--sl-color-accent-low);
+  box-shadow: inset 3px 0 0 var(--sl-color-accent);
+}
+
+/* Wide screens get a 7fr/4fr hero grid built to put an image in the second column. There is no
+   image, so that column was simply empty and the wordmark sat against a blank right half with up
+   to 10rem of padding above and below it. */
+@media (min-width: 50rem) {
+  .hero:not(:has(img)):not(:has(.hero-html)) {
+    grid-template-columns: 100%;
+    padding-block: clamp(2rem, calc(1rem + 5vmin), 5rem);
+  }
+
+  .hero:not(:has(img)):not(:has(.hero-html)) .stack {
+    text-align: center;
+  }
+
+  .hero:not(:has(img)):not(:has(.hero-html)) .copy,
+  .hero:not(:has(img)):not(:has(.hero-html)) .actions {
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* One elevated surface shared by code, cards and chrome, rather than letting each pick its own.
+   Text stays near-white: accent-coloured chips put three signals on every identifier in a sentence
+   — colour, border and fill — and prose about an API is mostly identifiers. */
 :not(pre) > code {
-  background: #0f2535;
-  border: 1px solid #1a3a4d;
-  color: #66f2ff;
+  background: var(--sl-color-bg-sidebar);
+  border: 1px solid var(--sl-color-hairline-light);
+  color: var(--sl-color-gray-1);
 }
 
 pre {
-  background: #0a1a28 !important;
-  border: 1px solid #1a3a4d;
-  box-shadow: 0 0 20px 0 rgba(0, 229, 255, 0.06);
+  background: var(--sl-color-bg-nav) !important;
+  border: 1px solid var(--sl-color-hairline);
 }
 
-/* Hero accent line */
-.hero > .sl-flex {
-  border-left: 3px solid var(--sl-color-accent);
-  padding-left: 1.25rem;
-}
-
-/* Cards — always lit, stronger on hover */
-.sl-card {
-  background: #0b1e2d;
-  border: 1px solid rgba(0, 229, 255, 0.18) !important;
-  box-shadow: 0 0 12px 0 rgba(0, 229, 255, 0.06);
+/* These targeted `.sl-card`/`.sl-icon`, which Starlight has never emitted — the real classes are
+   `.card`/`.icon`. Every rule was dead, so each card grid rendered Starlight's stock four-hue icon
+   rotation: purple, orange, green and red icons on a cyan-on-black page. */
+.card {
+  --sl-card-bg: var(--sl-surface-card);
+  --sl-card-border: var(--sl-color-hairline);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.sl-card:hover {
-  border-color: rgba(0, 229, 255, 0.5) !important;
-  box-shadow: 0 0 24px 0 rgba(0, 229, 255, 0.14);
+.card .icon {
+  color: var(--sl-color-accent);
 }
 
-/* Card icon in accent colour */
-.sl-card .sl-icon {
-  color: var(--sl-color-accent);
+.card:hover {
+  --sl-card-border: var(--sl-color-accent);
+  box-shadow: var(--sl-shadow-md);
 }
