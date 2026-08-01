@@ -14,4 +14,6 @@ dependencies {
     api(project(":sculk-series"))
     compileOnly(libs.adventure.api)
     compileOnly(libs.adventure.mini)
+
+    testImplementation(libs.mockbukkit)
 }
