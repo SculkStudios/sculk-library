@@ -81,9 +81,13 @@ A module depends **only on what it uses**. Two edges are load-bearing and easy t
   alternative.** Do not narrate what the code does. No banner comments. No KDoc that restates its
   own identifier (`/** The stack size. */ var amount`). There is no target ratio — a percentage
   produces deleted-but-useful documentation.
-- **Every module that hands out an interface ships a fake for it** in `src/testFixtures`.
-  `FakeScheduler` and `FakeVirtualEntityService` are why gui, hud, visual and data test with no
-  server. If you add an interface consumers implement against, add its fake.
+- **Every interface a consumer *calls* ships a fake for it** in `src/testFixtures` — `FakeScheduler`,
+  `FakeVirtualEntityService`, `FakeRepository`, `FakeHologram`. These are why gui, hud, visual and
+  data test with no server, and they are the framework's answer to "how do I test my plugin".
+  Interfaces consumers *implement* (`ArgumentParser`, `MappingResolver`, `RedisBackend`) need no
+  fake: the consumer writes the implementation, so there is nothing to stand in for.
+  A fake must refuse what it cannot model rather than guess — `FakeRepository` throws without
+  `columnsOf` because silently matching every row makes a wrong filter look correct.
 - **Test names are sentences describing the invariant**, e.g.
   ``fun `a still centred row is redrawn when the widest row moved`()``.
 - **Prefer a real engine to a mock.** The data layer runs against SQLite and H2 in MySQL mode,
