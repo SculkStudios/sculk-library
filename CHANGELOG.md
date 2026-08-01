@@ -70,6 +70,14 @@ having used them. Every module was touched, six were merged or removed, and two 
   never used.
 - **Items** move to `ITEM_MODEL` and `TOOLTIP_DISPLAY`; `ItemFlag` is gone. `item(String)` returns a
   `SculkResult` rather than null, matching `ItemBuilder` instead of contradicting it.
+- **`giveOrDrop` reports what was actually delivered.** `given` previously carried the whole input,
+  so a delivery into a full inventory returned the same stack in both `given` and `dropped` and
+  anything logging or charging for a reward counted items lying on the floor. The two lists are now
+  disjoint, a partly-accepted stack appears in each at its own amount, and `fullyDelivered` answers
+  the common case.
+- **`enchant(key)` no longer throws on an unknown key.** A material key returns a failure and a
+  model key is dropped; an enchantment key killed the whole item build — three answers to one typo
+  in a config file. It now costs the enchantment, logs the key, and builds the item.
 - **Examples** cut from 13 to 6.
 
 ### Removed

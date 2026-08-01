@@ -27,6 +27,19 @@ val icon = item("nether_star") {
 }
 ```
 
+## Keys that come from config
+
+Three parts of an item can be named by string, and a server owner will eventually mistype one. They
+fail differently on purpose, by how much of the item depends on them:
+
+| Call | Bad key | Why |
+| --- | --- | --- |
+| `item("diamond_sword")` | `SculkResult.Failure` | Without a material there is no item, so the caller has to decide. |
+| `enchant("sharpnesss", 3)` | Logged, enchant skipped | A decoration. One typo should not fail a reward. |
+| `model("bad key")` | Dropped | Same. |
+
+Nothing here is silent — the enchantment path names the key in the log.
+
 ## GUI Integration
 
 GUI items can use the same builder through `stack { }`:

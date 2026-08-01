@@ -19,6 +19,7 @@ import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
 import studio.sculk.annotation.SculkStable
 import studio.sculk.text.SculkMessages
+import java.util.logging.Logger
 
 /**
  * Kotlin-first builder for modern Paper item stacks.
@@ -110,9 +111,20 @@ public open class ItemBuilder public constructor(private var material: Material,
         enchantments[enchantment] = level
     }
 
-    /** Adds an enchantment by modern Minecraft key. */
+    /**
+     * Adds an enchantment by modern Minecraft key, accepting the common aliases.
+     *
+     * An unresolvable key costs the enchantment, not the item — the same trade [model] makes, and
+     * for the same reason: these keys come from config, and one typo in a kit definition should not
+     * stop the reward being handed out at all. It is logged with the key that failed.
+     */
     public fun enchant(key: String, level: Int) {
-        enchant(requireEnchantment(key), level)
+        val enchantment = enchantmentByKey(key)
+        if (enchantment == null) {
+            itemLogger.warning("Unknown enchantment key '$key'; the item was built without it.")
+            return
+        }
+        enchant(enchantment, level)
     }
 
     /**
@@ -339,8 +351,14 @@ internal fun enchantmentByKey(key: String): Enchantment? {
     return candidates.firstNotNullOfOrNull { registry.get(NamespacedKey.minecraft(it)) }
 }
 
-internal fun requireEnchantment(key: String): Enchantment =
-    enchantmentByKey(key) ?: throw IllegalArgumentException("Unknown enchantment key '$key'.")
+/**
+ * Not injected, unlike every other logger in Sculk.
+ *
+ * [ItemBuilder] is reached through a bare `item(Material) { }` with no plugin in scope, so there is
+ * nowhere to hand one in without putting a logger parameter on the whole DSL. Paper routes
+ * java.util.logging to the console, so the warning still lands where an admin will read it.
+ */
+private val itemLogger: Logger = Logger.getLogger("SculkItems")
 
 internal fun normalizeLookupKey(key: String): String = key.trim().lowercase().substringAfter(':')
 

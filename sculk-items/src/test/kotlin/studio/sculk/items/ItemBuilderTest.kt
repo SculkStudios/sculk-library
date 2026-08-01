@@ -102,12 +102,23 @@ class ItemBuilderTest {
     }
 
     @Test
-    fun `an unknown enchantment key names the key it could not resolve`() {
-        val failure = assertThrows(IllegalArgumentException::class.java) {
-            item(Material.DIAMOND_SWORD) { enchant("sharpnesss", 3) }
+    fun `an unknown enchantment key costs the enchantment and not the item`() {
+        // Enchantment keys arrive from config alongside material and model keys. Throwing here made
+        // one typo in a kit definition fail the whole reward, where the other two keys do not.
+        val stack = item(Material.DIAMOND_SWORD) { enchant("sharpnesss", 3) }
+
+        assertEquals(Material.DIAMOND_SWORD, stack.type)
+        assertEquals(0, levelOf(stack, Enchantment.SHARPNESS))
+    }
+
+    @Test
+    fun `a good enchantment on the same item survives a bad one beside it`() {
+        val stack = item(Material.DIAMOND_SWORD) {
+            enchant("sharpnesss", 3)
+            enchant("unbreaking", 2)
         }
 
-        assertTrue(failure.message!!.contains("sharpnesss"), failure.message)
+        assertEquals(2, levelOf(stack, Enchantment.UNBREAKING))
     }
 
     @Test
