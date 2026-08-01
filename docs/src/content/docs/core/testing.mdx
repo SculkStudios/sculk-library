@@ -131,3 +131,29 @@ H2 implements `ON CONFLICT … DO UPDATE` in **neither** its PostgreSQL nor its 
 own Postgres coverage is generated-SQL assertions plus an integration test gated on a real server
 (`SCULK_POSTGRES_URL`). If you target Postgres, test against Postgres.
 :::
+
+## Where the fakes stop
+
+Fakes cover logic; they do not cover the client. Menus, holograms, nametags and HUD elements only
+really exist once something is looking at them, and a plugin can pass every test and still fail to
+enable. Booting a real server is the cheapest way to close that gap:
+
+```kotlin
+plugins {
+    alias(libs.plugins.run.paper)
+}
+
+tasks.runServer {
+    minecraftVersion("1.21.11")
+}
+```
+
+```
+./gradlew :your-plugin:runServer
+```
+
+Two of Sculk's own bugs survived 316 passing tests and died on the first boot: a `@Serializable`
+config class fails at runtime if the `kotlin-serialization` plugin is missing — nothing at compile
+time says so — and a `paper-plugin.yml` carrying `${version}` reports that string literally as the
+version unless `processResources` expands it. Neither is reachable from a unit test, and both are
+the first thing a user would have hit.

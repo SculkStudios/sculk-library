@@ -67,10 +67,14 @@ val reward = item("diamond") {
 
 val result = player.giveOrDrop(reward)
 
-if (result.dropped.isNotEmpty()) {
+if (!result.fullyDelivered) {
     player.sendMessage("Some rewards were dropped at your feet.")
 }
 ```
+
+`given` and `dropped` are disjoint: `given` is only what the inventory accepted, and a stack that fit
+partly appears in both at its own amount. Log and charge against `given` — counting the input as
+delivered credits a player for items lying on the floor.
 
 Call this from the server thread, or from the player's region thread on Folia-like servers. If the item is part of a database-backed reward flow, load and decide the reward asynchronously, then hand back to sync before touching the inventory.
 
