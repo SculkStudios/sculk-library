@@ -62,6 +62,7 @@ public final class studio/sculk/items/ItemDeliveryResult {
 	public static synthetic fun copy$default (Lstudio/sculk/items/ItemDeliveryResult;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/items/ItemDeliveryResult;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDropped ()Ljava/util/List;
+	public final fun getFullyDelivered ()Z
 	public final fun getGiven ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;

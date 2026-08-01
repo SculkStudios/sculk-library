@@ -61,6 +61,8 @@ public class MenuListener(private val registry: MenuRegistry) : Listener {
     public fun onQuit(event: PlayerQuitEvent) {
         // A player who disconnects with a menu open never fires InventoryCloseEvent on every
         // server implementation, and the session would hold their inventory for the uptime.
-        registry.sessionFor(event.player)?.let { registry.forget(event.player.openInventory.topInventory) }
+        // Forgetting by the session's own inventory rather than re-reading the player's view, which
+        // may already be gone by the time a quit is handled.
+        registry.sessionFor(event.player)?.openInventory?.let(registry::forget)
     }
 }
