@@ -78,6 +78,59 @@ against a real backend without a server.
 
 Set `available = false` to test how your code behaves with no packet backend at all.
 
+## FakeRepository
+
+Tests the code that *uses* a repository, without a database.
+
+```kotlin
+val repo = FakeRepository<Profile, UUID>(
+    idOf = { it.id },
+    columnsOf = { mapOf("coins" to it.coins, "rank" to it.rank) },
+)
+val shop = ShopService(repo)
+
+shop.buy(profile, price = 50)
+
+assertEquals(50, repo.stored.single().coins)
+assertEquals(1, repo.writeCount)
+```
+
+Queries are evaluated against the map `columnsOf` returns, walking the same `Condition` tree the
+real repository renders to SQL — so `any { }` is an OR here for the same reason it is there. Omit
+`columnsOf` and any query-shaped call fails loudly; a fake that quietly matched every row would let
+a test pass while the filter under test is wrong.
+
+`failure` turns every subsequent call into a `SculkResult.Failure`:
+
+```kotlin
+repo.failure = "connection refused"
+
+assertTrue(shop.buy(profile, price = 50) is SculkResult.Failure)
+```
+
+That branch — what your plugin does when the database is down — is the one a success-only fake never
+reaches, and the one your players meet first during an outage.
+
+:::note
+This does not test *your* SQL. Sculk's own data layer runs against H2 and SQLite precisely because a
+fake answering a query proves nothing about the statement a real engine would parse. Use both: the
+fake for your service logic, a real engine for your schema.
+:::
+
+## FakeHologram
+
+```kotlin
+val hologram = FakeHologram()
+val timer = RoundTimer(hologram)
+
+timer.tick(seconds = 30)
+
+assertEquals(listOf("<gold>30s"), hologram.lines)
+assertEquals(0, hologram.teleports, "a countdown should not be moving")
+```
+
+Calling `setLines` or `teleport` after `remove` throws rather than recording, because on a real
+server that is a leak: the packets go nowhere and the object stays referenced.
 ## Testing without any of it
 
 Much of Sculk is deliberately free of Bukkit types so it needs no fake:
@@ -157,3 +210,4 @@ config class fails at runtime if the `kotlin-serialization` plugin is missing �
 time says so — and a `paper-plugin.yml` carrying `${version}` reports that string literally as the
 version unless `processResources` expands it. Neither is reachable from a unit test, and both are
 the first thing a user would have hit.
+
