@@ -19,6 +19,7 @@ import studio.sculk.text.SculkTheme
  * class MyPlugin : SculkPlugin() {
  *     override fun setup() {
  *         services.register(EconomyService(sculk.data))
+ *         // command { } builds the spec; the leading + is what registers it.
  *         +command("balance") { executes { reply("<value><coins></value>") } }
  *     }
  * }
@@ -61,7 +62,22 @@ public abstract class SculkPlugin : JavaPlugin() {
     @SculkStable
     protected open fun shutdown() {}
 
-    /** Registers a command. `+command("x") { … }` reads better in a long `setup()`. */
+    /**
+     * **Registers this command.** `command("x") { … }` only *builds* a spec; the leading `+` is
+     * what hands it to the plugin.
+     *
+     * ```kotlin
+     * override fun setup() {
+     *     +command("gifts") {          // the + registers it
+     *         executes { reply("<value>3</value> per player.") }
+     *     }
+     * }
+     * ```
+     *
+     * Splitting the two means a spec can be built anywhere — a test, a helper, a list assembled at
+     * runtime — and registered only where a plugin exists to own it. [commands] takes several at
+     * once, and [declaredCommands] is the resulting list.
+     */
     @SculkStable
     protected operator fun CommandSpec.unaryPlus() {
         declared += this
