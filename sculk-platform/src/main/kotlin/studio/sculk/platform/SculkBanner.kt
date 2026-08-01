@@ -19,7 +19,7 @@ import java.nio.charset.Charset
 @SculkInternal
 public class SculkBanner(private val logger: ComponentLogger) {
     public fun show(name: String, version: String, facts: List<Pair<String, String>>) {
-        val art = if (canRenderBlocks()) BLOCKS else ASCII
+        val art = artFor(consoleEncoding())
         val width = facts.maxOfOrNull { it.first.length } ?: 0
 
         logger.info(Component.empty())
@@ -51,14 +51,24 @@ public class SculkBanner(private val logger: ComponentLogger) {
      * UTF-8 renders them fine, and a Linux one under a stripped locale does not. Guessing produces
      * a banner made of question marks on exactly the setups least able to investigate it.
      */
-    private fun canRenderBlocks(): Boolean = runCatching {
-        val encoding = System.getProperty("stdout.encoding")
-            ?: System.getProperty("sun.stdout.encoding")
-            ?: Charset.defaultCharset().name()
-        Charset.forName(encoding).newEncoder().canEncode(BLOCKS.joinToString(""))
-    }.getOrDefault(false)
+    private fun consoleEncoding(): String = System.getProperty("stdout.encoding")
+        ?: System.getProperty("sun.stdout.encoding")
+        ?: Charset.defaultCharset().name()
 
-    private companion object {
+    internal companion object {
+        /**
+         * The art the console can actually draw.
+         *
+         * Separate from [show] so the choice is reachable without a logger and a real console —
+         * the fallback only matters on setups nobody developing this has in front of them.
+         */
+        internal fun artFor(encoding: String): List<String> {
+            val renderable = runCatching {
+                Charset.forName(encoding).newEncoder().canEncode(BLOCKS.joinToString(""))
+            }.getOrDefault(false)
+            return if (renderable) BLOCKS else ASCII
+        }
+
         val BLOCKS = listOf(
             "  ▄▄▄▄  ",
             " ██▀▀▀▀ ",
