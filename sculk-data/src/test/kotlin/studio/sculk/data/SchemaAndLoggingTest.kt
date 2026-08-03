@@ -87,6 +87,58 @@ class SchemaAndLoggingTest {
     }
 
     @Test
+    fun `a renamed column is reported rather than silently added beside the old one`() = runTest {
+        // The 4.5 -> 5.0 shape: 4.5 derived column names as snake_case, 5.0 uses the property name
+        // verbatim. Additive migration then puts an empty "playerUuid" beside a populated
+        // "player_uuid" and every row reads back as its Kotlin defaults, with nothing thrown and
+        // nothing logged. Every plugin with real data in a 4.5 table hits this on first boot.
+        val capture = Capture()
+        val source = h2()
+        source.connection.use { connection ->
+            connection.createStatement().use {
+                it.executeUpdate("CREATE TABLE players (id VARCHAR(64) PRIMARY KEY, player_uuid VARCHAR(64))")
+            }
+        }
+
+        SculkData.using(source, SqlDialect.MYSQL, capturingLogger(capture)).repository<PlayerRow, String>()
+        source.close()
+
+        val warning = capture.records.singleOrNull { it.contains("does not model") }
+        assertTrue(warning != null, "expected a warning naming both sets, got: ${capture.records}")
+        assertTrue(warning!!.contains("player_uuid"), warning)
+        assertTrue(warning.contains("coins"), "it must also name what was added: $warning")
+    }
+
+    @Test
+    fun `a table that simply gains a column is not reported as a rename`() = runTest {
+        // The same additive path, minus the abandoned column. Warning on this too would train
+        // everyone to ignore the one that matters.
+        val capture = Capture()
+        val source = h2()
+        source.connection.use { connection ->
+            connection.createStatement().use {
+                it.executeUpdate("CREATE TABLE players (id VARCHAR(64) PRIMARY KEY, coins BIGINT)")
+            }
+        }
+
+        SculkData.using(source, SqlDialect.MYSQL, capturingLogger(capture)).repository<PlayerRow, String>()
+        source.close()
+
+        assertTrue(capture.records.none { it.contains("does not model") }, "got: ${capture.records}")
+    }
+
+    @Test
+    fun `a fresh table is not reported as a rename`() = runTest {
+        val capture = Capture()
+        val source = h2()
+
+        SculkData.using(source, SqlDialect.MYSQL, capturingLogger(capture)).repository<PlayerRow, String>()
+        source.close()
+
+        assertTrue(capture.records.none { it.contains("does not model") }, "got: ${capture.records}")
+    }
+
+    @Test
     fun `a failed query is logged before it is returned`() = runTest {
         val capture = Capture()
         val source = h2()
