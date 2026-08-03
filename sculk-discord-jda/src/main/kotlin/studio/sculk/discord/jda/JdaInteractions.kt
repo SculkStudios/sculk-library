@@ -83,10 +83,10 @@ internal class JdaDeferred(private val event: IReplyCallback, override val actor
         event.hook.sendMessage(message.toCreateData()).setEphemeral(message.ephemeral).submit().await()
     }
 
-    override suspend fun respond(markdown: String): SculkResult<Unit> = respond(
+    override suspend fun respond(markdown: String, ephemeral: Boolean): SculkResult<Unit> = respond(
         studio.sculk.discord.message.message {
             text(markdown)
-            ephemeral = true
+            this.ephemeral = ephemeral
         },
     )
 

@@ -21,6 +21,24 @@ public data class DiscordActor(
 ) {
     public fun holds(permission: studio.sculk.discord.command.DiscordPermission): Boolean = permissionBits and permission.bit != 0L ||
         permissionBits and studio.sculk.discord.command.DiscordPermission.Administrator.bit != 0L
+
+    /**
+     * The union of what [grants] confers on every role this member holds.
+     *
+     * Every consumer mapping Discord roles onto its own permission nodes writes this same fold, so it
+     * lives here once.
+     *
+     * Note what it deliberately does *not* do: a member with no mapped role gets an empty set, never a
+     * fallback to their in-game rank or to Discord's own Administrator bit. Being server owner in
+     * Discord grants nothing here. The operator states which roles confer which nodes and nothing
+     * else does, so a power over players is granted on purpose or not at all.
+     *
+     * ```kotlin
+     * val nodes = actor.permissionsFor(settings.roles)   // Map<RoleId, Set<String>>
+     * if ("myplugin.punish.ban" !in nodes) return refuse()
+     * ```
+     */
+    public fun <T> permissionsFor(grants: Map<RoleId, Set<T>>): Set<T> = roles.flatMapTo(mutableSetOf()) { grants[it].orEmpty() }
 }
 
 /**
@@ -81,8 +99,14 @@ public interface DeferredInteraction {
     /** Sends a follow-up. Safe to call more than once. */
     public suspend fun respond(message: DiscordMessage): SculkResult<Unit>
 
-    /** Convenience for the overwhelmingly common case: one line of markdown. */
-    public suspend fun respond(markdown: String): SculkResult<Unit>
+    /**
+     * One line of markdown, the overwhelmingly common case.
+     *
+     * [ephemeral] defaults to true because most of these name a player. Set it false for the one
+     * line that has to be public — a channel notice saying an action was taken, which is what stops
+     * a second moderator acting on the same alert.
+     */
+    public suspend fun respond(markdown: String, ephemeral: Boolean = true): SculkResult<Unit>
 
     /** Replaces the message the component that triggered this is attached to. */
     public suspend fun editOriginal(message: DiscordMessage): SculkResult<Unit>
