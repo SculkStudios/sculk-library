@@ -119,35 +119,79 @@ public class Query internal constructor() {
     }
 }
 
-/** Renders a condition tree into a WHERE fragment and its ordered parameters. */
-internal fun Condition.render(dialect: SqlDialect): Pair<String, List<Any?>> = when (this) {
-    is Condition.Compare -> when {
-        // `= NULL` is never true in SQL, which reads as "the query is broken" rather than as
-        // "nothing matched".
-        value == null && operator == "=" -> "${dialect.quote(column)} IS NULL" to emptyList()
+/**
+ * Renders a condition tree into a WHERE fragment and its ordered parameters.
+ *
+ * [schema] is what makes a query agree with the rows it is querying. Without it the DSL emitted
+ * the Kotlin property name as a column name — wrong the moment `@Column` renamed one — and passed
+ * values straight to `setObject`, so a property stored through a serializer was compared in the
+ * wrong representation entirely. An `Instant` is written as epoch millis but reaches JDBC as an
+ * `Instant`, and the comparison then quietly matches nothing: no error, no rows, no clue.
+ */
+internal fun Condition.render(dialect: SqlDialect, schema: TableSchema? = null): Pair<String, List<Any?>> = when (this) {
+    is Condition.Compare -> {
+        val target = schema?.forProperty(column)
+        val name = target?.name ?: column
+        when {
+            // `= NULL` is never true in SQL, which reads as "the query is broken" rather than as
+            // "nothing matched".
+            value == null && operator == "=" -> "${dialect.quote(name)} IS NULL" to emptyList()
 
-        value == null && operator == "<>" -> "${dialect.quote(column)} IS NOT NULL" to emptyList()
+            value == null && operator == "<>" -> "${dialect.quote(name)} IS NOT NULL" to emptyList()
 
-        else -> "${dialect.quote(column)} $operator ?" to listOf(value)
+            else -> "${dialect.quote(name)} $operator ?" to listOf(coerce(value, target))
+        }
     }
 
-    is Condition.In ->
+    is Condition.In -> {
+        val target = schema?.forProperty(column)
+        val name = target?.name ?: column
         // An empty IN () is a syntax error on every engine; the honest translation of "in nothing"
         // is a predicate that matches nothing.
         if (values.isEmpty()) {
             "1 = 0" to emptyList()
         } else {
-            "${dialect.quote(column)} IN (${values.joinToString(", ") { "?" }})" to values
+            "${dialect.quote(name)} IN (${values.joinToString(", ") { "?" }})" to values.map { coerce(it, target) }
         }
+    }
 
-    is Condition.And -> combine(parts, "AND", dialect)
+    is Condition.And -> combine(parts, "AND", dialect, schema)
 
-    is Condition.Or -> combine(parts, "OR", dialect)
+    is Condition.Or -> combine(parts, "OR", dialect, schema)
 }
 
-private fun combine(parts: List<Condition>, keyword: String, dialect: SqlDialect): Pair<String, List<Any?>> {
+/**
+ * Converts a query parameter into the representation the column actually holds.
+ *
+ * The codec writes through the property's serializer, so the stored form of a type like `Instant`
+ * or `UUID` is not the object itself. A parameter has to make the same trip or it is comparing a
+ * different thing to the one in the row.
+ *
+ * Only the conversions the shipped serializers perform are handled; anything else is passed
+ * through, which is what a plain column has always done.
+ */
+private fun coerce(value: Any?, column: ColumnSchema?): Any? = when {
+    value == null -> null
+
+    // InstantSerializer stores epoch millis. Without this the driver stringifies the Instant and
+    // compares text against a BIGINT.
+    value is java.time.Instant -> value.toEpochMilli()
+
+    // UuidSerializer stores the canonical string form. Most drivers happen to stringify a UUID the
+    // same way, so this was working by luck rather than by design.
+    value is java.util.UUID -> value.toString()
+
+    // Enums are stored by name, never ordinal.
+    value is Enum<*> -> value.name
+
+    column?.type == SqlType.BOOLEAN && value is Boolean -> value
+
+    else -> value
+}
+
+private fun combine(parts: List<Condition>, keyword: String, dialect: SqlDialect, schema: TableSchema?): Pair<String, List<Any?>> {
     if (parts.isEmpty()) return "1 = 1" to emptyList()
-    val rendered = parts.map { it.render(dialect) }
+    val rendered = parts.map { it.render(dialect, schema) }
     val sql = rendered.joinToString(" $keyword ") { "(${it.first})" }
     return sql to rendered.flatMap { it.second }
 }
