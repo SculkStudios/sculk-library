@@ -44,26 +44,24 @@ your server (and add a `softdepend`).
 
 You must also install PacketEvents or ProtocolLib on the server. Sculk only provides adapters.
 
-## Enable packets
+## Using packets
+
+There is nothing to enable. `sculk.packets` resolves a backend the first time it is touched and
+returns a `SculkResult` — absent is not an error, so a plugin that wants client-side blocks on a
+server with no backend still enables, and the calls report why they cannot work:
 
 ```kotlin
-import studio.sculk.packets.PacketBackendMode
-
-class MyPlugin : SculkPlugin({
-    packets {
-        backend = PacketBackendMode.Auto
-        required = false
-    }
-}) {
+class MyPlugin : SculkPlugin() {
     override fun setup() {
-        sculk.packetsResult
-            ?.onSuccess { service -> logger.info("Packets enabled with ${service.backend}") }
-            ?.onFailure { message, _ -> logger.warning(message) }
+        sculk.packets
+            .onSuccess { service -> logger.info("Packets enabled with ${service.backend}") }
+            .onFailure { message, _ -> logger.warning(message) }
     }
 }
 ```
 
-`Auto` prefers PacketEvents, then ProtocolLib. If `required = true`, startup fails with a clear message when no backend is available.
+Backends are discovered in order — PacketEvents first, then ProtocolLib — so installing either one is
+enough and installing both prefers PacketEvents.
 
 ## Backend status
 

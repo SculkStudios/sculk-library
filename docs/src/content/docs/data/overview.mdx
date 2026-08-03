@@ -7,19 +7,40 @@ description: Coroutine-based repository pattern for persistent storage over SQLi
 
 ## Defining an entity
 
-Annotate a data class with `@Table` and mark each field with `@Column`. The primary key gets `@PrimaryKey`:
+An entity is a `@Serializable` data class annotated with `@Table`. Exactly one property carries `@Id`.
+Every other property maps to a column of its own name — `@Column` is only needed to override that:
 
 ```kotlin
+@Serializable
 @Table("player_data")
 data class PlayerData(
-    @PrimaryKey @Column("uuid") val uuid: UUID,
-    @Column("coins") val coins: Long = 0,
-    @Column("homes") val homes: Int = 0,
+    @Id @Serializable(with = UuidSerializer::class) val uuid: UUID,
+    @Index val name: String = "",
+    val coins: Long = 0,
+    val homes: Int = 0,
     @Column("play_time") val playTime: Long = 0,
+    @Json val warps: List<String> = emptyList(),
 )
 ```
 
-Sculk reads the annotations during mapper setup and caches the mapping, so normal repository calls do not need to rediscover the entity shape each time.
+`UUID` and `Instant` are not primitives kotlinx-serialization knows, so name `UuidSerializer` or
+`InstantSerializer` at the property. UUIDs are stored as text — sixteen bytes would be smaller, but
+text is readable in whatever client someone opens during an incident.
+
+- `@Id` — the primary key. Zero or two fails loudly at start-up rather than upserting duplicate rows.
+- `@Index` — creates an index. Without one, every non-key query is a full table scan.
+- `@Json` — stores a list, map or nested object as JSON text. Without it those are written with
+  `toString()` and read back as a String that no longer parses.
+
+The mapping comes from the compiler-generated serializer, not from reflection, so a renamed property
+is a compile error rather than a query that silently matches nothing.
+
+:::caution[Column names are the property names]
+5.0 maps `playTime` to a column called `playTime`. 4.5 converted it to `play_time`. Migration is
+additive, so on an existing 4.5 table the new column is added *beside* the old one and every row
+reads back as its Kotlin defaults. Sculk logs a warning naming both sets when it sees that shape —
+rename the columns in SQL, or pin them with `@Column`, before using the table.
+:::
 
 ## Creating a repository
 
@@ -85,21 +106,38 @@ See [Coroutines](/advanced/coroutines/) for the full scope/dispatcher model, and
 `sculk-data` generates a `storage.yml` in your plugin's data folder on first run:
 
 ```yaml
-type: sqlite       # sqlite or mysql
+# Where this plugin keeps its data.
+# Edit while the server is stopped.
 
-sqlite:
-  file: data.db    # relative to plugin data folder
+# One of: sqlite, mysql, postgres.
+backend: sqlite
 
-mysql:
+# The SQLite file, relative to the plugin folder. Ignored for the remote backends.
+file: data.db
+
+# Connection details for mysql and postgres.
+remote:
   host: localhost
   port: 3306
-  database: sculk
+  database: minecraft
   username: root
-  password: ""
-  pool-size: 10
+  password: "${DB_PASSWORD:-}"
+  use-ssl: false
+
+# How many connections to keep open.
+# More is not faster: a Minecraft server has one thread doing the asking.
+pool-size: 10
 ```
 
-Switch to MySQL by changing `type: mysql` and filling in the connection details. The schema migrations run automatically on startup for both backends.
+Switch backend by changing `backend:` and filling in `remote:`. Schema migration runs automatically
+on start-up for all three.
+
+`password` reads from the environment, so the shipped file stays a working example and the real
+secret never lands in a config anyone might paste into a support channel. `${DB_PASSWORD:-}` means
+"the `DB_PASSWORD` variable, or empty if it is unset"; `${DB_PASSWORD}` with no `:-` is left as
+written when unset, so a missing variable names itself in the log instead of silently becoming a
+blank password. A file containing a placeholder is never rewritten — otherwise the resolved secret
+would be written back to disk — which does mean it will not pick up new keys automatically.
 
 ## Multiple entities
 
@@ -151,6 +189,6 @@ repo.find(player.uniqueId)
 
 - Create repositories once at startup — don't create new instances per request.
 - Call repository methods from `sculk.scope.launchAsync { }`; hop back with `withMain { }` for Paper APIs.
-- Use the cache layer (`sculk.data.cached(...)`) for frequently-read entities like online player data. See [Caching](/data/caching).
+- Use the cache layer (`repo.cached(PlayerData::uuid)`) for frequently-read entities like online player data. See [Caching](/data/caching).
 - Handle `SculkResult.Failure` explicitly — log the message so operators can diagnose database issues.
 - Load player data on `PlayerJoinEvent` and cache it; flush to DB on `PlayerQuitEvent`.
