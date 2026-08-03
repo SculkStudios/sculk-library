@@ -118,6 +118,23 @@ assertEquals(Mentions.None, gateway.lastSent!!.mentions)
 It refuses what a real gateway refuses — sending before connecting fails, and a closed gateway stays
 closed. A fake that is more forgiving than production proves nothing.
 
+Handlers are testable end to end too, without a gateway at all:
+
+```kotlin
+val context = FakeCommandContext(actor, "kit give", mapOf("target" to FakeOption(user = someId)))
+router.dispatch(context)
+
+assertEquals("Given.", context.recorder.lastAnswer?.text)
+```
+
+`FakeComponentInteraction` and `FakeModalInteraction` do the same for a button and a form. Each
+enforces what Discord enforces — a modal only before acknowledgement, a reply only once — so a test
+cannot pass on code Discord would reject.
+
+The assertion worth writing most often is `recorder.silent`. A handler that returns without answering
+leaves the user on "thinking…" until Discord times it out, which is indistinguishable from the bot
+being dead, and it is the bug in this area that hides best.
+
 ## Where next
 
 - [Messages](/discord/messages/) — components as data, and the mention allow-list

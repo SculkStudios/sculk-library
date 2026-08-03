@@ -466,8 +466,13 @@ public abstract interface class studio/sculk/discord/interaction/ComponentIntera
 public abstract interface class studio/sculk/discord/interaction/DeferredInteraction {
 	public abstract fun editOriginal (Lstudio/sculk/discord/message/DiscordMessage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun getActor ()Lstudio/sculk/discord/interaction/DiscordActor;
-	public abstract fun respond (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun respond (Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun respond (Lstudio/sculk/discord/message/DiscordMessage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun respond$default (Lstudio/sculk/discord/interaction/DeferredInteraction;Ljava/lang/String;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/discord/interaction/DeferredInteraction$DefaultImpls {
+	public static synthetic fun respond$default (Lstudio/sculk/discord/interaction/DeferredInteraction;Ljava/lang/String;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class studio/sculk/discord/interaction/DiscordActor {
@@ -488,6 +493,7 @@ public final class studio/sculk/discord/interaction/DiscordActor {
 	public final fun getRoles ()Ljava/util/Set;
 	public fun hashCode ()I
 	public final fun holds (Lstudio/sculk/discord/command/DiscordPermission;)Z
+	public final fun permissionsFor (Ljava/util/Map;)Ljava/util/Set;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -655,6 +661,14 @@ public final class studio/sculk/discord/message/Container : studio/sculk/discord
 	public final fun getChildren ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/message/ContainerBuilder {
+	public final fun add (Lstudio/sculk/discord/message/MessageComponent;)V
+	public final fun divider (Z)V
+	public static synthetic fun divider$default (Lstudio/sculk/discord/message/ContainerBuilder;ZILjava/lang/Object;)V
+	public final fun row (Lkotlin/jvm/functions/Function1;)V
+	public final fun text (Ljava/lang/String;)V
 }
 
 public final class studio/sculk/discord/message/DiscordMessage {

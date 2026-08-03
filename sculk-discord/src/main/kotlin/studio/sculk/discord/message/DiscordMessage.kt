@@ -77,12 +77,12 @@ public class MessageBuilder internal constructor() {
     }
 
     /** A bordered block accented with [style]'s representative colour. */
-    public fun container(style: ThemeStyle?, block: MessageBuilder.() -> Unit) {
+    public fun container(style: ThemeStyle?, block: ContainerBuilder.() -> Unit) {
         container(style?.swatchHex?.let(::rgbOf), block)
     }
 
-    public fun container(accentRgb: Int? = null, block: MessageBuilder.() -> Unit) {
-        components += Container(MessageBuilder().apply(block).components.toList(), accentRgb)
+    public fun container(accentRgb: Int? = null, block: ContainerBuilder.() -> Unit) {
+        components += Container(ContainerBuilder().apply(block).contents(), accentRgb)
     }
 
     /** Adds an already-built component, for composing messages across files. */
@@ -91,6 +91,38 @@ public class MessageBuilder internal constructor() {
     }
 
     internal fun build(): DiscordMessage = DiscordMessage(components.toList(), mentions, ephemeral)
+}
+
+/**
+ * Builds a container's contents.
+ *
+ * A separate type from [MessageBuilder] purely so that `mentions` and `ephemeral` are **not** in
+ * scope here. They are properties of the whole message, and a container is one component of it —
+ * when the two shared a builder, setting either inside `container { }` compiled, wrote to a
+ * throwaway, and was discarded. Most of a real message is written inside a container, so that is
+ * exactly where someone reaches for them.
+ */
+@SculkStable
+public class ContainerBuilder internal constructor() {
+    private val components = mutableListOf<MessageComponent>()
+
+    public fun text(markdown: String) {
+        components += Text(markdown)
+    }
+
+    public fun divider(large: Boolean = false) {
+        components += Divider(large)
+    }
+
+    public fun row(block: RowBuilder.() -> Unit) {
+        components += RowBuilder().apply(block).build()
+    }
+
+    public fun add(component: MessageComponent) {
+        components += component
+    }
+
+    internal fun contents(): List<MessageComponent> = components.toList()
 }
 
 /** Builds one action row. */

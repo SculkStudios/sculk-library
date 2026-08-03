@@ -20,6 +20,11 @@ internal const val MAX_DESCRIPTION = 4096
  *
  * A webhook has no application behind it, so a component that reports clicks has nothing to report
  * them to. Dropping the buttons silently would post an alert that looks actionable and is not.
+ *
+ * **This is why a gateway alert and its webhook fallback are two different messages**, and it is not
+ * obvious until something hits it. A failover that reuses the gateway's message body is refused here
+ * rather than posted without its buttons — so build the fallback separately, with a link or a record
+ * id that tells staff where to go instead. Link buttons are fine: they never produce an interaction.
  */
 internal fun undeliverableReason(message: DiscordMessage): String? {
     val flat = message.flatten()
