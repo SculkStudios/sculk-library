@@ -1,0 +1,142 @@
+---
+title: Discord
+description: One Kotlin API for Discord bots, whether or not a Minecraft server is involved.
+---
+
+`sculk-discord` is the only Discord API your code should touch. JDA lives behind it, in a separate
+module, and can be replaced without a consumer changing.
+
+It works two ways, with the same API:
+
+- **A standalone bot.** `sculk-discord` imports no Bukkit and no Paper. There is no Minecraft
+  anywhere in a bot built on it.
+- **A bot your plugin owns.** An operator pastes a token into a config; the bot starts with the
+  server and stops with it.
+
+## Installing
+
+```kotlin
+dependencies {
+    implementation("com.github.SculkStudios.sculk-library:sculk-discord:5.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-discord-jda:5.0.0")
+}
+```
+
+`sculk-discord-jda` declares JDA as `compileOnly`, so **you** bring JDA. For a Paper plugin that
+means `paper-plugin.yml`:
+
+```yaml
+libraries:
+  - net.dv8tion:JDA:6.5.0
+```
+
+:::caution[Do not shade JDA]
+JDA itself is Apache-2.0, but its dependency graph reaches `net.sf.trove4j` and `jna`, both
+**LGPL-2.1**. Paper's library loader keeps them as separate unmodified downloads, which is what you
+want if the thing you ship is proprietary. Shading them makes them bundled code.
+:::
+
+## A standalone bot
+
+```kotlin
+suspend fun main() {
+    val scope = CoroutineScope(Dispatchers.Default)
+    val gateway = SculkDiscord.create(
+        BotConfig(token = System.getenv("DISCORD_TOKEN"), intents = setOf(Intent.GuildMessages)),
+        scope,
+    ).getOrThrow()
+
+    gateway.connect().getOrThrow()
+
+    val router = InteractionRouter(Logger.getLogger("bot"))
+    router.register(
+        discordCommand("ping") {
+            description = "Check the bot is alive"
+            executes { reply(message { text("Pong.") }) }
+        },
+    )
+    gateway.route(router)
+    gateway.registerCommands(router.registered)
+}
+```
+
+`connect()` suspends until the gateway is actually usable. That matters: JDA's own `build()` returns
+before the handshake finishes, so anything sent immediately after a connect you did not await is
+dropped with nothing to say it was attempted.
+
+## A bot your plugin owns
+
+```kotlin
+class MyPlugin : SculkPlugin() {
+    override fun setup() {
+        val gateway = SculkDiscord.create(botConfig(), sculk.scope, listOf(javaClass.classLoader))
+            .getOrElse { reason, _ -> logger.warning(reason); return }
+        keep(gateway)
+    }
+}
+```
+
+Pass your own class loader. Discovery uses `ServiceLoader`, and its single-argument form searches the
+*thread context* loader — which during plugin enable belongs to the server and cannot see your jar,
+so every backend looks uninstalled.
+
+## Nothing is null
+
+A missing backend, a blank token, a channel the bot cannot see: each is a `SculkResult.Failure`
+carrying a sentence you can put straight in a log. `SculkDiscord.disabled(reason)` hands back a
+gateway whose every call fails by name, so a bot with Discord switched off still runs and still says
+why nothing is posting.
+
+```kotlin
+val gateway = SculkDiscord.create(config, scope)
+    .getOrElse { reason, _ -> SculkDiscord.disabled(reason) }
+```
+
+## Everything suspends
+
+There is no `RestAction`, no `.queue()`, and no callback pairs. A call that reaches Discord is a
+`suspend fun` returning a `SculkResult`.
+
+This is not only ergonomics. An action that is built and never queued does nothing at all and reports
+nothing — a failure mode with no symptom other than silence, and one that has cost a whole feature in
+this ecosystem before now.
+
+## Testing without Discord
+
+`FakeDiscordGateway` ships as a published test fixture:
+
+```kotlin
+val gateway = FakeDiscordGateway()
+gateway.connect()
+
+alerts.post(incident)
+
+assertEquals(1, gateway.sent.size)
+assertEquals(Mentions.None, gateway.lastSent!!.mentions)
+```
+
+It refuses what a real gateway refuses — sending before connecting fails, and a closed gateway stays
+closed. A fake that is more forgiving than production proves nothing.
+
+Handlers are testable end to end too, without a gateway at all:
+
+```kotlin
+val context = FakeCommandContext(actor, "kit give", mapOf("target" to FakeOption(user = someId)))
+router.dispatch(context)
+
+assertEquals("Given.", context.recorder.lastAnswer?.text)
+```
+
+`FakeComponentInteraction` and `FakeModalInteraction` do the same for a button and a form. Each
+enforces what Discord enforces — a modal only before acknowledgement, a reply only once — so a test
+cannot pass on code Discord would reject.
+
+The assertion worth writing most often is `recorder.silent`. A handler that returns without answering
+leaves the user on "thinking…" until Discord times it out, which is indistinguishable from the bot
+being dead, and it is the bug in this area that hides best.
+
+## Where next
+
+- [Messages](/discord/messages/) — components as data, and the mention allow-list
+- [Commands](/discord/commands/) — slash commands, options, autocomplete
+- [Interactions](/discord/interactions/) — buttons, modals, and waiting for a click

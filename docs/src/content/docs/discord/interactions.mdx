@@ -1,0 +1,122 @@
+---
+title: Interactions
+description: Buttons, modals, and Discord's timing rules expressed as types.
+---
+
+Discord discards an interaction that goes unanswered for three seconds, and the user is left with a
+permanent "the application did not respond". Two rules follow from that, and both are types here
+rather than comments.
+
+## A modal must be the first response
+
+`replyModal` exists on an unacknowledged `Interaction` and nowhere else.
+
+```kotlin
+router.onComponent("punish") { interaction ->
+    if (needsDuration) {
+        interaction.replyModal(durationModal)   // fine — nothing has acknowledged yet
+        return@onComponent
+    }
+    val deferred = interaction.defer().getOrThrow()
+    deferred.respond("Working…")
+    // deferred.replyModal(…) does not compile
+}
+```
+
+Discord rejects a modal after an acknowledgement. Deciding the modal branch *before* anything is
+acknowledged used to be a comment you had to read; now it is the only thing that compiles.
+
+## After deferring, replies go somewhere else
+
+```kotlin
+val deferred = interaction.defer(ephemeral = true).getOrThrow()
+val result = repository.punish(target)          // as slow as it needs to be
+deferred.respond("Done — audited as `${result.id}`.")
+```
+
+`defer()` returns a **`DeferredInteraction`**, a different type with no `reply` on it. Replies now go
+to the follow-up hook, because a second acknowledgement is rejected.
+
+That distinction has a history: a member `reply` once shadowed an extension of the same name, the
+result was never queued, and every message from the handler silently went nowhere while the
+interaction sat on "thinking". Types make that unwriteable.
+
+## Component ids carry state, never authority
+
+Discord gives a component 100 characters of opaque state and no server-side session. The id is the
+whole memory a handler has.
+
+```kotlin
+val banId = ComponentId.of("punish", "ban", record.id).getOrThrow()
+```
+
+Two things follow:
+
+**It is input, not memory.** It has been outside your process. `ComponentId.parse` validates shape and
+nothing more; re-resolve everything it names against live state.
+
+**It carries no authority.** Nothing in an id says a click is allowed. Decide that when the click
+arrives, from the actor's roles *then* — so revoking a role takes effect on buttons posted before it
+was revoked, and an alert sitting in a channel for a week grants nothing it did not grant on the day.
+
+:::caution[Over-budget ids fail; they are never truncated]
+`ComponentId.of` returns a `SculkResult`. Trimming to fit looks harmless and is the worst option
+available: a shortened UUID still parses, still passes validation, and then matches no record — so the
+button renders, clicks, and reports that the thing it points at does not exist.
+
+A realistic namespace plus a UUID plus a duration clears 100 characters, so this is reachable rather
+than theoretical.
+:::
+
+Handlers register by namespace, so two plugins posting buttons in the same channel ignore each
+other's clicks instead of mis-parsing them:
+
+```kotlin
+router.onComponent("punish") { … }
+router.onModal("punish") { … }
+```
+
+## Waiting for a click
+
+```kotlin
+val id = gateway.send(channel, confirmation).getOrThrow()
+
+val click = gateway.awaitComponent(id, within = 15.seconds, from = staffId)
+
+click.fold(
+    { it.reply(message { text("Confirmed.") }) },
+    { reason, _ -> gateway.edit(channel, id, message { text("Timed out.") }) },
+)
+```
+
+This is the collector discord.js has and JDA does not, and it is the difference between three lines
+and a listener, a map keyed by message id, and a scheduled task to clean it up.
+
+`from` restricts who can answer. The collector always unregisters, including on timeout — one left
+behind holds its coroutine and matches a click made an hour later against a flow nobody is waiting on.
+
+## Modals
+
+```kotlin
+val form = modal(banId, "How long?") {
+    field("duration", "Duration", placeholder = "7d / 30d / permanent", maxLength = 16)
+}
+interaction.replyModal(form)
+```
+
+Reuse the id the button carried. Discord hands a submitted modal back with no reference to whatever
+produced it, so the id is the only place the answer's context can live — and reusing it makes the
+submit path the click path with a value attached.
+
+```kotlin
+router.onModal("punish") { submission ->
+    val duration = submission.field("duration").orEmpty()
+    …
+}
+```
+
+## Everything answers
+
+`InteractionRouter` catches whatever a handler throws, logs it, and still says something to the user.
+Silence is the one outcome that is never available: it is indistinguishable from the bot being dead,
+and it is what sends people looking in the wrong place.

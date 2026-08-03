@@ -28,6 +28,7 @@ shadow            = "9.6.1"
 run-paper         = "3.0.2"
 packetevents      = "2.13.0"
 protocollib       = "5.4.0"
+jda               = "6.5.0"
 
 [libraries]
 # Coroutines
@@ -74,6 +75,10 @@ asm               = { module = "org.ow2.asm:asm",                        version
 # Packet backends (optional adapters only)
 packetevents-spigot = { module = "com.github.retrooper:packetevents-spigot", version.ref = "packetevents" }
 protocollib         = { module = "net.dmulloy2:ProtocolLib", version.ref = "protocollib" }
+
+# Discord. Never shaded into a product jar: JDA itself is Apache-2.0, but its graph reaches
+# net.sf.trove4j and jna, both LGPL-2.1, which must stay separate unmodified downloads.
+jda               = { module = "net.dv8tion:JDA",                       version.ref = "jda" }
 
 # Benchmarks
 jmh-core          = { module = "org.openjdk.jmh:jmh-core",             version.ref = "jmh" }
