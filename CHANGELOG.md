@@ -4,6 +4,30 @@ All notable changes to Sculk Studio are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **`sculk-discord` and `sculk-discord-jda`** — a backend-neutral Discord API. Messages are a
+  component tree as data, slash commands are a spec mirroring the Brigadier side, and Discord's
+  timing rules are types: `replyModal` exists only before acknowledgement, and deferring hands back a
+  different type whose replies go to the follow-up hook. Everything suspends; there is no action to
+  build and forget to queue.
+- **`Mentions`** — an allow-list, `None` by default and opt-in per message. The Discord equivalent of
+  the `Placeholder.unparsed` boundary, replacing the practice of editing a message body to defuse a
+  ping, which misses `<@&roleId>` and corrupts the text a moderator reads as evidence.
+- **`ComponentId`** — namespaced component state with Discord's 100-character budget enforced at
+  build time. Over-budget fails rather than truncating: a shortened UUID still parses and then matches
+  no record.
+- **`awaitComponent`** — wait for a click on a message, optionally from one user, with a timeout. The
+  discord.js collector JDA has no equivalent for.
+- **`DiscordWebhook`** — the zero-gateway path, on serialized payloads rather than a hand-built JSON
+  string.
+- **`FakeDiscordGateway`** — a published test fixture that refuses what a real gateway refuses.
+
+`sculk-discord` imports no Bukkit and no JDA, enforced by a build check that scans compiled classes.
+The same API writes a standalone bot and a plugin-owned one.
+
 ## [5.0.0] — "Rebuilt" — 2026-07-31
 
 A full rebuild. 5.0 is not a migration from 4.5; it is the same ideas rewritten with the benefit of

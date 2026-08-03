@@ -116,6 +116,15 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Discord',
+					items: [
+						{ label: 'Overview', slug: 'discord/overview' },
+						{ label: 'Messages', slug: 'discord/messages' },
+						{ label: 'Commands', slug: 'discord/commands' },
+						{ label: 'Interactions', slug: 'discord/interactions' },
+					],
+				},
+				{
 					label: 'Series',
 					items: [
 						{ label: 'Overview', slug: 'series/overview' },

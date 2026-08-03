@@ -21,6 +21,7 @@ Each docs section maps 1:1 to a module. Packages are `studio.sculk.<area>` (flat
 | `sculk-visual` | `studio.sculk.visual` | Particles, sounds, timelines, packet-only holograms, nametags |
 | `sculk-integrations` | `studio.sculk.integrations` | Optional PlaceholderAPI / Vault / LuckPerms adapters |
 | `sculk-packets-api` (+ `-packetevents`, `-protocollib`) | `studio.sculk.packets` | Backend-neutral packet API, client blocks, virtual entities |
+| `sculk-discord` (+ `-jda`) | `studio.sculk.discord` | Backend-neutral Discord: message tree, slash command specs, typed interactions, collectors, webhooks. **Imports no Bukkit** — a standalone bot uses the same API a plugin does, and a build check enforces it |
 | `sculk-platform` | `studio.sculk.platform` | `SculkPlugin`, `SculkPlatform`, `ServiceRegistry`, events, scheduler impl |
 | `sculk-bom` | — | Version BOM, generated from the subproject list |
 
