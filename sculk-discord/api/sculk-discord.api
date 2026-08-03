@@ -1,0 +1,438 @@
+public final class studio/sculk/discord/BotConfig {
+	public fun <init> (Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Set;
+	public final fun component3 ()Ljava/util/Set;
+	public final fun copy (Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;)Lstudio/sculk/discord/BotConfig;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/BotConfig;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Lstudio/sculk/discord/BotConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommandGuilds ()Ljava/util/Set;
+	public final fun getConfigured ()Z
+	public final fun getIntents ()Ljava/util/Set;
+	public final fun getToken ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/ChannelId : studio/sculk/discord/DiscordId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lstudio/sculk/discord/ChannelId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getRaw ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/ComponentId {
+	public static final field Companion Lstudio/sculk/discord/ComponentId$Companion;
+	public static final field MAX_LENGTH I
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEncoded ()Ljava/lang/String;
+	public final fun getNamespace ()Ljava/lang/String;
+	public final fun getParts ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun part (I)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/ComponentId$Companion {
+	public final fun of (Ljava/lang/String;[Ljava/lang/String;)Lstudio/sculk/SculkResult;
+	public final fun parse (Ljava/lang/String;)Lstudio/sculk/discord/ComponentId;
+}
+
+public abstract interface class studio/sculk/discord/DiscordGateway : studio/sculk/SculkHandle {
+	public abstract fun channelExists-SyJAD2I (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun delete-0ROKZEE (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun edit-81MaTmM (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/message/DiscordMessage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getSelfId-NSeyY1E ()Ljava/lang/String;
+	public abstract fun getState ()Lstudio/sculk/discord/GatewayState;
+	public abstract fun presence (Lstudio/sculk/discord/Presence;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun send-4FSc6sg (Ljava/lang/String;Lstudio/sculk/discord/message/DiscordMessage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class studio/sculk/discord/DiscordGatewayProvider {
+	public abstract fun create (Lstudio/sculk/discord/BotConfig;Lkotlinx/coroutines/CoroutineScope;)Lstudio/sculk/discord/DiscordGateway;
+	public abstract fun getBackend ()Ljava/lang/String;
+	public abstract fun isAvailable ()Z
+}
+
+public abstract interface class studio/sculk/discord/DiscordId {
+	public abstract fun getRaw ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/GatewayState : java/lang/Enum {
+	public static final field Connecting Lstudio/sculk/discord/GatewayState;
+	public static final field Degraded Lstudio/sculk/discord/GatewayState;
+	public static final field Disabled Lstudio/sculk/discord/GatewayState;
+	public static final field Disconnected Lstudio/sculk/discord/GatewayState;
+	public static final field Ready Lstudio/sculk/discord/GatewayState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getUsable ()Z
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/discord/GatewayState;
+	public static fun values ()[Lstudio/sculk/discord/GatewayState;
+}
+
+public final class studio/sculk/discord/GuildId : studio/sculk/discord/DiscordId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lstudio/sculk/discord/GuildId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getRaw ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/Intent : java/lang/Enum {
+	public static final field DirectMessages Lstudio/sculk/discord/Intent;
+	public static final field GuildMembers Lstudio/sculk/discord/Intent;
+	public static final field GuildMessages Lstudio/sculk/discord/Intent;
+	public static final field GuildPresences Lstudio/sculk/discord/Intent;
+	public static final field MessageContent Lstudio/sculk/discord/Intent;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getPrivileged ()Z
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/discord/Intent;
+	public static fun values ()[Lstudio/sculk/discord/Intent;
+}
+
+public abstract interface class studio/sculk/discord/Mentions {
+	public static final field Companion Lstudio/sculk/discord/Mentions$Companion;
+}
+
+public final class studio/sculk/discord/Mentions$All : studio/sculk/discord/Mentions {
+	public static final field INSTANCE Lstudio/sculk/discord/Mentions$All;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/Mentions$Allow : studio/sculk/discord/Mentions {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Set;Ljava/util/Set;Z)V
+	public synthetic fun <init> (Ljava/util/Set;Ljava/util/Set;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Set;
+	public final fun component2 ()Ljava/util/Set;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/util/Set;Ljava/util/Set;Z)Lstudio/sculk/discord/Mentions$Allow;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/Mentions$Allow;Ljava/util/Set;Ljava/util/Set;ZILjava/lang/Object;)Lstudio/sculk/discord/Mentions$Allow;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEveryone ()Z
+	public final fun getRoles ()Ljava/util/Set;
+	public final fun getUsers ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/Mentions$Companion {
+	public final fun role-brGRuVY (Ljava/lang/String;)Lstudio/sculk/discord/Mentions$Allow;
+	public final fun roles (Ljava/util/Collection;)Lstudio/sculk/discord/Mentions$Allow;
+	public final fun user-tGH-GZo (Ljava/lang/String;)Lstudio/sculk/discord/Mentions$Allow;
+	public final fun users (Ljava/util/Collection;)Lstudio/sculk/discord/Mentions$Allow;
+}
+
+public final class studio/sculk/discord/Mentions$None : studio/sculk/discord/Mentions {
+	public static final field INSTANCE Lstudio/sculk/discord/Mentions$None;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/MessageId : studio/sculk/discord/DiscordId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lstudio/sculk/discord/MessageId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun getRaw ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/Presence {
+	public fun <init> (Ljava/lang/String;Lstudio/sculk/discord/Presence$Kind;)V
+	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/discord/Presence$Kind;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lstudio/sculk/discord/Presence$Kind;
+	public final fun copy (Ljava/lang/String;Lstudio/sculk/discord/Presence$Kind;)Lstudio/sculk/discord/Presence;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/Presence;Ljava/lang/String;Lstudio/sculk/discord/Presence$Kind;ILjava/lang/Object;)Lstudio/sculk/discord/Presence;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lstudio/sculk/discord/Presence$Kind;
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/Presence$Kind : java/lang/Enum {
+	public static final field Competing Lstudio/sculk/discord/Presence$Kind;
+	public static final field Listening Lstudio/sculk/discord/Presence$Kind;
+	public static final field Playing Lstudio/sculk/discord/Presence$Kind;
+	public static final field Watching Lstudio/sculk/discord/Presence$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/discord/Presence$Kind;
+	public static fun values ()[Lstudio/sculk/discord/Presence$Kind;
+}
+
+public final class studio/sculk/discord/RateLimiter {
+	public static final field WINDOW_MILLIS J
+	public fun <init> ()V
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun acquire (I)Z
+	public final fun used ()I
+}
+
+public final class studio/sculk/discord/RoleId : studio/sculk/discord/DiscordId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lstudio/sculk/discord/RoleId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public static final fun getMention-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getRaw ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/SculkDiscord {
+	public static final field INSTANCE Lstudio/sculk/discord/SculkDiscord;
+	public final fun create (Lstudio/sculk/discord/BotConfig;Lkotlinx/coroutines/CoroutineScope;Ljava/util/List;)Lstudio/sculk/SculkResult;
+	public static synthetic fun create$default (Lstudio/sculk/discord/SculkDiscord;Lstudio/sculk/discord/BotConfig;Lkotlinx/coroutines/CoroutineScope;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public final fun disabled (Ljava/lang/String;)Lstudio/sculk/discord/DiscordGateway;
+	public final fun discover (Ljava/util/List;)Ljava/util/List;
+}
+
+public final class studio/sculk/discord/SnowflakeKt {
+	public static final fun isWellFormed (Lstudio/sculk/discord/DiscordId;)Z
+}
+
+public final class studio/sculk/discord/UserId : studio/sculk/discord/DiscordId {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lstudio/sculk/discord/UserId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public static final fun getMention-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun getRaw ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/message/Button : studio/sculk/discord/message/Interactive {
+	public static final field Companion Lstudio/sculk/discord/message/Button$Companion;
+	public static final field MAX_LABEL I
+	public fun <init> (Ljava/lang/String;Lstudio/sculk/discord/ComponentId;Ljava/lang/String;Lstudio/sculk/discord/message/ButtonStyle;ZLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/discord/ComponentId;Ljava/lang/String;Lstudio/sculk/discord/message/ButtonStyle;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lstudio/sculk/discord/ComponentId;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lstudio/sculk/discord/message/ButtonStyle;
+	public final fun component5 ()Z
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lstudio/sculk/discord/ComponentId;Ljava/lang/String;Lstudio/sculk/discord/message/ButtonStyle;ZLjava/lang/String;)Lstudio/sculk/discord/message/Button;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/message/Button;Ljava/lang/String;Lstudio/sculk/discord/ComponentId;Ljava/lang/String;Lstudio/sculk/discord/message/ButtonStyle;ZLjava/lang/String;ILjava/lang/Object;)Lstudio/sculk/discord/message/Button;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEmoji ()Ljava/lang/String;
+	public final fun getEnabled ()Z
+	public final fun getId ()Lstudio/sculk/discord/ComponentId;
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getLink ()Ljava/lang/String;
+	public final fun getStyle ()Lstudio/sculk/discord/message/ButtonStyle;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/message/Button$Companion {
+}
+
+public final class studio/sculk/discord/message/ButtonStyle : java/lang/Enum {
+	public static final field Danger Lstudio/sculk/discord/message/ButtonStyle;
+	public static final field Primary Lstudio/sculk/discord/message/ButtonStyle;
+	public static final field Secondary Lstudio/sculk/discord/message/ButtonStyle;
+	public static final field Success Lstudio/sculk/discord/message/ButtonStyle;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/discord/message/ButtonStyle;
+	public static fun values ()[Lstudio/sculk/discord/message/ButtonStyle;
+}
+
+public final class studio/sculk/discord/message/Container : studio/sculk/discord/message/MessageComponent {
+	public fun <init> (Ljava/util/List;Ljava/lang/Integer;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/Integer;
+	public final fun copy (Ljava/util/List;Ljava/lang/Integer;)Lstudio/sculk/discord/message/Container;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/message/Container;Ljava/util/List;Ljava/lang/Integer;ILjava/lang/Object;)Lstudio/sculk/discord/message/Container;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccentRgb ()Ljava/lang/Integer;
+	public final fun getChildren ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/message/DiscordMessage {
+	public fun <init> (Ljava/util/List;Lstudio/sculk/discord/Mentions;Z)V
+	public synthetic fun <init> (Ljava/util/List;Lstudio/sculk/discord/Mentions;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Lstudio/sculk/discord/Mentions;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/util/List;Lstudio/sculk/discord/Mentions;Z)Lstudio/sculk/discord/message/DiscordMessage;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/message/DiscordMessage;Ljava/util/List;Lstudio/sculk/discord/Mentions;ZILjava/lang/Object;)Lstudio/sculk/discord/message/DiscordMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun flatten ()Ljava/util/List;
+	public final fun getComponentIds ()Ljava/util/List;
+	public final fun getComponents ()Ljava/util/List;
+	public final fun getEphemeral ()Z
+	public final fun getMentions ()Lstudio/sculk/discord/Mentions;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/message/DiscordMessageKt {
+	public static final fun message (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/discord/message/DiscordMessage;
+	public static final fun rgbOf (Ljava/lang/String;)I
+}
+
+public final class studio/sculk/discord/message/Divider : studio/sculk/discord/message/MessageComponent {
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun copy (Z)Lstudio/sculk/discord/message/Divider;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/message/Divider;ZILjava/lang/Object;)Lstudio/sculk/discord/message/Divider;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLarge ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class studio/sculk/discord/message/Interactive : studio/sculk/discord/message/MessageComponent {
+}
+
+public final class studio/sculk/discord/message/MessageBuilder {
+	public final fun add (Lstudio/sculk/discord/message/MessageComponent;)V
+	public final fun container (Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;)V
+	public final fun container (Lstudio/sculk/text/ThemeStyle;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun container$default (Lstudio/sculk/discord/message/MessageBuilder;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun divider (Z)V
+	public static synthetic fun divider$default (Lstudio/sculk/discord/message/MessageBuilder;ZILjava/lang/Object;)V
+	public final fun getEphemeral ()Z
+	public final fun getMentions ()Lstudio/sculk/discord/Mentions;
+	public final fun row (Lkotlin/jvm/functions/Function1;)V
+	public final fun setEphemeral (Z)V
+	public final fun setMentions (Lstudio/sculk/discord/Mentions;)V
+	public final fun text (Ljava/lang/String;)V
+}
+
+public abstract interface class studio/sculk/discord/message/MessageComponent {
+}
+
+public final class studio/sculk/discord/message/Row : studio/sculk/discord/message/MessageComponent {
+	public static final field Companion Lstudio/sculk/discord/message/Row$Companion;
+	public static final field MAX_PER_ROW I
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lstudio/sculk/discord/message/Row;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/message/Row;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/discord/message/Row;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComponents ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/message/Row$Companion {
+}
+
+public final class studio/sculk/discord/message/RowBuilder {
+	public final fun button (Ljava/lang/String;Lstudio/sculk/discord/ComponentId;Lstudio/sculk/discord/message/ButtonStyle;ZLjava/lang/String;)V
+	public static synthetic fun button$default (Lstudio/sculk/discord/message/RowBuilder;Ljava/lang/String;Lstudio/sculk/discord/ComponentId;Lstudio/sculk/discord/message/ButtonStyle;ZLjava/lang/String;ILjava/lang/Object;)V
+	public final fun link (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun link$default (Lstudio/sculk/discord/message/RowBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun select (Lstudio/sculk/discord/ComponentId;Ljava/util/List;Ljava/lang/String;IIZ)V
+	public static synthetic fun select$default (Lstudio/sculk/discord/message/RowBuilder;Lstudio/sculk/discord/ComponentId;Ljava/util/List;Ljava/lang/String;IIZILjava/lang/Object;)V
+}
+
+public final class studio/sculk/discord/message/SelectMenu : studio/sculk/discord/message/Interactive {
+	public static final field Companion Lstudio/sculk/discord/message/SelectMenu$Companion;
+	public static final field MAX_OPTIONS I
+	public fun <init> (Lstudio/sculk/discord/ComponentId;Ljava/util/List;Ljava/lang/String;IIZ)V
+	public synthetic fun <init> (Lstudio/sculk/discord/ComponentId;Ljava/util/List;Ljava/lang/String;IIZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lstudio/sculk/discord/ComponentId;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()Z
+	public final fun copy (Lstudio/sculk/discord/ComponentId;Ljava/util/List;Ljava/lang/String;IIZ)Lstudio/sculk/discord/message/SelectMenu;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/message/SelectMenu;Lstudio/sculk/discord/ComponentId;Ljava/util/List;Ljava/lang/String;IIZILjava/lang/Object;)Lstudio/sculk/discord/message/SelectMenu;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getId ()Lstudio/sculk/discord/ComponentId;
+	public final fun getMaxChoices ()I
+	public final fun getMinChoices ()I
+	public final fun getOptions ()Ljava/util/List;
+	public final fun getPlaceholder ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/message/SelectMenu$Companion {
+}
+
+public final class studio/sculk/discord/message/SelectOption {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lstudio/sculk/discord/message/SelectOption;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/message/SelectOption;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lstudio/sculk/discord/message/SelectOption;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefault ()Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/message/Text : studio/sculk/discord/message/MessageComponent {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lstudio/sculk/discord/message/Text;
+	public static synthetic fun copy$default (Lstudio/sculk/discord/message/Text;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/discord/message/Text;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMarkdown ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/discord/webhook/DiscordWebhook : studio/sculk/SculkHandle {
+	public fun <init> (Ljava/lang/String;ILkotlin/jvm/functions/Function0;Ljava/net/http/HttpClient;)V
+	public synthetic fun <init> (Ljava/lang/String;ILkotlin/jvm/functions/Function0;Ljava/net/http/HttpClient;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun send (Lstudio/sculk/discord/message/DiscordMessage;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun send$default (Lstudio/sculk/discord/webhook/DiscordWebhook;Lstudio/sculk/discord/message/DiscordMessage;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun sendText (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/Mentions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun sendText$default (Lstudio/sculk/discord/webhook/DiscordWebhook;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/Mentions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
