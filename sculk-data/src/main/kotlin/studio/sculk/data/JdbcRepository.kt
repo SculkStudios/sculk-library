@@ -76,7 +76,7 @@ public class JdbcRepository<T : Any, ID : Any>(
 
     override suspend fun count(query: Query.() -> Unit): SculkResult<Long> = io("count rows") { connection ->
         val built = Query().apply(query)
-        val where = built.condition?.render(dialect)
+        val where = built.condition?.render(dialect, schema)
         val sql = "SELECT COUNT(*) FROM ${dialect.quote(schema.table)}" + (where?.let { " WHERE ${it.first}" } ?: "")
         connection.prepareStatement(sql).use { statement ->
             bind(statement, where?.second.orEmpty())
@@ -125,7 +125,7 @@ public class JdbcRepository<T : Any, ID : Any>(
 
     override suspend fun deleteWhere(query: Query.() -> Unit): SculkResult<Int> = io("delete matching rows") { connection ->
         val built = Query().apply(query)
-        val where = built.condition?.render(dialect)
+        val where = built.condition?.render(dialect, schema)
         val sql = "DELETE FROM ${dialect.quote(schema.table)}" + (where?.let { " WHERE ${it.first}" } ?: "")
         connection.prepareStatement(sql).use { statement ->
             bind(statement, where?.second.orEmpty())
@@ -148,12 +148,15 @@ public class JdbcRepository<T : Any, ID : Any>(
 
     private fun selectSql(query: Query): String = buildString {
         append("SELECT * FROM ").append(dialect.quote(schema.table))
-        query.condition?.let { append(" WHERE ").append(it.render(dialect).first) }
+        query.condition?.let { append(" WHERE ").append(it.render(dialect, schema).first) }
         if (query.orderBy.isNotEmpty()) {
             append(" ORDER BY ")
             append(
-                query.orderBy.joinToString(", ") { (column, ascending) ->
-                    "${dialect.quote(column)} ${if (ascending) "ASC" else "DESC"}"
+                // Through the schema for the same reason the WHERE clause is: orderBy names a
+                // Kotlin property, which is not the column name once @Column has renamed it.
+                query.orderBy.joinToString(", ") { (property, ascending) ->
+                    val name = schema.forProperty(property)?.name ?: property
+                    "${dialect.quote(name)} ${if (ascending) "ASC" else "DESC"}"
                 },
             )
         }
@@ -166,7 +169,7 @@ public class JdbcRepository<T : Any, ID : Any>(
         }
     }
 
-    private fun parametersOf(query: Query): List<Any?> = query.condition?.render(dialect)?.second.orEmpty()
+    private fun parametersOf(query: Query): List<Any?> = query.condition?.render(dialect, schema)?.second.orEmpty()
 
     private fun bind(statement: PreparedStatement, parameters: List<Any?>) {
         parameters.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
