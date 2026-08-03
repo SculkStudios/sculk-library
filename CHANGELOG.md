@@ -28,6 +28,38 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 `sculk-discord` imports no Bukkit and no JDA, enforced by a build check that scans compiled classes.
 The same API writes a standalone bot and a plugin-owned one.
 
+- **`SculkPlugin.banner` and `bannerArt()`** — the start-up banner can now be turned off, or given a
+  plugin's own art. `onEnable` is final and printed Sculk's mark unconditionally, which put the
+  framework's branding in the console of anyone paying for a plugin built on it, and made a plugin
+  with a banner of its own print two.
+
+### Fixed
+
+- **A generated config no longer stops parsing on the second boot.** A `${VAR:-}` default rendered as
+  a plain scalar, and environment substitution runs over the text before it is parsed — so an unset
+  variable left `password:` with nothing after it, which is a null. `storage.yml` ships that default,
+  so every consumer of `sculk-data` wrote a working file on the first boot and failed to read it on
+  every one after. Values containing a placeholder are now quoted when written.
+- **`@Comment("a\nb")` no longer corrupts the file it documents.** Only the first line was prefixed
+  with `#`, leaving the rest as bare lines that do not parse. The `\n` form has been documented since
+  4.x without ever working.
+- **Schema migration reports a probable rename instead of silently emptying the table.** 5.0 derives
+  column names from the property verbatim where 4.5 converted them to `snake_case`. Migration is
+  additive, so on a 4.5 table the new column was added beside the populated old one and every row
+  read back as its Kotlin defaults, with nothing thrown and nothing logged. When new columns appear
+  beside columns the entity does not model, both sets are now named in a warning.
+- **Banner facts past the last line of art are no longer dropped.** `show()` iterated the art and
+  read facts by index, so a plugin adding two facts of its own silently lost the framework's own
+  "Started in" row.
+
+### Documentation
+
+- The config, data, packets, integrations, architecture and recipe pages taught APIs that no longer
+  exist — `@param:Min`, `@PrimaryKey`, `limit()`, `data.cached(delegate =)`, `commands.registerAll`,
+  `packetsResult`, and a `SculkPlugin({ gui(); data() })` constructor that takes no arguments. A
+  migration onto 5.0 had to be told to distrust the docs and read the `.api` dumps instead. The
+  `storage.yml` sample is now the file the generator actually writes.
+
 ## [5.0.0] — "Rebuilt" — 2026-07-31
 
 A full rebuild. 5.0 is not a migration from 4.5; it is the same ideas rewritten with the benefit of
