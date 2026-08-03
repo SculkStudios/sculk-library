@@ -26,16 +26,21 @@ softdepend:
 
 ## Backend selection
 
-```kotlin
-class MyPlugin : SculkPlugin({
-    packets {
-        backend = PacketBackendMode.PacketEvents
-        required = true
-    }
-})
-```
+Selection is by discovery, not by declaration: PacketEvents is preferred whenever it is installed.
+Add the adapter to your build and install the PacketEvents plugin, and `sculk.packets` resolves to it.
 
-Use `required = true` only when the plugin cannot run without packet features.
+If your plugin genuinely cannot run without packets, check at start-up and say so:
+
+```kotlin
+class MyPlugin : SculkPlugin() {
+    override fun setup() {
+        sculk.packets.onFailure { message, _ ->
+            logger.severe("This plugin needs PacketEvents installed: $message")
+            server.pluginManager.disablePlugin(this)
+        }
+    }
+}
+```
 
 ## Low-level listener
 
