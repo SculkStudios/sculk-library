@@ -455,7 +455,8 @@ public final class studio/sculk/discord/interaction/Interaction$DefaultImpls {
 }
 
 public final class studio/sculk/discord/interaction/InteractionRouter {
-	public fun <init> (Ljava/util/logging/Logger;)V
+	public synthetic fun <init> (Ljava/util/logging/Logger;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/logging/Logger;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun dispatch (Lstudio/sculk/discord/interaction/ComponentInteraction;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun dispatch (Lstudio/sculk/discord/interaction/DiscordCommandContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun dispatch (Lstudio/sculk/discord/interaction/ModalInteraction;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

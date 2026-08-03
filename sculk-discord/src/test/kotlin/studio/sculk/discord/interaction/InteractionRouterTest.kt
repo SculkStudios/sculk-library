@@ -1,5 +1,6 @@
 package studio.sculk.discord.interaction
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -16,7 +17,9 @@ import studio.sculk.discord.UserId
 import studio.sculk.discord.command.discordCommand
 import studio.sculk.discord.message.DiscordMessage
 import studio.sculk.discord.message.Text
+import studio.sculk.discord.message.message
 import java.util.logging.Logger
+import kotlin.time.Duration.Companion.seconds
 
 class InteractionRouterTest {
     private val router = InteractionRouter(Logger.getLogger("test"))
@@ -47,8 +50,13 @@ class InteractionRouterTest {
 
         override suspend fun defer(ephemeral: Boolean): SculkResult<DeferredInteraction> {
             acknowledged = true
+            deferrals++
             return SculkResult.failure("not needed in this test")
         }
+
+        /** How many times something deferred this, so the auto-defer watchdog is observable. */
+        var deferrals: Int = 0
+            private set
     }
 
     @Test
@@ -108,6 +116,33 @@ class InteractionRouterTest {
 
         assertEquals(1, interaction.said.size)
         assertTrue(interaction.said.single().contains("went wrong"), interaction.said.single())
+    }
+
+    @Test
+    fun `a handler slower than the deadline is deferred for, rather than left to time out`() = runTest {
+        // Discord discards an unanswered interaction after three seconds and shows a permanent
+        // "the application did not respond", which reads as the bot being dead rather than as a
+        // handler that forgot to defer.
+        val router = InteractionRouter(Logger.getLogger("test"), autoDeferAfter = 2.seconds)
+        router.register(discordCommand("slow") { executes { delay(10.seconds) } })
+        val interaction = RecordingInteraction(actor, "slow")
+
+        router.dispatch(interaction)
+
+        assertTrue(interaction.acknowledged, "the router should have acknowledged on the handler's behalf")
+        assertEquals(1, interaction.deferrals)
+    }
+
+    @Test
+    fun `a handler that answers in time is not deferred for`() = runTest {
+        val router = InteractionRouter(Logger.getLogger("test"), autoDeferAfter = 2.seconds)
+        router.register(discordCommand("fast") { executes { reply(message { text("done") }) } })
+        val interaction = RecordingInteraction(actor, "fast")
+
+        router.dispatch(interaction)
+
+        assertEquals(0, interaction.deferrals)
+        assertEquals(listOf("done"), interaction.said)
     }
 
     @Test
