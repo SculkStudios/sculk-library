@@ -3,150 +3,158 @@ title: Caching
 description: Caffeine-backed in-memory cache over repositories — cache hits never touch the database.
 ---
 
-For data that is read far more often than it is written — player profiles, economy balances, settings — wrapping your repository with `SculkCache` eliminates repeated database round-trips. Cache hits are pure in-memory reads backed by [Caffeine](https://github.com/ben-manes/caffeine), one of the fastest JVM caches available.
+For data read far more often than it is written — player profiles, economy balances, settings —
+wrapping a repository with `SculkCache` removes the repeated round-trips. Hits are pure in-memory
+reads backed by [Caffeine](https://github.com/ben-manes/caffeine).
 
 ## Creating a cache
+
+`cached` is an extension on the repository:
 
 ```kotlin
 val repo = sculk.data.repository<PlayerData, UUID>()
 
-val cache = sculk.data.cached(
-    delegate = repo,
-    idExtractor = PlayerData::uuid,
-) {
-    ttl = Duration.ofMinutes(10)   // evict after 10 minutes of no writes
-    maxSize = 500                   // maximum entries before LRU eviction
-}
+val cache = repo.cached(
+    idOf = PlayerData::uuid,
+    maximumSize = 10_000,
+    expireAfter = Duration.ofMinutes(10),
+    negativeExpireAfter = Duration.ofSeconds(30),
+)
 ```
 
-| Config  | Default    | Description |
-| :------ | :--------- | :---------- |
-| `ttl` | 10 minutes | How long after the last write before an entry is evicted |
-| `maxSize` | 500 | Maximum number of entries — oldest are evicted when exceeded |
+`idOf` is required and has no default: the cache cannot read an entity's key without reflection, and
+asking for it is one line at the call site.
+
+| Parameter | Default | Description |
+| :--- | :--- | :--- |
+| `idOf` | — | Reads an entity's primary key |
+| `maximumSize` | `10_000` | Entries held before eviction |
+| `expireAfter` | 10 minutes | How long after a write an entry survives |
+| `negativeExpireAfter` | 30 seconds | How long a *known-absent* id is remembered |
+
+### Negative caching
+
+Absent ids are remembered too, briefly. A join handler asks for a profile, the player is new, nothing
+is found — without a negative entry every later lookup that session asks the database the same
+question and gets the same nothing, making a new player the *worst* case rather than the cheapest.
+
+The negative TTL is deliberately short, so a row created by another server becomes visible in seconds
+rather than on restart.
 
 ## Using the cache
 
-`SculkCache` implements `SculkRepository` — you use the exact same API. No special code paths for cache vs. non-cache:
+`SculkCache` is **not** a `SculkRepository`. It exposes the subset that can be cached coherently:
 
 ```kotlin
 sculk.scope.launchAsync {
-    // Cache hit → no DB call
-    val result = cache.find(player.uniqueId)
-
-    // Save → writes to DB AND updates the cache entry
-    cache.save(updatedData)
-
-    // Delete → removes from DB AND invalidates the cache entry
-    cache.delete(player.uniqueId)
+    val result = cache.find(player.uniqueId)   // hit → no DB call
+    cache.save(updatedData)                    // writes through to the DB and updates the entry
+    cache.delete(player.uniqueId)              // deletes the row and marks the id absent
+    val now = cache.peek(player.uniqueId)      // whatever is cached right now, no DB call, no suspend
 }
 ```
 
-## Cache miss behaviour
+For anything else — `query`, `count`, `findAll`, `topBy`, `saveAll`, `deleteWhere` — go to the
+repository directly. Those either cannot be answered from a cache or would return a stale answer,
+so the cache does not pretend to offer them.
 
-On a cache miss, `find()` suspends while it calls through to the repository, stores the result in the cache, then returns it. Call it from `sculk.scope.launchAsync { }`.
+## Cache miss behaviour
 
 ```
 find(uuid)
-  └─ cache hit?  → return cached value immediately
-  └─ cache miss? → repo.find(uuid) → store in cache → return value
+  ├─ present?      → return the cached value
+  ├─ known absent? → return null without a DB call
+  └─ otherwise     → repo.find(uuid) → record present or absent → return
 ```
 
 ## Manual invalidation
 
-If you write to the database through a path that bypasses the cache (e.g., a console command, external tool, or direct SQL), you must manually invalidate the affected entry:
+If something writes to the database behind the cache's back — a console command, an external tool,
+direct SQL — drop the affected entry:
 
 ```kotlin
-// Invalidate a single entry
-cache.invalidate(uuid)
-
-// Invalidate everything (e.g., after a bulk import)
-cache.invalidateAll()
+cache.forget(uuid)   // one entry, positive and negative
+cache.clear()        // everything, e.g. after a bulk import
 ```
 
-## Recommended pattern: load on join, flush on quit
+`cache.size` reports the estimated number of cached entities.
 
-The most common pattern for player data — load into cache when the player joins, write back to DB when they leave:
+## Recommended pattern: load on join, forget on quit
 
 ```kotlin
 sculk.events.listen<PlayerJoinEvent> { event ->
     val player = event.player
     sculk.scope.launchAsync {
-        // Pre-load into cache; subsequent reads are instant
-        cache.find(player.uniqueId)
+        cache.findOrCreate(player.uniqueId) { PlayerData(uuid = it) }
     }
 }
 
 sculk.events.listen<PlayerQuitEvent> { event ->
     val player = event.player
     sculk.scope.launchAsync {
-        // Flush the current in-memory state to DB
-        val result = cache.find(player.uniqueId)
-        if (result is SculkResult.Success && result.value != null) {
-            cache.save(result.value)
-        }
-        cache.invalidate(player.uniqueId)
+        cache.peek(player.uniqueId)?.let { cache.save(it) }
+        cache.forget(player.uniqueId)
     }
 }
 ```
+
+`peek` rather than `find` on quit: the player's data is in the cache if it is anywhere, and a miss on
+quit means there is nothing to flush — not that the database should be asked again.
 
 ## findOrCreate
 
-Gets a cached entity by id, or creates, persists, and caches a new one if none exists. This is the cleanest way to initialise player data on join — no manual exists-check, no double-save:
-
-```kotlin
-sculk.events.listen<PlayerJoinEvent> { event ->
-    val player = event.player
-    sculk.scope.launchAsync {
-        val result = healthCache.findOrCreate(player.uniqueId) {
-            PlayerHealth(uuid = player.uniqueId, hearts = 10, maxHearts = 10)
-        }
-        // result.value is always non-null here — either loaded or freshly created
-    }
-}
-```
-
-The factory lambda is **only called if no record exists** in either the cache or the database. The new entity is saved and cached atomically before the result is returned.
-
-## topBy
-
-Returns the top `n` entities from the underlying repository sorted by any field. Always hits the database — cache is bypassed so leaderboards are always fresh:
+Gets a cached entity by id, or creates, persists and caches a new one if none exists:
 
 ```kotlin
 sculk.scope.launchAsync {
-    val topShards = repository.topBy("shards", rows = 10).getOrThrow()
-    // topShards is List<PlayerShards>, descending by default
+    val result = healthCache.findOrCreate(player.uniqueId) { uuid ->
+        PlayerHealth(uuid = uuid, hearts = 10, maxHearts = 10)
+    }
+    // result.value is always non-null here — either loaded or freshly created
+}
+```
 
-    val bottomHearts = repository.topBy("hearts", rows = 5, ascending = true).getOrThrow()
+The factory runs **only if no record exists** in either the cache or the database. The new entity is
+saved and cached before the result returns.
+
+## topBy
+
+Lives on the repository, not the cache — a leaderboard read through a cache would be stale:
+
+```kotlin
+sculk.scope.launchAsync {
+    val topShards = repo.topBy("shards", rows = 10).getOrThrow()
+    val bottomHearts = repo.topBy("hearts", rows = 5, ascending = true).getOrThrow()
 }
 ```
 
 :::note
-`topBy` sorts and limits **in SQL**, so it stays cheap on a table with a million rows. The previous cache-side version loaded the whole table and sorted it in memory, which is survivable at a thousand rows and not at a million.
+`topBy` sorts and limits **in SQL**, so it stays cheap on a table with a million rows. The previous
+cache-side version loaded the whole table and sorted it in memory, which is survivable at a thousand
+rows and not at a million.
 :::
 
 ## Batch saves
 
-`saveAll` upserts a list of entities in a single transaction. On failure the entire batch is rolled back — no partial writes:
+`saveAll` upserts a list in one transaction; on failure the whole batch rolls back. It is a
+repository method, so update the cache yourself if the entities are cached:
 
 ```kotlin
 sculk.scope.launchAsync {
     val updated = onlinePlayers.map { getUpdatedData(it) }
-    val result = cache.saveAll(updated)
-
-    if (result is SculkResult.Failure) {
-        logger.warning("Batch save failed: ${result.message}")
-    }
+    repo.saveAll(updated)
+        .onSuccess { updated.forEach { cache.forget(it.uuid) } }
+        .onFailure { message, _ -> logger.warning("Batch save failed: $message") }
 }
 ```
-
-`saveAll` also updates all corresponding cache entries on success, so subsequent reads stay consistent.
 
 ## Best practices
 
 - **One cache per entity type** — create it at startup and share it everywhere.
-- **Use `findOrCreate` on join** — eliminates the exists-check boilerplate and guarantees a valid entity is always in cache.
-- **Use `topBy` for leaderboards** — it is always fresh, and the database does the sorting.
-- **Use `saveAll` for bulk shutdown flushes** — one transaction is faster than N individual saves.
-- **Set `maxSize` to a sensible multiple of max-players** — for a 100-player server, 200–500 is plenty for player-scoped data.
-- **Keep `ttl` short for externally-mutable data** — longer (30–60 min) is fine for data only your plugin writes.
-- **Always go through the cache for hot paths** — bypassing it defeats the purpose and can cause stale reads.
+- **Use `findOrCreate` on join** — it removes the exists-check and guarantees a valid entity.
+- **Use `topBy` on the repository for leaderboards** — always fresh, and the database does the sorting.
+- **Use `saveAll` for bulk shutdown flushes** — one transaction beats N saves.
+- **Size `maximumSize` off max-players** — for a 100-player server, a few hundred is plenty for
+  player-scoped data.
+- **Keep `expireAfter` short for externally-mutable data**; longer is fine for data only your plugin writes.
+- **Go through the cache on hot paths** — bypassing it defeats the purpose and causes stale reads.

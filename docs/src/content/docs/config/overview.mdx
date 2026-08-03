@@ -64,12 +64,12 @@ Register migrations before `load<Settings>()`. If a config is already loaded, Sc
 ```kotlin
 @ConfigFile("settings.yml")
 data class Settings(
-    @param:Min(1) @param:Max(50) val maxHomes: Int = 5,
-    @param:NotEmpty val prefix: String = "<gray>[<aqua>Plugin<gray>] ",
+    @Min(1) @Max(50) val maxHomes: Int = 5,
+    @NotEmpty val prefix: String = "<gray>[<aqua>Plugin<gray>] ",
 )
 ```
 
-Sculk validates constructor parameter annotations. In Kotlin, use the explicit `@param:` target for `@Min`, `@Max`, and `@NotEmpty`; Java records do not need a use-site target.
+`@Min`, `@Max` and `@NotEmpty` target the **property**, so write them plain. A `@param:` use-site target aims them at the constructor parameter instead and does not compile.
 
 Invalid values are reported and the loaded object keeps the field's default where Sculk can safely do so. Treat validation messages as configuration errors to fix, not as something to ignore permanently.
 
@@ -165,12 +165,12 @@ Multi-line comments are supported — separate lines with `\n` in the annotation
 val killCooldown: Long = 60_000L,
 ```
 
-`@Comment` can be combined with `@param:Min`, `@param:Max`, and `@param:NotEmpty` on the same Kotlin property.
+`@Comment` can be combined with `@Min`, `@Max`, and `@NotEmpty` on the same Kotlin property.
 
 ## Best practices
 
 - One `@ConfigFile` per logical group: `settings.yml`, `messages.yml`, `economy.yml`.
 - Use subdirectories to keep configs tidy: `@ConfigFile("settings/combat.yml")`, `@ConfigFile("messages/combat.yml")`.
 - Keep defaults sensible for a fresh server install — operators should never need to touch the file just to get running.
-- Use `@param:Min`/`@param:Max` on any Kotlin numeric field where an out-of-range value would cause a bug.
+- Use `@Min`/`@Max` on any Kotlin numeric field where an out-of-range value would cause a bug.
 - Use `@Comment` on every field — a config file that explains itself is a config file that never gets misconfigured.

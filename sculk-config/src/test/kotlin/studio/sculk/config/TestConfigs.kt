@@ -41,3 +41,24 @@ data class Bounded(@Min(10) val tooSmall: Int = 1, @Max(5) val tooBig: Int = 99,
 @Serializable
 @ConfigFile("versioned.yml", revision = 2)
 data class Versioned(val greeting: String = "hello")
+
+/** Comments written as one string with newlines in it, rather than as one argument per line. */
+@Serializable
+@ConfigFile("multiline.yml")
+@Comment("A header\nspanning two lines.")
+data class MultilineComments(
+    @Comment("First line.\nSecond line.")
+    val value: Int = 1,
+    val nested: NestedMultiline = NestedMultiline(),
+)
+
+@Serializable
+data class NestedMultiline(
+    @Comment("Deeper.\nStill deeper.")
+    val inner: String = "x",
+)
+
+/** A default that reads from the environment, which is how a shipped file names a secret. */
+@Serializable
+@ConfigFile("secrets.yml")
+data class Secrets(val password: String = "\${DB_PASSWORD:-}", val token: String = "\${API_TOKEN}", val plain: String = "keep me")

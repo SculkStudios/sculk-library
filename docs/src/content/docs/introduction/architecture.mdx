@@ -18,15 +18,18 @@ Resources that need cleanup implement `SculkHandle`. Examples include listener r
 `SculkPlatform.close()` closes platform-owned handles, GUI sessions, commands, event listeners, and data resources. Scheduled tasks returned directly from `sculk.scheduler` should be retained and closed by your plugin unless you register them in your own lifecycle owner.
 
 ```kotlin
-class MyPlugin : SculkPlugin({ gui(); config(); data() }) {
+class MyPlugin : SculkPlugin() {
     override fun setup() {
-        sculk.commands.registerAll(
-            homeCommand(sculk),
-            adminCommand(sculk),
-        )
+        // command("x") { } builds a spec; the leading + is what registers it.
+        +homeCommand(sculk)
+        +adminCommand(sculk)
     }
 }
 ```
+
+There is no subsystem opt-in. Every subsystem on `sculk` is lazy, so a plugin that never touches
+`sculk.data` never opens a connection pool, and one that never touches `sculk.menus` never registers
+an inventory listener.
 
 `SculkPlugin` creates the `SculkPlatform` (exposed as `sculk`) and closes it on disable. Extend
 `JavaPlugin` directly only if you need to own the

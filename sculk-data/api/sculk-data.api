@@ -8,21 +8,24 @@ public final synthetic class studio/sculk/data/Column$Impl : studio/sculk/data/C
 }
 
 public final class studio/sculk/data/ColumnSchema {
-	public fun <init> (Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZI)V
+	public fun <init> (Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZILjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Lstudio/sculk/data/SqlType;
 	public final fun component3 ()Z
 	public final fun component4 ()Z
 	public final fun component5 ()Z
 	public final fun component6 ()I
-	public final fun copy (Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZI)Lstudio/sculk/data/ColumnSchema;
-	public static synthetic fun copy$default (Lstudio/sculk/data/ColumnSchema;Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZIILjava/lang/Object;)Lstudio/sculk/data/ColumnSchema;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZILjava/lang/String;)Lstudio/sculk/data/ColumnSchema;
+	public static synthetic fun copy$default (Lstudio/sculk/data/ColumnSchema;Ljava/lang/String;Lstudio/sculk/data/SqlType;ZZZILjava/lang/String;ILjava/lang/Object;)Lstudio/sculk/data/ColumnSchema;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getElementIndex ()I
 	public final fun getIndexed ()Z
 	public final fun getName ()Ljava/lang/String;
 	public final fun getNullable ()Z
 	public final fun getPrimaryKey ()Z
+	public final fun getPropertyName ()Ljava/lang/String;
 	public final fun getType ()Lstudio/sculk/data/SqlType;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -327,6 +330,7 @@ public final synthetic class studio/sculk/data/Table$Impl : studio/sculk/data/Ta
 public final class studio/sculk/data/TableSchema {
 	public static final field Companion Lstudio/sculk/data/TableSchema$Companion;
 	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun forProperty (Ljava/lang/String;)Lstudio/sculk/data/ColumnSchema;
 	public final fun get (Ljava/lang/String;)Lstudio/sculk/data/ColumnSchema;
 	public final fun getColumnNames ()Ljava/util/List;
 	public final fun getColumns ()Ljava/util/List;

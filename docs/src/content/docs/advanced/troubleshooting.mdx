@@ -52,8 +52,8 @@ In Kotlin config data classes, validation annotations should target constructor 
 ```kotlin
 @ConfigFile("settings.yml")
 data class Settings(
-    @param:Min(1) @param:Max(20) val maxHomes: Int = 5,
-    @param:NotEmpty val prefix: String = "<gray>[Plugin]",
+    @Min(1) @Max(20) val maxHomes: Int = 5,
+    @NotEmpty val prefix: String = "<gray>[Plugin]",
 )
 ```
 
@@ -76,13 +76,19 @@ val material = SculkSeries.material(config.icon) ?: Material.STONE
 
 ## GUI Clicks Do Not Fire
 
-Enable the GUI subsystem:
+There is no subsystem to enable — every subsystem is lazy, and touching `sculk.menus` is what starts
+it. Open menus through the registry rather than with `player.openInventory`:
 
 ```kotlin
-class MyPlugin : SculkPlugin({ gui() })
+class MyPlugin : SculkPlugin() {
+    override fun setup() {
+        sculk.menus.open(myMenu, player)
+    }
+}
 ```
 
-The platform layer owns inventory click/close listeners and session cleanup.
+The platform layer owns the inventory click/close listeners and session cleanup, so a menu shown by
+any other route has nothing listening to it.
 
 ## Async Access Errors
 

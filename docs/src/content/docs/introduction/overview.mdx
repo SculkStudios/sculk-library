@@ -12,7 +12,7 @@ The library keeps Paper visible. It does not try to replace Paper, hide thread-s
 ```kotlin
 @ConfigFile("settings.yml")
 data class Settings(
-    @param:Min(1) val maxHomes: Int = 5,
+    @Min(1) val maxHomes: Int = 5,
 )
 
 val homeMenu = gui("<dark_aqua>Your Homes") {

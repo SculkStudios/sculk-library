@@ -53,11 +53,11 @@ This recipe is intentionally config-driven. It does not persist player data.
 ## Lifecycle
 
 ```kotlin
-class ServerMenuPlugin : SculkPlugin({ config(); gui() }) {
+class ServerMenuPlugin : SculkPlugin() {
     private lateinit var menus: ServerMenus
 
     override fun setup() {
-        val settings = sculk.config.load<MenuSettings>()
+        val settings = sculk.config.load<MenuSettings>().getOrThrow()
         menus = ServerMenus { settings }
     }
 }
