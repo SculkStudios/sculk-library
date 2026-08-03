@@ -8,11 +8,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Activity
+import net.dv8tion.jda.api.entities.emoji.Emoji
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.events.session.SessionDisconnectEvent
 import net.dv8tion.jda.api.events.session.SessionRecreateEvent
@@ -29,15 +32,19 @@ import studio.sculk.coroutine.await
 import studio.sculk.discord.BotConfig
 import studio.sculk.discord.ChannelId
 import studio.sculk.discord.ComponentId
+import studio.sculk.discord.DiscordChatMessage
 import studio.sculk.discord.DiscordGateway
 import studio.sculk.discord.GatewayState
 import studio.sculk.discord.GuildId
+import studio.sculk.discord.GuildService
 import studio.sculk.discord.Intent
 import studio.sculk.discord.MessageId
 import studio.sculk.discord.Presence
+import studio.sculk.discord.RoleId
 import studio.sculk.discord.UserId
 import studio.sculk.discord.command.DiscordCommandSpec
 import studio.sculk.discord.interaction.ComponentInteraction
+import studio.sculk.discord.interaction.DiscordActor
 import studio.sculk.discord.interaction.InteractionRouter
 import studio.sculk.discord.message.DiscordMessage
 import studio.sculk.map
@@ -61,6 +68,7 @@ public class JdaGateway(
 ) : DiscordGateway {
     private val stateRef = AtomicReference(GatewayState.Disabled)
     private val routers = mutableListOf<InteractionRouter>()
+    private val messageHandlers = mutableListOf<suspend (DiscordChatMessage) -> Unit>()
     private val collectors = ConcurrentHashMap<String, MutableList<Collector>>()
 
     @Volatile
@@ -76,6 +84,7 @@ public class JdaGateway(
 
     override val state: GatewayState get() = stateRef.get()
     override val selfId: UserId? get() = jda?.selfUser?.id?.let(::UserId)
+    override val guilds: GuildService = JdaGuildService { jda }
 
     private class Collector(val messageId: String, val from: UserId?, val signal: CompletableDeferred<ComponentInteraction>)
 
@@ -130,6 +139,13 @@ public class JdaGateway(
         }.map { }
     }
 
+    override suspend fun react(channel: ChannelId, message: MessageId, emoji: String): SculkResult<Unit> {
+        val target = textChannel(channel).let { it as? SculkResult.Success ?: return it as SculkResult.Failure }
+        return attempt("react to ${message.raw}") {
+            target.value.addReactionById(message.raw, Emoji.fromFormatted(emoji)).submit().await()
+        }.map { }
+    }
+
     override suspend fun delete(channel: ChannelId, message: MessageId): SculkResult<Unit> {
         val target = textChannel(channel).let { it as? SculkResult.Success ?: return it as SculkResult.Failure }
         return attempt("delete ${message.raw}") { target.value.deleteMessageById(message.raw).submit().await() }.map { }
@@ -176,6 +192,23 @@ public class JdaGateway(
     override fun route(router: InteractionRouter): SculkHandle {
         synchronized(routers) { routers += router }
         return SculkHandle { synchronized(routers) { routers -= router } }
+    }
+
+    override fun onMessage(handler: suspend (DiscordChatMessage) -> Unit): SculkHandle {
+        synchronized(messageHandlers) { messageHandlers += handler }
+        if (Intent.GuildMessages !in config.intents) {
+            logger.warning(
+                "A message handler was registered but Intent.GuildMessages was not requested, so Discord " +
+                    "will never deliver one. Add it to the bot config.",
+            )
+        } else if (Intent.MessageContent !in config.intents) {
+            logger.warning(
+                "Message handlers are registered without Intent.MessageContent, so every message will " +
+                    "arrive with empty content. MessageContent is privileged: enable it on the application " +
+                    "at discord.com/developers before requesting it.",
+            )
+        }
+        return SculkHandle { synchronized(messageHandlers) { messageHandlers -= handler } }
     }
 
     override suspend fun awaitComponent(message: MessageId, within: Duration, from: UserId?): SculkResult<ComponentInteraction> {
@@ -269,6 +302,39 @@ public class JdaGateway(
             // does not also fire whatever handler owns the namespace.
             if (offerToCollector(event.messageId, interaction)) return
             dispatch { it.dispatch(interaction) }
+        }
+
+        /**
+         * Relays a human's message.
+         *
+         * Bots and webhooks are dropped here, this bot included. A relay that reacts to its own post
+         * is an infinite loop whose only brake is a rate limit, and it is the first bug every chat
+         * bridge writes — so it is not left to the handler to remember.
+         */
+        override fun onMessageReceived(event: MessageReceivedEvent) {
+            if (event.jda !== jda || event.author.isBot || event.isWebhookMessage) return
+            val handlers = synchronized(messageHandlers) { messageHandlers.toList() }
+            if (handlers.isEmpty()) return
+            val message = DiscordChatMessage(
+                id = MessageId(event.messageId),
+                channel = ChannelId(event.channel.id),
+                guild = if (event.isFromGuild) GuildId(event.guild.id) else null,
+                author = DiscordActor(
+                    id = UserId(event.author.id),
+                    name = event.member?.effectiveName ?: event.author.effectiveName,
+                    guild = if (event.isFromGuild) GuildId(event.guild.id) else null,
+                    roles = event.member?.roles?.map { RoleId(it.id) }?.toSet().orEmpty(),
+                    permissionBits = event.member?.let { Permission.getRaw(it.permissions) } ?: 0,
+                ),
+                content = event.message.contentRaw,
+                attachments = event.message.attachments.map { it.fileName },
+            )
+            scope.launch {
+                handlers.forEach { handler ->
+                    runCatching { handler(message) }
+                        .onFailure { logger.warning("A Discord message handler failed: ${it.message}") }
+                }
+            }
         }
 
         override fun onModalInteraction(event: ModalInteractionEvent) {

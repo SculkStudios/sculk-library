@@ -55,4 +55,5 @@ include(
     ":examples:staff-tools",
     ":examples:hud-showcase",
     ":examples:visual-showcase",
+    ":examples:discord-bot",
 )
