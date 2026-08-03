@@ -3,8 +3,8 @@ title: Querying, transactions & Redis
 description: The type-safe query DSL, database transactions, and the distributed Redis cache backend.
 ---
 
-Sculk 4.0's data layer is fully coroutine-based. Repository methods are `suspend` and run their JDBC
-work off-thread; call them from `sculk.scope.launchAsync { }`.
+The data layer is fully coroutine-based. Repository methods are `suspend` and run their JDBC work
+off-thread; call them from `sculk.scope.launchAsync { }`.
 
 ## Query DSL
 
@@ -18,13 +18,35 @@ sculk.scope.launchAsync {
             PlayerData::coins greaterThan 1000
             PlayerData::name like "Steve%"
             orderByDescending(PlayerData::coins)
-            limit(10)
+            take(10)
         }
 }
 ```
 
-Operators: `eq`, `notEq`, `greaterThan`, `atLeast`, `lessThan`, `atMost`, `like`. Conditions are
-combined with `AND`; property references resolve to column names via the ORM mapping.
+Operators: `eq`, `notEq`, `greaterThan`, `atLeast`, `lessThan`, `atMost`, `like`, `isIn`. Conditions
+are combined with `AND`; property references resolve to column names, so a renamed field is a
+compile error rather than a query that silently matches nothing.
+
+`take(n)` caps the rows returned and `skip(n)` offsets them — together they paginate.
+
+Group with `OR` using `any { }`:
+
+```kotlin
+repo.query {
+    PlayerData::coins greaterThan 1000
+    any {
+        PlayerData::rank eq "vip"
+        PlayerData::rank eq "mvp"
+    }
+}
+```
+
+`eq null` renders as `IS NULL` rather than `= NULL`, which is never true in SQL and reads as a broken
+query. `isIn(emptyList())` renders as a predicate matching nothing, because an empty `IN ()` is a
+syntax error on every engine.
+
+Alongside `query` there are `findFirst { }`, `count { }` and `deleteWhere { }`, which take the same
+block.
 
 ## Transactions
 
@@ -43,32 +65,49 @@ sculk.scope.launchAsync {
 
 ## Caching
 
-`data.cached(...)` wraps a repository in an in-process Caffeine cache:
+`cached(...)` is an extension on the repository, wrapping it in an in-process Caffeine cache:
 
 ```kotlin
-val cache = sculk.data.cached(repo, PlayerData::uuid) {
-    ttl = Duration.ofMinutes(10)
-    maxSize = 10_000
-}
+val cache = repo.cached(
+    idOf = PlayerData::uuid,
+    maximumSize = 10_000,
+    expireAfter = Duration.ofMinutes(10),
+)
 ```
+
+`idOf` is required: the cache cannot read an entity's key without reflection, and asking for it is
+one line at the call site. See [Caching](/data/caching/) for the full surface.
 
 ## Distributed cache (Redis)
 
-For multi-server networks, `data.distributedCache(...)` stores entities in Redis so they are shared
-across servers. Entities must be `@Serializable`, and the plugin must add `io.lettuce:lettuce-core`:
+For multi-server networks, `RedisCache` stores entities in Redis so they are shared across servers.
+Entities must be `@Serializable`, and the plugin must add `io.lettuce:lettuce-core`. Works against
+Redis and Valkey alike:
 
 ```kotlin
 @Serializable
 data class PlayerData(val uuid: String, val coins: Long)
 
-val cache = sculk.data.distributedCache(
-    delegate = repo,
-    idExtractor = PlayerData::uuid,
+val cache = RedisCache.create(
+    repository = repo,
+    idOf = PlayerData::uuid,
     serializer = PlayerData.serializer(),
-    redisUri = "redis://localhost:6379",
+    uri = "redis://localhost:6379",
     keyPrefix = "players",
+    logger = logger,
+    ttl = Duration.ofMinutes(10),
 )
 ```
 
-Both backends implement the same `SculkCache` interface, so swapping local for distributed never
-changes your call sites. If Redis is unreachable, lookups degrade gracefully to the delegate repo.
+`RedisCache.using(...)` takes a `RedisBackend` you supply instead of a URI — for tests, and for a
+client the plugin already owns. `RedisBackend` is four suspend methods, so a test can substitute a
+map rather than needing a live server to cover a cache miss.
+
+If Redis is unreachable, lookups fall back to the repository and the failure is logged at most once
+every 30 seconds rather than once per lookup.
+
+:::note
+`RedisCache` and `SculkCache` do not share an interface — they offer the same core methods
+(`find`, `findOrCreate`, `save`, `delete`, `forget`, `clear`) but are separate types. Hold whichever
+one you construct.
+:::

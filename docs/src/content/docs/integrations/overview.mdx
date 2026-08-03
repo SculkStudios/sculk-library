@@ -8,7 +8,7 @@ description: Optional adapters for common server plugins.
 Enable integrations in your plugin's subsystem block:
 
 ```kotlin
-class MyPlugin : SculkPlugin({ integrations() }) {
+class MyPlugin : SculkPlugin() {
     override fun setup() { /* sculk.integrations.* */ }
 }
 ```

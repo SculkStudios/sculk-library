@@ -24,21 +24,16 @@ softdepend:
 
 ## Backend selection
 
-```kotlin
-class MyPlugin : SculkPlugin({
-    packets {
-        backend = PacketBackendMode.ProtocolLib
-    }
-})
-```
-
-Use this when your server stack already depends on ProtocolLib or when another plugin integration expects it.
+Selection is by discovery: ship only the ProtocolLib adapter on your compile classpath and install
+ProtocolLib on the server. If both adapters are present, PacketEvents wins — so depend on this one
+alone when your server stack already standardises on ProtocolLib.
 
 ## Compatibility notes
 
 - ProtocolLib is broad and ecosystem-friendly, but it can be heavier than a PacketEvents-first setup.
 - Keep ProtocolLib-specific packet container work inside the adapter module or your plugin integration layer.
-- Unavailable ProtocolLib returns `SculkResult.Failure` unless packets are marked as required.
+- With ProtocolLib absent, `sculk.packets` is a `SculkResult.Failure` naming the reason; the plugin
+  still enables.
 
 ## Common mistakes
 

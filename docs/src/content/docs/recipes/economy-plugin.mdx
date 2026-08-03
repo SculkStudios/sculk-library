@@ -52,42 +52,45 @@ implementation("com.github.SculkStudios.sculk-library:sculk-platform:4.0.0")
 ```kotlin
 @ConfigFile("economy.yml")
 data class EconomySettings(
-    @param:Min(0)
+    @Min(0)
     val startingCoins: Long = 100,
-    @param:Min(1)
+    @Min(1)
     val topLimit: Int = 10,
     val messages: EconomyMessages = EconomyMessages(),
 )
 ```
 
-Use `@param:` for validation annotations because Sculk validates constructor parameters.
+Validation annotations target the property, so they are written plain — no `@param:` use-site target.
 
 ## Data Model
 
 ```kotlin
+@Serializable
 @Table("economy_accounts")
 data class EconomyAccount(
-    @PrimaryKey val uuid: UUID,
-    var name: String,
-    var coins: Long,
-    var createdAt: Long,
-    var updatedAt: Long,
+    @Id val uuid: String,
+    @Index val name: String = "",
+    val coins: Long = 0,
+    val createdAt: Long = 0,
+    val updatedAt: Long = 0,
 )
 ```
 
-The repository is UUID-first and keeps the latest known player name for display.
+The repository is UUID-first and keeps the latest known player name for display. The key is stored as
+text — pass `player.uniqueId.toString()`, or declare it as `UUID` with
+`@Serializable(with = UuidSerializer::class)`.
 
 ## Lifecycle
 
 ```kotlin
-class EconomyPlugin : SculkPlugin({ config(); data() }) {
-    private lateinit var service: EconomyService
-
+class EconomyPlugin : SculkPlugin() {
     override fun setup() {
-        val settings = sculk.config.load<EconomySettings>()
-        val repository = sculk.data.repository<EconomyAccount, UUID>()
-        val cached = sculk.data.cached(repository, EconomyAccount::uuid)
-        service = EconomyService(cached, { settings.startingCoins })
+        val settings = sculk.config.load<EconomySettings>().getOrThrow()
+        // Touching sculk.data is what opens the pool; a plugin that never does pays nothing.
+        val repository = sculk.data.repository<EconomyAccount, String>()
+        sculk.services.register(
+            EconomyService(repository.cached(EconomyAccount::uuid), repository) { settings.startingCoins },
+        )
     }
 }
 ```

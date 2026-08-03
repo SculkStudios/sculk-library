@@ -14,8 +14,36 @@ internal object SchemaMigrator {
     fun apply(connection: Connection, schema: TableSchema, dialect: SqlDialect, logger: Logger) {
         createTable(connection, schema, dialect)
         val existing = existingColumns(connection, schema, dialect)
-        addMissingColumns(connection, schema, dialect, existing, logger)
+        val added = addMissingColumns(connection, schema, dialect, existing, logger)
+        warnOnAbandonedColumns(schema, existing, added, logger)
         createIndexes(connection, schema, dialect)
+    }
+
+    /**
+     * Warns when new columns appear *beside* columns this entity no longer models.
+     *
+     * That pair is the signature of a rename, and a rename is the one shape additive migration
+     * handles badly: the old column keeps every row's data, the new one is empty, and each row then
+     * reads back as its Kotlin defaults. Nothing throws, nothing is dropped, and a plugin whose
+     * balances are all zero looks like it lost the table rather than like it is reading the wrong
+     * column. 5.0 derives column names from the property verbatim where 4.5 converted them to
+     * snake_case, so every 4.5 table hits this on first boot.
+     *
+     * A warning rather than a refusal, because the same shape is also produced by a legitimately
+     * removed field, and refusing to boot over a column somebody deleted on purpose is worse.
+     */
+    private fun warnOnAbandonedColumns(schema: TableSchema, existing: Set<String>, added: List<String>, logger: Logger) {
+        if (added.isEmpty() || existing.isEmpty()) return
+        val unmodelled = existing.filterNot { column -> schema.columns.any { it.name.equals(column, ignoreCase = true) } }
+        if (unmodelled.isEmpty()) return
+
+        logger.warning(
+            "[SculkData] ${schema.table}: added ${added.sorted()} to a table that already has " +
+                "${unmodelled.sorted()}, which this entity does not model. If those are the same fields under an " +
+                "older name, their data is still in the old columns and every row will read back as its Kotlin " +
+                "default. Nothing here drops data, but nothing here moves it either — rename the columns in SQL " +
+                "before using the table.",
+        )
     }
 
     private fun createTable(connection: Connection, schema: TableSchema, dialect: SqlDialect) {
@@ -53,13 +81,15 @@ internal object SchemaMigrator {
         return emptySet()
     }
 
+    /** Returns the columns it added, so [warnOnAbandonedColumns] can tell a rename from a new field. */
     private fun addMissingColumns(
         connection: Connection,
         schema: TableSchema,
         dialect: SqlDialect,
         existing: Set<String>,
         logger: Logger,
-    ) {
+    ): List<String> {
+        val added = mutableListOf<String>()
         for (column in schema.columns) {
             if (existing.any { it.equals(column.name, ignoreCase = true) }) continue
             // Always nullable: rows already in the table have no value for it, and the entity's
@@ -68,7 +98,9 @@ internal object SchemaMigrator {
                 "${dialect.quote(column.name)} ${dialect.columnType(column.type)}"
             connection.createStatement().use { it.executeUpdate(sql) }
             logger.info("[SculkData] Added ${schema.table}.${column.name}.")
+            added += column.name
         }
+        return added
     }
 
     private fun createIndexes(connection: Connection, schema: TableSchema, dialect: SqlDialect) {

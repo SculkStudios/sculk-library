@@ -215,6 +215,40 @@ class SculkConfigTest {
     }
 
     @Test
+    fun `a generated file whose default names an environment variable can be loaded again`() {
+        // The first boot writes the file, the second reads it back. A shipped `${VAR:-}` default
+        // that renders unquoted substitutes to `password:` -- an empty YAML value, which is null --
+        // so the file the framework itself generated no longer parses. Every boot after the first
+        // one failed, which reads as "the plugin broke overnight" rather than as a rendering bug.
+        config().load<Secrets>().getOrThrow()
+
+        val reloaded = config().load<Secrets>()
+
+        assertTrue(reloaded.isSuccess, "the generated file must round-trip, got: $reloaded")
+        assertEquals("", reloaded.getOrThrow().password, "an unset variable with an empty default is an empty string")
+    }
+
+    @Test
+    fun `a placeholder default is quoted so substituting it cannot empty the key`() {
+        config().load<Secrets>().getOrThrow()
+
+        val text = file("secrets.yml").readText()
+
+        assertTrue(text.contains("password: \"\${DB_PASSWORD:-}\""), "got: $text")
+        assertTrue(text.contains("token: \"\${API_TOKEN}\""), "got: $text")
+        assertFalse(text.contains("plain: \"keep me\""), "an ordinary string must not gain quotes: $text")
+    }
+
+    @Test
+    fun `a set variable still wins over the default in a generated file`() {
+        config().load<Secrets>().getOrThrow()
+
+        val loaded = config(mapOf("DB_PASSWORD" to "hunter2")).load<Secrets>().getOrThrow()
+
+        assertEquals("hunter2", loaded.password)
+    }
+
+    @Test
     fun `save writes the given value out`() {
         config().save(Settings(maxHomes = 77)).getOrThrow()
 

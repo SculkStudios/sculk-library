@@ -28,6 +28,14 @@ public data class ColumnSchema(
     public val indexed: Boolean,
     /** The element index in the serial descriptor, so the codec can line rows up without a name lookup. */
     public val elementIndex: Int,
+    /**
+     * The Kotlin property name, which is what the query DSL sees.
+     *
+     * Equal to [name] unless `@Column` renamed the column. The query DSL builds conditions from
+     * `KProperty1.name`, so without this a renamed column produced SQL naming a column that does
+     * not exist.
+     */
+    public val propertyName: String = name,
 )
 
 /**
@@ -46,6 +54,17 @@ public class TableSchema private constructor(public val table: String, public va
 
     public operator fun get(name: String): ColumnSchema? = columns.firstOrNull { it.name == name }
 
+    /**
+     * The column a query DSL term refers to.
+     *
+     * The DSL names Kotlin properties; the table names columns. Those differ whenever `@Column`
+     * renamed one, so every query has to come through here rather than assuming they match.
+     *
+     * Falls back to a column-name match so `topBy`, which takes a column name, keeps working.
+     */
+    public fun forProperty(propertyName: String): ColumnSchema? = columns.firstOrNull { it.propertyName == propertyName }
+        ?: columns.firstOrNull { it.name == propertyName }
+
     public companion object {
         @SculkStable
         public fun of(descriptor: SerialDescriptor): TableSchema {
@@ -55,14 +74,15 @@ public class TableSchema private constructor(public val table: String, public va
             val columns = (0 until descriptor.elementsCount).map { index ->
                 val annotations = descriptor.getElementAnnotations(index)
                 val element = descriptor.getElementDescriptor(index)
+                val propertyName = descriptor.getElementName(index)
                 ColumnSchema(
-                    name = annotations.filterIsInstance<Column>().firstOrNull()?.name
-                        ?: descriptor.getElementName(index),
+                    name = annotations.filterIsInstance<Column>().firstOrNull()?.name ?: propertyName,
                     type = sqlTypeOf(element, annotations),
                     nullable = element.isNullable,
                     primaryKey = annotations.any { it is Id },
                     indexed = annotations.any { it is Index },
                     elementIndex = index,
+                    propertyName = propertyName,
                 )
             }
 

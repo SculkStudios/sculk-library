@@ -20,7 +20,7 @@ internal object CommentedYaml {
     /** Renders [yaml] with the comments declared on [descriptor], plus the file header. */
     fun decorate(yaml: String, descriptor: SerialDescriptor, revision: Int): String {
         val comments = collect(descriptor, prefix = "", into = LinkedHashMap(), seen = HashSet())
-        val header = descriptor.annotations.filterIsInstance<Comment>().flatMap { it.lines.asList() }
+        val header = commentLines(descriptor.annotations)
 
         val out = StringBuilder()
         header.forEach { out.append("# ").append(it).append('\n') }
@@ -62,6 +62,17 @@ internal object CommentedYaml {
         return out.toString().trimEnd('\n') + "\n"
     }
 
+    /**
+     * The comment lines declared by [annotations], with embedded newlines split out.
+     *
+     * `@Comment` is vararg, so one line per argument is the spelling it invites — but `@Comment("a\nb")`
+     * is the one someone writes anyway, and emitting it as a single `# a\nb` puts `b` into the file as
+     * a bare unprefixed line. That does not parse, and it fails with no exception and no warning at the
+     * point it is written. Splitting here makes both spellings mean the same thing.
+     */
+    private fun commentLines(annotations: List<Annotation>): List<String> =
+        annotations.filterIsInstance<Comment>().flatMap { it.lines.asList() }.flatMap { it.lineSequence() }
+
     private fun collect(
         descriptor: SerialDescriptor,
         prefix: String,
@@ -76,9 +87,7 @@ internal object CommentedYaml {
             val name = yamlKey(descriptor.getElementName(index))
             val path = if (prefix.isEmpty()) name else "$prefix.$name"
 
-            descriptor.getElementAnnotations(index)
-                .filterIsInstance<Comment>()
-                .flatMap { it.lines.asList() }
+            commentLines(descriptor.getElementAnnotations(index))
                 .takeIf { it.isNotEmpty() }
                 ?.let { into[path] = it }
 
