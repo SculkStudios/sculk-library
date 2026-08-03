@@ -253,7 +253,7 @@ constructor(
     }
 
     private fun <T : Any> render(serializer: KSerializer<T>, value: T): String = CommentedYaml.decorate(
-        yaml.encodeToString(serializer, value).replace("\r\n", "\n"),
+        quotePlaceholders(yaml.encodeToString(serializer, value).replace("\r\n", "\n")),
         serializer.descriptor,
         declaredRevision(serializer),
     )
