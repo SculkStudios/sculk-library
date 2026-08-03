@@ -1,0 +1,134 @@
+---
+title: Discord commands
+description: Slash commands as data, compiled to Discord by one adapter.
+---
+
+```kotlin
+val kit = discordCommand("kit") {
+    description = "Claim a kit"
+
+    sub("give") {
+        description = "Give a kit to someone"
+        user("target", "Who gets it", required = true)
+        string("kit", "Which kit") { typed -> kits.matching(typed).map { OptionChoice(it, it) } }
+        executes {
+            reply(message { text("Given.") })
+        }
+    }
+}
+
+router.register(kit)
+gateway.registerCommands(router.registered)
+```
+
+Same shape as the [Paper-side `command { }`](/commands/overview/) on purpose. They are one idea
+against two front ends, and you should not have to learn a second dialect for the other one.
+
+## Spec first, Discord second
+
+`discordCommand { }` produces a **`DiscordCommandSpec`**: an immutable data class with no JDA in it.
+One adapter turns it into Discord's registration payload.
+
+```kotlin
+kit.usage("kit")            // "/kit give <target> [kit]"
+kit.flatten()               // every invokable leaf with its full path
+kit.at("kit give")          // the node at a path
+```
+
+That split is why a command tree is testable with no gateway — and it matters more here than on the
+Minecraft side, because Discord caches a global registration for about an hour. A tree you can diff
+before pushing is a tree you do not have to wait an hour to correct.
+
+## Discord's own rules, checked at build time
+
+Discord answers a malformed batch by refusing **all of it**. One bad name takes out every command your
+bot tried to register, and the error does not say which. So each of these fails where you wrote it:
+
+| Rejected | Because |
+| --- | --- |
+| `discordCommand("Kit")` | Discord rejects uppercase names |
+| Four levels of nesting | Discord has three: command, group, subcommand |
+| A group with its own options | Only leaves take options |
+| A group with its own handler | A group is never invoked directly |
+| A required option after an optional one | Discord requires every required option first |
+| Fixed choices *and* autocomplete | Discord accepts one or the other |
+
+A child that has children of its own becomes a **subcommand group**; a child without becomes a plain
+subcommand. You do not declare which — having children is what makes it one.
+
+## Options
+
+```kotlin
+string("reason", "Why", required = true)
+integer("amount", "How many", min = 1, max = 64)
+number("factor", "Scale", min = 0.5, max = 2.0)
+boolean("silent", "Skip the announcement")
+user("target", "Who")
+channel("where", "Which channel")
+role("rank", "Which role")
+attachment("proof", "A screenshot")
+```
+
+Discord parses and validates these client-side, so a wrong type never reaches your handler — which is
+why there are no string parsers here the way there are on the Brigadier side.
+
+Read them by name:
+
+```kotlin
+executes {
+    val target = option("target").asUser
+    val amount = optionOrNull("amount")?.asLong ?: 1
+}
+```
+
+## Suggestions that do not go stale
+
+`string(…) { typed -> … }` takes a **lambda**, resolved per keystroke:
+
+```kotlin
+string("kit", "Which kit") { typed -> kits.names().filter { it.startsWith(typed) }.map { OptionChoice(it, it) } }
+```
+
+A list captured at registration stops matching the moment a config reload changes the set, and
+suggestions then stay wrong until the next restart.
+
+## Permissions are Discord's, not your server's
+
+```kotlin
+discordCommand("ban") {
+    defaultPermission = DiscordPermission.BanMembers
+}
+```
+
+Deliberately not an in-game permission node. The person running a slash command is usually not on the
+server, so there is no live permissible to ask — and inheriting authority from an in-game rank the
+operator has forgotten about is how someone ends up with powers nobody meant to grant.
+
+Inside a handler, check the member:
+
+```kotlin
+if (!actor.holds(DiscordPermission.BanMembers)) {
+    reply(message { text("You cannot use that.") })
+    return@executes
+}
+```
+
+## Registering
+
+```kotlin
+gateway.registerCommands(router.registered)                       // global, cached ~1 hour
+gateway.registerCommands(router.registered, setOf(devGuildId))    // instant
+```
+
+Registration **replaces** whatever Discord currently has. A command you deleted from the code but left
+registered keeps appearing in the client and answering with "not a command this server handles", which
+reads as a broken bot rather than a stale registration.
+
+## Dispatch is a tree walk
+
+`InteractionRouter` resolves a path by walking the spec. There is no `when (event.name)` chain, and
+that is not a style preference: a chain is the shape that lets a node advertise two handlers and only
+ever reach the first — a defect this ecosystem has actually shipped.
+
+Anything unroutable still answers the user. A deferred interaction that is never followed up shows
+"thinking…" until Discord times it out, which is indistinguishable from the bot being dead.

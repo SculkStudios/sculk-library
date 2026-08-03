@@ -19,6 +19,15 @@ subprojects {
 apiValidation {
     // Examples are compile gates, not products: they have no API to keep stable, and sculk-bom
     // has no code at all.
-    ignoredProjects += listOf("sculk-bom", "basic-plugin", "economy-plugin", "server-menu", "staff-tools", "hud-showcase", "visual-showcase")
+    ignoredProjects += listOf(
+        "sculk-bom",
+        "basic-plugin",
+        "economy-plugin",
+        "server-menu",
+        "staff-tools",
+        "hud-showcase",
+        "visual-showcase",
+        "discord-bot",
+    )
     nonPublicMarkers += "studio.sculk.annotation.SculkInternal"
 }

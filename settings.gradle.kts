@@ -41,6 +41,8 @@ include(
     ":sculk-packets-protocollib",
     ":sculk-visual",
     ":sculk-hud",
+    ":sculk-discord",
+    ":sculk-discord-jda",
     ":sculk-platform",
     ":sculk-bom",
 )
@@ -53,4 +55,5 @@ include(
     ":examples:staff-tools",
     ":examples:hud-showcase",
     ":examples:visual-showcase",
+    ":examples:discord-bot",
 )

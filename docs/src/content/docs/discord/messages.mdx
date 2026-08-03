@@ -1,0 +1,98 @@
+---
+title: Discord messages
+description: Components as data, and the allow-list that stops a player pinging your staff server.
+---
+
+A message is a tree of data, not a builder you mutate. That is what makes "does this alert offer a
+Ban button" a unit test rather than something you find out in a live channel.
+
+```kotlin
+val alert = message {
+    container(theme["danger"]) {
+        text("**$playerName** was flagged")
+        divider()
+        text("Severity 4 · profanity")
+        row {
+            button("Ban", banId, ButtonStyle.Danger)
+            button("Reveal full message", revealId)
+        }
+    }
+}
+
+gateway.send(channelId, alert)
+```
+
+## Mentions are off, and opting in is per message
+
+**Every message pings nothing unless it says otherwise.**
+
+```kotlin
+message {
+    text("@everyone the server is down")     // renders as text, pings nobody
+}
+
+message {
+    text("<@$staffId> the server is down")
+    mentions = Mentions.user(staffId)        // pings exactly that person
+}
+```
+
+This is the Discord half of the boundary [placeholders](/text/placeholders/) draw for MiniMessage: a
+value that came from a player is *text*, and text must not become a ping because of the characters in
+it.
+
+:::danger[Do not defuse a mention by editing the text]
+The other approach — replacing `@everyone` with a zero-width-space variant — does not hold. It misses
+`<@&roleId>` entirely, and it corrupts the exact string a moderator is reading as evidence of what was
+said.
+
+Discord already offers the correct control: an allow-list sent *alongside* the message, deciding what
+resolves without touching what is displayed. That is what `Mentions` is.
+:::
+
+`Mentions.All` exists, and is only ever right when every character of the message was written by the
+server operator. One interpolated player name makes it a way to ping your staff server on demand.
+
+## Colour comes from the theme
+
+A container's accent is a [`ThemeStyle`](/text/theme/), so the palette is defined once and Discord and
+Minecraft agree:
+
+```kotlin
+container(theme["danger"]) { text("…") }
+```
+
+A gradient contributes its `swatchHex` — Discord takes one colour, and the middle stop reads closer to
+the whole gradient than either end does.
+
+## Limits are enforced where you build
+
+A row holding six buttons, a select menu with duplicate values, a button that is both a link and an
+interaction — each fails when the message is constructed, naming the problem. The alternative is an
+HTTP 400 from a request that was queued somewhere else entirely.
+
+| Rule | Why it is checked here |
+| --- | --- |
+| 5 components per row | Discord's limit; the error names the row |
+| 80-character button label | Silently truncated otherwise |
+| 25 select options | Rejected on send otherwise |
+| Unique select values | A duplicate makes the submitted choice ambiguous |
+| A button is a link **or** an interaction | A link button never produces an interaction, so an id on one would never fire |
+
+## Webhooks
+
+A webhook needs no token, no intents and no gateway, and it still delivers while a gateway is
+reconnecting — which is exactly when something worth reporting tends to be happening.
+
+```kotlin
+val hook = DiscordWebhook(url, maxPerMinute = 30)
+hook.sendText("<Steve> hello", username = "Steve", avatarUrl = avatar)
+hook.close()
+```
+
+It takes the same `DiscordMessage`, and refuses one carrying interactive components — a webhook has
+no application behind it to receive a click, so posting those would render an alert that looks
+actionable and is not.
+
+`DiscordWebhook` is a `SculkHandle`. Close it: the HTTP client owns a selector and an executor thread
+set, and skipping that leaks one per plugin enable.
