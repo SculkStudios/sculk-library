@@ -1,6 +1,7 @@
 package studio.sculk.config
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import studio.sculk.annotation.SculkInternal
@@ -30,6 +31,27 @@ class GeneratedFileFormatTest {
         }.readBytes().decodeToString().replace("\r\n", "\n")
 
         assertEquals(expected, File(folder, "storage.yml").readText().replace("\r\n", "\n"))
+    }
+
+    @Test
+    fun `a comment written with a newline in it still generates a parseable file`() {
+        // A bare `b` where `# b` was meant is not a comment, and the file the plugin ships stops
+        // loading. Nothing throws at the point it is written, so the first sign of it is a server
+        // that will not boot.
+        config().load<MultilineComments>().getOrThrow()
+        val text = File(folder, "multiline.yml").readText().replace("\r\n", "\n")
+
+        assertTrue(text.lines().none { it.isNotBlank() && !it.trimStart().startsWith("#") && ':' !in it }, "got:\n$text")
+        assertTrue(text.contains("# First line.\n# Second line."), "got:\n$text")
+        assertTrue(text.contains("  # Deeper.\n  # Still deeper."), "a nested comment keeps its indent: $text")
+        assertTrue(text.startsWith("# A header\n# spanning two lines."), "got:\n$text")
+    }
+
+    @Test
+    fun `a config whose comments have newlines still round-trips`() {
+        config().load<MultilineComments>().getOrThrow()
+
+        assertEquals(1, config().load<MultilineComments>().getOrThrow().value)
     }
 
     @Test
