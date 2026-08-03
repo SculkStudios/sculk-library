@@ -1,8 +1,13 @@
 package studio.sculk.discord
 
+import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
+import studio.sculk.discord.command.DiscordCommandSpec
+import studio.sculk.discord.interaction.ComponentInteraction
+import studio.sculk.discord.interaction.InteractionRouter
 import studio.sculk.discord.message.DiscordMessage
+import kotlin.time.Duration
 
 /** One message the fake was asked to send. */
 @SculkStable
@@ -31,6 +36,7 @@ public class FakeDiscordGateway(override var selfId: UserId? = UserId("100000000
     private val _sent = mutableListOf<SentMessage>()
     private val _edited = mutableListOf<SentMessage>()
     private val _deleted = mutableListOf<MessageId>()
+    private val _registeredCommands = mutableListOf<DiscordCommandSpec>()
     private var nextId = 1L
 
     override var state: GatewayState = GatewayState.Disconnected
@@ -54,6 +60,21 @@ public class FakeDiscordGateway(override var selfId: UserId? = UserId("100000000
 
     /** The last message sent, or null. The common assertion, spelled once. */
     public val lastSent: DiscordMessage? get() = _sent.lastOrNull()?.message
+
+    /** Commands pushed to Discord, and where they were pushed. */
+    public val registeredCommands: List<DiscordCommandSpec> get() = _registeredCommands.toList()
+
+    public var commandGuilds: Set<GuildId> = emptySet()
+        private set
+
+    /** Routers attached, so a test can assert the bot wired its handlers up. */
+    public val routers: MutableList<InteractionRouter> = mutableListOf()
+
+    /** Set this and the next [awaitComponent] resolves to it instead of timing out. */
+    public var nextComponent: ComponentInteraction? = null
+
+    /** Messages a collector waited on, in order. */
+    public val awaited: MutableList<MessageId> = mutableListOf()
 
     public fun clear() {
         _sent.clear()
@@ -88,6 +109,30 @@ public class FakeDiscordGateway(override var selfId: UserId? = UserId("100000000
     override suspend fun presence(activity: Presence): SculkResult<Unit> = guard {
         presences += activity
         SculkResult.ok()
+    }
+
+    override suspend fun registerCommands(commands: List<DiscordCommandSpec>, guilds: Set<GuildId>): SculkResult<Unit> = guard {
+        _registeredCommands.clear()
+        _registeredCommands += commands
+        commandGuilds = guilds
+        SculkResult.ok()
+    }
+
+    override fun route(router: InteractionRouter): SculkHandle {
+        routers += router
+        return SculkHandle { routers -= router }
+    }
+
+    /**
+     * Returns whatever [nextComponent] was set to, or times out.
+     *
+     * Null rather than suspending is deliberate: a fake that blocks forever turns a wrong assertion
+     * into a hung test suite, and the timeout path is the one worth covering anyway.
+     */
+    override suspend fun awaitComponent(message: MessageId, within: Duration, from: UserId?): SculkResult<ComponentInteraction> = guard {
+        awaited += message
+        nextComponent?.let { SculkResult.success(it) }
+            ?: SculkResult.failure("Nobody used a component on $message within $within.")
     }
 
     override fun close() {

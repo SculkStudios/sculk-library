@@ -42,6 +42,7 @@ include(
     ":sculk-visual",
     ":sculk-hud",
     ":sculk-discord",
+    ":sculk-discord-jda",
     ":sculk-platform",
     ":sculk-bom",
 )

@@ -4,7 +4,11 @@ import kotlinx.coroutines.CoroutineScope
 import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
+import studio.sculk.discord.command.DiscordCommandSpec
+import studio.sculk.discord.interaction.ComponentInteraction
+import studio.sculk.discord.interaction.InteractionRouter
 import studio.sculk.discord.message.DiscordMessage
+import kotlin.time.Duration
 
 /**
  * A connection to Discord.
@@ -53,6 +57,30 @@ public interface DiscordGateway : SculkHandle {
 
     /** Sets the bot's presence line. */
     public suspend fun presence(activity: Presence): SculkResult<Unit>
+
+    /**
+     * Pushes a command set to Discord, replacing whatever was there.
+     *
+     * [guilds] empty registers globally, which Discord caches for about an hour — fine for a released
+     * bot, painful while developing. Naming a guild registers instantly, which is why a dev config
+     * usually names one.
+     */
+    public suspend fun registerCommands(commands: List<DiscordCommandSpec>, guilds: Set<GuildId> = emptySet()): SculkResult<Unit>
+
+    /** Sends every incoming interaction through [router] until the handle is closed. */
+    public fun route(router: InteractionRouter): SculkHandle
+
+    /**
+     * Waits for someone to use a component on [message].
+     *
+     * The thing discord.js has and JDA does not, and the reason a flow like "post a confirmation,
+     * wait fifteen seconds, act on the answer" reads as three lines here instead of a listener, a
+     * map keyed by message id, and a scheduled task to clean it up.
+     *
+     * Times out to a named failure rather than suspending forever — an abandoned collector that never
+     * completes leaks its coroutine and the buttons stay live indefinitely.
+     */
+    public suspend fun awaitComponent(message: MessageId, within: Duration, from: UserId? = null): SculkResult<ComponentInteraction>
 }
 
 /** What the bot appears to be doing. */

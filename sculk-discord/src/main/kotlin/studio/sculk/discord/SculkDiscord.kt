@@ -1,10 +1,15 @@
 package studio.sculk.discord
 
 import kotlinx.coroutines.CoroutineScope
+import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
+import studio.sculk.discord.command.DiscordCommandSpec
+import studio.sculk.discord.interaction.ComponentInteraction
+import studio.sculk.discord.interaction.InteractionRouter
 import studio.sculk.discord.message.DiscordMessage
 import java.util.ServiceLoader
+import kotlin.time.Duration
 
 /**
  * Finds a Discord backend and builds a gateway on it.
@@ -102,6 +107,12 @@ private class DisabledGateway(private val reason: String) : DiscordGateway {
     override suspend fun channelExists(channel: ChannelId): SculkResult<Boolean> = refuse()
 
     override suspend fun presence(activity: Presence): SculkResult<Unit> = refuse()
+
+    override suspend fun registerCommands(commands: List<DiscordCommandSpec>, guilds: Set<GuildId>): SculkResult<Unit> = refuse()
+
+    override fun route(router: InteractionRouter): SculkHandle = SculkHandle.NONE
+
+    override suspend fun awaitComponent(message: MessageId, within: Duration, from: UserId?): SculkResult<ComponentInteraction> = refuse()
 
     override fun close() {}
 }
