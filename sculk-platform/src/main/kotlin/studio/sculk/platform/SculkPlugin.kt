@@ -43,6 +43,23 @@ public abstract class SculkPlugin : JavaPlugin() {
     @SculkStable
     protected open val builtInHelp: Boolean get() = true
 
+    /**
+     * Whether to print the start-up banner at all.
+     *
+     * Turn it off in a plugin that prints its own. A framework mark in a paying customer's console
+     * is the product's branding, not the framework's, and a plugin that banners for itself would
+     * otherwise print two — with the server and version rows duplicated across both.
+     */
+    @SculkStable
+    protected open val banner: Boolean get() = true
+
+    /**
+     * The art printed beside [bannerFacts]. Override it to print your own mark instead of Sculk's,
+     * which is the better answer than [banner] `= false` when you still want the facts.
+     */
+    @SculkStable
+    protected open fun bannerArt(): BannerArt = BannerArt.SCULK
+
     /** Extra lines beside the start-up banner: version numbers, world names, anything diagnostic. */
     @SculkStable
     protected open fun bannerFacts(): List<Pair<String, String>> = emptyList()
@@ -125,11 +142,13 @@ public abstract class SculkPlugin : JavaPlugin() {
         // After setup, so it sees every command; a supplier so it also sees any registered later.
         if (builtInHelp) declared += HelpCommand({ declaredCommands }, CommandHelp()).spec()
 
-        SculkBanner(componentLogger).show(
-            name = pluginMeta.name,
-            version = pluginMeta.version,
-            facts = standardFacts() + bannerFacts() + ("Started in" to "${System.currentTimeMillis() - startedAt}ms"),
-        )
+        if (banner) {
+            SculkBanner(componentLogger, bannerArt()).show(
+                name = pluginMeta.name,
+                version = pluginMeta.version,
+                facts = standardFacts() + bannerFacts() + ("Started in" to "${System.currentTimeMillis() - startedAt}ms"),
+            )
+        }
     }
 
     final override fun onDisable() {
