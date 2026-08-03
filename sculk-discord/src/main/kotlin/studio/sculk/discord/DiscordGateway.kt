@@ -29,6 +29,9 @@ public interface DiscordGateway : SculkHandle {
     /** The bot's own user id, or null before the first successful connect. */
     public val selfId: UserId?
 
+    /** Roles, nicknames and moderation — everything done to a member rather than to a channel. */
+    public val guilds: GuildService
+
     /**
      * Connects, or reports why it could not.
      *
@@ -40,6 +43,15 @@ public interface DiscordGateway : SculkHandle {
 
     /** Sends [message] to [channel]. */
     public suspend fun send(channel: ChannelId, message: DiscordMessage): SculkResult<MessageId>
+
+    /** One line of markdown, pinging nothing unless [mentions] says otherwise. */
+    public suspend fun sendText(channel: ChannelId, markdown: String, mentions: Mentions = Mentions.None): SculkResult<MessageId> = send(
+        channel,
+        DiscordMessage(components = listOf(studio.sculk.discord.message.Text(markdown)), mentions = mentions),
+    )
+
+    /** Adds a reaction. [emoji] is a unicode character or a `name:id` custom emoji. */
+    public suspend fun react(channel: ChannelId, message: MessageId, emoji: String): SculkResult<Unit>
 
     /** Replaces a message this bot sent. */
     public suspend fun edit(channel: ChannelId, message: MessageId, replacement: DiscordMessage): SculkResult<Unit>
@@ -69,6 +81,19 @@ public interface DiscordGateway : SculkHandle {
 
     /** Sends every incoming interaction through [router] until the handle is closed. */
     public fun route(router: InteractionRouter): SculkHandle
+
+    /**
+     * Calls [handler] for each message a human posts, until the handle is closed.
+     *
+     * Bot messages are filtered out before [handler] sees them, including this bot's own. A relay
+     * that echoes what it just posted is an infinite loop with a rate limit as its only brake, and
+     * every chat bridge writes that filter — so it lives here rather than in each of them.
+     *
+     * Requires [Intent.GuildMessages], and [Intent.MessageContent] for the body to be anything but
+     * empty. `MessageContent` is privileged: without it Discord delivers the event with the text
+     * stripped, which reads as a bot that sees messages and cannot understand them.
+     */
+    public fun onMessage(handler: suspend (DiscordChatMessage) -> Unit): SculkHandle
 
     /**
      * Waits for someone to use a component on [message].

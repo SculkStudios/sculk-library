@@ -6,6 +6,7 @@ import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
 import studio.sculk.discord.command.DiscordCommandSpec
 import studio.sculk.discord.interaction.ComponentInteraction
+import studio.sculk.discord.interaction.DiscordActor
 import studio.sculk.discord.interaction.InteractionRouter
 import studio.sculk.discord.message.DiscordMessage
 import java.util.ServiceLoader
@@ -93,8 +94,11 @@ public object SculkDiscord {
 private class DisabledGateway(private val reason: String) : DiscordGateway {
     override val state: GatewayState = GatewayState.Disabled
     override val selfId: UserId? = null
+    override val guilds: GuildService = DisabledGuilds(reason)
 
     private fun <T> refuse(): SculkResult<T> = SculkResult.failure("Discord is not available: $reason")
+
+    override suspend fun react(channel: ChannelId, message: MessageId, emoji: String): SculkResult<Unit> = refuse()
 
     override suspend fun connect(): SculkResult<Unit> = refuse()
 
@@ -112,7 +116,35 @@ private class DisabledGateway(private val reason: String) : DiscordGateway {
 
     override fun route(router: InteractionRouter): SculkHandle = SculkHandle.NONE
 
+    override fun onMessage(handler: suspend (DiscordChatMessage) -> Unit): SculkHandle = SculkHandle.NONE
+
     override suspend fun awaitComponent(message: MessageId, within: Duration, from: UserId?): SculkResult<ComponentInteraction> = refuse()
 
     override fun close() {}
+}
+
+private class DisabledGuilds(private val reason: String) : GuildService {
+    private fun <T> refuse(): SculkResult<T> = SculkResult.failure("Discord is not available: $reason")
+
+    override suspend fun member(guild: GuildId, user: UserId): SculkResult<DiscordActor> = refuse()
+
+    override suspend fun isPresent(guild: GuildId): Boolean = false
+
+    override suspend fun addRole(guild: GuildId, user: UserId, role: RoleId): SculkResult<Unit> = refuse()
+
+    override suspend fun removeRole(guild: GuildId, user: UserId, role: RoleId): SculkResult<Unit> = refuse()
+
+    override suspend fun setRoles(guild: GuildId, user: UserId, roles: Set<RoleId>): SculkResult<Unit> = refuse()
+
+    override suspend fun setNickname(guild: GuildId, user: UserId, nickname: String?): SculkResult<Unit> = refuse()
+
+    override suspend fun kick(guild: GuildId, user: UserId, reason: String?): SculkResult<Unit> = refuse()
+
+    override suspend fun ban(guild: GuildId, user: UserId, reason: String?, deleteMessageHours: Int): SculkResult<Unit> = refuse()
+
+    override suspend fun unban(guild: GuildId, user: UserId): SculkResult<Unit> = refuse()
+
+    override suspend fun timeout(guild: GuildId, user: UserId, duration: Duration, reason: String?): SculkResult<Unit> = refuse()
+
+    override suspend fun clearTimeout(guild: GuildId, user: UserId): SculkResult<Unit> = refuse()
 }

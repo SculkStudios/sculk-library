@@ -47,6 +47,30 @@ public final class studio/sculk/discord/ComponentId$Companion {
 	public final fun parse (Ljava/lang/String;)Lstudio/sculk/discord/ComponentId;
 }
 
+public final class studio/sculk/discord/DiscordChatMessage {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/interaction/DiscordActor;Ljava/lang/String;Ljava/util/List;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/interaction/DiscordActor;Ljava/lang/String;Ljava/util/List;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-cKSXoUU ()Ljava/lang/String;
+	public final fun component2-_vBS7UY ()Ljava/lang/String;
+	public final fun component3-e_U5Prg ()Ljava/lang/String;
+	public final fun component4 ()Lstudio/sculk/discord/interaction/DiscordActor;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Z
+	public final fun copy-EnQjT80 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/interaction/DiscordActor;Ljava/lang/String;Ljava/util/List;Z)Lstudio/sculk/discord/DiscordChatMessage;
+	public static synthetic fun copy-EnQjT80$default (Lstudio/sculk/discord/DiscordChatMessage;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/interaction/DiscordActor;Ljava/lang/String;Ljava/util/List;ZILjava/lang/Object;)Lstudio/sculk/discord/DiscordChatMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttachments ()Ljava/util/List;
+	public final fun getAuthor ()Lstudio/sculk/discord/interaction/DiscordActor;
+	public final fun getChannel-_vBS7UY ()Ljava/lang/String;
+	public final fun getContent ()Ljava/lang/String;
+	public final fun getFromBot ()Z
+	public final fun getGuild-e_U5Prg ()Ljava/lang/String;
+	public final fun getId-cKSXoUU ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class studio/sculk/discord/DiscordGateway : studio/sculk/SculkHandle {
 	public abstract fun awaitComponent-NCPTjwk (Ljava/lang/String;JLjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun awaitComponent-NCPTjwk$default (Lstudio/sculk/discord/DiscordGateway;Ljava/lang/String;JLjava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
@@ -54,18 +78,25 @@ public abstract interface class studio/sculk/discord/DiscordGateway : studio/scu
 	public abstract fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun delete-0ROKZEE (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun edit-81MaTmM (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/message/DiscordMessage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getGuilds ()Lstudio/sculk/discord/GuildService;
 	public abstract fun getSelfId-NSeyY1E ()Ljava/lang/String;
 	public abstract fun getState ()Lstudio/sculk/discord/GatewayState;
+	public abstract fun onMessage (Lkotlin/jvm/functions/Function2;)Lstudio/sculk/SculkHandle;
 	public abstract fun presence (Lstudio/sculk/discord/Presence;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun react-81MaTmM (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun registerCommands (Ljava/util/List;Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun registerCommands$default (Lstudio/sculk/discord/DiscordGateway;Ljava/util/List;Ljava/util/Set;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public abstract fun route (Lstudio/sculk/discord/interaction/InteractionRouter;)Lstudio/sculk/SculkHandle;
 	public abstract fun send-4FSc6sg (Ljava/lang/String;Lstudio/sculk/discord/message/DiscordMessage;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun sendText-U1iCoNU (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/Mentions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun sendText-U1iCoNU$default (Lstudio/sculk/discord/DiscordGateway;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/Mentions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class studio/sculk/discord/DiscordGateway$DefaultImpls {
 	public static synthetic fun awaitComponent-NCPTjwk$default (Lstudio/sculk/discord/DiscordGateway;Ljava/lang/String;JLjava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun registerCommands$default (Lstudio/sculk/discord/DiscordGateway;Ljava/util/List;Ljava/util/Set;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static fun sendText-U1iCoNU (Lstudio/sculk/discord/DiscordGateway;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/Mentions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun sendText-U1iCoNU$default (Lstudio/sculk/discord/DiscordGateway;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/discord/Mentions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface class studio/sculk/discord/DiscordGatewayProvider {
@@ -102,6 +133,37 @@ public final class studio/sculk/discord/GuildId : studio/sculk/discord/DiscordId
 	public fun toString ()Ljava/lang/String;
 	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
 	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public abstract interface class studio/sculk/discord/GuildService {
+	public static final field Companion Lstudio/sculk/discord/GuildService$Companion;
+	public static final field MAX_DELETE_HOURS I
+	public static final field MAX_TIMEOUT_DAYS I
+	public abstract fun addRole-IoLCCdI (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun ban-YD14oW8 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun ban-YD14oW8$default (Lstudio/sculk/discord/GuildService;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun clearTimeout-Da-As-c (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun isPresent-WGh_VpQ (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun kick-6gX9HCc (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun kick-6gX9HCc$default (Lstudio/sculk/discord/GuildService;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun member-Da-As-c (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun removeRole-IoLCCdI (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setNickname-6gX9HCc (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setRoles-6gX9HCc (Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun timeout-eBSaL8A (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun timeout-eBSaL8A$default (Lstudio/sculk/discord/GuildService;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun unban-Da-As-c (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/discord/GuildService$Companion {
+	public static final field MAX_DELETE_HOURS I
+	public static final field MAX_TIMEOUT_DAYS I
+}
+
+public final class studio/sculk/discord/GuildService$DefaultImpls {
+	public static synthetic fun ban-YD14oW8$default (Lstudio/sculk/discord/GuildService;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun kick-6gX9HCc$default (Lstudio/sculk/discord/GuildService;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun timeout-eBSaL8A$default (Lstudio/sculk/discord/GuildService;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class studio/sculk/discord/Intent : java/lang/Enum {
