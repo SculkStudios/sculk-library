@@ -11,6 +11,7 @@ import studio.sculk.command.argument.DurationParser
 import studio.sculk.command.argument.EnumParser
 import studio.sculk.command.argument.GreedyStringParser
 import studio.sculk.command.argument.MaterialParser
+import studio.sculk.command.argument.PlayerNameParser
 import studio.sculk.command.argument.PlayerParser
 import studio.sculk.command.argument.StringParser
 import studio.sculk.command.argument.UuidParser
@@ -167,6 +168,15 @@ public class CommandBuilder internal constructor(private val name: String) {
     public fun boolean(name: String, optional: Boolean = false): Unit = add(name, BooleanParser, optional)
 
     public fun player(name: String, optional: Boolean = false): Unit = add(name, PlayerParser, optional)
+
+    /**
+     * A player name that need not be online, read back with `argument<String>(name)`.
+     *
+     * Use this rather than [player] for anything a moderator does to somebody who has already
+     * left -- bans, lookups, history -- and rather than [string], which silently has no
+     * completions at all.
+     */
+    public fun playerName(name: String, optional: Boolean = false): Unit = add(name, PlayerNameParser, optional)
 
     public fun uuid(name: String, optional: Boolean = false): Unit = add(name, UuidParser, optional)
 
