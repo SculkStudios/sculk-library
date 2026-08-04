@@ -78,7 +78,7 @@ constructor(
         val inv = openInventory ?: return
         val item = gui.items[slot]
         @OptIn(studio.sculk.annotation.SculkInternal::class)
-        inv.setItem(slot, item?.resolveStack(player) ?: ItemStack(Material.AIR))
+        inv.setItem(slot, item?.resolveStack(player, messages) ?: ItemStack(Material.AIR))
     }
 
     /**
@@ -127,7 +127,7 @@ constructor(
         val inv = openInventory ?: return
         @OptIn(studio.sculk.annotation.SculkInternal::class)
         for ((slot, item) in gui.items) {
-            inv.setItem(slot, item.resolveStack(player))
+            inv.setItem(slot, item.resolveStack(player, messages))
         }
         refreshPagination()
     }
