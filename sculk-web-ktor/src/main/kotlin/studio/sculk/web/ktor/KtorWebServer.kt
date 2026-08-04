@@ -89,22 +89,34 @@ public class KtorWebServer(private val config: WebConfig) : SculkWebServer {
      * theory that costs hours before it is discarded.
      *
      * The port explanation is still offered, but only where it can be true.
+     *
+     * Matched against the cause chain rather than the thrown type: the engine starts the bind on a
+     * coroutine and rethrows what surfaces, so the `BindException` arrives wrapped. Checking the
+     * top-level type alone sent the one case this function exists for -- a port already in use --
+     * down the generic branch, which is how the test asserting it names the port caught this.
      */
-    private fun explain(error: Throwable): String = when (error) {
-        is BindException ->
-            "Could not bind ${config.bind}:${config.port} (${error.message}). " +
+    private fun explain(error: Throwable): String = when {
+        error.causes().any { it is BindException } ->
+            "Could not bind ${config.bind}:${config.port} (${error.rootMessage()}). " +
                 "Another process is already using that port."
 
         // Not a startup failure at all -- the classes could not be wired together. Almost always
         // one library loaded by a different classloader than the one it was compiled against.
-        is LinkageError ->
-            "The web server could not be linked: ${error.message}. This is a classloading problem, " +
-                "not a port or configuration problem -- the HTTP library and the Kotlin runtime it " +
-                "was compiled against have been loaded by different classloaders. Shade them " +
-                "together rather than loading either separately."
+        error.causes().any { it is LinkageError } ->
+            "The web server could not be linked: ${error.rootMessage()}. This is a classloading " +
+                "problem, not a port or configuration problem -- the HTTP library and the Kotlin " +
+                "runtime it was compiled against have been loaded by different classloaders. Shade " +
+                "them together rather than loading either separately."
 
         else -> "The web server did not start: ${error.message}"
     }
+
+    /** The throwable and everything it wraps. Bounded, because a cause chain can be circular. */
+    private fun Throwable.causes(): Sequence<Throwable> =
+        generateSequence(this) { it.cause?.takeIf { cause -> cause !== it } }.take(MAX_CAUSE_DEPTH)
+
+    /** The innermost message, which is the one naming the actual failure. */
+    private fun Throwable.rootMessage(): String? = causes().lastOrNull { it.message != null }?.message ?: message
 
     /**
      * Mounts one route.
@@ -175,6 +187,9 @@ public class KtorWebServer(private val config: WebConfig) : SculkWebServer {
     private companion object {
         const val GRACE_MILLIS = 500L
         const val TIMEOUT_MILLIS = 2_000L
+
+        /** Deep enough for any real wrapping, short enough that a cycle cannot hang start-up. */
+        const val MAX_CAUSE_DEPTH = 16
     }
 }
 
