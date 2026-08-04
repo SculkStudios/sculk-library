@@ -522,6 +522,11 @@ public final class studio/sculk/discord/interaction/Interaction$DefaultImpls {
 	public static synthetic fun defer$default (Lstudio/sculk/discord/interaction/Interaction;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
+public final class studio/sculk/discord/interaction/InteractionKt {
+	public static final fun answer (Lstudio/sculk/discord/interaction/Interaction;Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun answer$default (Lstudio/sculk/discord/interaction/Interaction;Ljava/lang/String;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
 public final class studio/sculk/discord/interaction/InteractionRouter {
 	public synthetic fun <init> (Ljava/util/logging/Logger;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Ljava/util/logging/Logger;JLkotlin/jvm/internal/DefaultConstructorMarker;)V

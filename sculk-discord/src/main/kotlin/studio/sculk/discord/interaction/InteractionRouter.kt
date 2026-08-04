@@ -129,19 +129,3 @@ public class InteractionRouter(
         watchdog.cancel()
     }
 }
-
-/**
- * Says something, whichever side of acknowledgement this interaction is on.
- *
- * The router cannot know whether a handler already deferred before it threw, and picking wrong means
- * the error message itself is rejected and the user is left on "thinking…". Trying the direct reply
- * and falling back to a follow-up covers both without the caller tracking state.
- */
-private suspend fun Interaction.answer(markdown: String) {
-    val message = studio.sculk.discord.message.message {
-        text(markdown)
-        ephemeral = true
-    }
-    if (!acknowledged && reply(message).isSuccess) return
-    runCatching { defer(ephemeral = true).getOrNull()?.respond(message) }
-}

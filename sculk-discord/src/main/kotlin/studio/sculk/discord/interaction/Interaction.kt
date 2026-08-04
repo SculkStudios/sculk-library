@@ -157,3 +157,26 @@ public interface ModalInteraction : Interaction {
 
     public fun field(name: String): String?
 }
+
+/**
+ * Says something, whichever side of acknowledgement this interaction is on.
+ *
+ * A handler cannot always know whether it has been deferred: the router's watchdog defers on the
+ * handler's behalf after two seconds, so whether [reply] is still legal depends on how slow the
+ * database was. Picking wrong means the message is rejected and the user is left on "thinking..."
+ * forever, which reads as the bot being dead. Trying the direct reply and falling back to a
+ * follow-up covers both without the caller tracking state.
+ *
+ * ```kotlin
+ * executes { answer("Banned ${'$'}{target.name}.") }
+ * ```
+ */
+@SculkStable
+public suspend fun Interaction.answer(markdown: String, ephemeral: Boolean = true) {
+    val message = studio.sculk.discord.message.message {
+        text(markdown)
+        this.ephemeral = ephemeral
+    }
+    if (!acknowledged && reply(message).isSuccess) return
+    runCatching { defer(ephemeral = ephemeral).getOrNull()?.respond(message) }
+}
