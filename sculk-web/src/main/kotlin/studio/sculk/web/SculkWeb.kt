@@ -3,6 +3,7 @@ package studio.sculk.web
 import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
+import java.util.ServiceLoader
 
 /**
  * An embedded HTTP server, described without naming one.
@@ -158,4 +159,72 @@ public interface SculkWebProvider {
     public val backend: String
 
     public fun create(config: WebConfig): SculkWebServer
+}
+
+/**
+ * Finds a backend and builds a server.
+ *
+ * The same entry point shape as `SculkDiscord.create`, and for the same reason: a consumer names
+ * the abstraction, never the implementation, so swapping Ktor for something else is a dependency
+ * change rather than an edit.
+ */
+@SculkStable
+public object SculkWeb {
+    /**
+     * Creates a server from whichever backend is on the classpath.
+     *
+     * [loaders] matters more than it looks. The single-argument `ServiceLoader.load` uses the
+     * thread-context classloader, which **cannot see a Paper plugin's own jar** -- so a plugin must
+     * pass one of its own classes' loaders or discovery silently finds nothing. `sculk-discord`
+     * carries the identical caveat, and it is the single most common way this kind of wiring fails.
+     */
+    @SculkStable
+    public fun create(
+        config: WebConfig,
+        loaders: List<ClassLoader> = listOf(SculkWeb::class.java.classLoader),
+    ): SculkResult<SculkWebServer> {
+        val providers = discover(loaders)
+
+        return when {
+            providers.isEmpty() ->
+                SculkResult.failure(
+                    "No sculk-web backend is on the classpath. Add sculk-web-ktor (or another " +
+                        "backend) and make sure its ServiceLoader descriptor survived shading -- " +
+                        "shadowJar needs mergeServiceFiles().",
+                )
+
+            else -> SculkResult.success(providers.first().create(config))
+        }
+    }
+
+    /** Every backend visible to [loaders], for diagnostics. */
+    @SculkStable
+    public fun discover(loaders: List<ClassLoader>): List<SculkWebProvider> = loaders
+        .flatMap { loader ->
+            // A broken descriptor from one jar must not hide every other backend.
+            runCatching { ServiceLoader.load(SculkWebProvider::class.java, loader).toList() }
+                .getOrDefault(emptyList())
+        }.distinctBy { it.backend }
+
+    /**
+     * A server whose every call fails by name.
+     *
+     * Returned instead of null so a consumer that ignores the failure gets a message saying what
+     * went wrong rather than a NullPointerException three frames away.
+     */
+    @SculkStable
+    public fun disabled(reason: String): SculkWebServer = DisabledWebServer(reason)
+}
+
+private class DisabledWebServer(private val reason: String) : SculkWebServer {
+    override val running: Boolean = false
+    override val port: Int = 0
+
+    override suspend fun start(): SculkResult<Unit> = SculkResult.failure("Web server disabled: $reason")
+
+    override fun route(method: HttpMethod, path: String, handler: suspend (WebRequest) -> WebResponse): Unit = Unit
+
+    override fun static(pathPrefix: String, resourceRoot: String): Unit = Unit
+
+    override fun close(): Unit = Unit
 }

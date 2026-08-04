@@ -9,6 +9,14 @@ public final class studio/sculk/web/HttpMethod : java/lang/Enum {
 	public static fun values ()[Lstudio/sculk/web/HttpMethod;
 }
 
+public final class studio/sculk/web/SculkWeb {
+	public static final field INSTANCE Lstudio/sculk/web/SculkWeb;
+	public final fun create (Lstudio/sculk/web/WebConfig;Ljava/util/List;)Lstudio/sculk/SculkResult;
+	public static synthetic fun create$default (Lstudio/sculk/web/SculkWeb;Lstudio/sculk/web/WebConfig;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public final fun disabled (Ljava/lang/String;)Lstudio/sculk/web/SculkWebServer;
+	public final fun discover (Ljava/util/List;)Ljava/util/List;
+}
+
 public abstract interface class studio/sculk/web/SculkWebProvider {
 	public abstract fun create (Lstudio/sculk/web/WebConfig;)Lstudio/sculk/web/SculkWebServer;
 	public abstract fun getBackend ()Ljava/lang/String;
