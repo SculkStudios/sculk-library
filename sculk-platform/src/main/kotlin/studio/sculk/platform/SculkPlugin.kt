@@ -159,11 +159,16 @@ public abstract class SculkPlugin : JavaPlugin() {
     }
 
     /**
-     * The facts that answer the first two support questions before anyone asks: which storage
-     * backend is live, and whether a packet backend loaded.
+     * The facts that answer the first support question before anyone asks.
+     *
+     * The packet backend is named only when one actually loaded. It used to report `none`
+     * otherwise, which is accurate and unhelpful: most plugins use no packet features at all, so
+     * their owners read a line saying `none` on an otherwise healthy startup and open a ticket
+     * asking what is broken. A plugin that does depend on a backend can say so in [bannerFacts],
+     * where it knows whether the absence matters.
      */
-    private fun standardFacts(): List<Pair<String, String>> = listOf(
-        "Server" to "${server.name} ${server.minecraftVersion}",
-        "Packets" to sculk.packets.fold({ it.backend.name }, { _, _ -> "none" }),
-    )
+    private fun standardFacts(): List<Pair<String, String>> = buildList {
+        add("Server" to "${server.name} ${server.minecraftVersion}")
+        sculk.packets.getOrNull()?.let { add("Packets" to it.backend.name) }
+    }
 }
