@@ -41,6 +41,8 @@ include(
     ":sculk-packets-protocollib",
     ":sculk-visual",
     ":sculk-hud",
+    ":sculk-web",
+    ":sculk-web-ktor",
     ":sculk-discord",
     ":sculk-discord-jda",
     ":sculk-platform",
