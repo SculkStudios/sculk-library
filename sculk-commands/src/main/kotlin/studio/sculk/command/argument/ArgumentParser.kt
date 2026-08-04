@@ -127,6 +127,55 @@ public object PlayerParser : ArgumentParser<Player> {
         .filter { it.startsWith(input, ignoreCase = true) }
 }
 
+/**
+ * A player name that does not have to belong to anyone online.
+ *
+ * [PlayerParser] resolves to a live [Player] and therefore rejects everything else, which makes it
+ * the wrong type for a whole class of command: banning, unbanning, looking up history and checking
+ * alts are all things you do to somebody who has already left. Reaching for `string` instead is the
+ * obvious workaround and it is a bad one -- [StringParser] offers no completions, so the command
+ * silently loses tab completion and the operator is left typing names by hand and guessing at
+ * capitalisation.
+ *
+ * This keeps the completions and drops the requirement. Suggestions come from online players first,
+ * then names the server has seen before, so the common case still completes in one keystroke while
+ * an offline target remains typeable.
+ */
+@SculkStable
+public object PlayerNameParser : ArgumentParser<String> {
+    override val typeName: String = "player"
+
+    /**
+     * Accepts any plausible name.
+     *
+     * Deliberately not a strict `[A-Za-z0-9_]{3,16}` check: Bedrock players arrive through Geyser
+     * with a prefix and a space, and cracked servers allow names the Mojang rules never did.
+     * Rejecting them here would refuse to ban a player the server is perfectly happy to host. The
+     * bound that matters is length, because the name ends up in a database column.
+     */
+    override fun parse(input: String): String? = input.takeIf { it.isNotBlank() && it.length <= MAX_NAME_LENGTH }
+
+    override fun suggest(input: String): List<String> {
+        val online = Bukkit.getOnlinePlayers().map { it.name }
+        // Online first and de-duplicated, so somebody standing in front of you is never buried
+        // under a page of names from the usercache.
+        val known = Bukkit.getOfflinePlayers().mapNotNull { it.name }
+        return (online + known)
+            .distinct()
+            .filter { it.startsWith(input, ignoreCase = true) }
+            .take(MAX_SUGGESTIONS)
+    }
+
+    /** Vanilla's limit; a longer name cannot have been used to log in. */
+    private const val MAX_NAME_LENGTH = 16
+
+    /**
+     * Brigadier sends the whole list to the client on every keystroke, and a long-lived server's
+     * usercache holds tens of thousands of names.
+     */
+    private const val MAX_SUGGESTIONS = 50
+}
+
 @SculkInternal
 public object UuidParser : ArgumentParser<UUID> {
     override val typeName: String = "uuid"

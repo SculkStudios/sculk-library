@@ -46,6 +46,8 @@ public final class studio/sculk/command/CommandBuilder {
 	public final fun player (Ljava/lang/String;Z)V
 	public final fun player (Lkotlin/jvm/functions/Function2;)V
 	public static synthetic fun player$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;ZILjava/lang/Object;)V
+	public final fun playerName (Ljava/lang/String;Z)V
+	public static synthetic fun playerName$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;ZILjava/lang/Object;)V
 	public final fun setAliases (Ljava/util/List;)V
 	public final fun setDescription (Ljava/lang/String;)V
 	public final fun setPermission (Ljava/lang/String;)V
@@ -234,5 +236,13 @@ public abstract interface class studio/sculk/command/argument/ArgumentParser {
 
 public final class studio/sculk/command/argument/ArgumentParser$DefaultImpls {
 	public static fun suggest (Lstudio/sculk/command/argument/ArgumentParser;Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class studio/sculk/command/argument/PlayerNameParser : studio/sculk/command/argument/ArgumentParser {
+	public static final field INSTANCE Lstudio/sculk/command/argument/PlayerNameParser;
+	public fun getTypeName ()Ljava/lang/String;
+	public synthetic fun parse (Ljava/lang/String;)Ljava/lang/Object;
+	public fun parse (Ljava/lang/String;)Ljava/lang/String;
+	public fun suggest (Ljava/lang/String;)Ljava/util/List;
 }
 
