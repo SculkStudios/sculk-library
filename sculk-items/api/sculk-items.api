@@ -69,6 +69,7 @@ public final class studio/sculk/items/ItemDeliveryResult {
 }
 
 public final class studio/sculk/items/ItemDescriptor {
+	public static final field Companion Lstudio/sculk/items/ItemDescriptor$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/util/Map;ZLjava/lang/String;Ljava/lang/Integer;ZZLjava/util/Map;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/util/Map;ZLjava/lang/String;Ljava/lang/Integer;ZZLjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -98,6 +99,21 @@ public final class studio/sculk/items/ItemDescriptor {
 	public final fun getUnbreakable ()Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class studio/sculk/items/ItemDescriptor$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lstudio/sculk/items/ItemDescriptor$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lstudio/sculk/items/ItemDescriptor;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lstudio/sculk/items/ItemDescriptor;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class studio/sculk/items/ItemDescriptor$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
 public final class studio/sculk/items/ItemDescriptorKt {

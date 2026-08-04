@@ -65,7 +65,7 @@ constructor(
                 Bukkit.createInventory(null, size, rendered)
             }
         for ((slot, item) in items) {
-            inv.setItem(slot, item.resolveStack(forPlayer))
+            inv.setItem(slot, item.resolveStack(forPlayer, messages))
         }
         return inv
     }

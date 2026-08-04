@@ -106,7 +106,9 @@ constructor(
     public fun forget(player: Player) {
         sidebars.remove(player.uniqueId)?.sidebar?.close()
         tabLists.remove(player.uniqueId)
-        bossBars.remove(player.uniqueId)
+        // Hidden rather than merely dropped, for the same reason as [close]: forgetting a player
+        // who is still online would otherwise strand their bar permanently.
+        bossBars.remove(player.uniqueId)?.let { player.hideBossBar(it) }
         actionBars.clear(player.uniqueId)
     }
 
@@ -120,6 +122,11 @@ constructor(
         sidebars.values.forEach { it.sidebar.close() }
         sidebars.clear()
         tabLists.clear()
+        // Hidden before the map is dropped. Clearing alone leaves every boss bar on screen with
+        // nothing left that knows how to remove it: the bar outlives the plugin that showed it, and
+        // survives /reload, so the only way a player gets rid of it is to reconnect.
+        val viewers = onlinePlayers().associateBy { it.uniqueId }
+        bossBars.forEach { (id, bar) -> viewers[id]?.hideBossBar(bar) }
         bossBars.clear()
     }
 

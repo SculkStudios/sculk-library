@@ -1,5 +1,6 @@
 package studio.sculk.items
 
+import kotlinx.serialization.Serializable
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.inventory.ItemStack
@@ -10,7 +11,13 @@ import studio.sculk.text.SculkMessages
 /**
  * A config-shaped item: everything a server owner would reasonably write in YAML, and nothing that
  * only makes sense in code.
+ *
+ * Serialisable because "put it in a config" is the entire point: `sculk-config` decodes through the
+ * compiler-generated descriptor, so a plugin embedding one of these in its own `@Serializable`
+ * settings class needs a serializer to embed. Without one the type reads as documentation that does
+ * not compile.
  */
+@Serializable
 @SculkStable
 public data class ItemDescriptor(
     public val material: String,

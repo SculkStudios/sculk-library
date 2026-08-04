@@ -33,7 +33,34 @@ The same API writes a standalone bot and a plugin-owned one.
   framework's branding in the console of anyone paying for a plugin built on it, and made a plugin
   with a banner of its own print two.
 
+- **`ItemDescriptor` is `@Serializable`.** It is the config-shaped item type, `items/config-items`
+  documents putting one in a settings class, and `sculk-config` decodes through the
+  compiler-generated descriptor — so the one thing the type exists for did not compile. A plugin
+  embedding one had to hand-write a `KSerializer` for a framework type, or mirror the class.
+  `sculk-items` cannot depend on `sculk-config` to prove the two agree, so the round-trip is
+  asserted against kaml configured exactly as `SculkConfig` configures it.
+
 ### Fixed
+
+- **GUI item names and lore now render through the plugin's theme.** A `Gui` is defined by `gui { }`
+  long before anything knows which `SculkMessages` will open it, and items were built there and then
+  — against a default renderer carrying `SculkTheme.EMPTY`. So a semantic tag in an item name reached
+  the player as the literal text `<danger>`, while the GUI *title*, which `Gui.buildInventory` renders
+  with the real renderer, came out themed. `GuiItem` now carries a render function instead of a
+  finished `ItemStack`, and the registry's renderer is applied when the menu opens — including for
+  `stack { }`, `dynamicContent`, and `refresh`. No public signature changed; every affected member is
+  `@SculkInternal`.
+- **Boss bars are hidden when the HUD closes.** `HudService.close()` cleared its map without hiding
+  anything, so on plugin disable or `/reload` every bar stayed on every viewer's screen with nothing
+  left that knew how to remove it — surviving the plugin that created it until the player reconnected.
+  `forget(player)` had the same gap.
+
+### Changed
+
+- **The startup banner names a packet backend only when one loaded**, instead of reporting `none`.
+  Accurate, but most plugins use no packet features, so their owners read `none` on an otherwise
+  healthy startup and ask what is broken. A plugin that depends on a backend can say so in
+  `bannerFacts()`, where it knows whether the absence matters.
 
 - **A generated config no longer stops parsing on the second boot.** A `${VAR:-}` default rendered as
   a plain scalar, and environment substitution runs over the text before it is parsed — so an unset

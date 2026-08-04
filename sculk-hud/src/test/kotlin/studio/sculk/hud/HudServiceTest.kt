@@ -1,5 +1,6 @@
 package studio.sculk.hud
 
+import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -139,5 +140,47 @@ class HudServiceTest {
                     .serialize(component) == "<red>Impostor joined"
             },
         )
+    }
+
+    @Test
+    fun `closing the hud hides every boss bar it was showing`() {
+        // Clearing the map alone left the bar on screen with nothing left that could remove it: it
+        // outlived the plugin, survived /reload, and only went away when the player reconnected.
+        val first = player()
+        val second = player()
+        val hud = service()
+        val bar = BossBar.bossBar(Component.text("Party"), 0.5f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS)
+        hud.bossBar(first, bar)
+        hud.bossBar(second, bar)
+
+        hud.close()
+
+        verify(first).hideBossBar(bar)
+        verify(second).hideBossBar(bar)
+    }
+
+    @Test
+    fun `forgetting a player hides their boss bar`() {
+        val player = player()
+        val hud = service()
+        val bar = BossBar.bossBar(Component.text("Party"), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS)
+        hud.bossBar(player, bar)
+
+        hud.forget(player)
+
+        verify(player).hideBossBar(bar)
+    }
+
+    @Test
+    fun `closing twice does not try to hide a bar again`() {
+        val player = player()
+        val hud = service()
+        val bar = BossBar.bossBar(Component.text("Party"), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS)
+        hud.bossBar(player, bar)
+
+        hud.close()
+        hud.close()
+
+        verify(player, times(1)).hideBossBar(bar)
     }
 }
