@@ -1,0 +1,91 @@
+public final class studio/sculk/web/HttpMethod : java/lang/Enum {
+	public static final field DELETE Lstudio/sculk/web/HttpMethod;
+	public static final field GET Lstudio/sculk/web/HttpMethod;
+	public static final field PATCH Lstudio/sculk/web/HttpMethod;
+	public static final field POST Lstudio/sculk/web/HttpMethod;
+	public static final field PUT Lstudio/sculk/web/HttpMethod;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/web/HttpMethod;
+	public static fun values ()[Lstudio/sculk/web/HttpMethod;
+}
+
+public abstract interface class studio/sculk/web/SculkWebProvider {
+	public abstract fun create (Lstudio/sculk/web/WebConfig;)Lstudio/sculk/web/SculkWebServer;
+	public abstract fun getBackend ()Ljava/lang/String;
+}
+
+public abstract interface class studio/sculk/web/SculkWebServer : studio/sculk/SculkHandle {
+	public abstract fun getPort ()I
+	public abstract fun getRunning ()Z
+	public abstract fun route (Lstudio/sculk/web/HttpMethod;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
+	public abstract fun start (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun static (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class studio/sculk/web/WebConfig {
+	public fun <init> ()V
+	public fun <init> (ILjava/lang/String;JLjava/util/Set;)V
+	public synthetic fun <init> (ILjava/lang/String;JLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/util/Set;
+	public final fun copy (ILjava/lang/String;JLjava/util/Set;)Lstudio/sculk/web/WebConfig;
+	public static synthetic fun copy$default (Lstudio/sculk/web/WebConfig;ILjava/lang/String;JLjava/util/Set;ILjava/lang/Object;)Lstudio/sculk/web/WebConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBind ()Ljava/lang/String;
+	public final fun getMaxBodyBytes ()J
+	public final fun getPort ()I
+	public final fun getTrustedProxies ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/web/WebRequest {
+	public fun <init> (Lstudio/sculk/web/HttpMethod;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Lstudio/sculk/web/HttpMethod;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun cookie (Ljava/lang/String;)Ljava/lang/String;
+	public final fun copy (Lstudio/sculk/web/HttpMethod;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;)Lstudio/sculk/web/WebRequest;
+	public static synthetic fun copy$default (Lstudio/sculk/web/WebRequest;Lstudio/sculk/web/HttpMethod;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/web/WebRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBody ()Ljava/lang/String;
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getMethod ()Lstudio/sculk/web/HttpMethod;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getQuery ()Ljava/util/Map;
+	public final fun getRemoteAddress ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun header (Ljava/lang/String;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/web/WebResponse {
+	public static final field Companion Lstudio/sculk/web/WebResponse$Companion;
+	public fun <init> (ILjava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun copy (ILjava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lstudio/sculk/web/WebResponse;
+	public static synthetic fun copy$default (Lstudio/sculk/web/WebResponse;ILjava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lstudio/sculk/web/WebResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBody ()Ljava/lang/String;
+	public final fun getContentType ()Ljava/lang/String;
+	public final fun getHeaders ()Ljava/util/Map;
+	public final fun getStatus ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/web/WebResponse$Companion {
+	public final fun error (ILjava/lang/String;)Lstudio/sculk/web/WebResponse;
+	public final fun json (Ljava/lang/String;)Lstudio/sculk/web/WebResponse;
+	public final fun noContent ()Lstudio/sculk/web/WebResponse;
+}
+
