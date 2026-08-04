@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -195,10 +196,16 @@ class KtorWebServerTest {
             val result = runBlocking { instance.start() }
             instance.close()
 
-            // An operator reading "failed to start" learns nothing actionable.
-            if (result is SculkResult.Failure) {
-                assertTrue(result.message.contains("port", ignoreCase = true))
-            }
+            // Asserted rather than guarded by an `is Failure` check: binding a socket that is
+            // already open must fail, and a version of this test that quietly passes when it
+            // succeeds is not testing anything.
+            val failure = assertInstanceOf(SculkResult.Failure::class.java, result)
+
+            // An operator reading "failed to start" learns nothing actionable. The engine binds on
+            // a coroutine, so the BindException arrives wrapped -- matching on the thrown type
+            // alone sent this down the generic branch and dropped the word entirely.
+            assertTrue(failure.message.contains("port", ignoreCase = true), failure.message)
+            assertTrue(failure.message.contains(occupied.localPort.toString()), failure.message)
         }
     }
 
