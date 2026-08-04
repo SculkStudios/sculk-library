@@ -33,6 +33,13 @@ The same API writes a standalone bot and a plugin-owned one.
   framework's branding in the console of anyone paying for a plugin built on it, and made a plugin
   with a banner of its own print two.
 
+- **`ItemDescriptor` is `@Serializable`.** It is the config-shaped item type, `items/config-items`
+  documents putting one in a settings class, and `sculk-config` decodes through the
+  compiler-generated descriptor — so the one thing the type exists for did not compile. A plugin
+  embedding one had to hand-write a `KSerializer` for a framework type, or mirror the class.
+  `sculk-items` cannot depend on `sculk-config` to prove the two agree, so the round-trip is
+  asserted against kaml configured exactly as `SculkConfig` configures it.
+
 ### Fixed
 
 - **A generated config no longer stops parsing on the second boot.** A `${VAR:-}` default rendered as
