@@ -7,6 +7,8 @@ import org.bukkit.inventory.ItemStack
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
 import studio.sculk.items.ItemBuilder
+import studio.sculk.items.item
+import studio.sculk.text.SculkMessages
 
 /**
  * An immutable definition of a single slot in a [Gui].
@@ -21,7 +23,17 @@ public class GuiItem
 @SculkInternal
 constructor(
     public val slot: Int,
-    public val stack: ItemStack,
+    /**
+     * Builds this slot's stack against a renderer.
+     *
+     * A function rather than a finished [ItemStack] because a GUI is defined by `gui { }`, long
+     * before anything knows which [SculkMessages] will open it. Building eagerly meant every item
+     * name and lore line was rendered by a default renderer carrying [studio.sculk.text.SculkTheme.EMPTY]
+     * — so `<danger>` in an item name reached the player as the literal text `<danger>`, while the
+     * GUI *title*, which `Gui.buildInventory` renders with the real one, came out themed. Nothing
+     * threw, and the bug was invisible until somebody opened a menu.
+     */
+    @SculkInternal public val render: (SculkMessages) -> ItemStack,
     @SculkInternal public val clickHandler: (GuiContext.() -> Unit)?,
     /** Optional per-player builder that overrides [stack] when the GUI opens. */
     @SculkInternal public val dynamicBuilder: (GuiItemBuilder.(Player) -> Unit)?,
@@ -34,20 +46,35 @@ constructor(
     @SculkInternal public val animation: GuiAnimation? = null,
 ) {
     /**
-     * Returns the [ItemStack] to display for [player].
+     * The stack as rendered with no theme.
      *
-     * If [dynamicBuilder] is set, it is evaluated using a fresh [GuiItemBuilder]
-     * seeded with this item's static values, then built. Otherwise returns [stack].
+     * Public because it always has been. Prefer [resolveStack]: this one cannot know the theme of
+     * whichever registry ends up opening the menu, so any semantic tag in its name or lore renders
+     * as literal text.
+     */
+    public val stack: ItemStack by lazy { render(UNTHEMED) }
+
+    private companion object {
+        /** One shared themeless renderer, so reading [stack] does not allocate one each time. */
+        val UNTHEMED = SculkMessages()
+    }
+
+    /**
+     * Returns the [ItemStack] to display for [player], rendered through [messages].
+     *
+     * If [dynamicBuilder] is set, it is evaluated using a fresh [GuiItemBuilder] seeded with this
+     * item's static values, then built against the same renderer.
      */
     @SculkInternal
-    public fun resolveStack(player: Player?): ItemStack {
-        if (dynamicBuilder == null || player == null) return stack
+    public fun resolveStack(player: Player?, messages: SculkMessages): ItemStack {
+        if (dynamicBuilder == null || player == null) return render(messages)
         @OptIn(SculkInternal::class)
         val itemBuilder = GuiItemBuilder(slot)
-        itemBuilder.material = stack.type
-        itemBuilder.amount = stack.amount
+        val seed = render(messages)
+        itemBuilder.material = seed.type
+        itemBuilder.amount = seed.amount
         dynamicBuilder.invoke(itemBuilder, player)
-        return itemBuilder.build().stack
+        return itemBuilder.build().render(messages)
     }
 
     /**
@@ -241,10 +268,23 @@ constructor(private val slot: Int) {
 
     @SculkInternal
     public fun build(): GuiItem {
-        val stack =
+        // Captured rather than built: the renderer is not known until the menu is opened. Everything
+        // read here is already final, so the closure sees the values the DSL block set.
+        val material = material
+        val amount = amount
+        val name = name
+        val lore = lore.toList()
+        val glow = glow
+        val customModelData = customModelData
+        val enchantments = enchantments.toMap()
+        val stackBuilder = stackBuilder
+        val explicitStack = explicitStack
+        val firstFrame = animation?.frames?.firstOrNull()
+
+        val render: (SculkMessages) -> ItemStack = { messages ->
             explicitStack?.clone()
-                ?: animation?.frames?.firstOrNull()?.clone()
-                ?: studio.sculk.items.item(material) {
+                ?: firstFrame?.clone()
+                ?: messages.item(material) {
                     amount(amount)
                     if (name.isNotBlank()) name(name)
                     if (lore.isNotEmpty()) lore(lore)
@@ -253,9 +293,10 @@ constructor(private val slot: Int) {
                     for ((enchName, level) in enchantments) enchant(enchName, level)
                     stackBuilder?.invoke(this)
                 }
+        }
         return GuiItem(
             slot = slot,
-            stack = stack,
+            render = render,
             clickHandler = clickHandler,
             dynamicBuilder = dynamicBuilder,
             leftClickHandler = leftClickHandler,
