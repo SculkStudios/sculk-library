@@ -13,6 +13,43 @@ import org.bukkit.inventory.ItemRarity
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.Damageable
 import org.bukkit.inventory.meta.ItemMeta
+import studio.sculk.annotation.SculkInternal
+
+/**
+ * Writes a display name and lore onto a stack that already exists, using whichever API this server has.
+ *
+ * For callers holding a finished [ItemStack] — a skull carrying a profile, a config-built descriptor —
+ * that still need the name and lore written beside it. They cannot go through [ItemBuilder], which
+ * builds a stack rather than decorating one, and they must not reach for `setData` directly: that is
+ * the call which does not exist on 1.21.0–1.21.3.
+ */
+@SculkInternal
+public fun ItemStack.writeDisplay(name: Component? = null, lore: List<Component> = emptyList()) {
+    if (name == null && lore.isEmpty()) return
+    val spec =
+        ItemSpec(
+            displayName = name,
+            itemName = null,
+            lore = lore,
+            enchantments = emptyMap(),
+            glint = null,
+            customModelData = null,
+            model = null,
+            hideVanillaTooltip = false,
+            unbreakable = null,
+            damage = null,
+            maxDamage = null,
+            maxStackSize = null,
+            rarity = null,
+        )
+    if (ItemCompat.dataComponents) {
+        ModernItemWriter.apply(this, spec)
+        return
+    }
+    val meta = itemMeta ?: return
+    LegacyItemWriter.edits(spec).forEach { meta.it() }
+    itemMeta = meta
+}
 
 /**
  * The resolved contents of an [ItemBuilder], handed to whichever writer this server can use.

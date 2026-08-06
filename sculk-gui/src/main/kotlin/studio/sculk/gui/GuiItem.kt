@@ -7,7 +7,10 @@ import org.bukkit.inventory.ItemStack
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
 import studio.sculk.items.ItemBuilder
+import studio.sculk.items.ItemDescriptor
 import studio.sculk.items.item
+import studio.sculk.items.toItemStack
+import studio.sculk.items.writeDisplay
 import studio.sculk.text.SculkMessages
 
 /**
@@ -150,6 +153,7 @@ constructor(private val slot: Int) {
     private var dynamicBuilder: (GuiItemBuilder.(Player) -> Unit)? = null
     private var stackBuilder: (ItemBuilder.() -> Unit)? = null
     private var explicitStack: ItemStack? = null
+    private var descriptor: ItemDescriptor? = null
 
     /** Registers a click handler for this item (any click type). */
     public fun onClick(block: GuiContext.() -> Unit) {
@@ -249,6 +253,23 @@ constructor(private val slot: Int) {
     }
 
     /**
+     * Fills this slot from a config-declared [ItemDescriptor], keeping every property it declares.
+     *
+     * The point of this over reading `descriptor.material` and rebuilding by hand is that a
+     * descriptor carries more than a material: lore, amount, enchantments, glint, model, custom model
+     * data, `hideVanillaTooltip`, `unbreakable` and persistent data. A plugin that pulls only the
+     * material off a config item silently throws the rest away, and a server owner who set
+     * `custom-model-data` on their menu icon sees nothing happen and has no way to find out why.
+     *
+     * Resolved when the menu opens, not here, so the descriptor's own name and lore render through
+     * the theme of the registry that opens it. A `name` or `lore` written beside this call still wins
+     * — that is how a static config icon carries per-player text.
+     */
+    public fun describe(descriptor: ItemDescriptor) {
+        this.descriptor = descriptor
+    }
+
+    /**
      * Adds an enchantment by its Minecraft key (e.g. `"sharpness"`, `"unbreaking"`).
      *
      * Unsafe levels are allowed — useful for display items. The enchantment is
@@ -281,18 +302,47 @@ constructor(private val slot: Int) {
         val explicitStack = explicitStack
         val firstFrame = animation?.frames?.firstOrNull()
 
+        val descriptor = descriptor
+
         val render: (SculkMessages) -> ItemStack = { messages ->
-            explicitStack?.clone()
-                ?: firstFrame?.clone()
-                ?: messages.item(material) {
-                    amount(amount)
-                    if (name.isNotBlank()) name(name)
-                    if (lore.isNotEmpty()) lore(lore)
-                    if (glow) glint()
-                    if (customModelData != 0) customModelData(customModelData)
-                    for ((enchName, level) in enchantments) enchant(enchName, level)
-                    stackBuilder?.invoke(this)
-                }
+            val supplied =
+                explicitStack?.clone()
+                    ?: firstFrame?.clone()
+                    // A config-declared item is resolved here, not at declaration time, so its name
+                    // and lore go through the theme of whichever registry opens the menu.
+                    ?: descriptor?.toItemStack(messages)?.getOrNull()
+
+            // A supplied stack still takes the name and lore written beside it.
+            //
+            // It used to be returned untouched, which meant `stack(head); name = "..."` silently
+            // dropped the name -- and that is the *only* way to build a player skull, a
+            // config-backed ItemDescriptor or anything else with metadata the GUI defaults cannot
+            // express. So every menu that showed a player head showed a bare "Player Head" with no
+            // name and no lore, in a block of code that reads as though it sets both. Nothing threw,
+            // nothing logged, and it was visible only by opening the menu.
+            //
+            // Applied here rather than left to the caller because the caller cannot see the
+            // problem: the DSL accepts `name` and `lore` on that slot exactly as it does anywhere
+            // else, so the honest fix is to make them mean what they appear to mean.
+            supplied?.also { stack ->
+                // Through writeDisplay rather than setData: that call does not exist on 1.21.0-1.21.3,
+                // and reaching for it here would put the crash sculk-items just fixed back into every
+                // menu that supplies its own stack. It also keeps this on the same API ItemBuilder
+                // uses -- mixing components and ItemMeta on one stack is how a name set here reads
+                // back as null from the component the rest of the library asks for.
+                stack.writeDisplay(
+                    name = name.takeIf { it.isNotBlank() }?.let(messages::renderItemText),
+                    lore = lore.map(messages::renderItemText),
+                )
+            } ?: messages.item(material) {
+                amount(amount)
+                if (name.isNotBlank()) name(name)
+                if (lore.isNotEmpty()) lore(lore)
+                if (glow) glint()
+                if (customModelData != 0) customModelData(customModelData)
+                for ((enchName, level) in enchantments) enchant(enchName, level)
+                stackBuilder?.invoke(this)
+            }
         }
         return GuiItem(
             slot = slot,
