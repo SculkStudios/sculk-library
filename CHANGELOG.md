@@ -54,6 +54,16 @@ The same API writes a standalone bot and a plugin-owned one.
   probed by reflection and isolated, so an old server loses one property rather than the item. The
   probes assert against the compiled API in `ItemCompatTest` — a typo in one would otherwise route
   every server down the legacy path and nothing would notice. No public signature changed.
+- **A GUI slot that supplies its own stack now takes the name and lore written beside it.**
+  `GuiItemBuilder.build` returned `explicitStack?.clone()` untouched, so `stack(head); name = "..."`
+  silently dropped the name — and supplying a stack is the *only* way to build a player skull
+  carrying a profile, or a config-backed `ItemDescriptor`. The slots that most need a name were
+  exactly the ones that could not have one: every player head in every DaisyStaff staff menu reached
+  a moderator as a bare "Player Head", from a block of code that reads as though it sets both.
+  Nothing threw and nothing logged; it was visible only by opening the menu. Written through
+  `setData(CUSTOM_NAME/LORE)` rather than `editMeta`, matching `ItemBuilder` — mixing the two APIs on
+  one stack is how a name set here reads back as null from the component the rest of the library asks
+  for.
 - **GUI item names and lore now render through the plugin's theme.** A `Gui` is defined by `gui { }`
   long before anything knows which `SculkMessages` will open it, and items were built there and then
   — against a default renderer carrying `SculkTheme.EMPTY`. So a semantic tag in an item name reached

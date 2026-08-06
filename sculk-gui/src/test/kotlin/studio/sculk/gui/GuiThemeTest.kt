@@ -67,6 +67,106 @@ class GuiThemeTest {
         menu.items.getValue(slot).resolveStack(player, SculkMessages(theme))
 
     @Test
+    fun `describe fills a slot from a config item without losing its properties`() {
+        // Reading only `descriptor.material` and rebuilding by hand is the tempting shortcut, and it
+        // silently discards everything else a server owner wrote in their menu config.
+        val menu =
+            gui("<danger>Menu") {
+                size = 9
+                item(0) {
+                    describe(
+                        studio.sculk.items.ItemDescriptor(
+                            material = "diamond_sword",
+                            name = "<danger>Configured",
+                            lore = listOf("<danger>from config"),
+                            amount = 3,
+                            glint = true,
+                        ),
+                    )
+                }
+            }
+
+        val stack = resolved(menu, 0, server.addPlayer())
+
+        assertEquals(Material.DIAMOND_SWORD, stack.type)
+        assertEquals(3, stack.amount, "amount is part of the descriptor and must survive")
+        assertEquals(true, stack.getData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE), "so is glint")
+        // Themed by the registry that opened the menu, not by whatever was in scope at gui { }.
+        assertEquals("Configured", plain(stack.getData(DataComponentTypes.CUSTOM_NAME)))
+        assertEquals(listOf("from config"), stack.getData(DataComponentTypes.LORE)?.lines()?.map(::plain))
+    }
+
+    @Test
+    fun `a name written beside describe overrides the config item's own`() {
+        // How a static config icon carries per-player text: the owner sets the look, the code sets
+        // the line that changes.
+        val menu =
+            gui("<danger>Menu") {
+                size = 9
+                item(0) {
+                    describe(studio.sculk.items.ItemDescriptor(material = "paper", name = "<danger>From config"))
+                    name = "<danger>From code"
+                }
+            }
+
+        assertEquals("From code", plain(resolved(menu, 0, server.addPlayer()).getData(DataComponentTypes.CUSTOM_NAME)))
+    }
+
+    @Test
+    fun `a slot that supplies its own stack still takes the name and lore beside it`() {
+        // The whole reason `stack(...)` exists is metadata the GUI defaults cannot express -- a
+        // player skull carrying a profile, a config-backed ItemDescriptor. Returning that stack
+        // untouched meant every one of those slots silently dropped the `name` and `lore(...)`
+        // written beneath it, in a block that reads as though it sets both.
+        //
+        // Found in DaisyStaff, where it made every player head in every staff menu render as a bare
+        // "Player Head": the reports queue, the appeals queue, history, alts and the punish menu.
+        // Nothing threw, no test failed, and it was visible only by opening the menu.
+        val player = server.addPlayer()
+        val menu =
+            gui("Title") {
+                size = 27
+                item(13) {
+                    stack(org.bukkit.inventory.ItemStack(Material.PLAYER_HEAD))
+                    name = "<danger>Griefer"
+                    lore("<value>Priority: high")
+                }
+            }
+
+        val rendered = resolved(menu, 13, player)
+
+        assertEquals("Griefer", plain(rendered.getData(DataComponentTypes.CUSTOM_NAME)))
+        assertEquals(Material.PLAYER_HEAD, rendered.type, "the supplied stack must survive")
+        val lore = rendered.getData(DataComponentTypes.LORE)?.lines()
+        assertEquals(1, lore?.size)
+        assertTrue(plain(lore!!.first())!!.contains("Priority: high"), plain(lore.first()))
+    }
+
+    @Test
+    fun `a supplied stack with no name beside it is not given an empty one`() {
+        // The other half of the fix: writing the name unconditionally would stamp an empty
+        // component over whatever the caller had already baked into the stack, which loses the same
+        // information by the opposite route.
+        //
+        // Asserted as "no component was written" rather than "the caller's name survived", because
+        // the second is not this library's behaviour to assert -- MockBukkit's ItemStack.clone does
+        // not carry data components, so a test phrased that way fails identically whether the fix
+        // is present or not. It would have been a test of the mock.
+        val player = server.addPlayer()
+        val menu =
+            gui("Title") {
+                size = 27
+                item(13) { stack(org.bukkit.inventory.ItemStack(Material.DIAMOND)) }
+            }
+
+        val rendered = resolved(menu, 13, player)
+
+        assertEquals(Material.DIAMOND, rendered.type)
+        assertEquals(null, rendered.getData(DataComponentTypes.CUSTOM_NAME))
+        assertEquals(null, rendered.getData(DataComponentTypes.LORE))
+    }
+
+    @Test
     fun `an item name is rendered with the opening registry's theme`() {
         val player = server.addPlayer()
         val menu =
