@@ -2,11 +2,7 @@ package studio.sculk.items
 
 import io.papermc.paper.datacomponent.DataComponentType
 import io.papermc.paper.datacomponent.DataComponentTypes
-import io.papermc.paper.datacomponent.item.CustomModelData
 import io.papermc.paper.datacomponent.item.FoodProperties
-import io.papermc.paper.datacomponent.item.ItemEnchantments
-import io.papermc.paper.datacomponent.item.ItemLore
-import io.papermc.paper.datacomponent.item.TooltipDisplay
 import io.papermc.paper.registry.RegistryAccess
 import io.papermc.paper.registry.RegistryKey
 import net.kyori.adventure.text.Component
@@ -24,11 +20,14 @@ import java.util.logging.Logger
 /**
  * Kotlin-first builder for modern Paper item stacks.
  *
- * Built entirely on Paper's data-component API (Minecraft 1.20.5+). Display properties — name,
- * lore, enchantments, model data, rarity, durability — are written as data components. For
- * components without a dedicated DSL method (food, tool, equippable, consumable, tooltip display,
- * …) use the generic [component] / [unsetComponent] escape hatch, which accepts any
- * [DataComponentType] and its value so the full modern surface is always reachable.
+ * Display properties — name, lore, enchantments, model data, rarity, durability — are written as
+ * data components where the server has them, and through the equivalent `ItemMeta` calls where it
+ * does not. That split is not cosmetic: Paper only gained the component API partway through 1.21,
+ * and reshaped two components again after that, while `api-version: '1.21'` keeps loading the plugin
+ * on all of it. [ItemCompat] holds the detail. For components without a dedicated DSL method (food,
+ * tool, equippable, consumable, tooltip display, …) use the generic [component] / [unsetComponent]
+ * escape hatch, which accepts any [DataComponentType] and its value so the full modern surface is
+ * always reachable — on a server old enough to lack components entirely, those are skipped.
  *
  * ```kotlin
  * item(Material.GOLDEN_APPLE) {
@@ -266,58 +265,65 @@ public open class ItemBuilder public constructor(private var material: Material,
         metaEdits += block
     }
 
-    /** Builds the final [ItemStack]. */
+    /**
+     * Builds the final [ItemStack].
+     *
+     * Two paths, chosen by what the running server supports. Modern servers get data components;
+     * 1.21.0–1.21.3, which have no component API at all, get the equivalent [ItemMeta] writes. See
+     * [ItemCompat] for why this is version-dependent inside a single Minecraft major line.
+     */
     public open fun build(): ItemStack {
         val stack = ItemStack(material, amount)
+        val spec = spec()
+        val modern = ItemCompat.dataComponents
 
-        // Persistent data + escape-hatch meta edits go through ItemMeta (the PDC carrier).
-        if (persistentData.isNotEmpty() || metaEdits.isNotEmpty()) {
+        // One ItemMeta pass: persistent data, escape-hatch edits, and anything this server is too old
+        // to express as a component. It has to run *before* the component writes — assigning
+        // stack.itemMeta replaces the whole backing component map, so doing it after would silently
+        // drop everything setData had written.
+        val fallbacks = if (modern) ModernItemWriter.fallbacks(spec) else LegacyItemWriter.edits(spec)
+        if (persistentData.isNotEmpty() || metaEdits.isNotEmpty() || fallbacks.isNotEmpty()) {
             val meta = stack.itemMeta
             if (meta != null) {
                 persistentData.forEach { meta.it() }
                 metaEdits.forEach { meta.it() }
+                fallbacks.forEach { meta.it() }
                 stack.itemMeta = meta
             }
         }
 
-        // Everything else is written as modern data components.
-        displayName?.let { stack.setData(DataComponentTypes.CUSTOM_NAME, it) }
-        itemName?.let { stack.setData(DataComponentTypes.ITEM_NAME, it) }
-        if (lore.isNotEmpty()) {
-            val builder = ItemLore.lore()
-            lore.forEach { builder.addLine(it) }
-            stack.setData(DataComponentTypes.LORE, builder.build())
+        if (modern) {
+            ModernItemWriter.apply(stack, spec)
+            componentEdits.forEach { stack.it() }
+        } else if (componentEdits.isNotEmpty()) {
+            // component()/food() are inherently component-shaped; there is nothing to fall back to.
+            ItemCompat.unsupported("data components")
         }
-        if (enchantments.isNotEmpty()) {
-            val builder = ItemEnchantments.itemEnchantments()
-            enchantments.forEach { (enchantment, level) -> builder.add(enchantment, level) }
-            stack.setData(DataComponentTypes.ENCHANTMENTS, builder.build())
-        }
-        glint?.let { stack.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, it) }
-        customModelData?.let {
-            stack.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addFloat(it.toFloat()).build())
-        }
-        model?.let { stack.setData(DataComponentTypes.ITEM_MODEL, it) }
-        if (hideVanillaTooltip) {
-            stack.setData(
-                DataComponentTypes.TOOLTIP_DISPLAY,
-                TooltipDisplay
-                    .tooltipDisplay()
-                    .addHiddenComponents(
-                        DataComponentTypes.ENCHANTMENTS,
-                        DataComponentTypes.ATTRIBUTE_MODIFIERS,
-                        DataComponentTypes.UNBREAKABLE,
-                    ).build(),
-            )
-        }
-        unbreakable?.let { if (it) stack.setData(DataComponentTypes.UNBREAKABLE) else stack.unsetData(DataComponentTypes.UNBREAKABLE) }
-        maxStackSize?.let { stack.setData(DataComponentTypes.MAX_STACK_SIZE, it) }
-        maxDamage?.let { stack.setData(DataComponentTypes.MAX_DAMAGE, it) }
-        damage?.let { stack.setData(DataComponentTypes.DAMAGE, it) }
-        rarity?.let { stack.setData(DataComponentTypes.RARITY, it) }
-        componentEdits.forEach { stack.it() }
         return stack
     }
+
+    /**
+     * What this builder was actually told to set, as opposed to what an item ends up looking like.
+     *
+     * Internal because the distinction is invisible from the finished stack — "never asked for" and
+     * "asked for the default" produce identical items — yet it is the whole difference between
+     * working and crashing on 1.21.4. A test can only assert it from here.
+     */
+    internal fun spec(): ItemSpec = ItemSpec(
+        displayName = displayName,
+        itemName = itemName,
+        lore = lore,
+        enchantments = enchantments,
+        glint = glint,
+        customModelData = customModelData,
+        model = model,
+        hideVanillaTooltip = hideVanillaTooltip,
+        unbreakable = unbreakable,
+        damage = damage,
+        maxDamage = maxDamage,
+        maxStackSize = maxStackSize,
+        rarity = rarity,
+    )
 }
 
 internal fun materialByKey(key: String): Material? {
@@ -358,7 +364,7 @@ internal fun enchantmentByKey(key: String): Enchantment? {
  * nowhere to hand one in without putting a logger parameter on the whole DSL. Paper routes
  * java.util.logging to the console, so the warning still lands where an admin will read it.
  */
-private val itemLogger: Logger = Logger.getLogger("SculkItems")
+internal val itemLogger: Logger = Logger.getLogger("SculkItems")
 
 internal fun normalizeLookupKey(key: String): String = key.trim().lowercase().substringAfter(':')
 
