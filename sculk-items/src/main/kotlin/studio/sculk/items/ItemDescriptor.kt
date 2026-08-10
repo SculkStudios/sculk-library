@@ -35,17 +35,30 @@ public data class ItemDescriptor(
 
 /** Builds the described item, reporting an unknown material by name. */
 @SculkStable
-public fun ItemDescriptor.toItemStack(messages: SculkMessages = SculkMessages()): SculkResult<ItemStack> = messages.item(material) {
-    amount(this@toItemStack.amount)
-    this@toItemStack.name?.let { name(it) }
-    if (lore.isNotEmpty()) lore(lore)
-    enchantments.forEach { (key, level) -> enchantmentByKey(key)?.let { enchant(it, level) } }
-    if (glint) glint()
-    model?.let { model(it) }
-    customModelData?.let { customModelData(it) }
-    if (hideVanillaTooltip) hideVanillaTooltip()
-    unbreakable(unbreakable)
-    data.forEach { (key, value) -> pdc(key, value) }
+public fun ItemDescriptor.toItemStack(messages: SculkMessages = SculkMessages()): SculkResult<ItemStack> =
+    messages.item(material) { applyDescriptor(this@toItemStack) }
+
+/**
+ * Applies a descriptor to a builder.
+ *
+ * Split out of [toItemStack] so it can be asserted on directly. Whether a property was *set* and
+ * what the finished item *looks like* are not the same question, and only the first one distinguishes
+ * the 1.21.4 crash from correct behaviour.
+ */
+internal fun ItemBuilder.applyDescriptor(descriptor: ItemDescriptor) {
+    amount(descriptor.amount)
+    descriptor.name?.let { name(it) }
+    if (descriptor.lore.isNotEmpty()) lore(descriptor.lore)
+    descriptor.enchantments.forEach { (key, level) -> enchantmentByKey(key)?.let { enchant(it, level) } }
+    if (descriptor.glint) glint()
+    descriptor.model?.let { model(it) }
+    descriptor.customModelData?.let { customModelData(it) }
+    if (descriptor.hideVanillaTooltip) hideVanillaTooltip()
+    // Only when asked. Setting the default was pointless work on every server and a hard crash on
+    // 1.21.4, where UNBREAKABLE is a differently-shaped field that the compiled reference cannot
+    // resolve — so every item built from config threw NoSuchFieldError.
+    if (descriptor.unbreakable) unbreakable(true)
+    descriptor.data.forEach { (key, value) -> pdc(key, value) }
 }
 
 /** Describes an existing stack in the same shape a config would use. */

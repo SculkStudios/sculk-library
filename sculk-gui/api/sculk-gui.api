@@ -74,6 +74,7 @@ public final class studio/sculk/gui/GuiItem {
 public final class studio/sculk/gui/GuiItemBuilder {
 	public final fun animate (JLkotlin/jvm/functions/Function1;)V
 	public static synthetic fun animate$default (Lstudio/sculk/gui/GuiItemBuilder;JLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun describe (Lstudio/sculk/items/ItemDescriptor;)V
 	public final fun dynamicContent (Lkotlin/jvm/functions/Function2;)V
 	public final fun enchantment (Ljava/lang/String;I)V
 	public final fun getAmount ()I
