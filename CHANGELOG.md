@@ -42,6 +42,18 @@ The same API writes a standalone bot and a plugin-owned one.
 
 ### Fixed
 
+- **Items build on every 1.21.x server, not just the newest.** `api-version: '1.21'` loads a plugin on
+  the whole 1.21 line, but Paper only gained the data-component API partway through it and then
+  reshaped two components again: `UNBREAKABLE` is `Valued` on 1.21.4 and `NonValued` from 1.21.5, and
+  `TOOLTIP_DISPLAY` does not exist below 1.21.5. A JVM field reference carries its type descriptor, so
+  the 1.21.11-compiled `UNBREAKABLE` reference did not resolve on 1.21.4 — `NoSuchFieldError`, thrown
+  the first time it ran. `ItemDescriptor.toItemStack` reached it unconditionally by calling
+  `unbreakable(false)` for the default, so on 1.21.4 *every* item built from config threw, and a
+  plugin's rewards silently stopped being handed out. `ItemBuilder` now writes components where they
+  exist and the equivalent `ItemMeta` calls where they do not; each component that changed shape is
+  probed by reflection and isolated, so an old server loses one property rather than the item. The
+  probes assert against the compiled API in `ItemCompatTest` — a typo in one would otherwise route
+  every server down the legacy path and nothing would notice. No public signature changed.
 - **GUI item names and lore now render through the plugin's theme.** A `Gui` is defined by `gui { }`
   long before anything knows which `SculkMessages` will open it, and items were built there and then
   — against a default renderer carrying `SculkTheme.EMPTY`. So a semantic tag in an item name reached
