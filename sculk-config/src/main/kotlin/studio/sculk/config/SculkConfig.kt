@@ -226,12 +226,28 @@ constructor(
                 // Append-only. The render is a source of keys the file is missing, never a
                 // replacement for it -- see ConfigMerge for what a full rewrite destroys.
                 val merged = ConfigMerge.appendMissing(original, render(serializer, value))
-                if (merged != original) file.writeText(merged)
+                // Never write a merge that does not parse. The merger edits text rather than a
+                // parsed document, so a shape it mishandles produces a file the owner cannot load
+                // and did not break — and it is written over the one that worked. Keeping the
+                // original costs them the new keys, which are defaults anyway; writing a broken one
+                // costs them their configuration.
+                if (merged != original && parses(serializer, merged, name)) file.writeText(merged)
             }
 
             value
         }
     }
+
+    /** Whether [text] still decodes, so a merge that mangled the file is never saved over it. */
+    private fun <T : Any> parses(serializer: KSerializer<T>, text: String, name: String): Boolean =
+        runCatching { yaml.decodeFromString(serializer, text) }
+            .onFailure {
+                logger.warning(
+                    "[SculkConfig] Adding new keys to $name would have produced a file that does not " +
+                        "parse (${it.message}); $name was left as it is. Its new settings are using " +
+                        "their defaults. Please report this with a copy of the file.",
+                )
+            }.isSuccess
 
     private fun applyMigrations(name: String, text: String): String {
         val steps = migrations[name].orEmpty()
