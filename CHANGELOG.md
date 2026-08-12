@@ -6,8 +6,48 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.1.0] — "Bridged" — 2026-08-12
+
 ### Added
 
+- **`DiscordRole` and role reads on `GuildService`** — `role(guild, id)` and `roles(guild)`, plus
+  `DiscordActor.highestColoredRole(guildRoles)`. `DiscordActor.roles` carried ids and nothing else, so
+  a bridge that wanted to tint a relayed line the way Discord tints the sender's name could not: the
+  colour, name and position were all discarded in translation. `roles(guild)` returns the whole list
+  highest-first so a sync over thousands of members fetches once rather than per role per member.
+- **`GuildService.members(guild, users)`** — bulk member lookup, batched to Discord's hundred-per-request
+  limit. The single-member call in a loop is one round trip per member, which over a linked-account
+  table is thousands of requests and slow enough that a reconcile can still be running when the next
+  one is due.
+- **`BotConfig.cacheAllMembers`** — opt into holding every member in memory for the sync-heavy case.
+  Off by default; ignored with a log line when `Intent.GuildMembers` was not requested, because
+  without that intent Discord never sends the members to cache.
+- **`DiscordGateway.closeAwaiting(timeout)`** — closes and waits for what was already sent to leave.
+  `close()` returns as soon as it has asked the backend to stop, which drops precisely the shutdown
+  announcement posted immediately before it.
+- **The rest of Components V2** — `Section` (up to three lines of text with one accessory), `Thumbnail`,
+  `MediaGallery`, `Container.spoiler`, `SelectOption.emoji`, and `EntitySelect` over Discord's own
+  users, roles and channels. A section with a thumbnail is the layout a chat bridge actually wants —
+  a relayed line with the speaker's face beside it — and an embed could only fake it with the
+  author-icon slot, which is one per embed and cannot repeat down a message.
+- **`DiscordGateway.onMessageEdit`, `onMessageDelete` and `onMemberChange`** — a bridge that relays the
+  original and ignores the edit shows Minecraft a version of the conversation that exists nowhere, and
+  the edit is usually the correction. `onMemberChange` covers joins, departures and role changes, so a
+  role sync reacts instead of re-reading every linked member on a timer. A bulk purge is fanned out to
+  one deletion each, so the single-message path is the only one a consumer has to write.
+- **`DiscordGateway.sendTyping`** — the standard affordance while a slow command runs.
+- **`DiscordCommandSpec.signature()` and `signatureOf(commands)`** — a stable fingerprint of everything
+  Discord is actually told, so a bot can skip the destructive, heavily rate-limited registration PUT
+  when nothing changed. It excludes the executor: changing what a command does changes nothing Discord
+  stores, and hashing the lambda would make every restart look like a change.
+- **`OptionValue.asMentionable` and `asAttachment`, and a `mentionable(...)` option** — `attachment(...)`
+  previously declared an option whose value could not be read at all.
+- **Six more `DiscordPermission` entries** — ManageChannels, ViewAuditLog, MentionEveryone,
+  ManageNicknames, ManageRoles, ManageWebhooks.
+- **Inbound message fidelity** — `DiscordChatMessage` gained `displayContent` (mentions resolved to
+  names; the raw form put a bare `<@493…>` in front of players) and `reply`, and `DiscordActor` gained
+  `username`, `nickname` and `avatarUrl` kept apart from the display `name`. Collapsing the handle and
+  the display name into one field lost the only half that is stable across guilds and renames.
 - **`sculk-discord` and `sculk-discord-jda`** — a backend-neutral Discord API. Messages are a
   component tree as data, slash commands are a spec mirroring the Brigadier side, and Discord's
   timing rules are types: `replyModal` exists only before acknowledgement, and deferring hands back a
@@ -72,6 +112,48 @@ The same API writes a standalone bot and a plugin-owned one.
 
 ### Fixed
 
+- **A thread, an announcement channel or a forum post is a valid target.** Sends resolved only a plain
+  `TextChannel`, so every other kind of message channel reported "not visible to the bot" — sending an
+  operator to check permissions on a channel whose id was perfectly correct.
+- **`channelExists` says which of three things is wrong.** It answered a bare `false` for "not
+  connected", "no such channel" and "the bot cannot post there" alike, which are fixed in three
+  different places by three different people. It now distinguishes them, and never reports a
+  disconnected gateway as a missing channel.
+- **An autocomplete supplier that throws is logged.** It produced an empty list, which in the Discord
+  client is indistinguishable from "nothing matches what you typed".
+- **`awaitComponent` no longer leaks an entry per message id.** Removing the collector and dropping the
+  empty list were two steps that could interleave with a concurrent registration; they are now one
+  operation under the same lock.
+- **Relayed messages keep their order, and a blip no longer drops one.** Sends were bare rest actions:
+  two messages dispatched a millisecond apart raced through the rate-limit buckets, which for a chat
+  bridge means an exchange that reads backwards. Sends are now serialised per channel — different
+  channels stay independent, so a slow console relay cannot hold up chat — and a transient failure
+  (an `IOException`, a 5xx, a rate limit) is retried once. Anything unrecognised is not retried, so a
+  permissions mistake costs one dropped message rather than a burst of requests.
+- **A send during a reconnect says the gateway is down.** `send` never consulted `state.usable`, and
+  the dead client was cleared inside the delayed retry coroutine rather than when the disconnect was
+  noticed — so for the length of the backoff a send was dispatched into a dead JDA and failed with
+  whatever it threw.
+- **Two disconnects a millisecond apart no longer start two reconnect loops.** The check on the retry
+  job was an unguarded check-then-set reachable from a JDA event thread, a coroutine and the connect
+  path at once.
+- **The member cache actually caches.** `MemberCachePolicy.DEFAULT` is `VOICE.or(OWNER)`, and the
+  voice-state cache flag it depends on was disabled two lines later — so the setting looked like it
+  cached members and held approximately the guild owner. Now explicitly all-or-nothing, driven by
+  `BotConfig.cacheAllMembers`, with the chunking filter set to match.
+- **A rate-limited webhook is retried at the time Discord asked for.** A 429 carries `Retry-After`,
+  and treating it as an ordinary rejection discarded the one piece of information that would have let
+  the message through — during exactly the burst that caused the limit. Retried once, not in a loop.
+- **The webhook fallback stops dropping content in silence.** A row of link buttons and any row at the
+  top level vanished from the rendered payload with no diagnostic; link buttons now survive as
+  markdown links. The unused `flags` field, which documented Components V2 support that was never
+  implemented, has been removed rather than left implying it.
+- **`DiscordCommandSpec.ephemeral` does something.** It was written by the builder and read by nothing:
+  the router's auto-defer hardcoded `ephemeral = true`, so a command declared public still went out
+  ephemeral whenever its handler was slow enough for the watchdog to acknowledge first.
+- **A nested container fails where it is built.** `Container(children = listOf(Container(...)))`
+  constructed happily and threw during rendering at send time, so the failure named an HTTP call
+  instead of the line responsible — and only for messages that were actually sent.
 - **Items build on every 1.21.x server, not just the newest.** `api-version: '1.21'` loads a plugin on
   the whole 1.21 line, but Paper only gained the data-component API partway through it and then
   reshaped two components again: `UNBREAKABLE` is `Valued` on 1.21.4 and `NonValued` from 1.21.5, and

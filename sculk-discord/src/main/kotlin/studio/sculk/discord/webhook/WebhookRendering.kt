@@ -5,6 +5,11 @@ import studio.sculk.discord.message.Button
 import studio.sculk.discord.message.Container
 import studio.sculk.discord.message.DiscordMessage
 import studio.sculk.discord.message.Divider
+import studio.sculk.discord.message.EntitySelect
+import studio.sculk.discord.message.MediaGallery
+import studio.sculk.discord.message.MessageComponent
+import studio.sculk.discord.message.Row
+import studio.sculk.discord.message.Section
 import studio.sculk.discord.message.SelectMenu
 import studio.sculk.discord.message.Text
 
@@ -29,7 +34,8 @@ internal const val MAX_DESCRIPTION = 4096
 internal fun undeliverableReason(message: DiscordMessage): String? {
     val flat = message.flatten()
     val interactive = flat.filterIsInstance<Button>().count { it.id != null } +
-        flat.filterIsInstance<SelectMenu>().size
+        flat.filterIsInstance<SelectMenu>().size +
+        flat.filterIsInstance<EntitySelect>().size
     return if (interactive == 0) {
         null
     } else {
@@ -61,23 +67,22 @@ internal fun allowedMentionsFor(mentions: Mentions): AllowedMentions = when (men
 /**
  * Renders a message into a webhook body.
  *
- * A webhook cannot carry Components V2, so a [Container] becomes an embed — which is what it is the
- * modern replacement for — and its accent becomes the embed colour. Loose [Text] outside any
- * container becomes the content line.
+ * This path does not carry Components V2. Sending V2 through a webhook is possible — it needs the
+ * `IS_COMPONENTS_V2` flag and Discord's raw component schema — but this module speaks HTTP directly
+ * rather than through a backend library, so supporting it means hand-writing and maintaining that
+ * whole schema. Until something needs it, a [Container] becomes an embed, which is what an embed is:
+ * the thing V2 containers replaced. The accent becomes the embed colour.
+ *
+ * Nothing is dropped in silence. A [Row] of link buttons becomes a line of markdown links rather than
+ * vanishing, because a fallback alert whose "Open incident" button quietly disappeared is worse than
+ * one that reads slightly differently from its gateway twin. Interactive components never reach here
+ * at all — [undeliverableReason] refuses the message first.
  */
 internal fun payloadFor(message: DiscordMessage, username: String?, avatarUrl: String?): WebhookPayload {
-    val loose = message.components.filterIsInstance<Text>().joinToString("\n") { it.markdown }
+    val loose = message.components.filterNot { it is Container }.flatten().joinToString("\n")
     val embeds = message.components.filterIsInstance<Container>().map { container ->
         WebhookEmbed(
-            description = container.children
-                .mapNotNull { child ->
-                    when (child) {
-                        is Text -> child.markdown
-                        is Divider -> "───"
-                        else -> null
-                    }
-                }.joinToString("\n")
-                .take(MAX_DESCRIPTION),
+            description = container.children.flatten().joinToString("\n").take(MAX_DESCRIPTION),
             color = container.accentRgb,
         )
     }
@@ -89,3 +94,30 @@ internal fun payloadFor(message: DiscordMessage, username: String?, avatarUrl: S
         embeds = embeds,
     )
 }
+
+/** Flattens components to the lines an embed description or a content field can hold. */
+private fun List<MessageComponent>.flatten(): List<String> = mapNotNull { child ->
+    when (child) {
+        is Text -> child.markdown
+
+        is Divider -> DIVIDER_RULE
+
+        is Row -> child.components.filterIsInstance<Button>().mapNotNull { it.asMarkdownLink() }
+            .joinToString(" · ")
+            .ifBlank { null }
+
+        // The accessory image is lost — an embed has one image slot and a message may hold many
+        // sections — but the text is not, and a link-button accessory survives as a link.
+        is Section -> (child.content.map { it.markdown } + listOfNotNull((child.accessory as? Button)?.asMarkdownLink()))
+            .joinToString("\n")
+
+        is MediaGallery -> child.items.joinToString("\n") { it.url }
+
+        else -> null
+    }
+}
+
+/** A link button as `[label](url)`, or null for anything that is not a link. */
+private fun Button.asMarkdownLink(): String? = link?.let { "[$label]($it)" }
+
+private const val DIVIDER_RULE = "───"

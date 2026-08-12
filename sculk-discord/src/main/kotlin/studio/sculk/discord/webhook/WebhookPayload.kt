@@ -20,8 +20,6 @@ internal data class WebhookPayload(
     @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("allowed_mentions") val allowedMentions: AllowedMentions = AllowedMentions(),
     val embeds: List<WebhookEmbed> = emptyList(),
-    /** Components V2. Discord rejects component payloads without it. */
-    val flags: Int? = null,
 )
 
 /**

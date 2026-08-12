@@ -132,4 +132,43 @@ class WebhookRenderingTest {
 
         assertFalse(encoded.contains("username"), encoded)
     }
+
+    @Test
+    fun `a link button inside a container survives as a markdown link`() {
+        val alert = message {
+            container {
+                text("Server unreachable")
+                row { link("Open incident", "https://status.example/42") }
+            }
+        }
+
+        val description = payloadFor(alert, null, null).embeds.single().description
+
+        assertTrue(description!!.contains("[Open incident](https://status.example/42)"), description)
+    }
+
+    @Test
+    fun `a row at the top level is not silently dropped`() {
+        val alert = message {
+            text("Server unreachable")
+            row { link("Open incident", "https://status.example/42") }
+        }
+
+        val content = payloadFor(alert, null, null).content
+
+        assertTrue(content!!.contains("https://status.example/42"), content)
+    }
+
+    @Test
+    fun `a divider inside a container still renders as a rule`() {
+        val alert = message {
+            container {
+                text("before")
+                divider()
+                text("after")
+            }
+        }
+
+        assertEquals("before\n───\nafter", payloadFor(alert, null, null).embeds.single().description)
+    }
 }

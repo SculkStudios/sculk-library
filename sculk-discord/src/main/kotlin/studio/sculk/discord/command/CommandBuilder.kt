@@ -63,6 +63,10 @@ public class DiscordCommandBuilder internal constructor(private val name: String
     public fun attachment(name: String, description: String, required: Boolean = false): Unit =
         add(CommandOption(name, description, OptionType.Attachment, required))
 
+    /** A user or a role — read it with [studio.sculk.discord.interaction.OptionValue.asMentionable]. */
+    public fun mentionable(name: String, description: String, required: Boolean = false): Unit =
+        add(CommandOption(name, description, OptionType.Mentionable, required))
+
     private fun add(option: CommandOption) {
         require(options.none { it.name == option.name }) {
             "Duplicate option name '${option.name}' on /$name."

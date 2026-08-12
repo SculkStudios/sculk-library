@@ -67,6 +67,15 @@ public interface DiscordGateway : SculkHandle {
      */
     public suspend fun channelExists(channel: ChannelId): SculkResult<Boolean>
 
+    /**
+     * Shows the bot as typing in [channel] for a few seconds.
+     *
+     * The honest way to cover a slow relay: a command that takes four seconds to answer looks like a
+     * dead bot, and the typing indicator is what Discord users already read as "it heard you". It
+     * expires on its own, so there is nothing to cancel.
+     */
+    public suspend fun sendTyping(channel: ChannelId): SculkResult<Unit>
+
     /** Sets the bot's presence line. */
     public suspend fun presence(activity: Presence): SculkResult<Unit>
 
@@ -96,6 +105,32 @@ public interface DiscordGateway : SculkHandle {
     public fun onMessage(handler: suspend (DiscordChatMessage) -> Unit): SculkHandle
 
     /**
+     * Calls [handler] when someone edits a message, with the message as it now reads.
+     *
+     * A bridge that relays the original and ignores the edit shows Minecraft a version of the
+     * conversation that no longer exists anywhere — and the edit is usually the correction.
+     *
+     * Same filters as [onMessage]: bots and webhooks never reach the handler.
+     */
+    public fun onMessageEdit(handler: suspend (DiscordChatMessage) -> Unit): SculkHandle
+
+    /**
+     * Calls [handler] when a message is deleted, including each of a bulk purge.
+     *
+     * Ids only — see [DeletedMessage].
+     */
+    public fun onMessageDelete(handler: suspend (DeletedMessage) -> Unit): SculkHandle
+
+    /**
+     * Calls [handler] when a member joins, leaves, or has their roles changed.
+     *
+     * The alternative is polling, which for role sync means every linked member is re-read on a timer
+     * whether or not anything changed — and a grant made just after a pass is invisible until the
+     * next one. Needs [Intent.GuildMembers].
+     */
+    public fun onMemberChange(handler: suspend (MemberChange) -> Unit): SculkHandle
+
+    /**
      * Waits for someone to use a component on [message].
      *
      * The thing discord.js has and JDA does not, and the reason a flow like "post a confirmation,
@@ -106,6 +141,30 @@ public interface DiscordGateway : SculkHandle {
      * completes leaks its coroutine and the buttons stay live indefinitely.
      */
     public suspend fun awaitComponent(message: MessageId, within: Duration, from: UserId? = null): SculkResult<ComponentInteraction>
+
+    /**
+     * Closes, and waits for what was already sent to actually leave.
+     *
+     * [SculkHandle.close] returns the moment it has asked the backend to stop, which is correct for a
+     * handle and wrong for the last thing a process does. The message that matters most is the one
+     * announcing the shutdown, and it is posted immediately before this — so a close that does not
+     * wait drops precisely the message nobody is left to notice is missing. That was a real bug in
+     * the plugin this API was written for: "server stopping" was queued, the gateway was closed two
+     * lines later, and the announcement never arrived.
+     *
+     * Fails rather than hanging when [timeout] runs out, so a wedged connection delays a restart by a
+     * bounded amount instead of holding the JVM open.
+     */
+    public suspend fun closeAwaiting(timeout: Duration = DEFAULT_SHUTDOWN_TIMEOUT): SculkResult<Unit> {
+        close()
+        return SculkResult.ok()
+    }
+
+    @SculkStable
+    public companion object {
+        /** How long [closeAwaiting] waits before giving up. */
+        public val DEFAULT_SHUTDOWN_TIMEOUT: Duration = kotlin.time.Duration.parse("10s")
+    }
 }
 
 /** What the bot appears to be doing. */
@@ -129,6 +188,19 @@ public data class BotConfig(
     public val intents: Set<Intent> = emptySet(),
     /** Guild ids to register commands into. Empty registers globally, which Discord caches for ~1 hour. */
     public val commandGuilds: Set<GuildId> = emptySet(),
+    /**
+     * Whether to hold every member of every guild in memory.
+     *
+     * Off by default, and worth turning on only for the case that needs it: a sync that reads the same
+     * few thousand members repeatedly. With it off, looking a member up is a request to Discord every
+     * time — fine for the occasional moderation call, and the difference between one pass and
+     * thousands of round trips for a role reconcile.
+     *
+     * The cost is real memory, proportional to the member count of every guild the bot is in, and it
+     * needs [Intent.GuildMembers]: without that intent Discord never sends the members to cache, so
+     * this is ignored and says so in the log rather than silently doing nothing.
+     */
+    public val cacheAllMembers: Boolean = false,
 ) {
     /** False when the token is absent or still the placeholder a generated config ships with. */
     public val configured: Boolean

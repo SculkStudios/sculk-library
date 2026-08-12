@@ -2,6 +2,10 @@ package studio.sculk.discord.jda
 
 import net.dv8tion.jda.api.components.actionrow.ActionRow
 import net.dv8tion.jda.api.components.container.Container
+import net.dv8tion.jda.api.components.mediagallery.MediaGallery
+import net.dv8tion.jda.api.components.section.Section
+import net.dv8tion.jda.api.components.selections.EntitySelectMenu
+import net.dv8tion.jda.api.components.selections.StringSelectMenu
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay
 import net.dv8tion.jda.api.entities.Message
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -13,9 +17,13 @@ import studio.sculk.discord.Mentions
 import studio.sculk.discord.RoleId
 import studio.sculk.discord.UserId
 import studio.sculk.discord.message.ButtonStyle
+import studio.sculk.discord.message.EntityKind
+import studio.sculk.discord.message.SelectOption
+import studio.sculk.discord.message.Thumbnail
 import studio.sculk.discord.message.message
 import studio.sculk.text.ThemeStyle
 import java.awt.Color
+import net.dv8tion.jda.api.components.thumbnail.Thumbnail as JdaThumbnail
 
 class JdaRenderingTest {
     private val ban = ComponentId.of("punish", "ban", "r1").getOrThrow()
@@ -92,5 +100,75 @@ class JdaRenderingTest {
         val components = message { text("plain") }.toTopLevelComponents()
 
         assertEquals("plain", (components.single() as TextDisplay).content)
+    }
+
+    @Test
+    fun `a section renders with its thumbnail accessory`() {
+        val components = message {
+            section(Thumbnail("https://crafatar.com/avatars/steve", description = "Steve")) { text("<Steve> hello") }
+        }.toTopLevelComponents()
+
+        val section = components.single() as Section
+        val thumbnail = section.accessory as JdaThumbnail
+        assertEquals("https://crafatar.com/avatars/steve", thumbnail.url)
+        assertEquals("Steve", thumbnail.description)
+        assertEquals("<Steve> hello", (section.contentComponents.single() as TextDisplay).content)
+    }
+
+    @Test
+    fun `a section renders with a button accessory`() {
+        val components = message {
+            section(studio.sculk.discord.message.Button("Ban", ban, style = ButtonStyle.Danger)) { text("flagged") }
+        }.toTopLevelComponents()
+
+        val accessory = (components.single() as Section).accessory
+        assertEquals(ban.encoded, (accessory as net.dv8tion.jda.api.components.buttons.Button).customId)
+    }
+
+    @Test
+    fun `a gallery renders every image`() {
+        val components = message {
+            gallery {
+                image("https://cdn.example/one.png", description = "one")
+                image("https://cdn.example/two.png", spoiler = true)
+            }
+        }.toTopLevelComponents()
+
+        val gallery = components.single() as MediaGallery
+        assertEquals(listOf("https://cdn.example/one.png", "https://cdn.example/two.png"), gallery.items.map { it.url })
+        assertEquals("one", gallery.items.first().description)
+        assertTrue(gallery.items.last().isSpoiler)
+    }
+
+    @Test
+    fun `a spoilered container renders spoilered`() {
+        val components = message { container(accentRgb = null, spoiler = true) { text("hidden") } }.toTopLevelComponents()
+
+        assertTrue((components.single() as Container).isSpoiler)
+    }
+
+    @Test
+    fun `an entity select renders with the kinds it was given`() {
+        val components = message {
+            row { selectEntity(ban, EntityKind.User, EntityKind.Role, placeholder = "Pick") }
+        }.toTopLevelComponents()
+
+        val select = (components.single() as ActionRow).components.single() as EntitySelectMenu
+        assertEquals(
+            setOf(EntitySelectMenu.SelectTarget.USER, EntitySelectMenu.SelectTarget.ROLE),
+            select.entityTypes.toSet(),
+        )
+    }
+
+    @Test
+    fun `a select option keeps its emoji`() {
+        val components = message {
+            row {
+                select(ban, listOf(SelectOption("Green", "green", emoji = "🟢")))
+            }
+        }.toTopLevelComponents()
+
+        val menu = (components.single() as ActionRow).components.single() as StringSelectMenu
+        assertEquals("🟢", menu.options.single().emoji?.formatted)
     }
 }

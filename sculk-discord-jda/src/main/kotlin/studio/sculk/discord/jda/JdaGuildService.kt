@@ -1,17 +1,24 @@
 package studio.sculk.discord.jda
 
+import kotlinx.coroutines.suspendCancellableCoroutine
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.utils.concurrent.Task
 import studio.sculk.SculkResult
 import studio.sculk.coroutine.await
+import studio.sculk.discord.DiscordRole
 import studio.sculk.discord.GuildId
 import studio.sculk.discord.GuildService
 import studio.sculk.discord.RoleId
 import studio.sculk.discord.UserId
 import studio.sculk.discord.interaction.DiscordActor
 import studio.sculk.map
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 import java.time.Duration as JavaDuration
@@ -36,6 +43,39 @@ internal class JdaGuildService(private val client: () -> JDA?) : GuildService {
     }
 
     override suspend fun isPresent(guild: GuildId): Boolean = client()?.getGuildById(guild.raw) != null
+
+    override suspend fun role(guild: GuildId, role: RoleId): SculkResult<DiscordRole> = withGuild(guild) { target ->
+        val resolved = target.getRoleById(role.raw)
+            ?: return@withGuild SculkResult.failure("Role ${role.raw} does not exist in ${target.name}.")
+        SculkResult.success(resolved.toRole())
+    }
+
+    override suspend fun roles(guild: GuildId): SculkResult<List<DiscordRole>> = withGuild(guild) { target ->
+        SculkResult.success(target.roles.map { it.toRole() }.sortedByDescending { it.position })
+    }
+
+    override suspend fun members(guild: GuildId, users: Set<UserId>): SculkResult<Map<UserId, DiscordActor>> {
+        if (users.isEmpty()) return SculkResult.success(emptyMap())
+        return withGuild(guild) { target ->
+            val found = mutableMapOf<UserId, DiscordActor>()
+            for (batch in users.chunked(GuildService.MAX_MEMBER_LOOKUP)) {
+                val members = runCatching { target.retrieveMembersByIds(*batch.map { it.raw }.toTypedArray()).await() }
+                    .getOrElse { error ->
+                        // JDA refuses this outright without the intent, rather than returning nothing,
+                        // and its own message does not say which intent or where to enable it.
+                        return@withGuild SculkResult.failure(
+                            "Could not look up ${batch.size} member(s) of ${target.name}: " +
+                                "${error.message ?: error::class.simpleName}. Bulk member lookup needs the " +
+                                "GuildMembers intent, enabled on the application at discord.com/developers " +
+                                "and requested in the bot config.",
+                            error,
+                        )
+                    }
+                members.forEach { found[UserId(it.id)] = it.toActor() }
+            }
+            SculkResult.success(found)
+        }
+    }
 
     override suspend fun addRole(guild: GuildId, user: UserId, role: RoleId): SculkResult<Unit> =
         withMemberAndRole(guild, user, role) { target, member, resolved ->
@@ -144,12 +184,72 @@ internal class JdaGuildService(private val client: () -> JDA?) : GuildService {
     }
 }
 
-private fun Member.toActor(): DiscordActor = DiscordActor(
+/**
+ * Reads a role's colour from [Role.getColors] rather than the deprecated `getColor`.
+ *
+ * Discord grew gradient and holographic roles, so a role no longer has *a* colour. JDA kept the old
+ * single-colour accessor working by returning the primary, and deprecated it. Taking the primary is
+ * still the right answer for anything tinting text — a gradient cannot survive the trip to a Minecraft
+ * chat line — but it is a deliberate flattening rather than an accident of the old API.
+ *
+ * `isDefault` is the uncoloured case, and it is not the same as black: Discord's sentinel for "sets no
+ * colour" would otherwise arrive as `0x000000` and be rendered as an actual black name.
+ */
+private fun Role.toRole(): DiscordRole = DiscordRole(
+    id = RoleId(id),
+    name = name,
+    colorRgb = colors.takeIf { !it.isDefault }?.primaryRaw?.and(RGB_MASK),
+    position = position,
+    hoisted = isHoisted,
+    mentionable = isMentionable,
+)
+
+/**
+ * Suspends on a JDA [Task], which is its member-chunking type and is not a `CompletableFuture`.
+ *
+ * `Task.get()` blocks, and blocking here would tie up a dispatcher thread for the length of a member
+ * chunk request — the exact cost bulk lookup exists to avoid. Cancelling the coroutine cancels the
+ * request, so an abandoned sync stops asking Discord for members nobody is waiting on.
+ */
+private suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { continuation ->
+    onSuccess { continuation.resume(it) }
+    onError { continuation.resumeWithException(it) }
+    continuation.invokeOnCancellation { runCatching { cancel() } }
+}
+
+private const val RGB_MASK = 0xFFFFFF
+
+/**
+ * Flattens a member into the neutral actor, keeping the display name and the handle apart.
+ *
+ * `effectiveName` is nickname, then global name, then username — right for display and useless for
+ * anything that has to still match tomorrow. Carrying `user.name` alongside it is what lets a consumer
+ * record who linked an account without the record changing every time they rename themselves.
+ */
+internal fun Member.toActor(): DiscordActor = DiscordActor(
     id = UserId(id),
     name = effectiveName,
     guild = GuildId(guild.id),
     roles = roles.map { RoleId(it.id) }.toSet(),
     permissionBits = Permission.getRaw(permissions),
+    username = user.name,
+    nickname = nickname,
+    avatarUrl = effectiveAvatarUrl,
+)
+
+/**
+ * The same, for someone seen outside a guild or not cached as a member.
+ *
+ * No roles and no permission bits, because there is no guild to hold them in — not because they were
+ * dropped. A caller deciding a permission from this gets an empty set and refuses, which is the safe
+ * direction for the DM case.
+ */
+internal fun User.toActor(guild: GuildId?): DiscordActor = DiscordActor(
+    id = UserId(id),
+    name = effectiveName,
+    guild = guild,
+    username = name,
+    avatarUrl = effectiveAvatarUrl,
 )
 
 /** JDA wants a `UserSnowflake` for actions on someone who may not be a member any more. */

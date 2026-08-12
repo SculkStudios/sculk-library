@@ -45,13 +45,21 @@ public data class DiscordMessage(
             when (it) {
                 is Button -> it.id
                 is SelectMenu -> it.id
+                is EntitySelect -> it.id
                 else -> null
             }
         }
 
     private fun flattenOne(component: MessageComponent): List<MessageComponent> = when (component) {
         is Container -> listOf(component) + component.children.flatMap { flattenOne(it) }
+
         is Row -> listOf(component) + component.components
+
+        // The accessory is included because it can be a Button, and a walk that skipped it would let
+        // an interactive component reach a webhook unnoticed — which is the one thing flatten() is
+        // load-bearing for.
+        is Section -> listOf(component) + component.content + listOfNotNull(component.accessory as? MessageComponent)
+
         else -> listOf(component)
     }
 }
@@ -77,12 +85,22 @@ public class MessageBuilder internal constructor() {
     }
 
     /** A bordered block accented with [style]'s representative colour. */
-    public fun container(style: ThemeStyle?, block: ContainerBuilder.() -> Unit) {
-        container(style?.swatchHex?.let(::rgbOf), block)
+    public fun container(style: ThemeStyle?, spoiler: Boolean = false, block: ContainerBuilder.() -> Unit) {
+        container(accentRgb = style?.swatchHex?.let(::rgbOf), spoiler = spoiler, block = block)
     }
 
-    public fun container(accentRgb: Int? = null, block: ContainerBuilder.() -> Unit) {
-        components += Container(ContainerBuilder().apply(block).contents(), accentRgb)
+    public fun container(accentRgb: Int? = null, spoiler: Boolean = false, block: ContainerBuilder.() -> Unit) {
+        components += Container(ContainerBuilder().apply(block).contents(), accentRgb, spoiler)
+    }
+
+    /** Text with an image or a button beside it. */
+    public fun section(accessory: SectionAccessory, block: SectionBuilder.() -> Unit) {
+        components += SectionBuilder().apply(block).build(accessory)
+    }
+
+    /** A grid of images. */
+    public fun gallery(block: GalleryBuilder.() -> Unit) {
+        components += GalleryBuilder().apply(block).build()
     }
 
     /** Adds an already-built component, for composing messages across files. */
@@ -118,11 +136,45 @@ public class ContainerBuilder internal constructor() {
         components += RowBuilder().apply(block).build()
     }
 
+    /** Text with an image or a button beside it. */
+    public fun section(accessory: SectionAccessory, block: SectionBuilder.() -> Unit) {
+        components += SectionBuilder().apply(block).build(accessory)
+    }
+
+    /** A grid of images. */
+    public fun gallery(block: GalleryBuilder.() -> Unit) {
+        components += GalleryBuilder().apply(block).build()
+    }
+
     public fun add(component: MessageComponent) {
         components += component
     }
 
     internal fun contents(): List<MessageComponent> = components.toList()
+}
+
+/** Builds one section's lines of text. */
+@SculkStable
+public class SectionBuilder internal constructor() {
+    private val lines = mutableListOf<Text>()
+
+    public fun text(markdown: String) {
+        lines += Text(markdown)
+    }
+
+    internal fun build(accessory: SectionAccessory): Section = Section(lines.toList(), accessory)
+}
+
+/** Builds a media gallery. */
+@SculkStable
+public class GalleryBuilder internal constructor() {
+    private val items = mutableListOf<MediaItem>()
+
+    public fun image(url: String, description: String? = null, spoiler: Boolean = false) {
+        items += MediaItem(url, description, spoiler)
+    }
+
+    internal fun build(): MediaGallery = MediaGallery(items.toList())
 }
 
 /** Builds one action row. */
@@ -154,6 +206,22 @@ public class RowBuilder internal constructor() {
         enabled: Boolean = true,
     ) {
         components += SelectMenu(id, options, placeholder, minChoices, maxChoices, enabled)
+    }
+
+    /**
+     * A select over Discord's own users, roles or channels.
+     *
+     * Discord searches its lists as the user types, so this does not need — and cannot take — options.
+     */
+    public fun selectEntity(
+        id: ComponentId,
+        vararg kinds: EntityKind,
+        placeholder: String? = null,
+        minChoices: Int = 1,
+        maxChoices: Int = 1,
+        enabled: Boolean = true,
+    ) {
+        components += EntitySelect(id, kinds.toSet(), placeholder, minChoices, maxChoices, enabled)
     }
 
     internal fun build(): Row = Row(components.toList())

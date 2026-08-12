@@ -59,6 +59,9 @@ public class FakeDiscordGateway(override var selfId: UserId? = UserId("100000000
     /** Presences set, in order. */
     public val presences: MutableList<Presence> = mutableListOf()
 
+    /** Channels the bot was shown typing in, in order. */
+    public val typing: MutableList<ChannelId> = mutableListOf()
+
     public val sent: List<SentMessage> get() = _sent.toList()
     public val edited: List<SentMessage> get() = _edited.toList()
     public val deleted: List<MessageId> get() = _deleted.toList()
@@ -80,6 +83,15 @@ public class FakeDiscordGateway(override var selfId: UserId? = UserId("100000000
 
     /** Message handlers attached. Feed them with [deliver]. */
     public val messageHandlers: MutableList<suspend (DiscordChatMessage) -> Unit> = mutableListOf()
+
+    /** Edit handlers attached. Feed them with [deliverEdit]. */
+    public val editHandlers: MutableList<suspend (DiscordChatMessage) -> Unit> = mutableListOf()
+
+    /** Delete handlers attached. Feed them with [deliverDelete]. */
+    public val deleteHandlers: MutableList<suspend (DeletedMessage) -> Unit> = mutableListOf()
+
+    /** Member-change handlers attached. Feed them with [deliverMemberChange]. */
+    public val memberHandlers: MutableList<suspend (MemberChange) -> Unit> = mutableListOf()
 
     /** Set this and the next [awaitComponent] resolves to it instead of timing out. */
     public var nextComponent: ComponentInteraction? = null
@@ -122,6 +134,11 @@ public class FakeDiscordGateway(override var selfId: UserId? = UserId("100000000
 
     override suspend fun channelExists(channel: ChannelId): SculkResult<Boolean> = guard { SculkResult.success(channel in knownChannels) }
 
+    override suspend fun sendTyping(channel: ChannelId): SculkResult<Unit> = guard {
+        typing += channel
+        SculkResult.ok()
+    }
+
     override suspend fun presence(activity: Presence): SculkResult<Unit> = guard {
         presences += activity
         SculkResult.ok()
@@ -142,6 +159,37 @@ public class FakeDiscordGateway(override var selfId: UserId? = UserId("100000000
     override fun onMessage(handler: suspend (DiscordChatMessage) -> Unit): SculkHandle {
         messageHandlers += handler
         return SculkHandle { messageHandlers -= handler }
+    }
+
+    override fun onMessageEdit(handler: suspend (DiscordChatMessage) -> Unit): SculkHandle {
+        editHandlers += handler
+        return SculkHandle { editHandlers -= handler }
+    }
+
+    override fun onMessageDelete(handler: suspend (DeletedMessage) -> Unit): SculkHandle {
+        deleteHandlers += handler
+        return SculkHandle { deleteHandlers -= handler }
+    }
+
+    override fun onMemberChange(handler: suspend (MemberChange) -> Unit): SculkHandle {
+        memberHandlers += handler
+        return SculkHandle { memberHandlers -= handler }
+    }
+
+    /** Delivers [message] as an edit. */
+    public suspend fun deliverEdit(message: DiscordChatMessage) {
+        if (message.fromBot) return
+        editHandlers.toList().forEach { it(message) }
+    }
+
+    /** Delivers a deletion. */
+    public suspend fun deliverDelete(message: DeletedMessage) {
+        deleteHandlers.toList().forEach { it(message) }
+    }
+
+    /** Delivers a member change. */
+    public suspend fun deliverMemberChange(change: MemberChange) {
+        memberHandlers.toList().forEach { it(change) }
     }
 
     /**
@@ -225,6 +273,7 @@ public sealed interface GuildAction {
 @SculkStable
 public class FakeGuildService : GuildService {
     private val members = mutableMapOf<Pair<String, String>, DiscordActor>()
+    private val roles = mutableMapOf<Pair<String, String>, DiscordRole>()
 
     /** Every action taken, in order. */
     public val actions: MutableList<GuildAction> = mutableListOf()
@@ -232,9 +281,17 @@ public class FakeGuildService : GuildService {
     /** Set this and every call fails with it. */
     public var failure: String? = null
 
+    /** Every bulk member lookup, as the ids it was asked for. Assert batching against this. */
+    public val memberLookups: MutableList<Set<UserId>> = mutableListOf()
+
     /** Declares a member the bot can see. */
     public fun put(guild: GuildId, actor: DiscordActor) {
         members[guild.raw to actor.id.raw] = actor
+    }
+
+    /** Declares a role the bot can see. */
+    public fun putRole(guild: GuildId, role: DiscordRole) {
+        roles[guild.raw to role.id.raw] = role
     }
 
     override suspend fun member(guild: GuildId, user: UserId): SculkResult<DiscordActor> {
@@ -244,6 +301,36 @@ public class FakeGuildService : GuildService {
     }
 
     override suspend fun isPresent(guild: GuildId): Boolean = members.keys.any { it.first == guild.raw }
+
+    override suspend fun role(guild: GuildId, role: RoleId): SculkResult<DiscordRole> {
+        failure?.let { return SculkResult.failure(it) }
+        return roles[guild.raw to role.raw]?.let { SculkResult.success(it) }
+            ?: SculkResult.failure(
+                "Role ${role.raw} is not a known role of ${guild.raw}. Declare it with putRole() first.",
+            )
+    }
+
+    override suspend fun roles(guild: GuildId): SculkResult<List<DiscordRole>> {
+        failure?.let { return SculkResult.failure(it) }
+        return SculkResult.success(
+            roles.filterKeys { it.first == guild.raw }.values.sortedByDescending { it.position },
+        )
+    }
+
+    /**
+     * Returns the declared members among [users], and records what was asked for.
+     *
+     * Undeclared ids are omitted rather than failing, matching the real contract: over a stored list
+     * of linked accounts, somebody having left the guild is expected. [memberLookups] records the
+     * batches so a test can assert that a sync asked once rather than once per member.
+     */
+    override suspend fun members(guild: GuildId, users: Set<UserId>): SculkResult<Map<UserId, DiscordActor>> {
+        failure?.let { return SculkResult.failure(it) }
+        memberLookups += users
+        return SculkResult.success(
+            users.mapNotNull { user -> members[guild.raw to user.raw]?.let { user to it } }.toMap(),
+        )
+    }
 
     override suspend fun addRole(guild: GuildId, user: UserId, role: RoleId): SculkResult<Unit> =
         record(guild, user, GuildAction.AddRole(guild, user, role))

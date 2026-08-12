@@ -88,10 +88,16 @@ private fun SculkOptionType.toJda(): OptionType = when (this) {
 }
 
 private fun DiscordPermission.toJda(): Permission = when (this) {
-    DiscordPermission.ManageMessages -> Permission.MESSAGE_MANAGE
     DiscordPermission.KickMembers -> Permission.KICK_MEMBERS
     DiscordPermission.BanMembers -> Permission.BAN_MEMBERS
-    DiscordPermission.ModerateMembers -> Permission.MODERATE_MEMBERS
-    DiscordPermission.ManageGuild -> Permission.MANAGE_SERVER
     DiscordPermission.Administrator -> Permission.ADMINISTRATOR
+    DiscordPermission.ManageChannels -> Permission.MANAGE_CHANNEL
+    DiscordPermission.ManageGuild -> Permission.MANAGE_SERVER
+    DiscordPermission.ViewAuditLog -> Permission.VIEW_AUDIT_LOGS
+    DiscordPermission.ManageMessages -> Permission.MESSAGE_MANAGE
+    DiscordPermission.MentionEveryone -> Permission.MESSAGE_MENTION_EVERYONE
+    DiscordPermission.ManageNicknames -> Permission.NICKNAME_MANAGE
+    DiscordPermission.ManageRoles -> Permission.MANAGE_ROLES
+    DiscordPermission.ManageWebhooks -> Permission.MANAGE_WEBHOOKS
+    DiscordPermission.ModerateMembers -> Permission.MODERATE_MEMBERS
 }
