@@ -119,13 +119,29 @@ constructor(
         public fun using(dataSource: DataSource, dialect: SqlDialect, logger: Logger): SculkData =
             SculkData(dataSource, dialect, logger, owned = false)
 
-        private fun urlFor(dialect: SqlDialect, settings: StorageSettings, dataFolder: File): String {
+        @SculkInternal
+        internal fun urlFor(dialect: SqlDialect, settings: StorageSettings, dataFolder: File): String {
             val remote = settings.remote
             return when (dialect) {
                 SqlDialect.SQLITE -> "jdbc:sqlite:${File(dataFolder, settings.file).absolutePath}"
 
+                // `allowPublicKeyRetrieval` when TLS is off, or a stock MySQL 8 cannot be connected to
+                // at all. MySQL 8 authenticates with `caching_sha2_password` by default, and that
+                // exchange needs either TLS or permission to fetch the server's public key — without
+                // one of them the driver fails with "RSA public key is not available client side",
+                // which reads as nothing to do with the config and happens before a single statement
+                // is sent. MariaDB servers are unaffected either way; the flag is ignored there.
+                //
+                // The MITM caveat is real but narrow: it applies to the initial handshake on a network
+                // where someone can impersonate the database, and these connections are overwhelmingly
+                // localhost or a private network. Someone exposing their database to the internet
+                // should set `use-ssl: true`, which drops this flag and is the right answer anyway.
                 SqlDialect.MYSQL ->
-                    "jdbc:mariadb://${remote.host}:${remote.port}/${remote.database}?useSSL=${remote.useSsl}"
+                    buildString {
+                        append("jdbc:mariadb://${remote.host}:${remote.port}/${remote.database}")
+                        append("?useSSL=${remote.useSsl}")
+                        if (!remote.useSsl) append("&allowPublicKeyRetrieval=true")
+                    }
 
                 SqlDialect.POSTGRES ->
                     "jdbc:postgresql://${remote.host}:${remote.port}/${remote.database}?ssl=${remote.useSsl}"
