@@ -30,6 +30,15 @@ public class SculkMessages(
     shadowArgb: Int? = null,
     private val suppressItalics: Boolean = true,
     private val miniMessage: MiniMessage = MiniMessage.miniMessage(),
+    /**
+     * Accept legacy `&c`/`§c` colour codes in templates as well as MiniMessage tags.
+     *
+     * On by default: every config written before MiniMessage uses them, and printing `&cSomething`
+     * verbatim reads as the plugin being broken. Values are unaffected either way — they arrive
+     * through `Placeholder.unparsed` after this runs, so a `&c` in a player's name stays text. See
+     * [LegacyCodes] for what is and is not faithful.
+     */
+    private val legacyCodes: Boolean = true,
 ) {
     private val shadow: ShadowColor? = shadowArgb?.let { ShadowColor.shadowColor(it) }
 
@@ -54,7 +63,10 @@ public class SculkMessages(
         }
         extra?.let { resolvers += it }
 
-        val parsed = miniMessage.deserialize(theme.expand(template), TagResolver.resolver(resolvers))
+        // Legacy codes are rewritten here, on the template, and never on a value: the resolvers above
+        // insert values during deserialisation, which is after this point.
+        val expanded = theme.expand(template).let { if (legacyCodes) LegacyCodes.toMiniMessage(it) else it }
+        val parsed = miniMessage.deserialize(expanded, TagResolver.resolver(resolvers))
         return applyFallbackStyle(parsed)
     }
 
