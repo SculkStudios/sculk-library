@@ -17,8 +17,8 @@ It works two ways, with the same API:
 
 ```kotlin
 dependencies {
-    implementation("com.github.SculkStudios.sculk-library:sculk-discord:5.0.0")
-    implementation("com.github.SculkStudios.sculk-library:sculk-discord-jda:5.0.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-discord:5.1.0")
+    implementation("com.github.SculkStudios.sculk-library:sculk-discord-jda:5.1.0")
 }
 ```
 
@@ -80,6 +80,26 @@ Pass your own class loader. Discovery uses `ServiceLoader`, and its single-argum
 *thread context* loader — which during plugin enable belongs to the server and cannot see your jar,
 so every backend looks uninstalled.
 
+## Shutting down
+
+`keep(gateway)` closes it on disable, which is right for a handle and not enough for the last thing a
+process does. `close()` returns as soon as it has asked the backend to stop — so a "server stopping"
+announcement posted immediately before it usually never leaves the JVM.
+
+When the final message matters, wait for it:
+
+```kotlin
+override fun shutdown() {
+    runBlocking {
+        gateway.send(alerts, message { text("Server stopping.") })
+        gateway.closeAwaiting()
+    }
+}
+```
+
+`closeAwaiting` fails rather than hanging when its timeout runs out, so a wedged connection delays a
+restart by a bounded amount instead of holding the server open.
+
 ## Nothing is null
 
 A missing backend, a blank token, a channel the bot cannot see: each is a `SculkResult.Failure`
@@ -137,6 +157,8 @@ being dead, and it is the bug in this area that hides best.
 
 ## Where next
 
-- [Messages](/discord/messages/) — components as data, and the mention allow-list
-- [Commands](/discord/commands/) — slash commands, options, autocomplete
+- [Messages](/discord/messages/) — components as data, the mention allow-list, and relaying what
+  people post
+- [Commands](/discord/commands/) — slash commands, options, autocomplete, registration
 - [Interactions](/discord/interactions/) — buttons, modals, and waiting for a click
+- [Guilds and members](/discord/guilds/) — roles and colours, bulk member lookup, moderation

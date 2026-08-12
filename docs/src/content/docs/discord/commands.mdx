@@ -66,6 +66,7 @@ boolean("silent", "Skip the announcement")
 user("target", "Who")
 channel("where", "Which channel")
 role("rank", "Which role")
+mentionable("who", "A user or a role")
 attachment("proof", "A screenshot")
 ```
 
@@ -78,6 +79,18 @@ Read them by name:
 executes {
     val target = option("target").asUser
     val amount = optionOrNull("amount")?.asLong ?: 1
+    val file = optionOrNull("proof")?.asAttachment          // fileName, url, sizeBytes, isImage
+}
+```
+
+`mentionable` is the one type where Discord decides which kind arrived, so `asMentionable` hands back
+the shared `DiscordId` supertype and the handler branches:
+
+```kotlin
+when (val who = option("who").asMentionable) {
+    is UserId -> grant(who)
+    is RoleId -> grantAll(who)
+    else -> refuse()
 }
 ```
 
@@ -104,6 +117,11 @@ Deliberately not an in-game permission node. The person running a slash command 
 server, so there is no live permissible to ask — and inheriting authority from an in-game rank the
 operator has forgotten about is how someone ends up with powers nobody meant to grant.
 
+The set is `KickMembers`, `BanMembers`, `Administrator`, `ManageChannels`, `ManageGuild`,
+`ViewAuditLog`, `ManageMessages`, `MentionEveryone`, `ManageNicknames`, `ManageRoles`,
+`ManageWebhooks` and `ModerateMembers`. `defaultPermission` takes one — Discord's default-member
+permission field is a single value. Requiring a *combination* is a check inside the handler.
+
 Inside a handler, check the member:
 
 ```kotlin
@@ -123,6 +141,36 @@ gateway.registerCommands(router.registered, setOf(devGuildId))    // instant
 Registration **replaces** whatever Discord currently has. A command you deleted from the code but left
 registered keeps appearing in the client and answering with "not a command this server handles", which
 reads as a broken bot rather than a stale registration.
+
+Each call is scoped: naming a guild replaces only that guild's set. That is how one bot puts different
+commands in different servers — `/link` in the community guild, `/console` in the staff one:
+
+```kotlin
+gateway.registerCommands(listOf(link, unlink), setOf(mainGuild))
+gateway.registerCommands(listOf(console), setOf(staffGuild))
+```
+
+:::caution[Do not mix global and per-guild]
+A guild-scoped set **shadows** the global one for that guild, so a command registered globally will
+not appear in any guild that has its own set. Register everything per-guild, or nothing per-guild.
+:::
+
+### Only when it changed
+
+Nothing here is idempotent — every call is a fresh PUT against an endpoint Discord rate-limits hard,
+and it otherwise runs on every boot whether or not anything changed. Fingerprint the set and compare:
+
+```kotlin
+val signature = DiscordCommandSpec.signatureOf(router.registered)
+if (signature != store.lastCommandSignature(guild)) {
+    gateway.registerCommands(router.registered, setOf(guild))
+    store.rememberCommandSignature(guild, signature)
+}
+```
+
+The fingerprint covers what Discord actually stores — names, descriptions, options, permissions and
+structure — and deliberately not the executor. Changing what a command *does* changes nothing on
+Discord's side, and hashing a lambda would make every restart look like a change.
 
 ## Dispatch is a tree walk
 

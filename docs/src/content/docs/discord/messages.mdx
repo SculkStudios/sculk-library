@@ -79,6 +79,119 @@ HTTP 400 from a request that was queued somewhere else entirely.
 | Unique select values | A duplicate makes the submitted choice ambiguous |
 | A button is a link **or** an interaction | A link button never produces an interaction, so an id on one would never fire |
 
+## Sections, galleries and spoilers
+
+A **section** is text with one thing beside it — an image, or a button that acts on what the text is
+about. It is the layout an embed could only fake, and the reason a chat bridge wants Components V2:
+
+```kotlin
+message {
+    container(theme["chat"]) {
+        section(Thumbnail(avatarUrl, description = "Steve")) {
+            text("**Steve** · *Donor*")
+            text("hello from Minecraft")
+        }
+    }
+}
+```
+
+Up to three lines of text per section; use several sections in one container for more. A row of
+buttons *under* a block of text is a different thing and reads as one — use `row` for that.
+
+A **gallery** is what a relay posts when somebody attaches four screenshots — one grid rather than
+four messages:
+
+```kotlin
+message {
+    gallery {
+        image("https://cdn.discordapp.com/…/one.png", description = "spawn")
+        image("https://cdn.discordapp.com/…/two.png", spoiler = true)
+    }
+}
+```
+
+A container can be spoilered whole with `container(theme["danger"], spoiler = true) { … }`.
+
+## Entity selects
+
+When the options are Discord's own users, roles or channels, do not enumerate them:
+
+```kotlin
+row { selectEntity(pickId, EntityKind.User, placeholder = "Which account is yours?") }
+```
+
+Discord searches its lists as the user types. Building the same prompt from a `SelectMenu` means
+fetching and paginating a member list into twenty-five fixed options — a lot of requests, and wrong
+the moment somebody joins. The chosen ids arrive in `ComponentInteraction.selected`.
+
+When the options *are* yours to list, `SelectMenu` still applies, and each `SelectOption` takes an
+`emoji` — a unicode character or a `name:id` custom emoji:
+
+```kotlin
+row {
+    select(
+        modeId,
+        listOf(
+            SelectOption("Survival", "survival", emoji = "🌱"),
+            SelectOption("Creative", "creative", emoji = "🧱"),
+        ),
+    )
+}
+```
+
+## Receiving messages
+
+`onMessage` delivers what a human posted. Bot and webhook messages are filtered out before a handler
+sees them, this bot's own included — a relay that reacts to its own post is an infinite loop whose
+only brake is a rate limit.
+
+```kotlin
+gateway.onMessage { message ->
+    val quoted = message.reply?.let { "↳ ${it.author?.name}: ${it.excerpt}\n" }.orEmpty()
+    val files = message.attachments.joinToString { if (it.isImage) "[image]" else "[${it.fileName}]" }
+    broadcast("$quoted<${message.author.name}> ${message.displayContent} $files")
+}
+```
+
+Three fields worth knowing apart:
+
+| Field | What it is |
+| --- | --- |
+| `content` | Exactly as typed, mentions still as `<@493…>`. Use it for parsing. |
+| `displayContent` | Mentions, channels and emoji resolved to names. Use it for **relaying** — the raw form shows players a bare snowflake. |
+| `author.name` vs `author.username` | The per-guild display name, versus the stable account handle. Show the first; store the second. |
+
+:::caution[Everything here is untrusted]
+It was typed by a person. It reaches Minecraft as a *value*, never as a template — putting it through
+MiniMessage is the same markup-injection hole the Minecraft side closes with `Placeholder.unparsed`,
+pointed the other way. Resolving a mention does not sanitise anything.
+:::
+
+### Edits and deletions
+
+```kotlin
+gateway.onMessageEdit { broadcast("<${it.author.name}> ${it.displayContent} *(edited)*") }
+gateway.onMessageDelete { records.remove(it.id) }
+```
+
+A bridge that relays the original and ignores the edit shows Minecraft a version of the conversation
+that exists nowhere — and the edit is usually the correction. A bulk purge arrives as one deletion per
+message, so the single-message path is the only one to write. A deletion carries **ids only**: Discord
+does not send the content of a deleted message, so a relay that wants to strike through what it posted
+has to have kept its own record.
+
+For members joining, leaving or having their roles changed, see
+[Guilds and members](/discord/guilds/#reacting-to-changes).
+
+### Showing the bot is working
+
+```kotlin
+gateway.sendTyping(channel)
+```
+
+Expires on its own, so there is nothing to cancel. Worth doing before a relay step that takes a
+noticeable moment — a command that answers four seconds later otherwise reads as a dead bot.
+
 ## Webhooks
 
 A webhook needs no token, no intents and no gateway, and it still delivers while a gateway is
@@ -93,6 +206,15 @@ hook.close()
 It takes the same `DiscordMessage`, and refuses one carrying interactive components — a webhook has
 no application behind it to receive a click, so posting those would render an alert that looks
 actionable and is not.
+
+This path does not carry Components V2. A `Container` becomes an embed, which is what an embed is —
+the thing containers replaced — and its accent becomes the embed colour. Link buttons survive as
+markdown links rather than disappearing, so a fallback alert does not silently lose the link that told
+staff where to go. Build the fallback as its own message rather than reusing the gateway's body.
+
+A rate-limited send is retried once, at the moment `Retry-After` asks for. Once, not in a loop:
+repeated 429s mean the caller is over budget, and hammering a rate limit is how a webhook gets shut off
+entirely. `maxPerMinute` is the local brake that keeps you from getting there.
 
 `DiscordWebhook` is a `SculkHandle`. Close it: the HTTP client owns a selector and an executor thread
 set, and skipping that leaks one per plugin enable.

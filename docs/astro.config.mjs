@@ -122,6 +122,7 @@ export default defineConfig({
 						{ label: 'Messages', slug: 'discord/messages' },
 						{ label: 'Commands', slug: 'discord/commands' },
 						{ label: 'Interactions', slug: 'discord/interactions' },
+						{ label: 'Guilds and members', slug: 'discord/guilds' },
 					],
 				},
 				{
