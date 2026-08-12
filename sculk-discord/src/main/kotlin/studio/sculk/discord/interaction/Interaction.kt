@@ -13,11 +13,31 @@ import studio.sculk.discord.message.DiscordMessage
 @SculkStable
 public data class DiscordActor(
     public val id: UserId,
+    /**
+     * What to call them here — the nickname if they set one, otherwise their display or account name.
+     *
+     * Right for anything shown to a person. Wrong for anything stored or matched, because it changes
+     * whenever they do, and differs between guilds for the same account: see [username].
+     */
     public val name: String,
     public val guild: GuildId?,
     public val roles: Set<RoleId> = emptySet(),
     /** Raw Discord permission bits the member holds, or 0 outside a guild. */
     public val permissionBits: Long = 0,
+    /**
+     * The account handle, which is global and does not change per guild.
+     *
+     * Kept apart from [name] because collapsing the two loses the only stable half. A bridge that
+     * records "who linked this account" wants this; a bridge rendering a chat line wants [name]. The
+     * old single field forced every consumer to pick one meaning and be wrong for the other use.
+     *
+     * Defaults to [name] so a hand-built actor in a test need not state both.
+     */
+    public val username: String = name,
+    /** Their nickname in this guild, or null when they have not set one. */
+    public val nickname: String? = null,
+    /** Their avatar, for a relay that posts through a webhook and wants the face to match. */
+    public val avatarUrl: String? = null,
 ) {
     public fun holds(permission: studio.sculk.discord.command.DiscordPermission): Boolean = permissionBits and permission.bit != 0L ||
         permissionBits and studio.sculk.discord.command.DiscordPermission.Administrator.bit != 0L
@@ -136,6 +156,17 @@ public interface OptionValue {
     public val asUser: UserId
     public val asChannel: ChannelId
     public val asRole: RoleId
+
+    /**
+     * A user or a role, whichever they picked.
+     *
+     * `Mentionable` is the one option type where Discord decides which kind arrived, so the caller has
+     * to branch on it — hence the shared supertype rather than two accessors, one of which would throw.
+     */
+    public val asMentionable: studio.sculk.discord.DiscordId
+
+    /** The uploaded file. */
+    public val asAttachment: studio.sculk.discord.DiscordAttachment
 }
 
 /** A button or select menu being used. */

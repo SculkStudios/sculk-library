@@ -105,4 +105,11 @@ class DiscordMessageTest {
     fun `an empty message is refused rather than posted as a blank line`() {
         assertThrows(IllegalArgumentException::class.java) { message { } }
     }
+
+    @Test
+    fun `a container inside a container is refused when it is built, not when it is sent`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            Container(children = listOf(Container(children = listOf(Text("nested")))))
+        }
+    }
 }

@@ -110,6 +110,8 @@ private class DisabledGateway(private val reason: String) : DiscordGateway {
 
     override suspend fun channelExists(channel: ChannelId): SculkResult<Boolean> = refuse()
 
+    override suspend fun sendTyping(channel: ChannelId): SculkResult<Unit> = refuse()
+
     override suspend fun presence(activity: Presence): SculkResult<Unit> = refuse()
 
     override suspend fun registerCommands(commands: List<DiscordCommandSpec>, guilds: Set<GuildId>): SculkResult<Unit> = refuse()
@@ -117,6 +119,12 @@ private class DisabledGateway(private val reason: String) : DiscordGateway {
     override fun route(router: InteractionRouter): SculkHandle = SculkHandle.NONE
 
     override fun onMessage(handler: suspend (DiscordChatMessage) -> Unit): SculkHandle = SculkHandle.NONE
+
+    override fun onMessageEdit(handler: suspend (DiscordChatMessage) -> Unit): SculkHandle = SculkHandle.NONE
+
+    override fun onMessageDelete(handler: suspend (DeletedMessage) -> Unit): SculkHandle = SculkHandle.NONE
+
+    override fun onMemberChange(handler: suspend (MemberChange) -> Unit): SculkHandle = SculkHandle.NONE
 
     override suspend fun awaitComponent(message: MessageId, within: Duration, from: UserId?): SculkResult<ComponentInteraction> = refuse()
 
@@ -129,6 +137,12 @@ private class DisabledGuilds(private val reason: String) : GuildService {
     override suspend fun member(guild: GuildId, user: UserId): SculkResult<DiscordActor> = refuse()
 
     override suspend fun isPresent(guild: GuildId): Boolean = false
+
+    override suspend fun role(guild: GuildId, role: RoleId): SculkResult<DiscordRole> = refuse()
+
+    override suspend fun roles(guild: GuildId): SculkResult<List<DiscordRole>> = refuse()
+
+    override suspend fun members(guild: GuildId, users: Set<UserId>): SculkResult<Map<UserId, DiscordActor>> = refuse()
 
     override suspend fun addRole(guild: GuildId, user: UserId, role: RoleId): SculkResult<Unit> = refuse()
 

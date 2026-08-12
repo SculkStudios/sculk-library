@@ -15,6 +15,8 @@ import studio.sculk.SculkResult
 import studio.sculk.coroutine.await
 import studio.sculk.discord.ChannelId
 import studio.sculk.discord.ComponentId
+import studio.sculk.discord.DiscordAttachment
+import studio.sculk.discord.DiscordId
 import studio.sculk.discord.GuildId
 import studio.sculk.discord.MessageId
 import studio.sculk.discord.RoleId
@@ -126,6 +128,17 @@ private class JdaOptionValue(private val mapping: OptionMapping) : OptionValue {
     override val asUser: UserId get() = UserId(mapping.asUser.id)
     override val asChannel: ChannelId get() = ChannelId(mapping.asChannel.id)
     override val asRole: RoleId get() = RoleId(mapping.asRole.id)
+
+    override val asMentionable: DiscordId
+        get() = when (val mentionable = mapping.asMentionable) {
+            is net.dv8tion.jda.api.entities.Role -> RoleId(mentionable.id)
+            else -> UserId(mentionable.id)
+        }
+
+    override val asAttachment: DiscordAttachment
+        get() = mapping.asAttachment.let {
+            DiscordAttachment(fileName = it.fileName, url = it.url, sizeBytes = it.size.toLong(), contentType = it.contentType)
+        }
 }
 
 internal fun Modal.toJda(): JdaModal = JdaModal.create(id.encoded, title)

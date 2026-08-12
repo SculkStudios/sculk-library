@@ -153,10 +153,47 @@ public data class DiscordCommandSpec(
         return node
     }
 
+    /**
+     * A stable fingerprint of everything Discord is told about this command.
+     *
+     * Registering is a destructive PUT against an endpoint Discord rate-limits hard, and it happens on
+     * every boot whether or not anything changed — twice, for a bot that registers different sets into
+     * two guilds. Persist this alongside the scope it was pushed to, compare on the next boot, and skip
+     * the call when it matches.
+     *
+     * Covers only what Discord stores: names, descriptions, options, permissions and structure. The
+     * executor is deliberately excluded — changing what a command *does* changes nothing Discord holds,
+     * and hashing the lambda would make every restart look like a change.
+     */
+    public fun signature(): String = buildString {
+        append(name).append('|').append(description)
+        append('|').append(defaultPermission?.name ?: "-")
+        append('|').append(guildOnly).append('|').append(ephemeral)
+        options.forEach { option ->
+            append("|o:").append(option.name).append(':').append(option.description)
+            append(':').append(option.type).append(':').append(option.required)
+            append(':').append(option.minValue ?: "-").append(':').append(option.maxValue ?: "-")
+            // Static choices are part of what Discord stores; an autocomplete supplier is not, so only
+            // its presence matters.
+            append(':').append(option.choices.joinToString(",") { "${it.name}=${it.value}" })
+            append(':').append(option.autocomplete != null)
+        }
+        children.forEach { append("|c:").append(it.signature()) }
+    }
+
     @SculkStable
     public companion object {
         /** Command, subcommand group, subcommand. Discord has no fourth level. */
         public const val MAX_DEPTH: Int = 3
+
+        /**
+         * One fingerprint for a whole command set, order-independent.
+         *
+         * Sorted by name because the registration order does not reach Discord, and a set that merely
+         * arrived in a different order is not a change worth spending a rate-limited request on.
+         */
+        public fun signatureOf(commands: List<DiscordCommandSpec>): String =
+            commands.sortedBy { it.name }.joinToString(";") { it.signature() }
     }
 }
 
@@ -169,10 +206,16 @@ public data class DiscordCommandSpec(
  */
 @SculkStable
 public enum class DiscordPermission(public val bit: Long) {
-    ManageMessages(1L shl 13),
     KickMembers(1L shl 1),
     BanMembers(1L shl 2),
-    ModerateMembers(1L shl 40),
-    ManageGuild(1L shl 5),
     Administrator(1L shl 3),
+    ManageChannels(1L shl 4),
+    ManageGuild(1L shl 5),
+    ViewAuditLog(1L shl 7),
+    ManageMessages(1L shl 13),
+    MentionEveryone(1L shl 17),
+    ManageNicknames(1L shl 27),
+    ManageRoles(1L shl 28),
+    ManageWebhooks(1L shl 29),
+    ModerateMembers(1L shl 40),
 }

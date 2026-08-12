@@ -29,6 +29,40 @@ public interface GuildService {
     /** Whether the bot can see this guild at all. */
     public suspend fun isPresent(guild: GuildId): Boolean
 
+    /**
+     * One role's name, colour and position.
+     *
+     * A [RoleId] on its own says only that a role exists somewhere. Anything that renders a role —
+     * a relayed chat line tinted to match Discord, a panel listing someone's ranks — needs what the
+     * role actually looks like, and reaching past this interface for it is how a consumer ends up
+     * depending on the backend it was the point of this module not to name.
+     */
+    public suspend fun role(guild: GuildId, role: RoleId): SculkResult<DiscordRole>
+
+    /**
+     * Every role in the guild, highest position first.
+     *
+     * Sorted here so that "the member's top role" is the first match rather than a fold each consumer
+     * writes, and returned whole because the per-role alternative is one lookup per role per member —
+     * which for a sync over a few thousand members is the difference between one call and thousands.
+     */
+    public suspend fun roles(guild: GuildId): SculkResult<List<DiscordRole>>
+
+    /**
+     * Several members at once.
+     *
+     * Discord resolves up to [MAX_MEMBER_LOOKUP] ids per request, and this batches [users] to that
+     * limit. The single-member [member] in a loop is the same work as one request per member, which
+     * for a role sync over a linked-account table is thousands of round trips against a rate limit
+     * that is not generous — slow enough that a reconcile can still be running when the next one is
+     * due.
+     *
+     * Members who are not in the guild are absent from the result rather than being an error: over a
+     * stored list of linked accounts, somebody having left is expected and not a reason to abandon
+     * the pass.
+     */
+    public suspend fun members(guild: GuildId, users: Set<UserId>): SculkResult<Map<UserId, DiscordActor>>
+
     public suspend fun addRole(guild: GuildId, user: UserId, role: RoleId): SculkResult<Unit>
 
     public suspend fun removeRole(guild: GuildId, user: UserId, role: RoleId): SculkResult<Unit>
@@ -75,5 +109,8 @@ public interface GuildService {
 
         /** Discord's cap on a timeout. */
         public const val MAX_TIMEOUT_DAYS: Int = 28
+
+        /** Discord's cap on how many members one lookup may name. */
+        public const val MAX_MEMBER_LOOKUP: Int = 100
     }
 }

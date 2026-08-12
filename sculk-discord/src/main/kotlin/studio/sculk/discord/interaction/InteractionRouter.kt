@@ -88,7 +88,7 @@ public class InteractionRouter(
             )
             return
         }
-        guarded("/${context.path}", context) { node.executor.invoke(context) }
+        guarded("/${context.path}", context, node.ephemeral) { node.executor.invoke(context) }
     }
 
     public suspend fun dispatch(context: ComponentInteraction) {
@@ -112,20 +112,26 @@ public class InteractionRouter(
      * The watchdog defers at [autoDeferAfter] instead, comfortably inside the window. A handler that
      * wants a modal is unaffected: Discord requires a modal to be the first response, so one that has
      * not opened it within two seconds could not have opened it at three either.
+     *
+     * [ephemeral] comes from the command's own spec, because Discord fixes visibility at the moment of
+     * acknowledgement and the watchdog is what acknowledges. Defaulting it to true here regardless is
+     * what made `DiscordCommandSpec.ephemeral` a setting that silently did nothing: a command declared
+     * public still went out ephemeral whenever its handler was slow enough for the watchdog to win.
      */
-    private suspend fun guarded(what: String, interaction: Interaction, block: suspend () -> Unit): Unit = coroutineScope {
-        val watchdog = launch {
-            delay(autoDeferAfter)
-            if (!interaction.acknowledged) {
-                interaction.defer(ephemeral = true).onFailure { reason, _ ->
-                    logger.fine("Could not auto-defer $what: $reason")
+    private suspend fun guarded(what: String, interaction: Interaction, ephemeral: Boolean = true, block: suspend () -> Unit): Unit =
+        coroutineScope {
+            val watchdog = launch {
+                delay(autoDeferAfter)
+                if (!interaction.acknowledged) {
+                    interaction.defer(ephemeral = ephemeral).onFailure { reason, _ ->
+                        logger.fine("Could not auto-defer $what: $reason")
+                    }
                 }
             }
+            runCatching { block() }.onFailure { error ->
+                logger.warning("Handling $what failed: ${error.message}")
+                interaction.answer("Something went wrong handling that — check the server console.")
+            }
+            watchdog.cancel()
         }
-        runCatching { block() }.onFailure { error ->
-            logger.warning("Handling $what failed: ${error.message}")
-            interaction.answer("Something went wrong handling that — check the server console.")
-        }
-        watchdog.cancel()
-    }
 }

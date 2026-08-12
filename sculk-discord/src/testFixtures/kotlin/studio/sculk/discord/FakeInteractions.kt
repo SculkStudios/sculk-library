@@ -202,6 +202,8 @@ public class FakeOption(
     private val user: UserId? = null,
     private val channel: ChannelId? = null,
     private val role: RoleId? = null,
+    private val mentionable: DiscordId? = null,
+    private val attachment: DiscordAttachment? = null,
 ) : OptionValue {
     override val asString: String get() = string ?: wrong("a string")
     override val asLong: Long get() = long ?: wrong("an integer")
@@ -210,6 +212,8 @@ public class FakeOption(
     override val asUser: UserId get() = user ?: wrong("a user")
     override val asChannel: ChannelId get() = channel ?: wrong("a channel")
     override val asRole: RoleId get() = role ?: wrong("a role")
+    override val asMentionable: DiscordId get() = mentionable ?: user ?: role ?: wrong("a user or a role")
+    override val asAttachment: DiscordAttachment get() = attachment ?: wrong("an attachment")
 
     private fun wrong(kind: String): Nothing = error("This FakeOption was not given $kind. Construct it with that value to read it as one.")
 }

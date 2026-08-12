@@ -69,10 +69,45 @@ class DiscordChatMessageTest {
     @Test
     fun `attachments are named, so a relay can say something happened`() = runTest {
         var names = emptyList<String>()
-        gateway.onMessage { names = it.attachments }
+        gateway.onMessage { names = it.attachments.map { attachment -> attachment.fileName } }
 
-        gateway.deliver(chat("look").copy(attachments = listOf("proof.png", "log.txt")))
+        gateway.deliver(
+            chat("look").copy(
+                attachments = listOf(
+                    DiscordAttachment("proof.png", "https://cdn.example/proof.png"),
+                    DiscordAttachment("log.txt", "https://cdn.example/log.txt"),
+                ),
+            ),
+        )
 
         assertEquals(listOf("proof.png", "log.txt"), names)
+    }
+
+    @Test
+    fun `an attachment knows whether it is an image, so a relay can say which`() {
+        val image = DiscordAttachment("proof.png", "https://cdn.example/proof.png", contentType = "image/png")
+        val text = DiscordAttachment("log.txt", "https://cdn.example/log.txt", contentType = "text/plain")
+        val unknown = DiscordAttachment("blob", "https://cdn.example/blob")
+
+        assertEquals(listOf(true, false, false), listOf(image.isImage, text.isImage, unknown.isImage))
+    }
+
+    @Test
+    fun `display content falls back to the raw content when nothing resolved it`() {
+        val message = chat("hello <@123>")
+
+        assertEquals("hello <@123>", message.displayContent)
+    }
+
+    @Test
+    fun `a reply carries who was answered, so the relay is not a non-sequitur`() = runTest {
+        var reply: ReplyContext? = null
+        gateway.onMessage { reply = it.reply }
+
+        val quoted = ReplyContext(MessageId("55"), DiscordActor(UserId("7"), "Ash", null), "is the server up?")
+        gateway.deliver(chat("yes").copy(reply = quoted))
+
+        assertEquals("Ash", reply?.author?.name)
+        assertEquals("is the server up?", reply?.excerpt)
     }
 }
