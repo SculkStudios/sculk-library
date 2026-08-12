@@ -86,6 +86,38 @@ class SchemaAndLoggingTest {
         assertTrue(indexes.any { it.contains("name") }, "expected an index on name, got: $indexes")
     }
 
+    /**
+     * Opening the same table twice must not try to create an index that is already there.
+     *
+     * This used to be handled by `CREATE INDEX IF NOT EXISTS`, which **MySQL does not support** —
+     * SQLite, Postgres and MariaDB all do, and one `SqlDialect.MYSQL` covers MySQL and MariaDB
+     * alike because the MariaDB driver serves both, so nothing could branch on it. Every boot
+     * against genuine MySQL failed here. The migrator now asks the database what indexes exist and
+     * only creates the missing ones.
+     *
+     * H2 accepts `IF NOT EXISTS` even in MySQL mode, so this cannot reproduce the original failure —
+     * only `MySqlIntegrationTest`, against a real server, can. What it does pin is that the
+     * check-first path is correct and does not create a second index or throw on the way through.
+     */
+    @Test
+    fun `opening a table twice does not recreate its indexes`() = runTest {
+        val source = h2()
+        SculkData.using(source, SqlDialect.MYSQL, Logger.getLogger("t")).repository<PlayerRow, String>()
+        SculkData.using(source, SqlDialect.MYSQL, Logger.getLogger("t")).repository<PlayerRow, String>()
+
+        val onName = mutableListOf<String>()
+        source.connection.use { connection ->
+            connection.metaData.getIndexInfo(null, null, "players", false, false).use { rows ->
+                while (rows.next()) {
+                    rows.getString("INDEX_NAME")?.lowercase()?.takeIf { "idx_players_name" in it }?.let { onName += it }
+                }
+            }
+        }
+        source.close()
+
+        assertEquals(1, onName.size, "the index was created a second time: $onName")
+    }
+
     @Test
     fun `a renamed column is reported rather than silently added beside the old one`() = runTest {
         // The 4.5 -> 5.0 shape: 4.5 derived column names as snake_case, 5.0 uses the property name
