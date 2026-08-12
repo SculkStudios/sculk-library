@@ -39,6 +39,30 @@ class SculkIntegrationsTest {
         assertEquals("LuckPerms is not installed or is not enabled.", (result as SculkResult.Failure).message)
     }
 
+    @Test
+    fun `customItems names every plugin that would satisfy it`() {
+        val result = integrationsWithPlugin(null).customItems()
+
+        assertTrue(result is SculkResult.Failure)
+        assertEquals(
+            "No custom-item plugin is installed or enabled; looked for Nexo, Oraxen, ItemsAdder.",
+            (result as SculkResult.Failure).message,
+        )
+    }
+
+    @Test
+    fun `customItems succeeds on one of the three, since a server has one`() {
+        val enabled =
+            proxy<Plugin> { method, _ ->
+                when (method.name) {
+                    "isEnabled" -> true
+                    else -> defaultValue(method.returnType)
+                }
+            }
+
+        assertTrue(integrationsWithPlugin(enabled).customItems().isSuccess)
+    }
+
     private fun integrationsWithPlugin(dependency: Plugin?): SculkIntegrations {
         val pluginManager =
             proxy<PluginManager> { method, _ ->

@@ -13,6 +13,10 @@ dependencies {
     // Material lookup by key belongs in one place; doing it here as well is what let item() and
     // ItemBuilder.material() disagree about how an unknown key fails.
     api(project(":sculk-series"))
+    // A material key may name a custom item — `nexo:ruby_sword` — and the DSL is where a config
+    // string turns into a stack. Integrations depends on sculk-common alone, so there is no cycle,
+    // and it adds nothing to the classpath: every custom-item plugin is reached by reflection.
+    api(project(":sculk-integrations"))
     // ItemDescriptor's generated serializer is public API: a consumer embedding one in its own
     // @Serializable settings class resolves it at compile time, so this cannot be implementation.
     api(libs.serialization.core)

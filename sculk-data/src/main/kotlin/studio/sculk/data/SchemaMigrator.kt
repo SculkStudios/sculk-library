@@ -1,6 +1,7 @@
 package studio.sculk.data
 
 import java.sql.Connection
+import java.sql.SQLException
 import java.util.logging.Logger
 
 /**
@@ -103,14 +104,58 @@ internal object SchemaMigrator {
         return added
     }
 
+    /**
+     * Creates the indexes an entity declares, for engines that cannot say `IF NOT EXISTS`.
+     *
+     * **MySQL has no `CREATE INDEX IF NOT EXISTS`.** SQLite, Postgres and MariaDB all accept it, and
+     * [SqlDialect.MYSQL] covers MySQL *and* MariaDB — one dialect, because the MariaDB driver serves
+     * both — so the enum cannot tell which one is on the other end. The statement was emitted
+     * unconditionally, so on genuine MySQL every index creation threw and table setup failed.
+     *
+     * Asking the database what it already has works on all of them and needs no dialect branch.
+     */
     private fun createIndexes(connection: Connection, schema: TableSchema, dialect: SqlDialect) {
-        for (column in schema.columns.filter { it.indexed && !it.primaryKey }) {
+        val wanted = schema.columns.filter { it.indexed && !it.primaryKey }
+        if (wanted.isEmpty()) return
+        val existing = existingIndexes(connection, schema)
+
+        for (column in wanted) {
             // Created separately from the table so an @Index added in a later version still
             // appears on a table that already exists.
             val name = "idx_${schema.table}_${column.name}"
-            val sql = "CREATE INDEX IF NOT EXISTS ${dialect.quote(name)} " +
+            if (existing.any { it.equals(name, ignoreCase = true) }) continue
+
+            val sql = "CREATE INDEX ${dialect.quote(name)} " +
                 "ON ${dialect.quote(schema.table)} (${dialect.quote(column.name)})"
-            connection.createStatement().use { it.executeUpdate(sql) }
+            try {
+                connection.createStatement().use { it.executeUpdate(sql) }
+            } catch (error: SQLException) {
+                // Two servers starting against one fresh database both pass the check above and
+                // both try to create it. Losing that race is not a failure -- but only when the
+                // index really is there now, so the database is asked again rather than assumed.
+                if (existingIndexes(connection, schema).none { it.equals(name, ignoreCase = true) }) throw error
+            }
         }
+    }
+
+    /**
+     * The index names already on the table.
+     *
+     * The table name is retried in three cases for the same reason [existingColumns] does it:
+     * engines disagree about the case they store identifiers in.
+     */
+    private fun existingIndexes(connection: Connection, schema: TableSchema): Set<String> {
+        for (candidate in listOf(schema.table, schema.table.uppercase(), schema.table.lowercase()).distinct()) {
+            val found = mutableSetOf<String>()
+            // `approximate = true` reads the stored statistics instead of forcing them to be
+            // recomputed, which on a large table is the difference between instant and a scan.
+            runCatching {
+                connection.metaData.getIndexInfo(null, null, candidate, false, true).use { rows ->
+                    while (rows.next()) rows.getString("INDEX_NAME")?.let { found += it }
+                }
+            }
+            if (found.isNotEmpty()) return found
+        }
+        return emptySet()
     }
 }

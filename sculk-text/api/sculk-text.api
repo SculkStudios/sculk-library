@@ -1,3 +1,9 @@
+public final class studio/sculk/text/LegacyCodes {
+	public static final field INSTANCE Lstudio/sculk/text/LegacyCodes;
+	public final fun present (Ljava/lang/String;)Z
+	public final fun toMiniMessage (Ljava/lang/String;)Ljava/lang/String;
+}
+
 public final class studio/sculk/text/MinecraftFont {
 	public static final field INSTANCE Lstudio/sculk/text/MinecraftFont;
 	public static final field SPACE_WIDTH I
@@ -21,8 +27,8 @@ public final class studio/sculk/text/SculkBundles {
 
 public final class studio/sculk/text/SculkMessages {
 	public fun <init> ()V
-	public fun <init> (Lstudio/sculk/text/SculkTheme;Ljava/lang/Integer;ZLnet/kyori/adventure/text/minimessage/MiniMessage;)V
-	public synthetic fun <init> (Lstudio/sculk/text/SculkTheme;Ljava/lang/Integer;ZLnet/kyori/adventure/text/minimessage/MiniMessage;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lstudio/sculk/text/SculkTheme;Ljava/lang/Integer;ZLnet/kyori/adventure/text/minimessage/MiniMessage;Z)V
+	public synthetic fun <init> (Lstudio/sculk/text/SculkTheme;Ljava/lang/Integer;ZLnet/kyori/adventure/text/minimessage/MiniMessage;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun actionBar (Lnet/kyori/adventure/audience/Audience;Ljava/lang/String;[Lkotlin/Pair;)V
 	public final fun getTheme ()Lstudio/sculk/text/SculkTheme;
 	public final fun render (Ljava/lang/String;Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;[Lkotlin/Pair;)Lnet/kyori/adventure/text/Component;

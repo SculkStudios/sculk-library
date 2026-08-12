@@ -110,9 +110,17 @@ internal object ConfigMerge {
         lines.addAll(at, payload)
     }
 
-    /** The index just past the last line belonging to [path], or -1 when it is not present. */
+    /**
+     * The index just past the last line belonging to [path], or -1 when it is not present.
+     *
+     * "Just past" stops short of the comment lines introducing whatever comes next, for the same
+     * reason [endOfBlock] exists: inserting at the next key's own index puts the new block between
+     * that key and its documentation, leaving the comment stranded above a setting it does not
+     * describe and the key below it bare.
+     */
     private fun endOfSection(lines: List<String>, path: String): Int {
         var indent = -1
+        var start = -1
         val stack = ArrayDeque<Pair<Int, String>>()
 
         for ((index, line) in structuralLines(lines)) {
@@ -123,11 +131,12 @@ internal object ConfigMerge {
 
             if (stack.joinToString(".") { it.second } == path) {
                 indent = lineIndent
+                start = index
                 continue
             }
-            if (indent >= 0 && lineIndent <= indent) return index
+            if (indent >= 0 && lineIndent <= indent) return endOfBlock(lines, start, index)
         }
-        return if (indent >= 0) lines.size else -1
+        return if (indent >= 0) endOfBlock(lines, start, lines.size) else -1
     }
 
     /** Every top-level and nested key path present in [text]. */
@@ -207,9 +216,36 @@ internal object ConfigMerge {
             }
 
             val match = KEY_LINE.find(line) ?: continue
-            if (match.groupValues[1].length <= indent) return index
+            if (match.groupValues[1].length <= indent) return endOfBlock(lines, start, index)
         }
-        return lines.size
+        return endOfBlock(lines, start, lines.size)
+    }
+
+    /**
+     * Backs [end] up over the blank and comment lines immediately before it.
+     *
+     * A comment sits *above* the key it documents, so the run of comments and blanks just before the
+     * next key belongs to that key — not to the block being closed here. Including them meant an
+     * inserted block arrived carrying a copy of the following key's comment, while the original
+     * stayed where it was:
+     *
+     *     # The port to listen on.          <- original
+     *
+     *       # How many votes a minute.
+     *       rate-limit: 20
+     *     # The port to listen on.          <- the copy, carried in with the block
+     *     port: 8192
+     *
+     * One more copy landed with every release that added a nested key, which is what "the comments
+     * are doubled up" looks like on a file that has been upgraded a few times.
+     */
+    private fun endOfBlock(lines: List<String>, start: Int, end: Int): Int {
+        var last = end
+        while (last > start + 1) {
+            val previous = lines[last - 1]
+            if (previous.isBlank() || previous.trimStart().startsWith("#")) last-- else break
+        }
+        return last
     }
 
     private class Block(val path: String, val depth: Int, val lines: List<String>)
