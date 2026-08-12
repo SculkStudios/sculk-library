@@ -1,0 +1,142 @@
+---
+title: Guilds and members
+description: Roles, colours, bulk member lookup, and the calls that change somebody's standing.
+---
+
+`DiscordGateway.guilds` is everything a bot does *to* a server rather than in a channel: reading roles,
+looking members up, and moderation.
+
+They are grouped rather than flattened onto the gateway for the same reason the packet service groups
+`clientBlocks` and `virtualEntities` — these are the calls that change someone's standing, and having
+them named together makes the permissions a bot needs obvious at a glance.
+
+## Reading roles
+
+`DiscordActor.roles` carries ids. To render a role — its name, or the colour Discord shows next to it —
+read the role itself:
+
+```kotlin
+val role = gateway.guilds.role(guild, RoleId("1035829461209384960")).getOrNull()
+println(role?.name)        // "Donor"
+println(role?.colorRgb)    // 0x00FF00, or null when the role sets no colour
+```
+
+`colorRgb` is **null for an uncoloured role, not zero**. Discord's "no colour" is a sentinel that
+renders as the default grey, and collapsing it to `0` would turn "this role sets no colour" into "this
+role sets black" — a visible wrong answer rather than an ignorable one.
+
+### Tinting a relayed message
+
+The common case: a chat bridge that colours a relayed line the way Discord colours the sender's name.
+That is the member's **highest coloured** role, which is not the same as their highest role — someone
+whose top role is an uncoloured organisational one still shows the colour of whatever sits below it.
+
+```kotlin
+val roles = gateway.guilds.roles(guild).getOrNull().orEmpty()
+
+gateway.onMessage { message ->
+    val accent = message.author.highestColoredRole(roles)?.colorRgb
+    relay(message.displayContent, accent)
+}
+```
+
+`roles(guild)` returns the guild's whole list, highest position first, so it is fetched once and reused
+across every member rather than looked up per role per message.
+
+## Looking members up
+
+```kotlin
+val member = gateway.guilds.member(guild, userId).getOrNull()
+```
+
+One member, one request. Fine for a moderation command; wrong for a sync.
+
+### In bulk
+
+```kotlin
+val linked: Set<UserId> = store.everyLinkedAccount()
+val members = gateway.guilds.members(guild, linked).getOrNull().orEmpty()
+
+for ((id, actor) in members) {
+    reconcile(id, actor.roles)
+}
+```
+
+Discord resolves up to a hundred ids per request, and `members` batches to that limit. Calling `member`
+in a loop over a few thousand linked accounts is a few thousand round trips against a rate limit that
+is not generous — slow enough that a reconcile can still be running when the next one is due.
+
+Somebody who has left the guild is **absent from the result rather than an error**: over a stored list
+of accounts, people leaving is expected and is not a reason to abandon the pass.
+
+:::note[Bulk lookup needs an intent]
+`members` needs `Intent.GuildMembers`, which is privileged — enable it on the application at
+discord.com/developers before requesting it. Without it the call fails by name rather than quietly
+returning nothing.
+:::
+
+### Caching members
+
+By default nothing is cached and every lookup is a request. For a bot that reads the same members
+repeatedly, trade memory for requests:
+
+```kotlin
+BotConfig(
+    token = token,
+    intents = setOf(Intent.GuildMessages, Intent.MessageContent, Intent.GuildMembers),
+    cacheAllMembers = true,
+)
+```
+
+The cost is real memory, proportional to the member count of every guild the bot is in. It is ignored,
+with a log line, when `Intent.GuildMembers` was not requested — without that intent Discord never sends
+the members to cache in the first place.
+
+## Reacting to changes
+
+A role sync that runs on a timer re-reads every linked member whether or not anything changed, and a
+role granted just after a pass is invisible until the next one. Subscribe instead:
+
+```kotlin
+gateway.onMemberChange { change ->
+    when (change) {
+        is MemberChange.RolesChanged -> sync(change.user, change.actor.roles)
+        is MemberChange.Left -> unlink(change.user)
+        is MemberChange.Joined -> welcome(change.user)
+    }
+}
+```
+
+`RolesChanged` carries both the delta (`added` / `removed`) and the resulting whole set
+(`actor.roles`). **Read the whole set.** Discord coalesces changes, so a sync driven by the delta
+drifts out of step with reality, while one driven by `actor.roles` is correct regardless of what it
+missed.
+
+`Left` covers leaving, being kicked and being banned alike — Discord does not say which, so neither
+does this. Telling them apart means reading the audit log, which is a different permission and a
+different request.
+
+:::note[Member events are privileged]
+All three cases need `Intent.GuildMembers`. Without it Discord sends none of them, and the only way to
+notice a role change is to poll — which is the thing these exist to replace. Registering a handler
+without the intent logs a warning rather than silently never firing.
+:::
+
+## Moderation
+
+```kotlin
+gateway.guilds.timeout(guild, user, 30.minutes, reason = "Spam in #general")
+gateway.guilds.setRoles(guild, user, desired)
+gateway.guilds.setNickname(guild, user, "Daisy")
+```
+
+`setRoles` replaces a member's roles with exactly the set given, in one request. Role sync usually
+computes a whole target set, and applying it piecewise means every intermediate state is broadcast and
+rate-limited separately — and is briefly visible to everyone.
+
+:::caution[Almost every failure here is the role hierarchy]
+Discord refuses any action against a member whose highest role sits at or above the bot's, and no
+amount of granting the bot permissions fixes it — the bot's own role has to be dragged up the server's
+role list. Failures from this service say so, because it is the cause perhaps nine times in ten and it
+is not discoverable from the error Discord returns.
+:::
