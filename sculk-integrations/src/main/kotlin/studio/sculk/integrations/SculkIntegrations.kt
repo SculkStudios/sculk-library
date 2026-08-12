@@ -32,6 +32,23 @@ public class SculkIntegrations public constructor(private val plugin: Plugin) {
 
     public fun luckPerms(): SculkResult<LuckPermsIntegration> = requirePlugin("LuckPerms").map { LuckPermsIntegration }
 
+    /**
+     * Custom items from Nexo, Oraxen or ItemsAdder, addressed as `nexo:ruby_sword`.
+     *
+     * Succeeds when at least one of them is installed, because the three are alternatives rather
+     * than a set — a server has one. [CustomItems] itself is reachable statically, since a config
+     * value resolves through the item DSL where no plugin is in scope; this is the presence check
+     * for a plugin that wants to report at start-up whether the feature is live at all.
+     */
+    public fun customItems(): SculkResult<CustomItems> {
+        val installed = CustomItems.pluginNames.filter { requirePlugin(it).isSuccess }
+        return if (installed.isEmpty()) {
+            SculkResult.failure("No custom-item plugin is installed or enabled; looked for ${CustomItems.pluginNames.joinToString()}.")
+        } else {
+            SculkResult.success(CustomItems)
+        }
+    }
+
     private fun requirePlugin(name: String): SculkResult<Plugin> {
         val dependency = plugin.server.pluginManager.getPlugin(name)
         return if (dependency != null && dependency.isEnabled) {
@@ -48,12 +65,21 @@ public class SculkIntegrations public constructor(private val plugin: Plugin) {
  * `Class.forName` and `getMethod` both walk and copy on every call. The placeholder adapter is
  * called per sidebar line per player per refresh, which is exactly where that cost lands.
  */
-private object Reflect {
+internal object Reflect {
     private val methods = ConcurrentHashMap<String, Method>()
 
     fun method(owner: String, name: String, vararg parameters: Class<*>): Method = methods.getOrPut("$owner#$name/${parameters.size}") {
         Class.forName(owner).getMethod(name, *parameters)
     }
+
+    /**
+     * The same cache for a class that is already in hand.
+     *
+     * Custom-item plugins are reached through their own class loader rather than `Class.forName`,
+     * and the builder a lookup hands back is a type this module cannot name at all.
+     */
+    fun method(owner: Class<*>, name: String, vararg parameters: Class<*>): Method =
+        methods.getOrPut("${owner.name}#$name/${parameters.size}") { owner.getMethod(name, *parameters) }
 }
 
 /** Runs text through PlaceholderAPI, returning it unchanged if anything goes wrong. */

@@ -1,3 +1,11 @@
+public final class studio/sculk/integrations/CustomItems {
+	public static final field INSTANCE Lstudio/sculk/integrations/CustomItems;
+	public final fun getPluginNames ()Ljava/util/List;
+	public final fun getPrefixes ()Ljava/util/List;
+	public final fun handles (Ljava/lang/String;)Z
+	public final fun resolve (Ljava/lang/String;)Lstudio/sculk/SculkResult;
+}
+
 public final class studio/sculk/integrations/LuckPermsIntegration {
 	public static final field INSTANCE Lstudio/sculk/integrations/LuckPermsIntegration;
 	public final fun primaryGroup (Ljava/util/UUID;)Lstudio/sculk/SculkResult;
@@ -10,6 +18,7 @@ public final class studio/sculk/integrations/PlaceholderApiIntegration {
 
 public final class studio/sculk/integrations/SculkIntegrations {
 	public fun <init> (Lorg/bukkit/plugin/Plugin;)V
+	public final fun customItems ()Lstudio/sculk/SculkResult;
 	public final fun luckPerms ()Lstudio/sculk/SculkResult;
 	public final fun placeholderApi ()Lstudio/sculk/SculkResult;
 	public final fun vaultEconomy ()Lstudio/sculk/SculkResult;
