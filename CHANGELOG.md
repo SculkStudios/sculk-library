@@ -40,6 +40,36 @@ The same API writes a standalone bot and a plugin-owned one.
   `sculk-items` cannot depend on `sculk-config` to prove the two agree, so the round-trip is
   asserted against kaml configured exactly as `SculkConfig` configures it.
 
+- **Custom items from Nexo, Oraxen and ItemsAdder.** Anywhere a material key is read — `item(String)`,
+  `SculkMessages.item(String)`, `ItemDescriptor.material` — a value of `nexo:ruby_sword`,
+  `oraxen:ruby_sword` or `itemsadder:mypack:ruby` now resolves to that plugin's item, and the rest of
+  the descriptor (name, lore, amount, enchantments, persistent data) is written on top of the stack it
+  hands back. `ItemBuilder` gained an optional `base: ItemStack` for that: a custom item's model and
+  components *are* the item and cannot be re-expressed as a `Material`. `SculkIntegrations.customItems()`
+  is the start-up presence check; `CustomItems` itself is reachable statically, because a config value
+  resolves through a top-level DSL function with no plugin in scope.
+
+  **Reached by reflection, and that is a licence decision rather than a style one.** Nexo and ItemsAdder
+  ship with no licence file at all — all rights reserved by default — and Oraxen carries a custom
+  proprietary one. None of them is on the compile classpath, none is bundled, and no repository was
+  added. The class is loaded from the plugin's own class loader rather than through `Class.forName`,
+  since Paper only lets one plugin see another's when the dependency is declared and a framework cannot
+  declare a `softdepend` on behalf of the plugin embedding it. Only the reflected `Method` handles are
+  cached: all three APIs return a freshly built stack, so caching one would only reintroduce the
+  question of when to invalidate it, and all three register items late, asynchronously, and reload them
+  on command.
+
+  Nothing that resolved before changes meaning. `Material.matchMaterial` strips a literal `minecraft:`
+  and then deletes non-word characters, so `nexo:ruby_sword` was already `NEXORUBY_SWORD` and already
+  null — there is no key to take away from anything. A test pins that. Failure is now three different
+  sentences, logged once per key: an unknown material, a plugin that is not installed, and a plugin that
+  has no such item are three things a server owner fixes three different ways, and a GUI slot resolving
+  a config item with `getOrNull()` used to show none of them.
+
+  `SculkSeries.material` is deliberately *not* the hook. `SculkRegistry.resolve` memoises misses
+  forever, so a start-up lookup against a plugin that registers its items later would cache a permanent
+  negative — and it returns `Material`, which cannot represent a custom item at all.
+
 ### Fixed
 
 - **Items build on every 1.21.x server, not just the newest.** `api-version: '1.21'` loads a plugin on
@@ -79,6 +109,9 @@ The same API writes a standalone bot and a plugin-owned one.
 
 ### Changed
 
+- **`ItemBuilder`'s constructor gained a third parameter, `base: ItemStack? = null`.** Source-compatible
+  for Kotlin, which resolves the default; a Java caller holding `new ItemBuilder(material, messages)`
+  has to be recompiled, as the two-argument constructor no longer exists in the bytecode.
 - **The startup banner names a packet backend only when one loaded**, instead of reporting `none`.
   Accurate, but most plugins use no packet features, so their owners read `none` on an otherwise
   healthy startup and ask what is broken. A plugin that depends on a backend can say so in

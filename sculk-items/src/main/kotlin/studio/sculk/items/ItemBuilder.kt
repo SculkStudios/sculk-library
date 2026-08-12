@@ -38,7 +38,22 @@ import java.util.logging.Logger
  * ```
  */
 @SculkStable
-public open class ItemBuilder public constructor(private var material: Material, private val messages: SculkMessages = SculkMessages()) {
+public open class ItemBuilder public constructor(
+    private var material: Material,
+    private val messages: SculkMessages = SculkMessages(),
+    /**
+     * A finished stack to decorate instead of building one from [material].
+     *
+     * The route a custom item takes: Nexo, Oraxen and ItemsAdder hand back a whole [ItemStack] whose
+     * model, components and persistent data are the item, and none of that can be re-expressed as a
+     * [Material]. Cloned on [build] rather than held, exactly as `GuiItemBuilder` treats an explicit
+     * stack, so one builder can be built twice and a caller's stack is never mutated.
+     *
+     * Everything the DSL sets is written on top, so a config that names `nexo:ruby_sword` and then
+     * its own name, lore and amount gets all of it. [material] is ignored while this is set.
+     */
+    private val base: ItemStack? = null,
+) {
     private var displayName: Component? = null
     private var itemName: Component? = null
     private val lore: MutableList<Component> = mutableListOf()
@@ -273,7 +288,7 @@ public open class ItemBuilder public constructor(private var material: Material,
      * [ItemCompat] for why this is version-dependent inside a single Minecraft major line.
      */
     public open fun build(): ItemStack {
-        val stack = ItemStack(material, amount)
+        val stack = base?.clone()?.also { it.amount = amount } ?: ItemStack(material, amount)
         val spec = spec()
         val modern = ItemCompat.dataComponents
 

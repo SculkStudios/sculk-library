@@ -10,8 +10,8 @@ public final class studio/sculk/items/InventoryDeliveryKt {
 }
 
 public class studio/sculk/items/ItemBuilder {
-	public fun <init> (Lorg/bukkit/Material;Lstudio/sculk/text/SculkMessages;)V
-	public synthetic fun <init> (Lorg/bukkit/Material;Lstudio/sculk/text/SculkMessages;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/bukkit/Material;Lstudio/sculk/text/SculkMessages;Lorg/bukkit/inventory/ItemStack;)V
+	public synthetic fun <init> (Lorg/bukkit/Material;Lstudio/sculk/text/SculkMessages;Lorg/bukkit/inventory/ItemStack;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun amount (I)V
 	public fun build ()Lorg/bukkit/inventory/ItemStack;
 	public final fun component (Lio/papermc/paper/datacomponent/DataComponentType$NonValued;)V
