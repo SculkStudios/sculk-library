@@ -192,4 +192,39 @@ class ItemBuilderTest {
         val message = (resolved as SculkResult.Failure).message
         assertTrue(message.contains("diamon_sword"), "the message is what lands in the log: $message")
     }
+
+    @Test
+    fun `a base stack is decorated rather than rebuilt`() {
+        // The custom-item path: Nexo, Oraxen and ItemsAdder hand back a finished stack whose model
+        // and components *are* the item, so the builder has to write on top of it rather than
+        // construct a fresh one from a Material.
+        // Asserted through persistent data rather than a component: MockBukkit's ItemStack.clone()
+        // drops anything written with setData, which real Paper carries. Persistent data travels on
+        // the meta and does survive, so it is what can honestly be pinned here.
+        val base = ItemStack(Material.DIAMOND_SWORD)
+        val meta = base.itemMeta!!
+        meta.persistentDataContainer.set(ItemKeys.of("pack_item"), PersistentDataType.STRING, "ruby")
+        base.itemMeta = meta
+
+        val built = ItemBuilder(Material.STONE, base = base).apply { lore("<gray>From a pack") }.build()
+
+        assertEquals(Material.DIAMOND_SWORD, built.type, "the base wins over the material argument")
+        assertEquals(
+            "ruby",
+            built.itemMeta?.persistentDataContainer?.get(ItemKeys.of("pack_item"), PersistentDataType.STRING),
+            "the provider's own metadata survives",
+        )
+        assertEquals(1, built.getData(DataComponentTypes.LORE)?.lines()?.size, "and the DSL still writes on top")
+    }
+
+    @Test
+    fun `a base stack is cloned, not adopted`() {
+        val base = ItemStack(Material.DIAMOND_SWORD)
+
+        val built = ItemBuilder(Material.STONE, base = base).apply { amount(3) }.build()
+
+        assertFalse(built === base)
+        assertEquals(1, base.amount, "the caller's stack is not mutated")
+        assertEquals(3, built.amount)
+    }
 }

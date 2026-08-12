@@ -33,7 +33,12 @@ public data class ItemDescriptor(
     public val data: Map<String, String> = emptyMap(),
 )
 
-/** Builds the described item, reporting an unknown material by name. */
+/**
+ * Builds the described item, reporting an unknown material by name.
+ *
+ * `material` is whatever a server owner wrote: a vanilla key, or `nexo:ruby_sword` and friends for a
+ * custom item, which arrives as a finished stack that the rest of the descriptor is written on top of.
+ */
 @SculkStable
 public fun ItemDescriptor.toItemStack(messages: SculkMessages = SculkMessages()): SculkResult<ItemStack> =
     messages.item(material) { applyDescriptor(this@toItemStack) }

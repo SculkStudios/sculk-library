@@ -14,12 +14,16 @@ import studio.sculk.config.NotEmpty
 @Comment("Where this plugin keeps its data.", "Edit while the server is stopped.")
 @SculkStable
 public data class StorageSettings(
-    @Comment("One of: sqlite, mysql, postgres.")
+    @Comment(
+        "One of: sqlite, mysql, mariadb, postgres.",
+        "mysql and mariadb are the same setting - both use the MariaDB driver, which talks to",
+        "either server. Write whichever one you actually run; nothing else changes.",
+    )
     @NotEmpty
     public val backend: String = "sqlite",
     @Comment("The SQLite file, relative to the plugin folder. Ignored for the remote backends.")
     public val file: String = "data.db",
-    @Comment("Connection details for mysql and postgres.")
+    @Comment("Connection details for the remote backends. Ignored by sqlite.")
     public val remote: RemoteSettings = RemoteSettings(),
     @Comment(
         "How many connections to keep open.",
@@ -34,6 +38,7 @@ public data class StorageSettings(
 @SculkStable
 public data class RemoteSettings(
     public val host: String = "localhost",
+    @Comment("3306 for mysql/mariadb, 5432 for postgres. The default is the MySQL one.")
     @Min(1)
     @Max(65535)
     public val port: Int = 3306,
