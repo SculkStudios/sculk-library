@@ -29,7 +29,11 @@ dependencies {
     // Speaks both the MySQL and the Postgres dialect, so the generated SQL is exercised by a real
     // engine rather than asserted as a string.
     testImplementation(libs.h2)
+    // The env-gated integration tests drive real servers through the drivers production names in
+    // SculkData.driverFor. Both are compileOnly for the shipped jar, so without them here the tests
+    // fail on driverClassName the moment CI supplies a URL, which reads as a broken database.
     testRuntimeOnly(libs.postgresql)
+    testRuntimeOnly(libs.mariadb.jdbc)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.coroutines.test)
     // RedisCache is tested against a stub backend, but the Lettuce types must still resolve.

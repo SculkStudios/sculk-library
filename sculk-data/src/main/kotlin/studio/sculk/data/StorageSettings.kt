@@ -47,5 +47,10 @@ public data class RemoteSettings(
     // Reads from the environment so the shipped file stays a working example and the real secret
     // never lands in a config anyone might paste into a support channel.
     public val password: String = "\${DB_PASSWORD:-}",
+    @Comment(
+        "Encrypt the connection. Leave off for a database on this machine or a private network.",
+        "Turn it on if the database is reachable from the internet - and note that on MySQL 8 that",
+        "also removes the public-key-retrieval fallback its default login needs when TLS is off.",
+    )
     public val useSsl: Boolean = false,
 )

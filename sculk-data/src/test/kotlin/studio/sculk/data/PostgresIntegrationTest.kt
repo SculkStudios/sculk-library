@@ -72,4 +72,14 @@ class PostgresIntegrationTest {
             source.close()
         }
     }
+
+    @Test
+    fun `a second boot migrates and upserts against a real postgres`() = runTest {
+        val source = open()
+        try {
+            SqlEngineContract.migrateReopenAndUpsert(source, SqlDialect.POSTGRES, Logger.getLogger("pg"))
+        } finally {
+            source.close()
+        }
+    }
 }
