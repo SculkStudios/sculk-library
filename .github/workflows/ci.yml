@@ -114,12 +114,12 @@ jobs:
       # The MySQL URL uses the MariaDB driver deliberately: that is the driver SculkData picks for
       # SqlDialect.MYSQL, so testing through anything else would test a path no server runs.
       #
-      # `allowPublicKeyRetrieval` is not a test convenience. MySQL 8 authenticates with
-      # caching_sha2_password by default, and that exchange needs either TLS or the server's public
-      # key — without one of them the connection fails before a single statement is sent. SculkData
-      # builds `jdbc:mariadb://…?useSSL=<setting>` and nothing else, so with the shipped
-      # `use-ssl: false` it cannot express either. That is an open defect, and the flag here is what
-      # keeps this job testing SQL rather than re-failing on the handshake.
+      # `allowPublicKeyRetrieval` is here because these tests build their own JDBC URL from this env
+      # var rather than going through `SculkData.urlFor`, so it has to carry what a real connection
+      # would. MySQL 8 authenticates with caching_sha2_password by default and that exchange needs
+      # either TLS or the server's public key; without one the connection fails before a statement is
+      # sent. `urlFor` appends the same flag when `use-ssl` is off, and `SculkDataUrlTest` is what
+      # actually pins that — this job proves the SQL, not the connection string.
       - name: Test against MySQL, MariaDB and PostgreSQL
         env:
           SCULK_MYSQL_URL: "jdbc:mariadb://127.0.0.1:3306/sculk?user=root&password=root&allowPublicKeyRetrieval=true"
