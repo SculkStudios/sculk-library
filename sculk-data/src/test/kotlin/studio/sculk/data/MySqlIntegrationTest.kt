@@ -70,4 +70,14 @@ class MySqlIntegrationTest {
             source.close()
         }
     }
+
+    @Test
+    fun `a second boot migrates and upserts against a real mysql`() = runTest {
+        val source = open()
+        try {
+            SqlEngineContract.migrateReopenAndUpsert(source, SqlDialect.MYSQL, Logger.getLogger("mysql"))
+        } finally {
+            source.close()
+        }
+    }
 }

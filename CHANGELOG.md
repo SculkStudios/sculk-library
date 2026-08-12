@@ -133,6 +133,25 @@ The same API writes a standalone bot and a plugin-owned one.
 - **Banner facts past the last line of art are no longer dropped.** `show()` iterated the art and
   read facts by index, so a plugin adding two facts of its own silently lost the framework's own
   "Started in" row.
+- **Table setup no longer fails on every genuine MySQL server.** `SchemaMigrator` emitted `CREATE
+  INDEX IF NOT EXISTS`, which is a MariaDB extension that SQLite and Postgres also have and **no
+  MySQL release does**. One `SqlDialect.MYSQL` covers MySQL and MariaDB alike, because the MariaDB
+  driver talks to both, so nothing could branch on it. The migrator now asks the database which
+  indexes exist and creates only the missing ones, which needs no dialect branch at all.
+
+### Testing
+
+- **CI runs the data layer against real MySQL, MariaDB and PostgreSQL servers.** The `CREATE INDEX
+  IF NOT EXISTS` failure above reached customers because the suite's idea of MySQL was H2's MySQL
+  mode, which accepts the syntax — the embedded database is not the production database, and a green
+  suite meant nothing about the engine anyone actually runs. A `Real Databases` job now starts
+  `mysql:8` (never MariaDB in that slot: MariaDB accepts the broken statement and would have passed
+  before the fix), `mariadb:11` and `postgres:16` as service containers and fills the URL variables
+  the integration tests are gated on. Each engine runs the second-boot path where every failure in
+  this layer has been: a schema that already exists, an index that is already there, a column the
+  entity has gained since, and an upsert issued by an entity that predates it. The job also fails if
+  any of the three suites reports itself skipped, because a gate that silently disables its own tests
+  is the same hole one level up.
 
 ### Documentation
 

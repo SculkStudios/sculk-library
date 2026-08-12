@@ -42,6 +42,117 @@ jobs:
           name: test-reports
           path: "**/build/reports/tests/"
 
+  # Separate from `build` on purpose, and not because of wall-clock time — GitHub runs jobs in
+  # parallel, so this costs a trivial edit nothing. It is separate because the two answer different
+  # questions. `build` is the fast loop: compile, ktlint, every embedded-engine test. This one only
+  # ever fails for one reason — a statement a real server rejects — and keeping it apart means that
+  # reason is legible in the checks list rather than buried in a suite of 900 tests, and that a
+  # database that failed to start cannot be mistaken for a compile error.
+  databases:
+    name: Real Databases
+    runs-on: ubuntu-latest
+
+    services:
+      # Genuine MySQL, never MariaDB. They are one `SqlDialect` here because the MariaDB driver
+      # talks to both, and MariaDB accepts syntax MySQL has never had — so a MariaDB container in
+      # this slot proves the opposite of what it looks like it proves. That substitution is exactly
+      # how `CREATE INDEX IF NOT EXISTS` reached customers.
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: sculk
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+          --health-start-period=20s
+
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: sculk
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sculk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # The MySQL URL uses the MariaDB driver deliberately: that is the driver SculkData picks for
+      # SqlDialect.MYSQL, so testing through anything else would test a path no server runs.
+      #
+      # `allowPublicKeyRetrieval` is not a test convenience. MySQL 8 authenticates with
+      # caching_sha2_password by default, and that exchange needs either TLS or the server's public
+      # key — without one of them the connection fails before a single statement is sent. SculkData
+      # builds `jdbc:mariadb://…?useSSL=<setting>` and nothing else, so with the shipped
+      # `use-ssl: false` it cannot express either. That is an open defect, and the flag here is what
+      # keeps this job testing SQL rather than re-failing on the handshake.
+      - name: Test against MySQL, MariaDB and PostgreSQL
+        env:
+          SCULK_MYSQL_URL: "jdbc:mariadb://127.0.0.1:3306/sculk?user=root&password=root&allowPublicKeyRetrieval=true"
+          SCULK_MARIADB_URL: "jdbc:mariadb://127.0.0.1:3307/sculk?user=root&password=root"
+          SCULK_POSTGRES_URL: "jdbc:postgresql://127.0.0.1:5432/sculk?user=postgres&password=postgres"
+        run: ./gradlew :sculk-data:test --no-daemon
+
+      # These tests skip themselves when their env var is unset, which is right for a laptop and
+      # silent failure here: a renamed variable or a container that never came up would turn this
+      # job green while running nothing. A skip in this job is a failure.
+      - name: Assert no engine was skipped
+        if: always()
+        run: |
+          status=0
+          for suite in MySqlIntegrationTest MariaDbIntegrationTest PostgresIntegrationTest; do
+            report="sculk-data/build/test-results/test/TEST-studio.sculk.data.$suite.xml"
+            if [ ! -f "$report" ]; then
+              echo "::error::$suite did not run at all — its URL variable is unset or misspelt."
+              status=1
+            elif ! grep -q 'skipped="0"' "$report"; then
+              echo "::error::$suite reported skipped tests; the database it needs was not reachable."
+              status=1
+            fi
+          done
+          exit $status
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: database-test-reports
+          path: "**/build/reports/tests/"
+
   docs:
     name: Docs
     runs-on: ubuntu-latest

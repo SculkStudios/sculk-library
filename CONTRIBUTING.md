@@ -85,6 +85,31 @@ No circular dependencies. Ever.
 ./gradlew :benchmarks:jmh
 ```
 
+## Testing against real databases
+
+`sculk-data` runs against SQLite and H2 in every build, but H2's MySQL mode is not MySQL — it accepts
+statements a real server rejects, which is how a `CREATE INDEX` that no MySQL release supports once
+shipped. The integration tests that cover the real engines skip themselves unless their URL is set,
+so a normal `./gradlew build` stays fast and offline. CI always sets all three; locally:
+
+```bash
+docker run -d --name sculk-mysql   -e MYSQL_ROOT_PASSWORD=root   -e MYSQL_DATABASE=sculk    -p 3306:3306 mysql:8
+docker run -d --name sculk-mariadb -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=sculk  -p 3307:3306 mariadb:11
+docker run -d --name sculk-pg      -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=sculk       -p 5432:5432 postgres:16
+
+# allowPublicKeyRetrieval is needed because MySQL 8 authenticates with caching_sha2_password over a
+# connection this test does not encrypt.
+export SCULK_MYSQL_URL="jdbc:mariadb://127.0.0.1:3306/sculk?user=root&password=root&allowPublicKeyRetrieval=true"
+export SCULK_MARIADB_URL="jdbc:mariadb://127.0.0.1:3307/sculk?user=root&password=root"
+export SCULK_POSTGRES_URL="jdbc:postgresql://127.0.0.1:5432/sculk?user=postgres&password=postgres"
+
+./gradlew :sculk-data:test
+```
+
+Point `SCULK_MYSQL_URL` at **MySQL, not MariaDB**. They share one `SqlDialect`, and MariaDB accepts
+syntax MySQL does not — so a MariaDB server in that slot reports the bugs it exists to catch as
+passes. `SCULK_MARIADB_URL` is the control that keeps a MySQL fix from breaking MariaDB.
+
 ## Submitting a Pull Request
 
 1. Fork the repository
