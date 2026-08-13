@@ -35,7 +35,8 @@ public final class studio/sculk/command/CommandBuilder {
 	public final fun getAliases ()Ljava/util/List;
 	public final fun getDescription ()Ljava/lang/String;
 	public final fun getPermission ()Ljava/lang/String;
-	public final fun greedy (Ljava/lang/String;)V
+	public final fun greedy (Ljava/lang/String;Z)V
+	public static synthetic fun greedy$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;ZILjava/lang/Object;)V
 	public final fun int (Ljava/lang/String;ZLjava/lang/Integer;Ljava/lang/Integer;)V
 	public static synthetic fun int$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;ZLjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Object;)V
 	public final fun long (Ljava/lang/String;ZLjava/lang/Long;Ljava/lang/Long;)V

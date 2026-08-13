@@ -8,6 +8,8 @@ public final class studio/sculk/integrations/CustomItems {
 
 public final class studio/sculk/integrations/LuckPermsIntegration {
 	public static final field INSTANCE Lstudio/sculk/integrations/LuckPermsIntegration;
+	public final fun groups (Ljava/util/UUID;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun hasPermission (Ljava/util/UUID;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun primaryGroup (Ljava/util/UUID;)Lstudio/sculk/SculkResult;
 }
 

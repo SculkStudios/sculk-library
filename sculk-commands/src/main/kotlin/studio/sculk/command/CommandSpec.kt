@@ -188,8 +188,14 @@ public class CommandBuilder internal constructor(private val name: String) {
 
     public fun <E : Enum<E>> enum(name: String, type: Class<E>, optional: Boolean = false): Unit = add(name, EnumParser(type), optional)
 
-    /** Consumes the rest of the line. Only valid as the final argument. */
-    public fun greedy(name: String): Unit = add(name, GreedyStringParser, optional = false)
+    /**
+     * Consumes the rest of the line. Only valid as the final argument.
+     *
+     * [optional] covers the shape a chat-style command actually has: `/sc` toggles, `/sc hello` sends.
+     * Without it the trailing message has to be required, and "the same command with and without a
+     * message" needs two nodes that then disagree about which one Brigadier offers.
+     */
+    public fun greedy(name: String, optional: Boolean = false): Unit = add(name, GreedyStringParser, optional)
 
     /**
      * One of a set of values.
