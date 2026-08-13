@@ -6,6 +6,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.2.0] — "Bridged, wired" — 2026-08-13
+
+### Changed
+
+- **`greedy(name)` is now `greedy(name, optional = false)`.** Source-compatible, but the old
+  single-argument method is gone from the bytecode, so a consumer compiled against 5.1.0 and run
+  against this needs a recompile. 5.1.0 never reached jitpack, so in practice nothing is affected —
+  recorded because the API dump changed shape, not because anyone is expected to be caught by it.
+
+### Added
+
+- **`greedy(name, optional)`** — the trailing-string argument was the only one of the fourteen that
+  could not be optional, which made the ordinary chat-command shape (`/sc` toggles, `/sc hello` sends)
+  impossible to express as one node.
+- **`LuckPermsIntegration.groups(uuid)` and `hasPermission(uuid, node)`** — suspending reads that load
+  the user when they are not cached, so the answer is correct for someone who is offline. `groups`
+  returns what LuckPerms itself would say the player has, with inheritance, contexts, temporary grants
+  and negations already applied; reading `InheritanceNode`s off a user and taking their names looks
+  equivalent and ignores all four. Both suspend rather than blocking, because LuckPerms may be backed
+  by a remote database and a `.get()` from a join listener stalls the server tick for as long as it
+  takes to answer. Method handles are now resolved from the declaring interfaces rather than from the
+  implementation object, whose class is not public — invoking a method resolved that way throws
+  `IllegalAccessException` on some JVMs.
+
 ## [5.1.0] — "Bridged" — 2026-08-12
 
 ### Added

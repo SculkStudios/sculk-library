@@ -42,6 +42,25 @@ sculk.integrations
     }
 ```
 
+`primaryGroup` reads the **cache only**, so somebody who is not loaded answers null. For an answer that
+is correct for anyone, online or not, use the suspending reads:
+
+```kotlin
+val groups = luckPerms.groups(uuid).getOrNull().orEmpty()      // every effective group
+val staff = luckPerms.hasPermission(uuid, "myplugin.staff").getOrNull() == true
+```
+
+Both load the user if they are not cached, which is why they suspend. Blocking on that load is the
+mistake worth naming: LuckPerms may be backed by a remote database, and a `.get()` from a join
+listener stalls the server tick for as long as that database takes.
+
+:::note[Groups, not nodes]
+`groups` returns what LuckPerms itself would say the player has — **inheritance, contexts, temporary
+grants and negations all already applied**. Reading `InheritanceNode`s off a user and taking their
+names looks equivalent and is not: it ignores all four, and happily reports a group the player does
+not actually have.
+:::
+
 Unavailable plugins return `SculkResult.Failure`; they do not crash plugin startup.
 
 ## Packet backends
