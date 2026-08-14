@@ -155,15 +155,35 @@ constructor(
         }
     }
 
-    /** Switches to a different [gui] for this player. */
+    /**
+     * Switches to a different [gui] for this player.
+     *
+     * **Records the switch and does not close anything.** It used to call `closeInventory()` to get
+     * out of the click handler, which sends the client back to the game view -- the mouse is
+     * re-grabbed for the camera, and when the next menu opens a tick later the cursor reappears at
+     * the centre of the screen. Every navigating click therefore made the pointer jump, which is
+     * what it was reported as.
+     *
+     * `openInventory` replaces an open screen directly, so the client goes screen to screen and the
+     * pointer stays where the player left it. [MenuRegistry] performs that a tick later -- opening
+     * an inventory from inside `InventoryClickEvent` desynchronises the client's cursor stack.
+     */
     public fun openGui(gui: Gui) {
         pendingGuiSwitch = gui
-        player.closeInventory()
     }
 
-    /** Returns the GUI to open after this session closes, if any. */
+    /**
+     * The GUI to switch to, taken exactly once.
+     *
+     * Cleared on read so the two callers -- the click handler and the close handler -- cannot both
+     * act on it and open the same menu twice.
+     */
     @SculkInternal
-    public fun pendingSwitch(): Gui? = pendingGuiSwitch
+    public fun takePendingSwitch(): Gui? {
+        val next = pendingGuiSwitch
+        pendingGuiSwitch = null
+        return next
+    }
 
     /**
      * Advances to the next page and re-renders the pagination slots.

@@ -78,26 +78,35 @@ constructor(
     public fun forget(inventory: Inventory) {
         sessions.remove(inventory)?.let { session ->
             @OptIn(SculkInternal::class)
-            val next = session.pendingSwitch()
+            val next = session.takePendingSwitch()
 
             @OptIn(SculkInternal::class)
             session.close()
 
-            // The other half of `GuiSession.openGui`, which had none.
-            //
-            // `openGui` set a pending GUI and closed the inventory to get out of the click handler,
-            // and `pendingSwitch()` had **no callers anywhere** -- so every in-menu navigation closed
-            // the menu and opened nothing. To a player, clicking any button in any Sculk menu threw
-            // them out of the menu, which is indistinguishable from the plugin crashing, and nothing
-            // was logged because nothing failed.
-            //
-            // A tick later, and never sooner: this runs inside `InventoryCloseEvent`, and Bukkit
-            // ignores an inventory opened from within one. Scheduled against the player so it is
-            // region-correct on Folia.
+            // The fallback path: a caller that closed the menu by some other route while a switch
+            // was pending. The click handler applies it first and clears it, so this normally finds
+            // nothing -- but a switch recorded and then dropped would be the original bug returning.
             if (next != null) {
                 scheduler.runSyncDelayed(session.player, 1L) { open(next, session.player) }
             }
         }
+    }
+
+    /**
+     * Applies a switch recorded during a click, without closing anything first.
+     *
+     * `openInventory` replaces the screen the player is looking at, so the client never returns to
+     * the game view and the pointer stays where they left it. Closing first is what made the cursor
+     * jump to the centre on every navigating click.
+     *
+     * A tick later, and never sooner: opening an inventory from inside `InventoryClickEvent`
+     * desynchronises the client's held-item stack. Scheduled against the player, so it stays
+     * region-correct on Folia.
+     */
+    @SculkInternal
+    public fun applyPendingSwitch(session: GuiSession) {
+        val next = session.takePendingSwitch() ?: return
+        scheduler.runSyncDelayed(session.player, 1L) { open(next, session.player) }
     }
 
     /** How many menus are open. Exposed so a test can assert nothing leaks. */

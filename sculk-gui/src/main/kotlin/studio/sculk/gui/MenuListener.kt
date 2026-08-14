@@ -38,6 +38,10 @@ public class MenuListener(private val registry: MenuRegistry) : Listener {
 
         if (!clickedTop) return
         session.handleClick(player, event)
+
+        // A click that navigated recorded where to go; apply it without closing this menu first.
+        @OptIn(SculkInternal::class)
+        registry.applyPendingSwitch(session)
     }
 
     @EventHandler(priority = EventPriority.HIGH)
