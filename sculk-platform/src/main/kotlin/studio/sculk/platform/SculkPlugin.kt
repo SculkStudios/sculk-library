@@ -8,6 +8,7 @@ import studio.sculk.annotation.SculkStable
 import studio.sculk.command.CommandHelp
 import studio.sculk.command.CommandSpec
 import studio.sculk.command.HelpCommand
+import studio.sculk.command.CommandText
 import studio.sculk.command.brigadier.BrigadierAdapter
 import studio.sculk.fold
 import studio.sculk.text.SculkTheme
@@ -63,6 +64,18 @@ public abstract class SculkPlugin : JavaPlugin() {
     /** Extra lines beside the start-up banner: version numbers, world names, anything diagnostic. */
     @SculkStable
     protected open fun bannerFacts(): List<Pair<String, String>> = emptyList()
+
+    /**
+     * The wording of the errors the command framework itself emits.
+     *
+     * `BrigadierAdapter` has taken a [CommandText] since it was written and **nothing ever passed
+     * one**, so every plugin got `CommandText.DEFAULT` and the customisation point was unreachable.
+     * A product with its own message prefix therefore had one set of lines -- "Usage: /claim <id>",
+     * "You do not have permission to do that." -- arriving unbranded next to everything else it
+     * says, which reads as a different plugin answering.
+     */
+    @SculkStable
+    protected open fun commandText(): CommandText = CommandText.DEFAULT
 
     @SculkStable
     public lateinit var sculk: SculkPlatform
@@ -131,7 +144,7 @@ public abstract class SculkPlugin : JavaPlugin() {
         // happens to wire things in. Registering this after setup would silently drop everything
         // declared from a helper that ran first.
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) { event ->
-            val adapter = BrigadierAdapter(sculk.messages, sculk.cooldowns, sculk.scope, logger)
+            val adapter = BrigadierAdapter(sculk.messages, sculk.cooldowns, sculk.scope, logger, commandText())
             for (spec in declared) {
                 event.registrar().register(adapter.build(spec), spec.description, spec.aliases)
             }
