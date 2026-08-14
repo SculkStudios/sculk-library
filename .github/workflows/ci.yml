@@ -72,7 +72,7 @@ jobs:
           --health-start-period=20s
 
       mariadb:
-        image: mariadb:11
+        image: mariadb:12
         env:
           MARIADB_ROOT_PASSWORD: root
           MARIADB_DATABASE: sculk
