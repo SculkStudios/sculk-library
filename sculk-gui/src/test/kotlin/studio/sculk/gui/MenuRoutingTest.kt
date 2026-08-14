@@ -4,6 +4,8 @@ import org.bukkit.Material
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -47,6 +49,70 @@ class MenuRoutingTest {
                 interactive()
             }
         }
+    }
+
+    // ---- navigation ----------------------------------------------------------------------------
+    // Two bugs have lived in this seam and neither had a test. First `openGui` recorded a switch
+    // that nothing ever applied, so every navigating click threw the player out of the menu. Then
+    // applying it by closing first sent the client back to the game view, which re-grabs the mouse
+    // and drops the cursor at the centre of the screen on every click.
+
+    @Test
+    fun `switching menus does not close the one the player is looking at`() {
+        val player = server.addPlayer()
+        val session = registry.open(simpleMenu(), player)
+        val before = player.openInventory.topInventory
+
+        session.openGui(simpleMenu())
+
+        assertSame(
+            before,
+            player.openInventory.topInventory,
+            "closing first returns the client to the game view, which is what moved the cursor",
+        )
+    }
+
+    @Test
+    fun `applying the switch opens the next menu`() {
+        val player = server.addPlayer()
+        val session = registry.open(simpleMenu(), player)
+        val first = session.openInventory
+
+        session.openGui(simpleMenu())
+        registry.applyPendingSwitch(session)
+        scheduler.advance(1)
+
+        assertNotSame(first, player.openInventory.topInventory, "the player should be in the new menu")
+        assertNotNull(registry.sessionFor(player.openInventory.topInventory))
+    }
+
+    @Test
+    fun `a switch is applied once, however many handlers look for it`() {
+        val player = server.addPlayer()
+        val session = registry.open(simpleMenu(), player)
+
+        session.openGui(simpleMenu())
+        registry.applyPendingSwitch(session)
+
+        // The close handler is the fallback path and runs for the same session. It must find nothing
+        // left to do, or navigating would open the destination twice -- so the switch is consumed on
+        // read rather than merely inspected.
+        assertNull(
+            session.takePendingSwitch(),
+            "the switch must be taken exactly once, whichever handler gets there first",
+        )
+    }
+
+    @Test
+    fun `a menu with no pending switch is left alone`() {
+        val player = server.addPlayer()
+        val session = registry.open(simpleMenu(), player)
+        val before = player.openInventory.topInventory
+
+        registry.applyPendingSwitch(session)
+        scheduler.advance(1)
+
+        assertSame(before, player.openInventory.topInventory)
     }
 
     @Test
