@@ -76,9 +76,27 @@ constructor(
     /** Forgets [inventory]'s session without closing the player's screen. */
     @SculkInternal
     public fun forget(inventory: Inventory) {
-        sessions.remove(inventory)?.let {
+        sessions.remove(inventory)?.let { session ->
             @OptIn(SculkInternal::class)
-            it.close()
+            val next = session.pendingSwitch()
+
+            @OptIn(SculkInternal::class)
+            session.close()
+
+            // The other half of `GuiSession.openGui`, which had none.
+            //
+            // `openGui` set a pending GUI and closed the inventory to get out of the click handler,
+            // and `pendingSwitch()` had **no callers anywhere** -- so every in-menu navigation closed
+            // the menu and opened nothing. To a player, clicking any button in any Sculk menu threw
+            // them out of the menu, which is indistinguishable from the plugin crashing, and nothing
+            // was logged because nothing failed.
+            //
+            // A tick later, and never sooner: this runs inside `InventoryCloseEvent`, and Bukkit
+            // ignores an inventory opened from within one. Scheduled against the player so it is
+            // region-correct on Folia.
+            if (next != null) {
+                scheduler.runSyncDelayed(session.player, 1L) { open(next, session.player) }
+            }
         }
     }
 
