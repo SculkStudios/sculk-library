@@ -58,7 +58,7 @@ jobs:
       # this slot proves the opposite of what it looks like it proves. That substitution is exactly
       # how `CREATE INDEX IF NOT EXISTS` reached customers.
       mysql:
-        image: mysql:8
+        image: mysql:26
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: sculk
