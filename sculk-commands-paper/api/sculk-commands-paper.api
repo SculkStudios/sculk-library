@@ -1,0 +1,55 @@
+public final class studio/sculk/command/paper/PaperArgument : studio/sculk/command/ArgumentType {
+	public fun getExpected ()Ljava/lang/String;
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+	public fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
+public final class studio/sculk/command/paper/PaperArgumentsKt {
+	public static final fun blockPosition (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun blockState (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun entities (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun entity (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun gameMode (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun itemStack (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun namedColor (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun onlinePlayer (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun onlinePlayers (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun playerProfiles (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun position (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun registryEntry (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;Lio/papermc/paper/registry/RegistryKey;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun textComponent (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun ticks (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun world (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+}
+
+public final class studio/sculk/command/paper/PaperCommandSource : studio/sculk/command/CommandSource {
+	public fun <init> (Lio/papermc/paper/command/brigadier/CommandSourceStack;)V
+	public fun getAudience ()Lnet/kyori/adventure/audience/Audience;
+	public fun getExecutionContext ()Lstudio/sculk/execution/ExecutionContext;
+	public fun getKind ()Lstudio/sculk/command/SenderKind;
+	public fun getName ()Ljava/lang/String;
+	public fun getPlatformSender ()Ljava/lang/Object;
+	public final fun getStack ()Lio/papermc/paper/command/brigadier/CommandSourceStack;
+	public fun getUniqueId ()Ljava/util/UUID;
+	public fun hasPermission (Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/command/paper/PaperCommandSourceKt {
+	public static final fun getPlayer (Lstudio/sculk/command/CommandContext;)Lorg/bukkit/entity/Player;
+	public static final fun getStack (Lstudio/sculk/command/CommandContext;)Lio/papermc/paper/command/brigadier/CommandSourceStack;
+}
+
+public final class studio/sculk/command/paper/PaperCommands {
+	public final fun getMessages ()Lstudio/sculk/command/CommandMessages;
+	public final fun getText ()Lstudio/sculk/text/Text;
+	public final fun register (Lstudio/sculk/command/CommandSpec;)V
+	public final fun register ([Lstudio/sculk/command/CommandSpec;)V
+}
+
+public final class studio/sculk/command/paper/PaperCommandsKt {
+	public static final fun commands (Lstudio/sculk/paper/PaperRuntime;Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lstudio/sculk/command/paper/PaperCommands;
+	public static synthetic fun commands$default (Lstudio/sculk/paper/PaperRuntime;Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;ILjava/lang/Object;)Lstudio/sculk/command/paper/PaperCommands;
+}
+

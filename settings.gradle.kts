@@ -37,6 +37,7 @@ include(
     ":sculk-text",
     ":sculk-config",
     ":sculk-commands",
+    ":sculk-commands-paper",
     ":sculk-testkit",
     ":sculk-paper",
     ":sculk-canvas",
@@ -46,6 +47,7 @@ include(
 // Never published. Each proves something about the published modules on a real server.
 include(
     ":integration-tests:boot",
+    ":integration-tests:commands",
     ":integration-tests:threading",
     ":integration-tests:velocity",
 )

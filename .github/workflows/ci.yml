@@ -72,6 +72,9 @@ jobs:
       - name: Threading on Paper 1.21.4, Paper 26.3, Folia 26.1.2 (two region sizes) and Canvas 26.3
         run: ./gradlew :integration-tests:threading:verifyThreading
 
+      - name: Commands on Paper 1.21.4, Paper 26.3 and Folia 26.1.2
+        run: ./gradlew :integration-tests:commands:verifyCommands
+
       - name: Velocity 4.2.0
         run: ./gradlew :integration-tests:velocity:verifyVelocity
 
