@@ -21,8 +21,8 @@ contract, `COMPATIBILITY.md` the version strategy; decisions and their reasons a
         │ implemented by
  ┌──────┴────────────┬─────────────────┐
  │ sculk-paper       │ sculk-velocity  │
- │  └ sculk-folia    │                 │
- │     └ sculk-canvas│                 │
+ │  (Paper, Folia)   │                 │
+ │  └ sculk-canvas   │                 │
  └──────┬────────────┴─────────────────┘
         │ capability adapters per anchor, selected once at startup
  Paper · Folia · Canvas · Velocity API

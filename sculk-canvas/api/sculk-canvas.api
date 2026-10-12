@@ -1,0 +1,40 @@
+public final class studio/sculk/canvas/CanvasOwnership {
+	public final fun ownsBox (Lorg/bukkit/World;Lorg/bukkit/util/BoundingBox;)Z
+	public final fun ownsPath (Lorg/bukkit/Location;Lorg/bukkit/util/Vector;I)Z
+	public static synthetic fun ownsPath$default (Lstudio/sculk/canvas/CanvasOwnership;Lorg/bukkit/Location;Lorg/bukkit/util/Vector;IILjava/lang/Object;)Z
+}
+
+public final class studio/sculk/canvas/CanvasRegionData {
+	public static final field CALLBACK_BUDGET_NANOS J
+	public static final field Companion Lstudio/sculk/canvas/CanvasRegionData$Companion;
+	public final fun create (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function2;)Lstudio/sculk/canvas/RegionData;
+}
+
+public final class studio/sculk/canvas/CanvasRegionData$Companion {
+}
+
+public final class studio/sculk/canvas/CanvasSupport : studio/sculk/paper/PaperPlatformExtension {
+	public static final field INSTANCE Lstudio/sculk/canvas/CanvasSupport;
+	public fun getId ()Ljava/lang/String;
+	public final fun getOWNERSHIP ()Lstudio/sculk/capability/CapabilityKey;
+	public final fun getREGION_DATA ()Lstudio/sculk/capability/CapabilityKey;
+	public final fun getTICK_MANAGER ()Lstudio/sculk/capability/CapabilityKey;
+	public final fun getWORLDS ()Lstudio/sculk/capability/CapabilityKey;
+	public fun resolve (Lstudio/sculk/paper/PaperPlatformExtension$Context;Lstudio/sculk/capability/Capabilities$Builder;)V
+	public fun sectionShift (Lstudio/sculk/paper/PaperPlatformExtension$Context;)Ljava/lang/Integer;
+}
+
+public final class studio/sculk/canvas/CanvasWorlds {
+	public final fun unload (Lorg/bukkit/World;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun unload$default (Lstudio/sculk/canvas/CanvasWorlds;Lorg/bukkit/World;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/canvas/RegionData {
+	public final fun local ()Ljava/lang/Object;
+}
+
+public abstract interface class studio/sculk/canvas/RegionTarget {
+	public abstract fun forChunk (II)Ljava/lang/Object;
+	public abstract fun getAll ()Ljava/util/Collection;
+}
+

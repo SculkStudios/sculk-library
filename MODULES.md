@@ -19,9 +19,8 @@ Status column: **6.0** ships in the first release; **6.1** is designed for but d
 
 | Module | Capability | Depends on | External | Status |
 | --- | --- | --- | --- | --- |
-| `sculk-paper` | `Sculk.attach`, `SculkPaperPlugin`, Paper runtime, capability adapters per anchor, bootstrap hook, event bridge, Brigadier compiler host | platform-api | paper-api (compileOnly) | 6.0 |
-| `sculk-folia` | Region-aware runtime extensions over `sculk-paper` | paper | — | 6.0 |
-| `sculk-canvas` | Canvas capability provider: regionized data, regionizer ownership checks, async lifecycle events, tick manager | folia | canvas-api (compileOnly) | 6.0 |
+| `sculk-paper` | `Sculk.attach`, `SculkPaperPlugin`, Paper and Folia runtime, capability adapters per anchor, bootstrap hook, event bridge, Brigadier compiler host. Folia needs no module of its own: Paper exposes the same region schedulers and ownership checks | platform-api | paper-api (compileOnly) | 6.0 |
+| `sculk-canvas` | Canvas capability provider: regionized data, bounding-box and movement ownership checks, async world unload, tick manager | paper | canvas-api (compileOnly) | 6.0 |
 | `sculk-velocity` | Velocity runtime: lifecycle over Guice construction, proxy dispatcher, events, Brigadier compiler host | platform-api | velocity-api (compileOnly) | 6.0 |
 | `sculk-velocity-runtime` | Provider plugin carrying Kotlin, kotlinx and Sculk for every Velocity plugin, because Velocity's class loaders share classes across plugins | velocity | — | 6.0 |
 | `sculk-paper-all` | Aggregate of every Paper-side module for authors who want everything | all Paper-side | — | 6.0 |

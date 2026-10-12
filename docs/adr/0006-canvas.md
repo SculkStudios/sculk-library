@@ -14,7 +14,7 @@ builds, and its API licence is not separately stated (`docs/research/c-folia-can
 
 ## Decision
 
-Ship `sculk-canvas` as a capability provider layered on `sculk-folia`, detected by brand
+Ship `sculk-canvas` as a capability provider layered on `sculk-paper`, detected by brand
 `canvasmc:canvas` with a class-presence fallback. Expose regionized data through a typed façade
 whose merge and split callbacks are non-suspending lambdas run inside a guard; expose the extra
 ownership checks, async lifecycle events, async world unload and tick manager as optional

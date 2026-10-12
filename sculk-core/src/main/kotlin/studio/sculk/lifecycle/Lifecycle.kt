@@ -30,28 +30,37 @@ public enum class LifecyclePhase {
 /**
  * Advances through [LifecyclePhase] in order and runs the actions registered for each phase.
  * Phases may be skipped (a Bukkit-style plugin starts at [LifecyclePhase.CONFIGURE]) but never
- * revisited. Not thread-safe: the platform advances it from one thread.
+ * revisited.
+ *
+ * Thread-safe: on Folia the global region thread enters READY while the enabling thread may still
+ * be registering. Actions run on the thread that advances, outside the lock.
  */
 @SculkStable
 public class Lifecycle(initial: LifecyclePhase? = null) {
-    public var phase: LifecyclePhase? = initial
-        private set
-
+    private val lock = Any()
+    private var current: LifecyclePhase? = initial
     private val actions = LinkedHashMap<LifecyclePhase, MutableList<() -> Unit>>()
+
+    public val phase: LifecyclePhase? get() = synchronized(lock) { current }
 
     /** Runs [action] when [target] is entered. Registering for a phase already entered is a wiring bug. */
     public fun on(target: LifecyclePhase, action: () -> Unit) {
-        val current = phase
-        check(current == null || target > current) { "Cannot run an action at $target: the runtime is already at $current." }
-        actions.getOrPut(target) { mutableListOf() } += action
+        synchronized(lock) {
+            val now = current
+            check(now == null || target > now) { "Cannot run an action at $target: the runtime is already at $now." }
+            actions.getOrPut(target) { mutableListOf() } += action
+        }
     }
 
     /** Enters [target], running its actions in registration order. Fails on any attempt to go backwards. */
     public fun advance(target: LifecyclePhase) {
-        val current = phase
-        check(current == null || target > current) { "Cannot move from $current back to $target." }
-        phase = target
-        actions.remove(target)?.forEach { it() }
+        val due = synchronized(lock) {
+            val now = current
+            check(now == null || target > now) { "Cannot move from $now back to $target." }
+            current = target
+            actions.keys.filter { it <= target }.flatMap { actions.remove(it).orEmpty() }
+        }
+        due.forEach { it() }
     }
 
     public fun hasReached(target: LifecyclePhase): Boolean = phase?.let { it >= target } ?: false

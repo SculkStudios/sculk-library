@@ -12,6 +12,7 @@ shadow = "9.6.1"
 run-paper = "3.1.0"
 paper-floor = "1.21.4-R0.1-SNAPSHOT"
 paper-current = "26.3.build.175-stable"
+canvas = "26.3.build.978-stable"
 
 [libraries]
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -24,6 +25,7 @@ archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" 
 kotlin-metadata = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 paper-api-floor = { module = "io.papermc.paper:paper-api", version.ref = "paper-floor" }
 paper-api-current = { module = "io.papermc.paper:paper-api", version.ref = "paper-current" }
+canvas-api = { module = "io.canvasmc.canvas:canvas-api", version.ref = "canvas" }
 
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradle-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint-gradle" }

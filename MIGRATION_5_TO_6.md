@@ -12,7 +12,7 @@ is inventoried in `docs/research/a-sculk5-audit.md` §2.
 | Sculk 5 | Sculk 6 | Notes |
 | --- | --- | --- |
 | `sculk-common` | `sculk-core`, `sculk-coroutines` | Result, handles, version, tasks and clocks move to core; scheduler and coroutine scope are replaced by execution contexts and dispatchers. |
-| `sculk-platform` | `sculk-paper` (+ `sculk-folia`, `sculk-canvas`) | `SculkPlugin` becomes `SculkPaperPlugin`; `Sculk.attach(plugin)` is the primary entry point. |
+| `sculk-platform` | `sculk-paper` (+ `sculk-canvas`) | `SculkPlugin` becomes `SculkPaperPlugin`; `Sculk.attach(plugin)` is the primary entry point. |
 | `sculk-text` | `sculk-text`, `sculk-placeholders` | Placeholders become a reactive, typed layer. |
 | `sculk-config` | `sculk-config` | Same philosophy; transactional reload and layered sources added. |
 | `sculk-series` | `sculk-registry` | Registry keys, tags and sets replace string lookups; aliases only where upstream renamed. |

@@ -46,6 +46,9 @@ public abstract class AbstractSculkRuntime(
     /** Sections platforms add to the shared report. */
     protected open fun DiagnosticReport.Builder.platformSections() {}
 
+    /** Runs after the plugin scope has closed, for platform cleanup such as cancelling stray tasks. */
+    protected open fun afterClose() {}
+
     final override fun diagnostics(): DiagnosticReport = DiagnosticReport.build {
         section("Runtime") {
             entry("Plugin", name)
@@ -69,7 +72,11 @@ public abstract class AbstractSculkRuntime(
         } catch (failure: Exception) {
             log.error("Closing $name's resources failed; the rest were still closed.", failure)
         } finally {
-            lifecycle.advance(LifecyclePhase.STOPPED)
+            try {
+                afterClose()
+            } finally {
+                lifecycle.advance(LifecyclePhase.STOPPED)
+            }
         }
     }
 }

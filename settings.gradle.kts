@@ -20,6 +20,9 @@ dependencyResolutionManagement {
                 includeGroup("com.mojang")
             }
         }
+        maven("https://maven.canvasmc.io/releases") {
+            content { includeGroupAndSubgroups("io.canvasmc") }
+        }
     }
 }
 
@@ -30,6 +33,8 @@ include(
     ":sculk-coroutines",
     ":sculk-platform-api",
     ":sculk-testkit",
+    ":sculk-paper",
+    ":sculk-canvas",
 )
 
 // Never published. Each proves something about the published modules on a real server.
