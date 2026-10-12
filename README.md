@@ -41,10 +41,12 @@ Published artifacts are JVM 21 bytecode and run on both Java generations. Detail
 | Milestone | State |
 | --- | --- |
 | M0 research and architecture | done |
-| M1 build engineering | done: JDK 25 builds JVM 21 bytecode that boots on Paper 1.21.4 (Java 21) and 26.3 (Java 25) |
-| M2 core, platforms, concurrency | next |
+| M1 build engineering | done, except the supply-chain items (dependency verification, lockfiles, licence allow-list, SBOM, provenance), which are scheduled in `REBUILD.md` and block 6.0 |
+| M2 core, platforms, concurrency | done: `sculk-core`, `sculk-coroutines`, `sculk-platform-api`, `sculk-testkit`, `sculk-paper`, `sculk-canvas`, `sculk-velocity`, threading proven on real Paper, Folia, Canvas and Velocity |
+| M3 author experience | in progress: `sculk-text` and `sculk-config` done; commands next |
 
-The full plan is in [`REBUILD.md`](REBUILD.md); decisions are in [`docs/adr`](docs/adr).
+Which modules exist today and which are planned is in [`MODULES.md`](MODULES.md). The full plan is
+in [`REBUILD.md`](REBUILD.md); decisions are in [`docs/adr`](docs/adr).
 
 ## Building
 

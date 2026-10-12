@@ -47,7 +47,7 @@ platform API must not prevent them later.
 | 5.x compatibility facade | Not shipped. `MIGRATION_5_TO_6.md` plus a `sculkMigrate` analysis task instead. | 5.x never reached public distribution; a facade would constrain the new architecture to serve one consumer. |
 | Persistence | JDBC + HikariCP + bounded IO dispatcher in 6.0. | Mature and predictable. R2DBC and Exposed are 6.x candidates behind the same repository contract. |
 | Code generation | KSP2, Gradle first. Annotations compile into the same models the DSL produces. | One command model, no runtime scanning. Maven KSP only once CI proves it. |
-| Maven | First-class consumption in 6.0; `sculk-maven-plugin` in 6.1. | Correct metadata and a BOM matter more than a plugin nobody has asked for. |
+| Maven | First-class consumption and `sculk-maven-plugin` (metadata and verification goals) in 6.0; the Maven plugin is built in M6 after the Gradle plugin. | Correct metadata and a BOM come first. Maven KSP stays documented as unavailable until CI proves it (ADR-0010). |
 | Packets | PacketEvents primary, ProtocolLib where tests pass. Both `compileOnly`, never bundled. | Upstream tracks protocol changes; Sculk should not. Licence stance in `LICENSING.md`. |
 | Documentation | Custom portal, framework chosen after the spike in `docs/research/g-docs-spike.md`. | Navigation and badges are generated from a manifest; a hand-maintained sidebar is a defect. |
 
@@ -65,7 +65,7 @@ No milestone writes bulk code before the previous gate is green.
 | M3 Author experience | text, placeholders, config, events, commands, permissions. | Two example plugins run on the full matrix; JMH baselines for rendering and commands. |
 | M4 Content and UI | items, PDC, registry, recipes, inventory, dialogs, presentation, config admin UI. | Menu, staff and HUD examples rebuilt; Folia inventory-ownership tests pass. |
 | M5 Scenes, assets, world, data, network | scenes, effects, resource packs, world, entity, data, cache, network, packets, integrations, Discord, web. | Real-database CI; Paper↔Velocity network test; packet tests on every anchor. |
-| M6 Tooling and docs | Gradle plugin, BOM, catalog, Maven verification, docs portal, generator, Doctor, internals only if benchmarked. | Generated projects build under Gradle and Maven; docs and snippets build in CI. |
+| M6 Tooling and docs | Gradle plugin, BOM, catalog, `sculk-paper-all`, Maven plugin and verification, docs portal, generator, Doctor, internals only if benchmarked. | Generated projects build under Gradle and Maven; docs and snippets build in CI. |
 | M7 Hardening and RC | Macro benchmarks, leak and concurrency tests, security audit, pilot migrations, migration guide, reproducible release. | Every release blocker below is checked. |
 
 ## Definition of done for a public feature
