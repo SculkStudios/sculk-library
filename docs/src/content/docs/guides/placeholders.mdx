@@ -1,0 +1,203 @@
+---
+title: Placeholders
+description: sculk-placeholders, typed global, audience and relational placeholders as MiniMessage tags, with refresh policies, async loading and change signals.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`sculk-placeholders` (package `studio.sculk.placeholder`) gives a plugin its own placeholders as
+MiniMessage tags: `shop:balance` is written `<shop_balance>` in any template rendered with
+[`sculk-text`](/guides/text/). It is platform-neutral and runs the same on Paper, Folia, Canvas and
+Velocity. The design is recorded in
+[ADR-0026](https://github.com/SculkStudios/sculk-library/blob/dev/docs/adr/0026-placeholders.md).
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-placeholders:6.0.0-SNAPSHOT")
+}
+```
+
+Create one `PlaceholderRegistry` per plugin with the plugin's scope, `PlaceholderRegistry(runtime.scope)`.
+Every placeholder and listener belongs to that scope and is removed when the plugin disables.
+
+The examples on this page are taken from the module's tests, which run on a
+[`FakeExecutor`](/guides/testing/). `Viewer` there is a small `Audience` with a UUID pointer; on a
+server, pass the `Player`.
+
+## Keys, tags and kinds
+
+A key is `namespace:name`, and its tag joins the two with an underscore. A namespace is lower-case
+letters, digits and `-`, never `_`, so every tag belongs to exactly one key. Registering a key twice,
+or a key whose tag would hide one of MiniMessage's own tags, is a wiring bug and throws.
+
+| Kind | Register with | Resolves for | Example |
+| --- | --- | --- | --- |
+| Global | `global`, `globalAsync` | everyone | players online |
+| Audience | `audience`, `audienceAsync` | one audience, by its `Identity.UUID` pointer | a player's balance |
+| Relational | `relational`, `relationalAsync` | one viewer seeing one target | a nametag colour |
+
+Render a template with the resolver that matches who it is for:
+
+| Resolver | Tags it resolves |
+| --- | --- |
+| `resolver()` | global placeholders |
+| `resolver(audience)` | global, and audience placeholders for that audience |
+| `resolver(viewer, target)` | global, audience placeholders for the **target**, and relational placeholders for the pair |
+
+The relational form describes the target as the viewer sees it, as a nametag or a chat line does. A
+tag whose placeholder needs an audience the render does not have is left in the output as written.
+
+```kotlin
+@Test
+fun `a balance renders per player and changes after a payment`() {
+    balances[steve.uniqueId] = 120.0
+    val balance = placeholders.audience(
+        "shop:balance",
+        Refresh.UntilInvalidated,
+        format = { Component.text(String.format(Locale.ROOT, "%,.2f", it)) },
+    ) { uniqueId?.let(balances::get) }
+
+    val template = "<primary>Balance: <shop_balance>"
+    assertEquals("Balance: 120.00", text.render(template, placeholders.resolver(steve)).plain())
+
+    balances[steve.uniqueId] = 1_095.5
+    balance.invalidate(steve)
+    assertEquals("Balance: 1,095.50", text.render(template, placeholders.resolver(steve)).plain())
+}
+
+@Test
+fun `a nametag shows the target's rank and how the viewer relates to them`() {
+    val teams = mapOf(steve.uniqueId to "red", alex.uniqueId to "blue")
+    placeholders.audience("shop:rank") { if (uniqueId == steve.uniqueId) "Owner" else "Member" }
+    placeholders.relational("teams:relation") { if (teams[viewerId] == teams[targetId]) "ally" else "enemy" }
+
+    val nametag = text.render("[<shop_rank>] <teams_relation>", placeholders.resolver(viewer = alex, target = steve))
+    assertEquals("[Owner] enemy", nametag.plain())
+}
+```
+
+A resolver sees its context as `this`: `uniqueId` and `audience` for an audience placeholder,
+`viewer`, `target`, `viewerId` and `targetId` for a relational one, and its arguments for every kind.
+
+## Values are never markup
+
+A placeholder is typed: it keeps its value as `T`, so code can read it with `value(...)`, and shows
+it through a format. By default a component is inserted as built and anything else as its string
+form, unparsed. A player who names themselves `<red>Steve` is shown as `<red>Steve`. Only a component
+the placeholder builds itself carries style or click events, and a null value shows as nothing.
+
+## Arguments
+
+Any kind can take positional arguments: `<stats_value:kills>`. Declare them with
+`PlaceholderArgument.text`, `integer`, `choice` or `of`, make the last ones optional with
+`optional(default)`, and read them with `this[argument]`. A tag with a missing, extra or invalid
+argument is left in the output as written, which shows the mistake where it was made; `value(...)`
+returns it as a `SculkFailure.InvalidInput` naming the argument.
+
+```kotlin
+@Test
+fun `a statistic is chosen by the tag's argument`() {
+    val stat = PlaceholderArgument.choice("stat", mapOf("kills" to 12, "deaths" to 3))
+    placeholders.audience("stats:value", arguments = listOf(stat)) { this[stat] }
+
+    val line = text.render("K <stats_value:kills> / D <stats_value:deaths> / <stats_value:assists>", placeholders.resolver(steve))
+    assertEquals("K 12 / D 3 / <stats_value:assists>", line.plain())
+}
+```
+
+Values are kept per argument list, so `<stats_value:kills>` and `<stats_value:deaths>` are cached
+separately.
+
+## Refresh policies
+
+| `Refresh` | A value is |
+| --- | --- |
+| `Live` (default) | computed on every render, never kept |
+| `Every(interval)` | kept for the interval, or until invalidated |
+| `UntilInvalidated` | kept until the plugin calls `invalidate` |
+
+Invalidate everyone with `invalidate()`, one audience with `invalidate(audience)` or
+`invalidate(uniqueId)`, and one pair with `invalidate(viewer, target)`. Kept values are bounded per
+placeholder (`cacheSize`, 1,024 by default), least recently used first out.
+
+### Slow values load asynchronously
+
+A synchronous resolver runs on the thread that renders. On Folia that is any region thread, several
+at once, so it must be thread-safe, must not block and must not touch the world. Anything behind a
+database or the network is registered with `globalAsync`, `audienceAsync` or `relationalAsync`: the
+resolver is a suspending function that runs in `ExecutionContext.Async`, and a render never waits. It
+shows the last loaded value, or `initial` before the first, and starts at most one load per value
+when the policy says the value is stale.
+
+```kotlin
+@Test
+fun `a value loaded from a database never makes a render wait`() {
+    var stored = 7
+    placeholders.audienceAsync("shop:top", Refresh.Every(30.seconds), initial = "…") {
+        stored.toString() // stands in for a suspending repository call
+    }
+    val resolver = placeholders.resolver(steve)
+
+    assertEquals("Top …", text.render("Top <shop_top>", resolver).plain())
+    executor.tick() // the load runs in the async context
+    assertEquals("Top 7", text.render("Top <shop_top>", resolver).plain())
+
+    stored = 3
+    clock.advance(Duration.ofSeconds(30))
+    assertEquals("Top 7", text.render("Top <shop_top>", resolver).plain()) // stale while it reloads
+    executor.tick()
+    assertEquals("Top 3", text.render("Top <shop_top>", resolver).plain())
+}
+```
+
+A load that throws is reported to the scope's failure handler. The last value stays shown, and the
+next attempt waits five seconds unless the placeholder is invalidated first. A load that started
+before an invalidation never counts as fresh.
+
+## Change signals
+
+`onChange` calls a listener with a `PlaceholderChange` whenever a value may have changed: on every
+invalidation, when an async load delivers a different value, and when a value recomputed after its
+interval differs from the one it replaces. The change names the placeholder and narrows it to
+`Audience(uniqueId)`, `Relation(viewer, target)` or `Everyone`, so a sidebar or tab list redraws only
+the lines that need it. The listener runs on the thread that caused the change and must be quick
+and thread-safe.
+
+`invalidateWith(source)` links a placeholder derived from another: when the source changes for one
+audience, the dependent is invalidated for the same audience. Links form an acyclic graph; a cycle
+throws.
+
+```kotlin
+@Test
+fun `a sidebar learns which players' lines changed`() {
+    val dirty = ConcurrentHashMap.newKeySet<UUID>()
+    placeholders.onChange { change ->
+        when (change) {
+            is PlaceholderChange.Audience -> dirty += change.uniqueId
+            is PlaceholderChange.Relation -> dirty += change.viewer
+            is PlaceholderChange.Everyone -> dirty += listOf(steve.uniqueId, alex.uniqueId)
+        }
+    }
+    val balance = placeholders.audience("shop:balance", Refresh.UntilInvalidated) { uniqueId?.let(balances::get) ?: 0.0 }
+    val wealth = placeholders.audience("shop:wealth", Refresh.UntilInvalidated) {
+        if ((balance.value(audience).getOrNull() ?: 0.0) > 1_000) "rich" else "modest"
+    }
+    wealth.invalidateWith(balance)
+
+    balances[steve.uniqueId] = 5_000.0
+    balance.invalidate(steve)
+    assertEquals(setOf(steve.uniqueId), dirty)
+    assertEquals("rich", wealth.value(steve).getOrNull())
+}
+```
+
+## PlaceholderAPI and MiniPlaceholders
+
+<Aside>
+  The bridges are separate, planned modules: `sculk-placeholderapi` and `sculk-miniplaceholders`.
+  Each walks `registered` and maps every placeholder onto the other system by kind, calling
+  `value(...)` and `render(...)`. Output from another plugin's placeholders enters Sculk as a value,
+  never as markup.
+</Aside>
