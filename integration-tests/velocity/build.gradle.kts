@@ -10,6 +10,7 @@ plugins {
 dependencies {
     compileOnly(libs.velocity.api)
     implementation(project(":sculk-velocity"))
+    implementation(project(":sculk-commands-velocity"))
 }
 
 tasks.processResources {

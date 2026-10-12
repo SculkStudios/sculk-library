@@ -38,6 +38,7 @@ include(
     ":sculk-config",
     ":sculk-commands",
     ":sculk-commands-paper",
+    ":sculk-commands-velocity",
     ":sculk-testkit",
     ":sculk-paper",
     ":sculk-canvas",

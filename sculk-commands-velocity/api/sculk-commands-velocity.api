@@ -1,0 +1,36 @@
+public final class studio/sculk/command/velocity/ProxyArgument : studio/sculk/command/ArgumentType {
+	public fun getExpected ()Ljava/lang/String;
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+	public fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
+public final class studio/sculk/command/velocity/VelocityCommandSource : studio/sculk/command/CommandSource {
+	public fun <init> (Lcom/velocitypowered/api/command/CommandSource;Lcom/velocitypowered/api/proxy/ProxyServer;)V
+	public fun getAudience ()Lnet/kyori/adventure/audience/Audience;
+	public fun getExecutionContext ()Lstudio/sculk/execution/ExecutionContext;
+	public fun getKind ()Lstudio/sculk/command/SenderKind;
+	public fun getName ()Ljava/lang/String;
+	public fun getPlatformSender ()Ljava/lang/Object;
+	public final fun getProxy ()Lcom/velocitypowered/api/proxy/ProxyServer;
+	public final fun getSource ()Lcom/velocitypowered/api/command/CommandSource;
+	public fun getUniqueId ()Ljava/util/UUID;
+	public fun hasPermission (Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/command/velocity/VelocityCommands {
+	public final fun getMessages ()Lstudio/sculk/command/CommandMessages;
+	public final fun getText ()Lstudio/sculk/text/Text;
+	public final fun register (Lstudio/sculk/command/CommandSpec;)V
+	public final fun register ([Lstudio/sculk/command/CommandSpec;)V
+}
+
+public final class studio/sculk/command/velocity/VelocityCommandsKt {
+	public static final fun commands (Lstudio/sculk/velocity/VelocityRuntime;Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lstudio/sculk/command/velocity/VelocityCommands;
+	public static synthetic fun commands$default (Lstudio/sculk/velocity/VelocityRuntime;Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;ILjava/lang/Object;)Lstudio/sculk/command/velocity/VelocityCommands;
+	public static final fun getVelocitySource (Lstudio/sculk/command/CommandContext;)Lcom/velocitypowered/api/command/CommandSource;
+	public static final fun proxyPlayer (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public static final fun server (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+}
+
