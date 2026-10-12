@@ -91,9 +91,10 @@ class-level `ApiStatus` marking differs between anchors (`ApiStatus` and `Deprec
 retention, so bytecode is the only place to read them; class kind is what caught `Attribute`
 turning from enum to interface and will catch `ItemStack` becoming an interface).
 
-Planned extensions, in the milestone that first needs them: method descriptors and method-level
-`ApiStatus` from a probe list, and static constant sets on holders such as `RegistryEvents`,
-`MenuType` and `DataComponentTypes` (M3, for the command argument catalogue); the Adventure,
+Since M3 the generator also compares, member by member, the public methods and fields of a probe
+list (`ArgumentTypes`, `RegistryKey`, `RegistryEvents`, `DataComponentTypes`, `MenuType`,
+`LifecycleEvents`), with method-level `ApiStatus` and deprecation, under `members` in its output.
+Planned extensions, in the milestone that first needs them: the Adventure,
 Brigadier and JSpecify versions from each POM (M3); generating the CI server matrix from the
 anchors and the Fill API instead of the shared hand-pinned `ServerMatrix` (M3); runtime probe lists, the
 documentation badges and the compatibility report (M6). The generator does not prove behaviour;

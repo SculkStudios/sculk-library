@@ -16,7 +16,7 @@ dependencies {
     testImplementation(libs.adventure.plain)
 }
 
-val adventureLatest: Configuration by configurations.creating {
+val adventureLatest: Configuration = configurations.create("adventureLatest") {
     isCanBeConsumed = false
 }
 

@@ -27,5 +27,15 @@ tasks.register<CompatibilityScan>("scanPaperApi") {
     description = "Writes the classes whose presence, kind or experimental status differs across the Paper anchors."
     anchorNames = anchors.keys.toList()
     anchorConfigurations.forEach { anchorJars.from(it) }
+    // Classes whose members appear, disappear or change status within a supported range; each feeds a
+    // capability or a per-member opt-in (COMPATIBILITY.md).
+    memberProbes.addAll(
+        "io.papermc.paper.command.brigadier.argument.ArgumentTypes",
+        "io.papermc.paper.registry.RegistryKey",
+        "io.papermc.paper.registry.event.RegistryEvents",
+        "io.papermc.paper.datacomponent.DataComponentTypes",
+        "org.bukkit.inventory.MenuType",
+        "io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents",
+    )
     output = layout.buildDirectory.file("compatibility/paper-api.json")
 }
