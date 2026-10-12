@@ -31,7 +31,7 @@ Status column: **6.0** ships in the first release; **6.1** is designed for but d
 | --- | --- | --- | --- | --- | --- |
 | `sculk-text` | Themes, semantic styles, trusted-template rendering, translations and plurals, glyph metrics, wrapping, centring | core | adventure, minimessage (compileOnly) | yes | 6.0 |
 | `sculk-placeholders` | Typed placeholders as `TagResolver`s with refresh policy and change signals; global, audience, relational, contextual | text, coroutines | — | yes | 6.0 |
-| `sculk-config` | Typed YAML with comment and unknown-key preservation, migrations, validation, transactional reload, layered sources, secrets | core, coroutines | kotlinx-serialization-core, kotaml, snakeyaml-engine | yes | 6.0 |
+| `sculk-config` | Typed YAML with comment and unknown-key preservation, migrations, validation, transactional reload, environment placeholders, secrets | core | kotlinx-serialization-core, snakeyaml-engine | yes | 6.0 |
 | `sculk-commands` | Immutable `CommandSpec`, DSL, argument catalogue, middleware, cooldowns, confirmation, flags, help, serverless test runner | text, coroutines | brigadier (compileOnly) | yes | 6.0 |
 | `sculk-events` | `listen` (immediate), `observe` (suspending), awaitable events, lifecycle-bound handles | coroutines, platform-api | — | yes | 6.0 |
 | `sculk-permissions` | Permission descriptors, native backend, context-aware checks | core, platform-api | — | yes | 6.0 |

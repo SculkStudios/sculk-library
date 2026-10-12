@@ -29,7 +29,7 @@ consequences matter more than exhaustive option surveys.
 | 0008 | [Paper plugins, Bukkit-style plugins and the Sculk lifecycle](0008-plugin-flavours-and-lifecycle.md) | Accepted |
 | 0009 | [Command model](0009-command-model.md) | Accepted |
 | 0010 | [DSL first, compile-time annotations second](0010-dsl-and-codegen.md) | Accepted |
-| 0011 | [Configuration serialisation](0011-config-serialization.md) | Accepted |
+| 0011 | [Configuration serialisation](0011-config-serialization.md) | Superseded by ADR-0021 |
 | 0012 | [Packet backend strategy](0012-packet-backend.md) | Accepted |
 | 0013 | [Resource-pack architecture](0013-resource-packs.md) | Accepted |
 | 0014 | [Persistence architecture](0014-persistence.md) | Accepted |
@@ -39,3 +39,4 @@ consequences matter more than exhaustive option surveys.
 | 0018 | [Repository and branches](0018-repository-and-branches.md) | Superseded by ADR-0020 |
 | 0019 | [Event handler semantics](0019-event-handler-semantics.md) | Accepted |
 | 0020 | [Two branches, main and dev](0020-two-branches.md) | Accepted |
+| 0021 | [Configuration codec on snakeyaml-engine](0021-config-codec.md) | Accepted |

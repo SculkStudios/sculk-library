@@ -1,6 +1,6 @@
 # ADR-0011: Configuration serialisation
 
-**Status**: Accepted · **Date**: 2026-10-12 · **Supersedes**: —
+**Status**: Superseded by ADR-0021 · **Date**: 2026-10-12 · **Supersedes**: —
 
 ## Context
 

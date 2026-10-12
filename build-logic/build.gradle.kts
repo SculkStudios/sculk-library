@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation(libs.gradle.kotlin)
+    implementation(libs.gradle.kotlin.serialization)
     implementation(libs.gradle.ktlint)
     implementation(libs.gradle.dokka)
     implementation(libs.gradle.maven.publish)
