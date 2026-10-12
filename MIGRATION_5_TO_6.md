@@ -18,7 +18,7 @@ is inventoried in `docs/research/a-sculk5-audit.md` §2.
 | `sculk-series` | `sculk-registry` | Registry keys, tags and sets replace string lookups; aliases only where upstream renamed. |
 | `sculk-items` | `sculk-items` | `ItemBuilder` becomes an immutable `ItemSpec`; typed PDC absorbed here. |
 | `sculk-integrations` | `sculk-permissions`, `sculk-luckperms`, `sculk-vault`, `sculk-placeholderapi`, `sculk-miniplaceholders`, `sculk-nexo`, `sculk-oraxen`, `sculk-itemsadder` | One artifact per integration; typed, cached adapters. |
-| `sculk-commands` | `sculk-commands` | Same `CommandSpec` idea; native Brigadier argument types, Velocity compiler, KSP frontend. |
+| `sculk-commands` | `sculk-commands`, `sculk-commands-paper`, `sculk-commands-velocity` | Same `CommandSpec` idea; the neutral module has no Brigadier dependency, and each platform module compiles specs through that platform's own Brigadier API with native argument types (ADR-0022). KSP frontend. |
 | `sculk-gui` | `sculk-inventory` | State-driven, diff-rendered menus; typed native views. |
 | `sculk-hud` | `sculk-presentation` | Render graph with update policies; tab list, nametags and below-name join sidebar and boss bars. |
 | `sculk-visual` | `sculk-scenes`, `sculk-effects` | Scene graph over display entities; animation engine; particle shapes. Holograms and nametags become scene nodes and presentation surfaces. |

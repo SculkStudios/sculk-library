@@ -19,7 +19,7 @@ correctly:
   reports whether it is native, emulated, degraded or unavailable on the running server.
 - **Specs as data.** Commands, items, menus, dialogs and scenes are immutable values compiled once
   for the platform, so they test without a server.
-- **Native where it matters.** Commands compile to Paper's Brigadier types, so clients validate
+- **Native where it matters.** Commands compile to Paper's and Velocity's own Brigadier, so clients validate
   arguments themselves.
 - **Safe text.** Values never become markup.
 - **Modular.** Depend on one module or on everything.

@@ -86,7 +86,7 @@ Legend: **N** = native Brigadier node (client validates + suggests) · **S** = s
 | optional / default | via sibling `executes()` | `setOptional`, `ListArgument`, `MapArgument` | `optional()` + default value, `Either`, aggregate parsers | `@Optional`, `@Default`, `Optional<T>` | `@OptionalArg`, `Optional<T>` |
 | custom type | `CustomArgumentType` (wraps native) | `CustomArgument` (wraps native) | `ArgumentParser` + `BrigadierMapping` | `ParameterType` + `ArgumentTypeFactory` | `ArgumentResolver` |
 
-Reading: Paper already exposes 37 native types incl. registry-generic `resource()`; CommandAPI's breadth is Paper's breadth re-exported through per-version NMS; cloud maps ~12 types natively and string-parses the rest; Lamp maps 5; LiteCommands maps none. Any Sculk `ArgumentType` registry that targets `ArgumentTypes` directly beats all four on Paper. Velocity natively offers only Mojang primitives + custom; backend-only types must be emulated or forwarded (cf. workstream D).
+Reading: Paper already exposes 37 native types incl. registry-generic `resource()`; CommandAPI's breadth is Paper's breadth re-exported through per-version NMS; cloud maps ~12 types natively and string-parses the rest; Lamp maps 5; LiteCommands maps none. Any Sculk `ArgumentType` registry that targets `ArgumentTypes` directly beats all four on Paper. Velocity natively offers only Mojang primitives; backend-only types must be emulated or forwarded (cf. workstream D). **Corrected 2026-10-12:** an earlier version said "primitives + custom"; Velocity supports no custom argument types ("Custom plugin command argument types are not supported in Velocity", docs.papermc.io/velocity/dev/command-api). See ADR-0022.
 
 ### A.4 Execution pipeline comparison (deep dive 2)
 

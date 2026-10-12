@@ -34,7 +34,9 @@ planned module is in `REBUILD.md`.
 | `sculk-text` | Themes, semantic styles, trusted-template rendering, translations and plurals, glyph metrics, wrapping, centring | core | adventure, minimessage (compileOnly) | yes | done |
 | `sculk-placeholders` | Typed placeholders as `TagResolver`s with refresh policy and change signals; global, audience, relational, contextual | text, coroutines | — | yes | planned |
 | `sculk-config` | Typed YAML with comment and unknown-key preservation, migrations, validation, transactional reload, environment placeholders, secrets | core | kotlinx-serialization-core, snakeyaml-engine | yes | done |
-| `sculk-commands` | Immutable `CommandSpec`, DSL, argument catalogue, middleware, cooldowns, confirmation, flags, help, serverless test runner | text, coroutines | brigadier (compileOnly) | yes | planned |
+| `sculk-commands` | Immutable `CommandSpec`, DSL, neutral argument model (primitive types and validators), middleware, cooldowns, confirmation, flags, help and usage, server-free test runner that interprets the spec (ADR-0022) | text, coroutines | — (no Brigadier) | yes | planned (next) |
+| `sculk-commands-paper` | Compiles a spec through Paper's `io.papermc.paper.command.brigadier` API (`Commands`, `ArgumentTypes`, `LifecycleEvents.COMMANDS`); Paper argument catalogue: players, entity selectors, positions, registry resources | commands, paper | paper-api (compileOnly; brings Brigadier) | no | planned |
+| `sculk-commands-velocity` | Compiles a spec into a `BrigadierCommand`; proxy catalogue (player, server); backend-only types sent as strings and validated on the proxy, since Velocity supports no custom argument types | commands, velocity | velocity-api (compileOnly; brings velocity-brigadier) | no | planned |
 | `sculk-events` | `listen` (immediate), `observe` (suspending), awaitable events, lifecycle-bound handles | coroutines, platform-api | — | yes | planned |
 | `sculk-permissions` | Permission descriptors, native backend, context-aware checks | core, platform-api | — | yes | planned |
 
@@ -146,7 +148,8 @@ Never published: `integration-tests/*` (server-side test plugins) and `tooling/c
 | Rule | Scope |
 | --- | --- |
 | No `org.bukkit`, `io.papermc`, `com.velocitypowered` | every module marked neutral |
-| No `net.minecraft` or `com.mojang` | everything outside `sculk-internals-*` |
+| No `com.mojang.brigadier` (platform API, as `paper-api` and `velocity-api` bring it) | every module marked neutral |
+| No `net.minecraft`, CraftBukkit, or any other `com.mojang` package | everything outside `sculk-internals-*` |
 | No PacketEvents | outside `sculk-packets-packetevents` |
 | No ProtocolLib | outside `sculk-packets-protocollib` |
 | No JDA | outside `sculk-discord-jda` |

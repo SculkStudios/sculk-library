@@ -30,7 +30,7 @@ pull request so it cannot rot.
 | --- | --- |
 | Text | Template parse, render with placeholders, glyph-width measurement, wrapping |
 | Placeholders | Graph invalidation fan-out for 1, 10 and 100 dependents |
-| Commands | Spec compilation to Brigadier, execution overhead per invocation, suggestion generation |
+| Commands | Spec compilation to Paper and Velocity Brigadier trees, execution overhead per invocation, suggestion generation, test-runner interpretation |
 | Config | Load, validate and migrate a 500-line file |
 | Items | `ItemSpec` to `ItemStack` on data-component and `ItemMeta` adapters |
 | PDC | Codec round trips for every built-in type |

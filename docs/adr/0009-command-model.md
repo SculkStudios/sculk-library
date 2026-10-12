@@ -1,6 +1,6 @@
 # ADR-0009: Command model
 
-**Status**: Accepted · **Date**: 2026-10-12 · **Supersedes**: —
+**Status**: Superseded by ADR-0022 · **Date**: 2026-10-12 · **Supersedes**: —
 
 ## Context
 

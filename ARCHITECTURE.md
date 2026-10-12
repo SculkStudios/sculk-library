@@ -72,7 +72,7 @@ made 5.x testable without a server and what 6 keeps everywhere:
 
 | Spec | Built by | Compiled to |
 | --- | --- | --- |
-| `CommandSpec` | DSL or KSP annotations | Paper Brigadier tree, Velocity Brigadier tree, serverless test runner |
+| `CommandSpec` | DSL or KSP annotations | Paper Brigadier tree (`sculk-commands-paper`), Velocity `BrigadierCommand` (`sculk-commands-velocity`); the neutral test runner interprets the spec without Brigadier (ADR-0022) |
 | `ItemSpec` | DSL or config | data components or `ItemMeta`, per capability |
 | `MenuSpec<S>` | DSL | typed menu view plus a renderer that diffs state |
 | `DialogSpec` | DSL | Paper dialog, or an explicit fallback |
