@@ -1,0 +1,170 @@
+---
+title: Commands
+description: sculk-commands and its Paper and Velocity compilers, one typed command DSL compiled into each platform's own Brigadier tree, with a server-free dispatcher for tests.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A command is declared once as data and runs on Paper, Folia, Canvas and Velocity. `sculk-commands`
+holds the declaration and a dispatcher that runs it without a server; `sculk-commands-paper` and
+`sculk-commands-velocity` compile it into each platform's own Brigadier tree, so the client
+validates and suggests arguments as it does for vanilla commands. The design is recorded in
+[ADR-0022](https://github.com/SculkStudios/sculk-library/blob/dev/docs/adr/0022-commands-on-platform-brigadier.md).
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-commands-paper:6.0.0-SNAPSHOT")    // or sculk-commands-velocity
+}
+```
+
+The examples on this page are taken from the module's tests, which run them on every build.
+
+## Declaring a command
+
+Arguments declared in a block form a chain, each following the last. `executes` runs when input
+ends at the end of the chain; `player` does the same for players only. Executors read arguments
+through the handles their declarations returned, `this[amount]`, with the declared type.
+
+```kotlin
+private val pay = command("pay") {
+    description = "Send coins to another player"
+    permission = "economy.pay"
+    val target = word("player")
+    val amount = double("amount", min = 0.01)
+    player {
+        val sender = source.name
+        val sum = this[amount]
+        if ((balances[sender] ?: 0.0) < sum) fail("<danger>You only have <balance> coins.", "balance" to balances[sender])
+        balances.merge(sender, -sum, Double::plus)
+        balances.merge(this[target], sum, Double::plus)
+        reply("<success>Sent <amount> coins to <target>.", "amount" to sum, "target" to this[target])
+    }
+}
+```
+
+`reply` renders through [`sculk-text`](/guides/text/), with your theme. Values are inserted as
+plain text, never as markup, so a player name containing `<red>` is printed, not obeyed. `fail`
+ends the command and shows its message as the outcome; it is not logged as an error. An exception
+from an executor gives the sender a short generic message and the full cause goes to the log.
+
+## Words, aliases and help
+
+`literal` branches from the word of the block it is written in. Aliases lead to the same branch and
+are matched without regard to case; help shows only the main word. `help()` adds a `help` word that
+lists every form the sender may use, generated from the tree.
+
+```kotlin
+private val economy = command("economy", "eco") {
+    permission = "economy.admin"
+    help()
+    literal("give", "add") {
+        val target = word("player")
+        val amount = double("amount", min = 0.01)
+        executes { balances.merge(this[target], this[amount], Double::plus) }
+    }
+    literal("reset") {
+        confirm(10.seconds)
+        executes { balances.clear() }
+    }
+}
+```
+
+To continue a command after an argument, as in `/eco <player> give <amount>`, use
+`after(argument) { … }`. The builder checks the tree as it is built: a word declared twice at one
+position, anything after a greedy argument, a required argument after an optional one, or two
+arguments with one name on a path each throw at once.
+
+## Optional arguments
+
+The last arguments of a chain can be optional. `optional()` reads as null when the sender leaves the
+argument out; `optional(default)` reads as the default.
+
+```kotlin
+private val balance = command("balance", "bal") {
+    val target = word("player").optional()
+    executes {
+        val name = this[target] ?: source.name
+        reply("<primary><name></primary> has <value><coins></value> coins.", "name" to name, "coins" to (balances[name] ?: 0.0))
+    }
+}
+```
+
+## Argument types
+
+| Function | Reads | Native on Paper | Native on Velocity |
+| --- | --- | --- | --- |
+| `boolean`, `integer`, `long`, `double` | the value, with optional bounds | yes | yes |
+| `word`, `string`, `greedy` | a word, a word or quoted text, the rest of the line; with optional length and pattern | yes (without length or pattern) | yes |
+| `choice` | one of a fixed set of words, as a value | parsed by Sculk | parsed by Sculk |
+| `uuid`, `key` | a UUID, a namespaced key | yes | parsed by Sculk |
+| `duration` | `90s`, `5m`, `1h30m`, `2d` | parsed by Sculk | parsed by Sculk |
+
+`sculk-commands-paper` adds Paper's own argument types: `onlinePlayer`, `onlinePlayers`,
+`playerProfiles`, `entity`, `entities`, `blockPosition`, `position`, `world`, `gameMode`,
+`itemStack`, `blockState`, `namedColor`, `textComponent`, `ticks` and `registryEntry`. Selectors such
+as `@p` resolve against the sender, on the thread the command runs on. `sculk-commands-velocity`
+adds `proxyPlayer` and `server`.
+
+<Aside>
+Velocity supports no custom argument types, so on a proxy everything but booleans, numbers and
+plain strings reaches the client as a string and is parsed by the proxy before the executor runs. A
+value that does not parse reaches the sender as the usual invalid-argument message.
+</Aside>
+
+Any other type implements `ArgumentType<T>`: a shape (word, quotable or greedy), what a valid value
+looks like, a parser that returns a `SculkResult`, and optional suggestions. Platforms carry it as a
+string of that shape and parse it with the same rules everywhere.
+
+## Middleware, cooldowns and confirmation
+
+Middleware wraps every executor in its block and the blocks inside it, outermost first. A
+middleware that does not call `proceed` stops the command. `cooldown` and `confirm` are built in;
+the console and command blocks share one cooldown.
+
+```kotlin
+private val daily = command("daily") {
+    cooldown(20.hours)
+    player { reply("<success>Here are your daily coins.") }
+}
+```
+
+## Registering
+
+On Paper, register while the plugin enables, before the server builds its command tree.
+Registering later is refused, because the tree is already built.
+
+```kotlin
+override suspend fun start() {
+    sculk.commands().register(pay, economy, balance, daily)
+}
+```
+
+On Velocity, `sculk.commands().register(...)` works at any time, and commands are unregistered when
+the plugin's runtime closes.
+
+Executors start in the sender's own execution context: the player's entity on Folia and Canvas, the
+global region for the console, and the plugin executor on a proxy. See
+[execution contexts](/concepts/execution/).
+
+## Testing
+
+`CommandDispatcher` runs specs without a server, the same way the platform trees parse them. A
+conformance suite runs every input through Paper's tree and through the dispatcher on real Paper,
+Folia and Velocity servers and fails if they disagree.
+
+```kotlin
+val dispatcher = CommandDispatcher()
+dispatcher.register(pay)
+dispatcher.register(balance)
+val steve = FakeCommandSource("Steve", permissions = setOf("economy.pay"))
+
+dispatcher.execute(steve, "pay Alex 25")
+dispatcher.execute(steve, "balance Alex")
+
+assertEquals(listOf("Sent 25.0 coins to Alex.", "Alex has 45.0 coins."), steve.plainMessages)
+```
+
+`FakeCommandSource` comes from [`sculk-testkit`](/guides/testing/). It holds permissions (`*` grants
+all) and records every message it is sent.

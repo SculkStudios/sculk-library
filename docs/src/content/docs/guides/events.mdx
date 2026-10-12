@@ -1,0 +1,100 @@
+---
+title: Events
+description: sculk-events, three handler kinds with one contract on Paper, Folia, Canvas and Velocity, plus a bus for events a plugin defines itself.
+sidebar:
+  order: 7
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`sculk-events` gives every platform the same three handler kinds, told apart by the API rather than
+by documentation. The design is recorded in
+[ADR-0019](https://github.com/SculkStudios/sculk-library/blob/dev/docs/adr/0019-event-handler-semantics.md).
+
+| Kind | Function | Runs | Can change the event |
+| --- | --- | --- | --- |
+| Immediate | `listen` | a plain function, on the thread firing the event, in priority order | yes |
+| Observer | `observe` | a suspending function, started once every decision is final | no |
+| Awaited | `await` | a suspending function the firer waits for, up to a timeout | yes |
+
+`await` exists only where the firer genuinely waits: Velocity's resulted events and events a plugin
+fires itself. A suspending handler on a Paper event could never cancel it after its first
+suspension, so Paper offers no `await`.
+
+A handler that throws is reported with the event type and never stops the others. Every handler
+belongs to the scope that registered it and ends when the plugin disables. Cancelled events are
+skipped unless a handler asks for them with `includeCancelled = true`.
+
+## Paper, Folia and Canvas
+
+```kotlin
+sculk.events.listen<PlayerJoinEvent> { event -> event.joinMessage(null) }
+sculk.events.observe<PlayerQuitEvent> { event -> accounts.save(event.player.uniqueId) }
+```
+
+`sculk.events` registers through Bukkit's public `PluginManager.registerEvent`. Register concrete
+event types such as `PlayerJoinEvent`: Bukkit refuses abstract ones. Observers run at MONITOR,
+start on the thread that fired the event, and resume after a suspension in the event's own context:
+the player's or entity's for their events, the block's region for block events, and the global
+region otherwise.
+
+<Aside type="caution">
+On Folia and Canvas, events fire in parallel on different region threads. State shared between
+handlers must be thread-safe.
+</Aside>
+
+## Velocity
+
+```kotlin
+sculk.events.await<LoginEvent> { event ->
+    if (bans.isBanned(event.player.uniqueId)) event.result = ResultedEvent.ComponentResult.denied(Component.text("Banned"))
+}
+```
+
+Velocity waits for `await` handlers through its own continuations, so a handler can deny a login
+after a database check. The default timeout is five seconds; past it, the event continues without
+the handler's answer and the timeout is reported. A denied result counts as cancelled. `listen`
+handlers run on the thread that fired the event, which for some events is a network event loop, so
+they must not block.
+
+## Events a plugin defines
+
+`LocalEventBus` fires events a plugin defines itself. Because the firer is a coroutine that waits,
+every handler kind is available: `listen` and `await` handlers run one after another in priority
+order, then observers start in the firer's context. A handler for a type also receives its
+subtypes.
+
+The examples below are taken from the module's tests.
+
+```kotlin
+class ShopPurchase(val player: String, val item: String, var price: Int) : Cancellable {
+    override var isCancelled: Boolean = false
+}
+```
+
+```kotlin
+val events = LocalEventBus(scope) { type, failure -> println("A ${type.simpleName} handler failed: $failure") }
+
+events.listen<ShopPurchase>(EventPriority.LOW) { purchase ->
+    if (purchase.item == "bedrock") purchase.isCancelled = true
+}
+events.await<ShopPurchase> { purchase ->
+    delayTicks(1) // a database lookup in a real plugin
+    if (purchase.player == "Steve") purchase.price = purchase.price * 9 / 10
+}
+events.observe<ShopPurchase> { purchase ->
+    sales += "${purchase.player} bought ${purchase.item} for ${purchase.price}"
+}
+```
+
+`fire` returns the event once every deciding handler has run, so the caller reads the outcome:
+
+```kotlin
+val purchase = executor.run { events.fire(ShopPurchase("Steve", "diamond", 100)) }
+```
+
+## Priorities
+
+`EventPriority` runs `LOWEST` first and `MONITOR` last on every platform, as Bukkit does. Sculk maps
+it onto Velocity's numeric priorities, where higher numbers run first. `MONITOR` handlers must not
+change the event.
