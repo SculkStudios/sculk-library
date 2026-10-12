@@ -1,6 +1,36 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    ":semanticCommits",
+    "group:kotlinx-coroutinesMonorepo",
+    "group:junit-frameworkMonorepo"
+  ],
+  "baseBranches": ["sculk-6"],
+  "automerge": false,
+  "minimumReleaseAge": "7 days",
+  "packageRules": [
+    {
+      "groupName": "Kotlin toolchain",
+      "matchPackageNames": ["/^org\\.jetbrains\\.kotlin/", "/^com\\.google\\.devtools\\.ksp/", "/^org\\.jetbrains\\.dokka/"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Anchor builds are pinned deliberately; COMPATIBILITY.md is updated alongside any move.",
+      "matchPackageNames": ["io.papermc.paper:paper-api"],
+      "enabled": false,
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "matchManagers": ["gradle-wrapper"],
+      "schedule": ["before 6am on monday"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "schedule": ["before 6am on monday"],
+      "minimumReleaseAge": "7 days"
+    }
   ]
 }
