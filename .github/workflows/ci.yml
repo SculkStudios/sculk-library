@@ -22,14 +22,17 @@ jobs:
 
       # The last version listed becomes JAVA_HOME and runs Gradle; the build compiles on 25 and runs
       # the unit tests on both, so both must be installed.
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: |
             21
             25
 
+      # Gradle only writes its cache from the default branch unless told otherwise, and 6 lives on dev.
       - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
 
       - name: Build, test on Java 21 and 25, check ABI, architecture and bytecode level
         run: ./gradlew build
@@ -51,19 +54,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: |
             21
             25
 
+      # Gradle only writes its cache from the default branch unless told otherwise, and 6 lives on dev.
       - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
 
       - name: Boot on Paper 1.21.4 (Java 21) and Paper 26.3 (Java 25)
         run: ./gradlew :integration-tests:boot:verifyBoot
 
-      - name: Threading on Paper 1.21.4, Paper 26.3, Folia 26.1.2 and Canvas 26.3
+      - name: Threading on Paper 1.21.4, Paper 26.3, Folia 26.1.2 (two region sizes) and Canvas 26.3
         run: ./gradlew :integration-tests:threading:verifyThreading
 
       - name: Velocity 4.2.0

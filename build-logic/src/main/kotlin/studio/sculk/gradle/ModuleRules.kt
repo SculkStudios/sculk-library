@@ -5,8 +5,25 @@ package studio.sculk.gradle
  * rules table in MODULES.md; a module in neither the neutral set nor an owner list is a platform module.
  */
 internal object ModuleRules {
-    private val PLATFORM = listOf("org.bukkit..", "io.papermc..", "com.destroystokyo..", "com.velocitypowered..", "io.canvasmc..")
-    private val INTERNALS = listOf("net.minecraft..", "com.mojang..", "org.bukkit.craftbukkit..")
+    // Brigadier is reached only through the copy each platform API ships: Paper's com.mojang:brigadier
+    // and Velocity's velocity-brigadier fork differ, so a neutral module cannot pick one.
+    private val PLATFORM = listOf(
+        "org.bukkit..",
+        "io.papermc..",
+        "com.destroystokyo..",
+        "com.velocitypowered..",
+        "io.canvasmc..",
+        "com.mojang.brigadier..",
+    )
+    private val INTERNALS = listOf(
+        "net.minecraft..",
+        "com.mojang.authlib..",
+        "com.mojang.datafixers..",
+        "com.mojang.serialization..",
+        "com.mojang.logging..",
+        "com.mojang.math..",
+        "org.bukkit.craftbukkit..",
+    )
     private val SQL_DRIVERS = listOf("org.sqlite..", "com.mysql..", "org.mariadb..", "org.postgresql..")
     private val REFLECTION = listOf("kotlin.reflect.full..", "kotlin.reflect.jvm..")
 

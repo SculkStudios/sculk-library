@@ -10,15 +10,21 @@ plugins {
 mavenPublishing {
     configure(KotlinJvm(javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml"), sourcesJar = SourcesJar.Sources()))
     publishToMavenCentral(automaticRelease = true)
-    // Signing keys exist only in the release environment; local and CI snapshot publishing stay unsigned.
-    if (providers.gradleProperty("signingInMemoryKey").isPresent) {
+    // Signing keys exist only in the release environment, so snapshots publish unsigned. A release
+    // without a key fails here rather than uploading files Central would reject.
+    val hasSigningKey = providers.gradleProperty("signingInMemoryKey").isPresent
+    if (hasSigningKey) {
         signAllPublications()
+    } else if (!project.version.toString().endsWith("-SNAPSHOT")) {
+        tasks.matching { "MavenCentral" in it.name }.configureEach {
+            doFirst { throw GradleException("Release ${project.version} must be signed; set signingInMemoryKey.") }
+        }
     }
     pom {
         name = project.name
         description = provider { project.description ?: "Sculk Studio module ${project.name}" }
         url = "https://github.com/SculkStudios/sculk-library"
-        inceptionYear = "2024"
+        inceptionYear = "2026"
         licenses {
             license {
                 name = "MIT License"
@@ -30,7 +36,7 @@ mavenPublishing {
             developer {
                 id = "sculkstudios"
                 name = "Sculk Studios"
-                url = "https://sculk.studio"
+                url = "https://github.com/SculkStudios"
             }
         }
         scm {

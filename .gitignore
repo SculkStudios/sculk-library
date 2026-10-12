@@ -57,10 +57,9 @@ Thumbs.db
 Desktop.ini
 
 # Logs / JVM crash output
-logs/
+/logs/
 *.log
 *.log.*
-debug.log
 hs_err_pid*
 replay_pid*
 
@@ -86,55 +85,23 @@ application-secrets.yaml
 *.mv.db
 *.trace.db
 
-# Minecraft / Paper local test servers
-server/
-test-server/
-run/
-runs/
-paper-server/
-local-server/
-dev-server/
-
-# Minecraft server files
-eula.txt
-banned-ips.json
-banned-players.json
-ops.json
-usercache.json
-whitelist.json
-permissions.yml
-commands.yml
-help.yml
-spigot.yml
-bukkit.yml
-paper-global.yml
-paper-world-defaults.yml
-
-# Minecraft worlds
-world/
-world_nether/
-world_the_end/
-worlds/
-DIM-1/
-DIM1/
-
-# Plugin runtime data
-plugins/
-crash-reports/
-/cache/
+# Local test servers. Anchored to the root: an unanchored `world/` or `plugins/` would also hide
+# source packages and modules such as sculk-world. Integration-test servers live under build/.
+/server/
+/test-server/
+/run/
+/runs/
 
 # Generated documentation / docs runtime
 .dokka/
-site/
-public/
-dist/
+/site/
 docs/.astro/
 docs/dist/
 docs/node_modules/
 
 # Temporary files
-tmp/
-temp/
+/tmp/
+/temp/
 *.tmp
 *.temp
 *.bak
@@ -164,3 +131,6 @@ benchmarks/results/
 
 # Local test server created by `gradlew runServer`
 examples/*/run/
+
+# Claude Code session data and agent worktrees
+/.claude/

@@ -6,7 +6,9 @@
     "group:kotlinx-coroutinesMonorepo",
     "group:junit-frameworkMonorepo"
   ],
-  "baseBranches": ["dev"],
+  "baseBranchPatterns": [
+    "dev"
+  ],
   "dependencyDashboard": true,
   "dependencyDashboardApproval": true,
   "automerge": false,
@@ -14,24 +16,49 @@
   "packageRules": [
     {
       "groupName": "Kotlin toolchain",
-      "matchPackageNames": ["/^org\\.jetbrains\\.kotlin/", "/^com\\.google\\.devtools\\.ksp/", "/^org\\.jetbrains\\.dokka/"],
+      "matchPackageNames": [
+        "/^org\\.jetbrains\\.kotlin:/",
+        "/^org\\.jetbrains\\.kotlin\\./",
+        "/^com\\.google\\.devtools\\.ksp/",
+        "/^org\\.jetbrains\\.dokka/"
+      ],
       "minimumReleaseAge": "7 days"
     },
     {
-      "description": "Anchor builds are pinned deliberately; COMPATIBILITY.md is updated alongside any move.",
-      "matchPackageNames": ["io.papermc.paper:paper-api"],
+      "description": "The Adventure floor is the oldest version Paper 1.21.4 ships and is pinned deliberately; the 5.x test target updates normally.",
+      "matchPackageNames": [
+        "/^net\\.kyori:adventure-/"
+      ],
+      "matchCurrentVersion": "/^4\\./",
       "enabled": false,
       "minimumReleaseAge": "7 days"
     },
     {
-      "matchManagers": ["gradle-wrapper"],
-      "schedule": ["before 6am on monday"],
+      "description": "Anchor builds are pinned deliberately; COMPATIBILITY.md moves with them.",
+      "matchPackageNames": [
+        "io.papermc.paper:paper-api",
+        "io.canvasmc.canvas:canvas-api"
+      ],
+      "enabled": false,
       "minimumReleaseAge": "7 days"
     },
     {
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "gradle-wrapper"
+      ],
+      "schedule": [
+        "before 6am on monday"
+      ],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "GitHub Actions",
-      "schedule": ["before 6am on monday"],
+      "schedule": [
+        "before 6am on monday"
+      ],
       "minimumReleaseAge": "7 days"
     }
   ]

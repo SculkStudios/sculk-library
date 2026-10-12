@@ -3,9 +3,16 @@ name: Canary
 # Upstream breakage, found before users find it. A failure here opens an issue and never blocks a
 # release: canary targets are unstable by definition.
 
+# GitHub runs scheduled workflows from the default branch only, which is 5.x until 6.0 replaces it.
+# Until then the canary also runs whenever dev changes a pinned version.
 on:
   schedule:
     - cron: "17 4 * * *"
+  push:
+    branches: [dev]
+    paths:
+      - gradle/libs.versions.toml
+      - build-logic/src/main/kotlin/sculk.compatibility.gradle.kts
   workflow_dispatch:
 
 permissions:
@@ -19,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 25
