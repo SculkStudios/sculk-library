@@ -87,23 +87,8 @@ public class CommandDispatcher(public val text: Text = Text(), public val messag
         is CommandNode.Argument<*> -> (node.suggestions?.suggest(partial, source) ?: node.type.suggest(partial, source))
     }
 
-    /** One line per runnable path that [source] may use: `/pay <player> <amount>`, with optional arguments in brackets. */
-    public fun usage(spec: CommandSpec, source: CommandSource): List<String> = buildList {
-        fun visit(node: CommandNode, path: String) {
-            if (!node.requirement.test(source)) return
-            val here = when (node) {
-                is CommandNode.Literal -> "$path ${node.name}"
-                is CommandNode.Argument<*> -> if (node.handle.declaration.optional) "$path [${node.name}]" else "$path <${node.name}>"
-            }
-            val executor = node.executor
-            val delegatesToOptional = node.children.any { child ->
-                child is CommandNode.Argument<*> && child.handle.declaration.optional && child.executor?.body === executor?.body
-            }
-            if (executor != null && !delegatesToOptional) add(here.trim())
-            node.children.forEach { visit(it, here) }
-        }
-        visit(spec.root, "")
-    }.map { "/$it" }
+    /** One line per runnable path that [source] may use; see [CommandSpec.usage]. */
+    public fun usage(spec: CommandSpec, source: CommandSource): List<String> = spec.usage(source)
 
     private fun match(node: CommandNode, reader: CommandReader, source: CommandSource, values: Map<ArgumentDeclaration, Any?>): Match {
         if (!reader.canRead) {

@@ -53,8 +53,40 @@ class CommandBuilderTest {
     fun `two arguments with one name on a path are refused`() {
         assertThrows<IllegalStateException> {
             command("copy") {
-                word("name")
-                literal("to") { word("name") }
+                val from = word("name")
+                after(from) { literal("to") { word("name") } }
+            }
+        }
+    }
+
+    @Test
+    fun `a word declared after an argument branches from the block, not from the argument`() {
+        val spec = command("warp") {
+            word("name").also { executes {} }
+            literal("set") { word("name").also { executes {} } }
+        }
+        assertEquals(listOf("name", "set"), spec.root.children.map { it.name })
+    }
+
+    @Test
+    fun `after continues the command from an argument`() {
+        val spec = command("eco") {
+            val player = word("player")
+            after(player) {
+                literal("give") { long("amount").also { executes {} } }
+            }
+        }
+        val player = spec.root.children.single()
+        assertEquals("give", player.children.single().name)
+    }
+
+    @Test
+    fun `after refuses an argument from another block`() {
+        assertThrows<IllegalStateException> {
+            command("x") {
+                lateinit var inner: ArgumentHandle<String>
+                literal("y") { inner = word("a") }
+                after(inner) {}
             }
         }
     }

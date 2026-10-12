@@ -9,9 +9,12 @@ import kotlin.time.Duration
 public annotation class CommandDsl
 
 /**
- * Declares a command. Arguments declared in a block form a chain, each following the last;
- * [CommandBuilder.literal] branches from the end of the chain, and [CommandBuilder.executes] runs
- * when input ends there.
+ * Declares a command. Each block stands for one word of the command:
+ *
+ * - arguments declared in a block form a chain after that word, each following the last, and
+ *   [CommandBuilder.executes] runs when input ends at the end of the chain;
+ * - [CommandBuilder.literal] branches from the block's own word, whatever was declared before it;
+ * - [CommandBuilder.after] branches from an argument, for forms such as `/eco <player> give`.
  *
  * ```kotlin
  * val pay = command("pay") {
@@ -33,7 +36,7 @@ public fun command(name: String, vararg aliases: String, block: CommandBuilder.(
     val builder = CommandBuilder(Draft.literal(name), parent = null).apply(block)
     val root = builder.build()
     aliases.forEach(::validWord)
-    return CommandSpec(root as CommandNode.Literal, aliases.toList(), builder.description)
+    return CommandSpec(root as CommandNode.Literal, aliases.toList(), builder.description).also { builder.built = it }
 }
 
 @SculkStable
@@ -51,16 +54,29 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
 
     private var condition: ((CommandSource) -> Boolean)? = null
 
+    internal var built: CommandSpec? = null
+
     /** An extra condition for this command or branch, such as a game mode. Senders who fail it never see it. */
     public fun requires(condition: (CommandSource) -> Boolean) {
         check(this.condition == null) { "A branch has one requires block; combine the conditions." }
         this.condition = condition
     }
 
-    /** A fixed word branching from the end of the chain; [aliases] lead to the same branch. */
+    /** A fixed word branching from this block's word; [aliases] lead to the same branch. */
     public fun literal(name: String, vararg aliases: String, block: CommandBuilder.() -> Unit) {
         val node = Draft.literal(name, aliases.toList())
-        attach(node)
+        attach(scope, node)
+        branches += node to CommandBuilder(node, this).apply(block)
+    }
+
+    /**
+     * Continues the command after [argument], which must be declared in this block: words and
+     * arguments in [block] follow it, as in `/eco <player> give <amount>`.
+     */
+    public fun after(argument: ArgumentHandle<*>, block: CommandBuilder.() -> Unit) {
+        val node = scope.find(argument.declaration)
+            ?: throw IllegalStateException("$argument is not declared in this block; after() continues an argument of the same block.")
+        check(node.argument?.type?.shape != ArgumentShape.GREEDY) { "Nothing can follow the greedy argument <${node.name}>." }
         branches += node to CommandBuilder(node, this).apply(block)
     }
 
@@ -70,7 +86,7 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
         check(tail.argument?.type?.shape != ArgumentShape.GREEDY) { "Nothing can follow the greedy argument <${tail.name}>." }
         val declaration = ArgumentDeclaration(name, type)
         val node = Draft.argument(declaration)
-        attach(node)
+        attach(tail, node)
         tail = node
         return ArgumentHandle(name, declaration)
     }
@@ -152,6 +168,22 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
         use(Confirmation(window))
     }
 
+    /**
+     * Adds a `help` word that lists every form of the command the sender may use, generated from
+     * the tree, under [header]. Only at the top level of a command.
+     */
+    public fun help(header: String = "<primary>/<command><muted> can be used as:") {
+        check(parent == null) { "help() belongs at the top level of a command." }
+        val root = this
+        literal("help") {
+            executes {
+                val spec = checkNotNull(root.built) { "The command is still being declared." }
+                reply(header, "command" to spec.name)
+                spec.usage(source).forEach { line -> reply("<secondary><line>", "line" to line) }
+            }
+        }
+    }
+
     /** Runs [body] when input ends at the end of the chain. */
     public fun executes(body: suspend CommandContext.() -> Unit) {
         setExecutor(requiresPlayer = false, body)
@@ -167,25 +199,23 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
         tail.executor = PendingExecutor(this, requiresPlayer, body)
     }
 
-    private fun attach(node: Draft) {
-        val clash = tail.children.firstOrNull { it.clashesWith(node) }
+    private fun attach(parent: Draft, node: Draft) {
+        val clash = parent.children.firstOrNull { it.clashesWith(node) }
         check(clash == null) {
             if (node.argument != null) {
-                "<${node.name}> and <${clash?.name}> would both read the same position after ${tail.name}."
+                "<${node.name}> and <${clash?.name}> would both read the same position after ${parent.name}."
             } else {
-                "'${node.name}' is declared twice after ${tail.name}."
+                "'${node.name}' is declared twice after ${parent.name}."
             }
         }
-        tail.children += node
+        parent.children += node
+        node.parent = parent
     }
 
     private fun checkName(name: String) {
         require(ARGUMENT_NAME.matches(name)) { "Argument name '$name' must be lower-case letters, digits, '-' or '_'." }
-        var builder: CommandBuilder? = this
-        while (builder != null) {
-            check(!builder.scope.chainHas(name)) { "Two arguments on one path are both named <$name>." }
-            builder = builder.parent
-        }
+        val taken = generateSequence(tail) { it.parent }.any { it.argument?.name == name }
+        check(!taken) { "Two arguments on one path are both named <$name>." }
     }
 
     internal fun middlewareChain(): List<CommandMiddleware> = parent?.middlewareChain().orEmpty() + middleware
@@ -210,6 +240,7 @@ internal class PendingExecutor(val builder: CommandBuilder, val requiresPlayer: 
 /** A mutable node while the DSL runs; frozen into [CommandNode] once the whole command is declared. */
 internal class Draft private constructor(val name: String, val aliases: List<String>, val argument: ArgumentDeclaration?) {
     val children = mutableListOf<Draft>()
+    var parent: Draft? = null
     var executor: PendingExecutor? = null
     var requirement: Requirement = Requirement.NONE
 
@@ -223,8 +254,8 @@ internal class Draft private constructor(val name: String, val aliases: List<Str
         else -> false
     }
 
-    fun chainHas(argumentName: String): Boolean =
-        argument?.name == argumentName || children.any { it.argument != null && it.chainHas(argumentName) }
+    fun find(declaration: ArgumentDeclaration): Draft? =
+        if (argument === declaration) this else children.firstNotNullOfOrNull { if (it.argument != null) it.find(declaration) else null }
 
     fun freeze(): CommandNode {
         checkOptionalChain()

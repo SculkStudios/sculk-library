@@ -17,6 +17,24 @@ public class CommandSpec internal constructor(
     public val name: String get() = root.name
     public val aliases: List<String> = aliases.toList()
 
+    /** One line per runnable path that [source] may use: `/pay <player> <amount>`, with optional arguments in brackets. */
+    public fun usage(source: CommandSource): List<String> = buildList {
+        fun visit(node: CommandNode, path: String) {
+            if (!node.requirement.test(source)) return
+            val here = when (node) {
+                is CommandNode.Literal -> "$path ${node.name}"
+                is CommandNode.Argument<*> -> if (node.handle.isOptional) "$path [${node.name}]" else "$path <${node.name}>"
+            }
+            val executor = node.executor
+            val delegatesToOptional = node.children.any { child ->
+                child is CommandNode.Argument<*> && child.handle.isOptional && child.executor?.body === executor?.body
+            }
+            if (executor != null && !delegatesToOptional) add("/" + here.trim())
+            node.children.forEach { visit(it, here) }
+        }
+        visit(root, "")
+    }
+
     override fun toString(): String = "CommandSpec(/$name)"
 }
 

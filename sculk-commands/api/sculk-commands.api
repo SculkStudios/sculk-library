@@ -96,6 +96,7 @@ public final class studio/sculk/command/BuiltinArgument$UuidArgument : studio/sc
 }
 
 public final class studio/sculk/command/CommandBuilder {
+	public final fun after (Lstudio/sculk/command/ArgumentHandle;Lkotlin/jvm/functions/Function1;)V
 	public final fun argument (Ljava/lang/String;Lstudio/sculk/command/ArgumentType;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun boolean (Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun choice (Ljava/lang/String;Ljava/util/Map;)Lstudio/sculk/command/ArgumentHandle;
@@ -110,6 +111,8 @@ public final class studio/sculk/command/CommandBuilder {
 	public final fun getPermission ()Ljava/lang/String;
 	public final fun greedy (Ljava/lang/String;I)Lstudio/sculk/command/ArgumentHandle;
 	public static synthetic fun greedy$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;IILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun help (Ljava/lang/String;)V
+	public static synthetic fun help$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;ILjava/lang/Object;)V
 	public final fun integer (Ljava/lang/String;II)Lstudio/sculk/command/ArgumentHandle;
 	public static synthetic fun integer$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;IIILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun key (Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
@@ -309,6 +312,7 @@ public final class studio/sculk/command/CommandSpec {
 	public final fun getName ()Ljava/lang/String;
 	public final fun getRoot ()Lstudio/sculk/command/CommandNode$Literal;
 	public fun toString ()Ljava/lang/String;
+	public final fun usage (Lstudio/sculk/command/CommandSource;)Ljava/util/List;
 }
 
 public final class studio/sculk/command/Confirmation : studio/sculk/command/CommandMiddleware {

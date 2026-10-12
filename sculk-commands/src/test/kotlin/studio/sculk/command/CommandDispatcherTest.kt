@@ -303,6 +303,24 @@ class CommandDispatcherTest {
     }
 
     @Test
+    fun `generated help lists only the forms the sender may use`() = runTest {
+        register(
+            command("warp") {
+                help()
+                word("name").also { executes {} }
+                literal("set") {
+                    permission = "warp.admin"
+                    word("name").also { executes {} }
+                }
+            },
+        )
+        dispatcher.execute(steve, "warp help")
+        assertEquals(listOf("/warp can be used as:", "/warp help", "/warp <name>"), steve.plainMessages)
+        dispatcher.execute(console, "warp help")
+        assertEquals(listOf("/warp can be used as:", "/warp help", "/warp <name>", "/warp set <name>"), console.plainMessages)
+    }
+
+    @Test
     fun `an unknown command is reported, not ignored`() = runTest {
         assertTrue(dispatcher.execute(steve, "nothing here") is CommandResult.UnknownCommand)
         assertEquals(listOf("Unknown command. Type /help for a list."), steve.plainMessages)
