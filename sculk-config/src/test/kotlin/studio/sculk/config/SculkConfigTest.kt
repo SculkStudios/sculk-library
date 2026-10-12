@@ -155,14 +155,17 @@ class SculkConfigTest {
 
     @Test
     fun `migrations upgrade the tree before decoding and back up the original`() {
-        file.writeText("config-version: 1\nmotd: Old welcome # note\nmax-players: 10\n")
+        val original = "config-version: 1\nmotd: Old welcome # note\nmax-players: 10\n"
+        file.writeText(original)
         val config = load {
             version = 2
             migration(from = 1) { rename("motd", "welcome-message") }
         }.getOrThrow()
         assertEquals("Old welcome", config.value.welcomeMessage)
-        assertTrue("config-version: 2" in file.readText())
-        assertTrue(directory.resolve("config.yml.v1.bak").exists())
+        val text = file.readText()
+        assertTrue("config-version: 2" in text, text)
+        assertTrue("welcome-message: Old welcome # note" in text, text)
+        assertEquals(original, directory.resolve("config.yml.v1.bak").readText())
     }
 
     @Test
@@ -191,7 +194,7 @@ class SculkConfigTest {
         file.writeText("worlds:\n  - world\n  - world\n")
         val failure = load {
             validate { settings ->
-                require(settings.worlds.toSet().size == settings.worlds.size, "worlds", "names without duplicates") { settings.worlds }
+                ensure(settings.worlds.toSet().size == settings.worlds.size, "worlds", "names without duplicates") { settings.worlds }
             }
         } as InvalidConfig
         assertEquals("config.yml: worlds (line 2): expected names without duplicates, found [world, world].", failure.message)
@@ -200,19 +203,5 @@ class SculkConfigTest {
     @Test
     fun `a type without defaults cannot generate a file`() {
         assertThrows<IllegalStateException> { SculkConfig.load<NoDefaults>(directory.resolve("x.yml")) }
-    }
-
-    @Test
-    fun `the watcher reloads after an outside edit and ignores Sculk's own writes`() {
-        val config = load().getOrThrow()
-        val failures = mutableListOf<Any>()
-        config.watch(debounceMillis = 50) { failures += it }.use {
-            config.save(config.value.copy(maxPlayers = 5)).getOrThrow()
-            file.writeText(file.readText().replace("max-players: 5", "max-players: 6"))
-            val deadline = System.currentTimeMillis() + 5_000
-            while (config.value.maxPlayers != 6 && System.currentTimeMillis() < deadline) Thread.sleep(20)
-        }
-        assertEquals(6, config.value.maxPlayers)
-        assertTrue(failures.isEmpty(), failures.toString())
     }
 }

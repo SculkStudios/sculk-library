@@ -70,24 +70,21 @@ internal object YamlTree {
 
     /**
      * Adds every key [complete] has and [existing] lacks, recursing into sections both have, and
-     * never touching what is already there. Returns whether anything was added.
+     * never touching what is already there. A map's entries are the operator's, so a map that
+     * exists is never extended.
      */
-    fun fillMissing(existing: MappingNode, complete: MappingNode): Boolean {
-        var changed = false
+    fun fillMissing(existing: MappingNode, complete: MappingNode) {
         for (tuple in complete.value) {
             val key = keyOf(tuple) ?: continue
-            val present = existing.value.firstOrNull { keyOf(it) == key }
+            val present = existing.value.firstOrNull { keyOf(it) == key }?.valueNode
+            val section = tuple.valueNode
             when {
-                present == null -> {
-                    existing.value.add(tuple)
-                    changed = true
-                }
+                present == null -> existing.value.add(tuple)
 
-                present.valueNode is MappingNode && tuple.valueNode is MappingNode && sameType(present.valueNode, tuple.valueNode) ->
-                    changed = fillMissing(present.valueNode as MappingNode, tuple.valueNode as MappingNode) || changed
+                present is MappingNode && section is MappingNode && !YamlEncoding.isMap(section) && sameType(present, section) ->
+                    fillMissing(present, section)
             }
         }
-        return changed
     }
 
     private fun sameType(a: Node, b: Node): Boolean {
@@ -98,25 +95,34 @@ internal object YamlTree {
 
     /**
      * Writes [generated]'s values into [existing], keeping the operator's comments, key order and
-     * unknown keys. A scalar whose resolved text already equals the new value is left exactly as
-     * written, so `${DATABASE_PASSWORD}` is never replaced by the secret it resolves to.
+     * unknown keys. A map takes exactly [generated]'s entries, keeping the comments of those that
+     * remain. A scalar whose resolved text already equals the new value is left exactly as written,
+     * so `${DATABASE_PASSWORD}` is never replaced by the secret it resolves to.
      */
-    fun apply(existing: Node, generated: Node, resolve: (String) -> String): Node = when {
-        existing is MappingNode && generated is MappingNode -> {
-            for (tuple in generated.value) {
-                val key = keyOf(tuple) ?: continue
-                val index = existing.value.indexOfFirst { keyOf(it) == key }
-                if (index < 0) {
-                    existing.value.add(tuple)
-                } else {
-                    val current = existing.value[index]
-                    existing.value[index] = NodeTuple(current.keyNode, apply(current.valueNode, tuple.valueNode, resolve))
-                }
+    fun merge(existing: Node, generated: Node, resolve: (String) -> String): Node = when {
+        existing is MappingNode && generated is MappingNode && YamlEncoding.isMap(generated) -> existing.apply {
+            val previous = value.toList()
+            value.clear()
+            generated.value.mapTo(value) { entry ->
+                val key = keyOf(entry)?.let(resolve)
+                val kept = previous.firstOrNull { keyOf(it)?.let(resolve) == key }
+                if (kept == null) entry else NodeTuple(kept.keyNode, merge(kept.valueNode, entry.valueNode, resolve))
             }
-            existing
         }
 
-        existing is ScalarNode && generated is ScalarNode && resolve(existing.value) == generated.value -> existing
+        existing is MappingNode && generated is MappingNode -> existing.apply {
+            for (tuple in generated.value) {
+                val key = keyOf(tuple) ?: continue
+                val index = value.indexOfFirst { keyOf(it) == key }
+                if (index < 0) {
+                    value.add(tuple)
+                } else {
+                    value[index] = NodeTuple(value[index].keyNode, merge(value[index].valueNode, tuple.valueNode, resolve))
+                }
+            }
+        }
+
+        existing is ScalarNode && generated is ScalarNode && resolve(existing.value) == resolve(generated.value) -> existing
 
         else -> generated.also { copyComments(existing, it) }
     }

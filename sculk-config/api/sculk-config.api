@@ -16,8 +16,8 @@ public final class studio/sculk/config/ConfigFile : studio/sculk/SculkHandle {
 	public final fun onChange (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
 	public final fun reload ()Lstudio/sculk/SculkResult;
 	public final fun save (Ljava/lang/Object;)Lstudio/sculk/SculkResult;
-	public final fun watch (JLkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
-	public static synthetic fun watch$default (Lstudio/sculk/config/ConfigFile;JLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkHandle;
+	public final fun watch (JLjava/util/concurrent/Executor;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public static synthetic fun watch$default (Lstudio/sculk/config/ConfigFile;JLjava/util/concurrent/Executor;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
 }
 
 public final class studio/sculk/config/ConfigFile$Companion {
@@ -26,10 +26,12 @@ public final class studio/sculk/config/ConfigFile$Companion {
 public final class studio/sculk/config/ConfigOptions {
 	public final fun getEnvironment ()Lkotlin/jvm/functions/Function1;
 	public final fun getHeader ()Ljava/util/List;
+	public final fun getOnUnknownKey ()Lkotlin/jvm/functions/Function2;
 	public final fun getVersion ()I
 	public final fun migration (ILkotlin/jvm/functions/Function1;)V
 	public final fun setEnvironment (Lkotlin/jvm/functions/Function1;)V
 	public final fun setHeader (Ljava/util/List;)V
+	public final fun setOnUnknownKey (Lkotlin/jvm/functions/Function2;)V
 	public final fun setVersion (I)V
 	public final fun validate (Lkotlin/jvm/functions/Function2;)V
 }
@@ -98,6 +100,6 @@ public final class studio/sculk/config/SecretSerializer : kotlinx/serialization/
 }
 
 public final class studio/sculk/config/Violations {
-	public final fun require (ZLjava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public final fun ensure (ZLjava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
 }
 

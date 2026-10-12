@@ -14,14 +14,27 @@ import studio.sculk.annotation.SculkStable
 /** How a configuration file is read, upgraded and checked. */
 @SculkStable
 public class ConfigOptions<T : Any> internal constructor() {
-    /** The schema version this plugin writes. Raise it with a [migration] whenever keys move. */
+    /**
+     * The schema version this plugin writes. Raise it whenever the file changes shape; a [migration]
+     * is needed only for a version whose keys move or change meaning, since new keys are added anyway.
+     */
     public var version: Int = 1
 
     /** Lines written at the top of a newly generated file. */
     public var header: List<String> = emptyList()
 
-    /** How `${NAME}` placeholders are resolved; the process environment by default. */
+    /**
+     * How `${NAME}` and `${NAME:-default}` placeholders in values and map keys are resolved; the
+     * process environment by default. `$${NAME}` is the literal text `${NAME}`, and text saved from
+     * code is escaped that way, so it reads back exactly as it was saved.
+     */
     public var environment: (String) -> String? = System::getenv
+
+    /**
+     * Called for each key the file has and the type does not read, such as a typo like `max-playres`,
+     * after every successful load or reload. The key stays in the file. Does nothing by default.
+     */
+    public var onUnknownKey: (path: String, line: Int?) -> Unit = { _, _ -> }
 
     internal val migrations = sortedMapOf<Int, MigrationBuilder>()
     internal val validations = mutableListOf<Violations.(T) -> Unit>()
@@ -36,7 +49,10 @@ public class ConfigOptions<T : Any> internal constructor() {
         migrations[from] = MigrationBuilder().apply(steps)
     }
 
-    /** Adds checks that run after decoding; every reported violation fails the load. */
+    /**
+     * Adds checks that run after decoding, on every load, reload and save; every violation reported
+     * through [Violations.ensure] fails it, and so does an [IllegalArgumentException] from `require`.
+     */
     public fun validate(rule: Violations.(T) -> Unit) {
         validations += rule
     }
@@ -56,7 +72,7 @@ public class MigrationBuilder internal constructor() {
         steps += { root -> YamlTree.remove(root, path) }
     }
 
-    /** Sets a scalar, replacing what was there. */
+    /** Sets a scalar to [value] exactly as written, replacing what was there. */
     public fun set(path: String, value: String) {
         steps += { root -> YamlTree.set(root, path, YamlEncoding.scalar(value)) }
     }
@@ -65,17 +81,23 @@ public class MigrationBuilder internal constructor() {
 /** Collects validation problems; see [ConfigOptions.validate]. */
 @SculkStable
 public class Violations internal constructor() {
-    internal val problems = mutableListOf<Triple<String, String, String>>()
+    internal class Problem(val path: String, val expected: String, val received: String)
 
-    /** Reports [path] unless [condition] holds. [received] is only evaluated when it does not. */
-    public fun require(condition: Boolean, path: String, expected: String, received: () -> Any?) {
-        if (!condition) problems += Triple(path, expected, received().toString())
+    internal val problems = mutableListOf<Problem>()
+
+    /**
+     * Reports the key at [path] unless [condition] holds: `ensure(port != 25565, "port", "a port other than the server's") { port }`.
+     * [received] is evaluated only when it does not.
+     */
+    public fun ensure(condition: Boolean, path: String, expected: String, received: () -> Any?) {
+        if (!condition) problems += Problem(path, expected, received().toString())
     }
 }
 
 /**
  * A [Secret] in a configuration file. Values typed this way are never echoed in errors:
- * `val password: ConfigSecret = Secret("")`.
+ * `val password: ConfigSecret = Secret("")`. The default is written to a generated file, so it is a
+ * placeholder such as an empty string, never a real credential.
  */
 public typealias ConfigSecret =
     @Serializable(with = SecretSerializer::class)

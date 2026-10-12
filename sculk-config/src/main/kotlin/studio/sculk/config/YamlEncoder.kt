@@ -34,6 +34,15 @@ internal object YamlEncoding {
         if (blankLineFirst) add(CommentLine(Optional.empty(), Optional.empty(), "", CommentType.BLANK_LINE))
         lines.flatMap { it.lines() }.forEach { add(CommentLine(Optional.empty(), Optional.empty(), " $it", CommentType.BLOCK)) }
     }
+
+    fun blankLine(): List<CommentLine> = comments(emptyList(), blankLineFirst = true)
+
+    /** Whether [node] was encoded from a `Map`, whose keys are data rather than schema. */
+    fun isMap(node: Node): Boolean = node.getProperty(MAP) == true
+
+    fun map(tuples: MutableList<NodeTuple>): MappingNode = MappingNode(Tag.MAP, tuples, FlowStyle.BLOCK).apply { setProperty(MAP, true) }
+
+    private const val MAP = "sculk.map"
 }
 
 /** Encodes one value and hands the resulting node to [put]. */
@@ -42,7 +51,7 @@ internal open class NodeEncoder(private val put: (Node) -> Unit) : AbstractEncod
 
     protected open fun place(node: Node) = put(node)
 
-    override fun encodeString(value: String) = place(YamlEncoding.scalar(value))
+    override fun encodeString(value: String) = place(YamlEncoding.scalar(Placeholders.escape(value)))
 
     override fun encodeBoolean(value: Boolean) = place(YamlEncoding.scalar(value.toString(), Tag.BOOL))
 
@@ -125,7 +134,7 @@ internal class MapEncoder(private val done: (Node) -> Unit) : NodeEncoder({}) {
         }
     }
 
-    override fun endStructure(descriptor: SerialDescriptor) = done(MappingNode(Tag.MAP, tuples, FlowStyle.BLOCK))
+    override fun endStructure(descriptor: SerialDescriptor) = done(YamlEncoding.map(tuples))
 }
 
 /** Writes a polymorphic value as its section with a leading `type` key. */

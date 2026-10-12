@@ -11,12 +11,19 @@ import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import org.snakeyaml.engine.v2.nodes.MappingNode
 import org.snakeyaml.engine.v2.nodes.Node
+import org.snakeyaml.engine.v2.nodes.NodeTuple
 import org.snakeyaml.engine.v2.nodes.ScalarNode
 import org.snakeyaml.engine.v2.nodes.SequenceNode
 import org.snakeyaml.engine.v2.nodes.Tag
+import studio.sculk.Secret
 
-/** What every decoder in one decode shares: the file name for errors and how to read the environment. */
-internal class DecodeContext(val file: String, val environment: (String) -> String?)
+/** A key the file has and the schema does not read. */
+internal class UnknownKey(val path: String, val line: Int?)
+
+/** What every decoder in one decode shares: the file name for errors, the environment, and the keys nothing read. */
+internal class DecodeContext(val file: String, val environment: (String) -> String?) {
+    val unknownKeys: MutableList<UnknownKey> = mutableListOf()
+}
 
 /**
  * Decodes kotlinx-serializable values from a snakeyaml-engine node tree. Every error names the
@@ -34,30 +41,23 @@ internal abstract class NodeDecoder(protected val context: DecodeContext) : Abst
     protected fun fail(expected: String, received: String, at: Node? = node, where: String = path, hint: String? = null): Nothing =
         throw ConfigDecodingException(InvalidConfig(context.file, where, at?.line(), expected, received, hint))
 
-    private fun scalar(expected: String): String {
+    private fun scalar(expected: String, nullHint: String? = null): String {
         val current = node ?: fail(expected, "nothing", where = path)
         if (current !is ScalarNode) fail(expected, describe(current))
-        return resolveEnvironment(current.value)
+        if (isNull(current)) fail(expected, "null", hint = nullHint)
+        return Placeholders.resolve(current.value, context.environment) { name ->
+            fail("environment variable $name to be set", "it unset", hint = "Set $name or give a default: \${$name:-value}.")
+        }
     }
 
-    protected fun received(text: String): String = if (secret) studio.sculk.Secret.REDACTED else "'$text'"
+    protected fun received(text: String): String = if (secret) Secret.REDACTED else "'$text'"
 
-    private fun resolveEnvironment(text: String): String = ENVIRONMENT.replace(text) { match ->
-        val name = match.groupValues[1]
-        val fallback = match.groups[2]?.value
-        context.environment(name) ?: fallback
-            ?: fail("environment variable $name to be set", "it unset", hint = "Set $name or give a default: \${$name:-value}.")
-    }
-
-    override fun decodeNotNullMark(): Boolean {
-        val current = node ?: return false
-        return !(current is ScalarNode && (current.tag == Tag.NULL || (current.isPlain && current.value in NULLS)))
-    }
+    override fun decodeNotNullMark(): Boolean = node?.let { !isNull(it) } ?: false
 
     override fun decodeNull(): Nothing? = null
 
     override fun decodeString(): String {
-        val text = scalar("text")
+        val text = scalar("text", nullHint = "Write '' for empty text, or quote the word: 'null'.")
         if (annotations.any { it is NotBlank } && text.isBlank()) fail("text that is not blank", received(text))
         return text
     }
@@ -118,9 +118,17 @@ internal abstract class NodeDecoder(protected val context: DecodeContext) : Abst
 
     override fun decodeInline(descriptor: SerialDescriptor): AbstractDecoder = this
 
+    /** A value the type itself rejects, through `require` in its `init` or a serializer's own check, fails at its key. */
     override fun <T> decodeSerializableValue(deserializer: DeserializationStrategy<T>): T {
+        val at = node
+        val where = path
         secret = deserializer.descriptor.serialName == SECRET
-        return deserializer.deserialize(this)
+        return try {
+            deserializer.deserialize(this)
+        } catch (rejected: IllegalArgumentException) {
+            val found = at?.let { if (secret && it is ScalarNode) Secret.REDACTED else describe(it) } ?: "nothing"
+            fail(rejected.message ?: "a value ${deserializer.descriptor.serialName} accepts", found, at, where)
+        }
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
@@ -152,15 +160,16 @@ internal abstract class NodeDecoder(protected val context: DecodeContext) : Abst
     protected open fun ignoredKeys(): Set<String> = emptySet()
 
     private fun emptyIfMissing(current: Node?): MappingNode {
-        if (current != null && !(current is ScalarNode && current.value.isEmpty())) fail("a section of keys", describe(current))
-        return MappingNode(Tag.MAP, mutableListOf(), org.snakeyaml.engine.v2.common.FlowStyle.BLOCK)
+        if (current != null && !isNull(current)) fail("a section of keys", describe(current))
+        return YamlTree.emptyMapping()
     }
 
     companion object {
         const val TYPE_KEY = "type"
         const val SECRET = "studio.sculk.Secret"
         private val NULLS = setOf("", "~", "null", "Null", "NULL")
-        private val ENVIRONMENT = Regex("""\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?}""")
+
+        fun isNull(node: Node): Boolean = node is ScalarNode && (node.tag == Tag.NULL || (node.isPlain && node.value in NULLS))
 
         fun normalise(text: String): String = text.lowercase().replace("-", "").replace("_", "")
 
@@ -197,8 +206,8 @@ internal class MappingDecoder(
     descriptor: SerialDescriptor,
     ignoredKeys: Set<String>,
 ) : NodeDecoder(context) {
-    private val entries: Map<String, Node> = mapping.value
-        .mapNotNull { tuple -> (tuple.keyNode as? ScalarNode)?.let { it.value to tuple.valueNode } }
+    private val entries: Map<String, NodeTuple> = mapping.value
+        .mapNotNull { tuple -> YamlTree.keyOf(tuple)?.let { it to tuple } }
         .filter { it.first !in ignoredKeys }
         .toMap()
     private val keys = (0 until descriptor.elementsCount).map { kebab(descriptor.getElementName(it)) }
@@ -207,9 +216,13 @@ internal class MappingDecoder(
     override var path: String = basePath
     override var annotations: List<Annotation> = emptyList()
 
+    override fun endStructure(descriptor: SerialDescriptor) {
+        (entries - keys.toSet()).forEach { (key, tuple) -> context.unknownKeys += UnknownKey(child(basePath, key), tuple.keyNode.line()) }
+    }
+
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         while (++index < descriptor.elementsCount) {
-            val value = entries[keys[index]]
+            val value = entries[keys[index]]?.valueNode
             if (value != null || !descriptor.isElementOptional(index)) {
                 secret = false
                 node = value
