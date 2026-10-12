@@ -13,10 +13,10 @@ six anchors, Fill build lists), `docs/research/d-velocity.md`, `docs/research/f-
 | Compatible | Paper 26.1.2 | `26.1.2.build.74-stable` | 25 | 4.26.1 |
 | Compatible | Paper 1.21.11 | `1.21.11-R0.1-20260511.115010-91` | 21 | 4.26.1 |
 | Floor | Paper 1.21.4 | `1.21.4-R0.1-20250925.065901-231` | 21 | 4.20.0 |
-| Platform | Folia | obtainable builds only: 26.2 (beta builds only), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4. 26.3 is expected shortly after Paper and Canvas went stable but had no Fill build on 2026-10-12; the canary job polls Fill and promotes it to the pull-request matrix the day a stable build appears. The matrix is generated from the Fill API, never from Paper's version list. | as Paper | as Paper |
+| Platform | Folia | obtainable builds only: 26.2 (beta builds only), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4. 26.3 is expected shortly after Paper and Canvas went stable but had no Fill build on 2026-10-12. The nightly canary job lists the Folia versions on Fill; moving a new build into the pull-request matrix is a manual change today. | as Paper | as Paper |
 | Platform | Canvas | 26.3 stable (builds 976–978, 2026-10-11), 26.2, 26.1.2, 1.21.11, 1.21.8; pinned download from the Canvas builds API (not on Fill); `io.canvasmc.canvas:canvas-api` from `maven.canvasmc.io` | 25 | as Paper |
 | Proxy | Velocity 4.2.0 | `com.velocitypowered:velocity-api:4.2.0` | 25 | 5.2.0 |
-| Canary | newest Paper, Folia, Canvas and Velocity builds | resolved nightly from Fill | — | — |
+| Canary | newest Paper, Folia, Canvas and Velocity builds | today the nightly job scans the pinned anchors and lists Folia and Canvas builds; resolving and booting the newest builds is planned for M3 | — | — |
 | Packets | PacketEvents 2.14.0 (26.3 support, released 2026-09-23); ProtocolLib 5.4.0 best effort | `compileOnly` | as server | — |
 
 Builds are pinned, not versions. Backports land mid-line: 26.2 build 100 removed `@Experimental`
@@ -28,7 +28,7 @@ A version threshold would be wrong on either side of those builds. `maven-metada
 
 | Version | Reason |
 | --- | --- |
-| 1.21, 1.21.1, 1.21.3 | No data components, `MenuType` or `TAGS` lifecycle; `Attribute` is still an enum; EOL since March 2025. Capabilities may degrade gracefully there but no CI anchor exists and nothing is promised. |
+| 1.21, 1.21.1, 1.21.3 | Each lacks some of the APIs the floor relies on (data components, `TAGS` lifecycle, `editPersistentDataContainer`, `Attribute` as an interface; see below); EOL since March 2025. No fallback code exists for them and nothing is promised. |
 | 1.21.2, 26.1 | Paper never shipped them. |
 | 1.21.5, 1.21.9, 26.1.1 | Never had a stable Paper build. |
 | 26.4 | Pre-release. Canary only. |
@@ -61,48 +61,57 @@ Detection runs once at startup by probing class and method presence with `Method
 caching the handles that the chosen adapter needs. No reflective lookup happens after boot. The
 state of every capability appears in the runtime diagnostic dump.
 
-Seed table from the jar scans (native since; states on older anchors):
+Seed table from the jar scans (native since; states on older anchors). Only versions from the
+1.21.4 floor up are listed: no fallback is built for anything below it.
 
-| Capability | Native since | Below that |
+| Capability | Native since | Below that, within the supported range |
 | --- | --- | --- |
-| Data components on `ItemStack` | 1.21.3 (experimental until 26.2 b100) | Degraded through `ItemMeta` on 1.21.x before 1.21.3; per-component-type probes because types churn (`ShownInTooltip` → `TooltipDisplay` at 1.21.5, `MapItemColor` removed 26.3) |
-| `editPersistentDataContainer` on `ItemStack` | 1.21.4 | Emulated through `editMeta` |
-| `MenuType` typed view builders | 1.21.1 (builders verified in 1.21.4 jar) | Degraded through `createInventory` |
+| Data components on `ItemStack` | 1.21.3, so every anchor (experimental until 26.2 b100) | — ; per-component-type probes because types churn (`ShownInTooltip` → `TooltipDisplay` at 1.21.5, `MapItemColor` removed 26.3) |
+| `editPersistentDataContainer` on `ItemStack` | 1.21.4 | — |
+| `MenuType` typed view builders | 1.21.1 (builders verified in 1.21.4 jar) | — |
 | Dialogs | 1.21.7 | Unavailable; fallback is a developer decision per dialog |
 | Registry modification | per registry: enchantments and game events 1.21; damage types, banners, paintings 1.21.4; dialogs, jukebox songs, instruments, animal variants 1.21.11; trim materials and patterns 26.2; decorated pot patterns 26.3 | Unavailable per registry; `RegistryFreezeEvent` gone by 1.21.11, use `compose()` |
-| Datapack discovery | 1.21.4 (still experimental in 26.3) | Unavailable |
-| Brigadier command API | 1.21 (experimental until 26.2 b100) | — |
+| Datapack discovery | 1.21.4 (still experimental in 26.3) | — |
+| Brigadier command API | 1.21, so every anchor (experimental until 26.2 b100) | — ; individual `ArgumentTypes` factories are newer, see Experimental API |
 | Connection and configuration-phase API | 1.21.7 | Degraded through login and join events |
 | Client brand on the connection | 26.2 | Degraded through `Player.getClientBrandName` |
 | Code of conduct event | 26.2 | Degraded: static server property only |
 | Post-processing effects | 26.3 b35 (`update` b159) | Unavailable |
-| Waypoint style and colour | 1.21.11 | Emulated hide-only through attributes on 1.21.6 to 1.21.10 |
+| Waypoint style and colour | 1.21.11 | Emulated hide-only through attributes on 1.21.6 to 1.21.10; Unavailable on 1.21.4 and 1.21.5, which have no waypoints |
 | Mannequins | 1.21.11 | Degraded through packet or armour-stand NPC |
 | Entity removal reason | 26.2 b109 | Degraded through `EntityRemoveEvent.getCause` |
 | `GameRules` registry | 1.21.11 | Legacy `GameRule` names |
-| Display entities, async teleport, chunk tickets, Folia schedulers, resource-pack stacking | 1.21 | — |
+| Display entities, async teleport, chunk tickets, Folia schedulers, resource-pack stacking | 1.21, so every anchor | — |
 
 ## Compatibility generator
 
-A Gradle task downloads each anchor `paper-api` jar and POM, scans them with ASM and emits
-`compat.json`. It records class presence (including inner classes), method descriptors from a
-probe list, `ApiStatus` and `Deprecated` annotations (class-retention, so bytecode is the only
-place to read them), class kind flags (which caught `Attribute` turning from enum to interface and
-will catch `ItemStack` becoming an interface), static constant sets on holders such as
-`RegistryEvents`, `MenuType` and `DataComponentTypes`, and the Adventure, Brigadier and JSpecify
-versions from the POM. The output drives runtime probe lists, the documentation badges, the CI
-matrix and the compatibility report. It does not prove behaviour; real servers do.
+Today `./gradlew :tooling:compatibility:scanPaperApi` downloads each pinned anchor `paper-api` jar,
+scans it with ASM and writes `paper-api.json`: every public class whose presence, class kind or
+class-level `ApiStatus` marking differs between anchors (`ApiStatus` and `Deprecated` have class
+retention, so bytecode is the only place to read them; class kind is what caught `Attribute`
+turning from enum to interface and will catch `ItemStack` becoming an interface).
+
+Planned extensions, in the milestone that first needs them: method descriptors and method-level
+`ApiStatus` from a probe list, and static constant sets on holders such as `RegistryEvents`,
+`MenuType` and `DataComponentTypes` (M3, for the command argument catalogue); the Adventure,
+Brigadier and JSpecify versions from each POM (M3); generating the CI server matrix from the
+anchors and the Fill API instead of the hand-written workflow (M3); runtime probe lists, the
+documentation badges and the compatibility report (M6). The generator does not prove behaviour;
+real servers do.
 
 ## Adventure
 
 Paper 1.21.x bundles Adventure 4.20 to 4.26 and Paper 26.2+ and Velocity 4 bundle Adventure 5.2.
 Adventure 5 removed `TranslationRegistry`, `PlainComponentSerializer`, `MessageType` and the
 deprecated `ClickEvent` and `HoverEvent` API, and made `ClickEvent.Action` a non-enum. Shared
-modules (`sculk-text`, `sculk-placeholders`, `sculk-presentation`, `sculk-dialogs`) compile against
-the floor Adventure of the lowest anchor they support and are compiled a second time against 5.2.0
-as a verification step. Both compilations must succeed. No `when` over an Adventure type that
-changed kind. MiniMessage fixtures run on both lines because 5.x tag behaviour is not yet verified.
-Translation uses the 4.x API surface that survives into 5 (`Translator`), not `TranslationRegistry`.
+modules (`sculk-text`, `sculk-placeholders`, `sculk-presentation`, `sculk-dialogs`) compile once,
+against the floor Adventure of the lowest anchor they support. Their test suite then runs a second
+time with the Adventure 5.2.0 jars in place of the floor jars, on Java 25 (`testAdventureLatest` in
+`sculk-text` today), so the same bytecode is proven on both lines. No `when` over an Adventure type
+that changed kind. MiniMessage fixtures run on both lines because 5.x tag behaviour is not yet
+verified. Translation builds on `TranslationStore`, `MiniMessageTranslationStore` and
+`GlobalTranslator`, which exist from Adventure 4.20.0 and survive unchanged into 5.2.0, never on
+`TranslationRegistry`.
 
 ## Java
 
@@ -118,23 +127,34 @@ Paper still marks `ItemType`, `PluginBootstrap`, `LifecycleEvents.TAGS`, `DATAPA
 commands, dialogs and registries experimental until 26.2 b100. Opt-ins are declared per adapter
 source set, never globally, so a new experimental symbol is a visible build change.
 
+Some experimental markers sit on single methods of an otherwise stable class. In 26.3
+(`26.3.build.175-stable`, read from the jar's bytecode) `ArgumentTypes.angle()`, `axes()`,
+`columnBlockPosition()`, `columnFinePosition()` (both overloads) and `blockInWorldPredicate()`
+carry method-level `@ApiStatus.Experimental`, and none of them exists in the 1.21.4 jar.
+`sculk-commands-paper` therefore opts in per method, never per class, and probes each factory at
+startup like any other capability.
+
 ## Behavioural shims
 
 Differences the capability engine must paper over, with the version they appear in:
 
 | Version | Difference | Sculk response |
 | --- | --- | --- |
-| 1.21 → 1.21.4 | `Attribute` enum → interface | Never `when` over `OldEnum` types; key-based lookups |
 | 1.21.5 | Tooltip components reworked | Per-component probes |
 | 1.21.6 → 1.21.11 | `RegistryFreezeEvent` → `RegistryComposeEvent` | Registry adapter per anchor |
 | 1.21.7 | `PlayerLoginEvent` deprecated for connection events | Connection lifecycle adapter |
 | 1.21.10 | Teleport keeps vanilla passenger semantics; `TeleportFlag.EntityState` is a no-op | Explicit `retainPassengers` option implemented per anchor |
 | 1.21.11 | Gamerules keyed by registry | Key-based gamerule access |
 | 26.1 | World identity by key; `WorldInfo.getName` obsolete; storage layout moved | Keys in persistence; name migration helper |
-| 26.2 | Adventure 5; beds lose block entities and PDC | Dual compile; documented data loss event |
+| 26.2 | Adventure 5; beds lose block entities and PDC | Tests run on both Adventure lines; documented data loss event |
 | 26.3 | `PlayerAnimationEvent` → `PlayerArmSwingEvent`; `PotionBrewer` deprecated | Event adapter; data-driven brewing recipes |
 
 ## Integration test matrix
+
+Today every pull request boots Paper 1.21.4 (Java 21) and 26.3 (Java 25), runs the threading
+scenarios on Paper 1.21.4, Paper 26.3, Folia 26.1.2 and Canvas 26.3, and boots Velocity 4.2.0. The
+servers are written by hand in `.github/workflows/ci.yml` and the `integration-tests` builds. The
+target matrix below, generated rather than hand-written, lands in M3; there is no nightly job yet.
 
 | When | Servers |
 | --- | --- |

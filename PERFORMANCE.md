@@ -32,7 +32,7 @@ pull request so it cannot rot.
 | Placeholders | Graph invalidation fan-out for 1, 10 and 100 dependents |
 | Commands | Spec compilation to Paper and Velocity Brigadier trees, execution overhead per invocation, suggestion generation, test-runner interpretation |
 | Config | Load, validate and migrate a 500-line file |
-| Items | `ItemSpec` to `ItemStack` on data-component and `ItemMeta` adapters |
+| Items | `ItemSpec` to `ItemStack` through data components |
 | PDC | Codec round trips for every built-in type |
 | Inventory | Diff of a 54-slot render with 1, 9 and 54 changes |
 | Presentation | Sidebar and tab-list diff |

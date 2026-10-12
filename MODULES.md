@@ -44,7 +44,7 @@ planned module is in `REBUILD.md`.
 
 | Module | Capability | Depends on | External | Status |
 | --- | --- | --- | --- | --- |
-| `sculk-items` | `ItemSpec` compiled to data components or `ItemMeta`; typed PDC codecs for every holder; custom-item provider SPI | text, paper | — | planned |
+| `sculk-items` | `ItemSpec` compiled to data components (native on every anchor, probed per component type); typed PDC codecs for every holder; custom-item provider SPI | text, paper | — | planned |
 | `sculk-registry` | Registry keys, tags, key and value sets, bootstrap mutation, aliases from generated mappings, datapack discovery | paper | — | planned |
 | `sculk-recipes` | Recipe DSL for every vanilla type including brewing and transmute | items, registry | — | planned |
 
