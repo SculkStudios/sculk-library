@@ -14,7 +14,7 @@ is inventoried in `docs/research/a-sculk5-audit.md` §2.
 | `sculk-common` | `sculk-core`, `sculk-coroutines` | Result, handles, version, tasks and clocks move to core; scheduler and coroutine scope are replaced by execution contexts and dispatchers. |
 | `sculk-platform` | `sculk-paper` (+ `sculk-canvas`) | `SculkPlugin` becomes `SculkPaperPlugin`; `Sculk.attach(plugin)` is the primary entry point. |
 | `sculk-text` | `sculk-text`, `sculk-placeholders` | Placeholders become a reactive, typed layer. |
-| `sculk-config` | `sculk-config` | Same philosophy; transactional reload and layered sources added. |
+| `sculk-config` | `sculk-config` | Same philosophy; comments and unknown keys survive a save, versioned migrations keep a backup, reload is transactional, and `${NAME}` environment placeholders resolve (ADR-0021). |
 | `sculk-series` | `sculk-registry` | Registry keys, tags and sets replace string lookups; aliases only where upstream renamed. |
 | `sculk-items` | `sculk-items` | `ItemBuilder` becomes an immutable `ItemSpec`; typed PDC absorbed here. |
 | `sculk-integrations` | `sculk-permissions`, `sculk-luckperms`, `sculk-vault`, `sculk-placeholderapi`, `sculk-miniplaceholders`, `sculk-nexo`, `sculk-oraxen`, `sculk-itemsadder` | One artifact per integration; typed, cached adapters. |

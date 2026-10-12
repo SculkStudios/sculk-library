@@ -10,6 +10,12 @@ needed `core.longpaths=true` or half the tree silently vanished), `gh api` repo/
 javadoc, project docs. **UNVERIFIED** = secondary source or inference, not checked against a primary.
 Licence flags: **LGPL** is the only copyleft found; nothing GPL/CC-NC/no-licence.
 
+> **Audit 2026-10-12.** This report assumed a 1.21.11 floor and used Sculk 5 names (`sculk-common`,
+> `sculk-series`, `sculk-visual`, `SculkScheduler`). The floor is 1.21.4 and a compatibility
+> generator is built after all (ADR-0002); module names are those in `MODULES.md`. The command
+> verdict is refined by ADR-0022 (platform Brigadier only, no Brigadier in the neutral module), and
+> the Velocity "primitives + custom" claim in §A.3 is corrected in place.
+
 Verdict in one table:
 
 | Area | Decision | One-line reason |
