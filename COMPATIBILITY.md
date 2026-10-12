@@ -95,7 +95,7 @@ Planned extensions, in the milestone that first needs them: method descriptors a
 `ApiStatus` from a probe list, and static constant sets on holders such as `RegistryEvents`,
 `MenuType` and `DataComponentTypes` (M3, for the command argument catalogue); the Adventure,
 Brigadier and JSpecify versions from each POM (M3); generating the CI server matrix from the
-anchors and the Fill API instead of the hand-written workflow (M3); runtime probe lists, the
+anchors and the Fill API instead of the shared hand-pinned `ServerMatrix` (M3); runtime probe lists, the
 documentation badges and the compatibility report (M6). The generator does not prove behaviour;
 real servers do.
 
@@ -151,10 +151,13 @@ Differences the capability engine must paper over, with the version they appear 
 
 ## Integration test matrix
 
-Today every pull request boots Paper 1.21.4 (Java 21) and 26.3 (Java 25), runs the threading
-scenarios on Paper 1.21.4, Paper 26.3, Folia 26.1.2 and Canvas 26.3, and boots Velocity 4.2.0. The
-servers are written by hand in `.github/workflows/ci.yml` and the `integration-tests` builds. The
-target matrix below, generated rather than hand-written, lands in M3; there is no nightly job yet.
+Today every push boots Paper 1.21.4 (Java 21) and 26.3 (Java 25), runs the threading scenarios on
+Paper 1.21.4, Paper 26.3, Folia 26.1.2 at grid-exponent 4 and 5 and Canvas 26.3, runs the command
+conformance suite on both Paper anchors and Folia, and runs the proxy suite on Velocity 4.2.0. Every
+suite reads its servers from one definition, `ServerMatrix` in `build-logic`, so a pin moves in one
+place; the Canvas jar is verified by SHA-256. Deriving the pins from the Fill API, rather than
+moving them by hand when the canary reports a newer build, is still planned, and so is the wider
+target matrix below; there is no nightly job yet.
 
 | When | Servers |
 | --- | --- |

@@ -7,7 +7,8 @@ import java.io.File
 
 /**
  * Proves a jar compiled on JDK 25 for JVM 21 loads, links against `sculk-core` and runs on a real
- * server, then stops the server. The verifying build task reads the result file.
+ * server: it compares the server's versions with the ones the build expects, writes one line per
+ * check to `results.properties`, then stops the server.
  */
 class SculkBootPlugin : JavaPlugin() {
     override fun onEnable() {
@@ -17,17 +18,19 @@ class SculkBootPlugin : JavaPlugin() {
 
     private fun report() {
         val raw = server.minecraftVersion
-        val parsed = MinecraftVersion.parse(raw).getOrNull()
-        val folia = runCatching { Class.forName("io.papermc.paper.threadedregions.RegionizedServer") }.isSuccess
-        dataFolder.mkdirs()
-        File(dataFolder, "result.properties").writeText(
-            """
-            minecraft=$raw
-            parsed=${parsed ?: ""}
-            java=${Runtime.version().feature()}
-            regionized=$folia
-            """.trimIndent() + "\n",
+        val expectedMinecraft = System.getProperty("sculk.itest.minecraft")
+        val expectedJava = System.getProperty("sculk.itest.java")
+        val parsed = MinecraftVersion.parse(raw).getOrNull()?.toString()
+        val java = Runtime.version().feature().toString()
+        val results = sortedMapOf(
+            "minecraft-version" to verdict(raw == expectedMinecraft) { "server reports $raw, expected $expectedMinecraft" },
+            "parsed-version" to verdict(parsed == expectedMinecraft) { "MinecraftVersion parsed '$parsed' from '$raw'" },
+            "java-version" to verdict(java == expectedJava) { "running on Java $java, expected $expectedJava" },
         )
+        dataFolder.mkdirs()
+        File(dataFolder, "results.properties").writeText(results.entries.joinToString("\n", postfix = "\n") { (key, value) -> "$key=$value" })
         server.shutdown()
     }
+
+    private fun verdict(ok: Boolean, detail: () -> String): String = if (ok) "PASS" else "FAIL: ${detail()}"
 }

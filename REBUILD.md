@@ -139,7 +139,7 @@ Corrections made to the plan after review. Details are in the commits of that da
 | Economy | `sculk-vault` targets VaultUnlocked, with legacy Vault as fallback. |
 | Compatibility | Removed fallbacks below the 1.21.4 floor (`ItemMeta`, `editMeta`, `createInventory`) and the `ItemMeta` benchmark. |
 | Adventure | Shared modules compile once and run their tests again against Adventure 5.2.0 jars; they are not compiled twice. |
-| CI matrix | Hand-written today; generation from the anchors and Fill is planned for M3. |
+| CI matrix | One shared `ServerMatrix` in `build-logic` feeds every suite; deriving its pins from Fill stays planned. |
 | Experimental API | Per-method opt-ins and probes for 26.3 `ArgumentTypes.angle`, `axes`, `columnBlockPosition`, `columnFinePosition`, `blockInWorldPredicate`. |
 | Translations | ADR-0024: translations on `MiniMessageTranslationStore` and `GlobalTranslator`, with CLDR plurals. |
 | Network | Valkey transport in its own `sculk-network-valkey`; plugin messaging reports a missing carrier; no routing through `sculk-data`. |
