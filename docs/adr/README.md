@@ -44,3 +44,4 @@ consequences matter more than exhaustive option surveys.
 | 0023 | [Packet backends and scoreboard surfaces on Folia](0023-packet-backends-and-folia-hud.md) | Accepted |
 | 0024 | [Translations on Adventure's translation stores](0024-translations-on-adventure-stores.md) | Accepted |
 | 0025 | [Resource-pack model: own, shaped after creative](0025-resource-pack-model.md) | Accepted |
+| 0026 | [Placeholders as typed tag resolvers with refresh policies](0026-placeholders.md) | Accepted |
