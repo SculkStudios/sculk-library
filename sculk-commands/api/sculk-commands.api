@@ -121,6 +121,7 @@ public final class studio/sculk/command/CommandBuilder {
 	public static synthetic fun long$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;JJILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun optional (Lstudio/sculk/command/ArgumentHandle;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun optional (Lstudio/sculk/command/ArgumentHandle;Ljava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun permission (Lstudio/sculk/permission/PermissionCheck;)V
 	public final fun player (Lkotlin/jvm/functions/Function2;)V
 	public final fun requires (Lkotlin/jvm/functions/Function1;)V
 	public final fun setDescription (Ljava/lang/String;)V
@@ -298,14 +299,18 @@ public final class studio/sculk/command/CommandResult$UnknownCommand : studio/sc
 	public fun message (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lnet/kyori/adventure/text/Component;
 }
 
-public abstract interface class studio/sculk/command/CommandSource {
+public abstract interface class studio/sculk/command/CommandSource : studio/sculk/permission/PermissionSubject {
 	public abstract fun getAudience ()Lnet/kyori/adventure/audience/Audience;
 	public abstract fun getExecutionContext ()Lstudio/sculk/execution/ExecutionContext;
 	public abstract fun getKind ()Lstudio/sculk/command/SenderKind;
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getPlatformSender ()Ljava/lang/Object;
 	public abstract fun getUniqueId ()Ljava/util/UUID;
-	public abstract fun hasPermission (Ljava/lang/String;)Z
+}
+
+public final class studio/sculk/command/CommandSource$DefaultImpls {
+	public static fun getPermissionContext (Lstudio/sculk/command/CommandSource;)Lstudio/sculk/permission/PermissionContext;
+	public static fun hasPermission (Lstudio/sculk/command/CommandSource;Lstudio/sculk/permission/Permission;)Z
 }
 
 public final class studio/sculk/command/CommandSpec {
@@ -333,6 +338,7 @@ public final class studio/sculk/command/Cooldown : studio/sculk/command/CommandM
 
 public final class studio/sculk/command/Requirement {
 	public static final field Companion Lstudio/sculk/command/Requirement$Companion;
+	public final fun getCheck ()Lstudio/sculk/permission/PermissionCheck;
 	public final fun getPermission ()Ljava/lang/String;
 	public final fun test (Lstudio/sculk/command/CommandSource;)Z
 }

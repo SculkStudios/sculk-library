@@ -1,6 +1,7 @@
 package studio.sculk.command
 
 import studio.sculk.annotation.SculkStable
+import studio.sculk.permission.PermissionCheck
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -149,11 +150,17 @@ public fun interface SuggestionProvider {
     public fun suggest(partial: String, source: CommandSource): List<String>
 }
 
-/** A permission and an extra condition; a sender who fails either never sees the node. */
+/**
+ * A permission check and an extra condition; a sender who fails either never sees the node. A
+ * contextual [check] can change as the sender moves; platforms resend command trees for the
+ * [PermissionCheck.contextKeys] it reads.
+ */
 @SculkStable
-public class Requirement internal constructor(public val permission: String?, private val condition: ((CommandSource) -> Boolean)?) {
-    public fun test(source: CommandSource): Boolean =
-        (permission == null || source.hasPermission(permission)) && (condition == null || condition(source))
+public class Requirement internal constructor(public val check: PermissionCheck?, private val condition: ((CommandSource) -> Boolean)?) {
+    /** The node [check] asks about, however the permission was declared. */
+    public val permission: String? get() = check?.node
+
+    public fun test(source: CommandSource): Boolean = (check == null || check.test(source)) && (condition == null || condition(source))
 
     @SculkStable
     public companion object {

@@ -9,6 +9,7 @@ description =
 dependencies {
     api(project(":sculk-platform-api"))
     api(project(":sculk-commands"))
+    api(project(":sculk-permissions"))
     api(libs.coroutines.test)
     // Tests have no server to provide Adventure, so the test kit brings it.
     api(libs.adventure.api)

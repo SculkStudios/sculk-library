@@ -38,6 +38,7 @@ include(
     ":sculk-placeholders",
     ":sculk-config",
     ":sculk-events",
+    ":sculk-permissions",
     ":sculk-commands",
     ":sculk-commands-paper",
     ":sculk-commands-velocity",

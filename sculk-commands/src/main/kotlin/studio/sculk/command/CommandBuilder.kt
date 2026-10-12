@@ -1,6 +1,8 @@
 package studio.sculk.command
 
 import studio.sculk.annotation.SculkStable
+import studio.sculk.permission.Permission
+import studio.sculk.permission.PermissionCheck
 import kotlin.time.Duration
 
 /** Marks the command DSL so an inner block cannot reach an outer builder by accident. */
@@ -49,10 +51,28 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
     /** Shown in help. */
     public var description: String? = null
 
-    /** The permission needed to see and use this command or branch. */
-    public var permission: String? = null
+    /**
+     * The permission node needed to see and use this command or branch, checked as the platform
+     * checks any string. Declare a [Permission] with [permission] instead so its default applies.
+     */
+    public var permission: String?
+        get() = permissionCheck?.node
+        set(value) {
+            permissionCheck = value?.let(PermissionCheck::node)
+        }
+
+    private var permissionCheck: PermissionCheck? = null
 
     private var condition: ((CommandSource) -> Boolean)? = null
+
+    /**
+     * The permission needed to see and use this command or branch: a [Permission] descriptor,
+     * whose default applies where nothing sets its node, or a contextual check such as
+     * `Fly.use.where(PermissionContext.WORLD, "minecraft:the_nether")`. Replaces any earlier one.
+     */
+    public fun permission(check: PermissionCheck) {
+        permissionCheck = check
+    }
 
     internal var built: CommandSpec? = null
 
@@ -226,7 +246,7 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
     }
 
     private fun applyRequirements() {
-        scope.requirement = Requirement(permission, condition)
+        scope.requirement = Requirement(permissionCheck, condition)
         branches.forEach { (_, builder) -> builder.applyRequirements() }
     }
 

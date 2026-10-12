@@ -8,6 +8,7 @@ description = "Sculk Studio commands: immutable command specs, a typed DSL, midd
 dependencies {
     api(project(":sculk-coroutines"))
     api(project(":sculk-text"))
+    api(project(":sculk-permissions"))
     // The server provides Adventure; senders expose it as their audience.
     compileOnly(libs.adventure.api)
     compileOnly(libs.adventure.minimessage)

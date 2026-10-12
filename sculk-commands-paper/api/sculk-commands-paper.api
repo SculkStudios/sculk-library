@@ -29,10 +29,12 @@ public final class studio/sculk/command/paper/PaperCommandSource : studio/sculk/
 	public fun getExecutionContext ()Lstudio/sculk/execution/ExecutionContext;
 	public fun getKind ()Lstudio/sculk/command/SenderKind;
 	public fun getName ()Ljava/lang/String;
+	public fun getPermissionContext ()Lstudio/sculk/permission/PermissionContext;
 	public fun getPlatformSender ()Ljava/lang/Object;
 	public final fun getStack ()Lio/papermc/paper/command/brigadier/CommandSourceStack;
 	public fun getUniqueId ()Ljava/util/UUID;
 	public fun hasPermission (Ljava/lang/String;)Z
+	public fun hasPermission (Lstudio/sculk/permission/Permission;)Z
 	public fun toString ()Ljava/lang/String;
 }
 

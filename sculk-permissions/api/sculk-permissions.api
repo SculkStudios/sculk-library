@@ -1,0 +1,116 @@
+public final class studio/sculk/permission/ContextualPermission : studio/sculk/permission/PermissionCheck {
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConditions ()Ljava/util/Map;
+	public fun getContextKeys ()Ljava/util/Set;
+	public fun getNode ()Ljava/lang/String;
+	public final fun getPermission ()Lstudio/sculk/permission/Permission;
+	public fun hashCode ()I
+	public fun test (Lstudio/sculk/permission/PermissionSubject;)Z
+	public fun toString ()Ljava/lang/String;
+	public final fun where (Ljava/lang/String;[Ljava/lang/String;)Lstudio/sculk/permission/ContextualPermission;
+}
+
+public final class studio/sculk/permission/Permission : studio/sculk/permission/PermissionCheck {
+	public static final field Companion Lstudio/sculk/permission/Permission$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/permission/PermissionDefault;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/permission/PermissionDefault;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChildren ()Ljava/util/Map;
+	public fun getContextKeys ()Ljava/util/Set;
+	public final fun getDefault ()Lstudio/sculk/permission/PermissionDefault;
+	public final fun getDescription ()Ljava/lang/String;
+	public fun getNode ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun test (Lstudio/sculk/permission/PermissionSubject;)Z
+	public fun toString ()Ljava/lang/String;
+	public final fun where (Ljava/lang/String;[Ljava/lang/String;)Lstudio/sculk/permission/ContextualPermission;
+}
+
+public final class studio/sculk/permission/Permission$Companion {
+	public final fun isValidNode (Ljava/lang/String;)Z
+}
+
+public abstract interface class studio/sculk/permission/PermissionCheck {
+	public static final field Companion Lstudio/sculk/permission/PermissionCheck$Companion;
+	public abstract fun getContextKeys ()Ljava/util/Set;
+	public abstract fun getNode ()Ljava/lang/String;
+	public abstract fun test (Lstudio/sculk/permission/PermissionSubject;)Z
+}
+
+public final class studio/sculk/permission/PermissionCheck$Companion {
+	public final fun node (Ljava/lang/String;)Lstudio/sculk/permission/PermissionCheck;
+}
+
+public final class studio/sculk/permission/PermissionContext {
+	public static final field Companion Lstudio/sculk/permission/PermissionContext$Companion;
+	public static final field GAME_MODE Ljava/lang/String;
+	public static final field SERVER Ljava/lang/String;
+	public static final field WORLD Ljava/lang/String;
+	public fun <init> (Ljava/util/Map;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun get (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getKeys ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/permission/PermissionContext$Companion {
+	public final fun getEMPTY ()Lstudio/sculk/permission/PermissionContext;
+	public final fun of ([Lkotlin/Pair;)Lstudio/sculk/permission/PermissionContext;
+}
+
+public final class studio/sculk/permission/PermissionDefault : java/lang/Enum {
+	public static final field EVERYONE Lstudio/sculk/permission/PermissionDefault;
+	public static final field NOBODY Lstudio/sculk/permission/PermissionDefault;
+	public static final field NON_OPERATORS Lstudio/sculk/permission/PermissionDefault;
+	public static final field OPERATORS Lstudio/sculk/permission/PermissionDefault;
+	public final fun appliesTo (Z)Z
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/permission/PermissionDefault;
+	public static fun values ()[Lstudio/sculk/permission/PermissionDefault;
+}
+
+public abstract class studio/sculk/permission/PermissionGroup {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getPermissions ()Ljava/util/List;
+	public final fun getPrefix ()Ljava/lang/String;
+	protected final fun include (Lstudio/sculk/permission/Permission;)Lstudio/sculk/permission/Permission;
+	protected final fun permission (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/permission/PermissionDefault;Ljava/util/Collection;)Lstudio/sculk/permission/Permission;
+	public static synthetic fun permission$default (Lstudio/sculk/permission/PermissionGroup;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/permission/PermissionDefault;Ljava/util/Collection;ILjava/lang/Object;)Lstudio/sculk/permission/Permission;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/permission/PermissionResolver {
+	public fun <init> (Ljava/util/Collection;)V
+	public final fun find (Ljava/lang/String;)Lstudio/sculk/permission/Permission;
+	public final fun getPermissions ()Ljava/util/List;
+	public final fun resolve (Lstudio/sculk/permission/Permission;ZLkotlin/jvm/functions/Function1;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class studio/sculk/permission/PermissionSubject {
+	public fun getPermissionContext ()Lstudio/sculk/permission/PermissionContext;
+	public abstract fun hasPermission (Ljava/lang/String;)Z
+	public fun hasPermission (Lstudio/sculk/permission/Permission;)Z
+}
+
+public final class studio/sculk/permission/PermissionSubject$DefaultImpls {
+	public static fun getPermissionContext (Lstudio/sculk/permission/PermissionSubject;)Lstudio/sculk/permission/PermissionContext;
+	public static fun hasPermission (Lstudio/sculk/permission/PermissionSubject;Lstudio/sculk/permission/Permission;)Z
+}
+
+public final class studio/sculk/permission/PermissionSubjectKt {
+	public static final fun hasPermission (Lstudio/sculk/permission/PermissionSubject;Lstudio/sculk/permission/PermissionCheck;)Z
+}
+
+public abstract interface class studio/sculk/permission/SculkPermissions {
+	public abstract fun register (Ljava/util/Collection;)Lstudio/sculk/SculkHandle;
+	public fun register (Lstudio/sculk/permission/PermissionGroup;)Lstudio/sculk/SculkHandle;
+	public fun register ([Lstudio/sculk/permission/Permission;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/permission/SculkPermissions$DefaultImpls {
+	public static fun register (Lstudio/sculk/permission/SculkPermissions;Lstudio/sculk/permission/PermissionGroup;)Lstudio/sculk/SculkHandle;
+	public static fun register (Lstudio/sculk/permission/SculkPermissions;[Lstudio/sculk/permission/Permission;)Lstudio/sculk/SculkHandle;
+}
+

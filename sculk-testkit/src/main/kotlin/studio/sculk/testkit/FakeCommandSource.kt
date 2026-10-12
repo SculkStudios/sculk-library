@@ -7,11 +7,15 @@ import studio.sculk.annotation.SculkStable
 import studio.sculk.command.CommandSource
 import studio.sculk.command.SenderKind
 import studio.sculk.execution.ExecutionContext
+import studio.sculk.permission.Permission
+import studio.sculk.permission.PermissionContext
 import java.util.UUID
 
 /**
  * A [CommandSource] for tests: holds its permissions, records every message it is sent. A
- * permission of `*` grants everything, as an operator has. Thread-safe.
+ * permission of `*` grants everything, as an operator has. A [Permission] descriptor it was not
+ * granted falls back to the descriptor's default, with `*` deciding whether it is an operator.
+ * Thread-safe.
  */
 @SculkStable
 public class FakeCommandSource(
@@ -20,10 +24,15 @@ public class FakeCommandSource(
     permissions: Set<String> = emptySet(),
     override val executionContext: ExecutionContext = ExecutionContext.Global,
     override val uniqueId: UUID? = if (kind.isPlayer) UUID.nameUUIDFromBytes("FakePlayer:$name".toByteArray()) else null,
+    context: PermissionContext = PermissionContext.EMPTY,
 ) : CommandSource {
     private val lock = Any()
     private val granted = permissions.toMutableSet()
     private val received = mutableListOf<Component>()
+
+    /** Where the sender is, for contextual permissions; change it to move the sender. */
+    @Volatile
+    override var permissionContext: PermissionContext = context
 
     override val audience: Audience = object : Audience {
         override fun sendMessage(message: Component) {
@@ -40,6 +49,10 @@ public class FakeCommandSource(
     public val plainMessages: List<String> get() = messages.map(PlainTextComponentSerializer.plainText()::serialize)
 
     override fun hasPermission(permission: String): Boolean = synchronized(lock) { "*" in granted || permission in granted }
+
+    override fun hasPermission(permission: Permission): Boolean = synchronized(lock) {
+        "*" in granted || permission.node in granted || permission.default.appliesTo(operator = false)
+    }
 
     public fun grant(permission: String) {
         synchronized(lock) { granted += permission }

@@ -11,20 +11,23 @@ public final class studio/sculk/testkit/FakeClock : studio/sculk/time/SculkClock
 public final class studio/sculk/testkit/FakeCommandSource : studio/sculk/command/CommandSource {
 	public static final field Companion Lstudio/sculk/testkit/FakeCommandSource$Companion;
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Lstudio/sculk/command/SenderKind;Ljava/util/Set;Lstudio/sculk/execution/ExecutionContext;Ljava/util/UUID;)V
-	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/command/SenderKind;Ljava/util/Set;Lstudio/sculk/execution/ExecutionContext;Ljava/util/UUID;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lstudio/sculk/command/SenderKind;Ljava/util/Set;Lstudio/sculk/execution/ExecutionContext;Ljava/util/UUID;Lstudio/sculk/permission/PermissionContext;)V
+	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/command/SenderKind;Ljava/util/Set;Lstudio/sculk/execution/ExecutionContext;Ljava/util/UUID;Lstudio/sculk/permission/PermissionContext;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun clearMessages ()V
 	public fun getAudience ()Lnet/kyori/adventure/audience/Audience;
 	public fun getExecutionContext ()Lstudio/sculk/execution/ExecutionContext;
 	public fun getKind ()Lstudio/sculk/command/SenderKind;
 	public final fun getMessages ()Ljava/util/List;
 	public fun getName ()Ljava/lang/String;
+	public fun getPermissionContext ()Lstudio/sculk/permission/PermissionContext;
 	public final fun getPlainMessages ()Ljava/util/List;
 	public fun getPlatformSender ()Ljava/lang/Object;
 	public fun getUniqueId ()Ljava/util/UUID;
 	public final fun grant (Ljava/lang/String;)V
 	public fun hasPermission (Ljava/lang/String;)Z
+	public fun hasPermission (Lstudio/sculk/permission/Permission;)Z
 	public final fun revoke (Ljava/lang/String;)V
+	public fun setPermissionContext (Lstudio/sculk/permission/PermissionContext;)V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -73,6 +76,29 @@ public final class studio/sculk/testkit/FakeExecutor$ThreadModel : java/lang/Enu
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/testkit/FakeExecutor$ThreadModel;
 	public static fun values ()[Lstudio/sculk/testkit/FakeExecutor$ThreadModel;
+}
+
+public final class studio/sculk/testkit/FakePermissionSubject : studio/sculk/permission/PermissionSubject {
+	public fun <init> (ZLjava/util/Map;Lstudio/sculk/permission/PermissionContext;)V
+	public synthetic fun <init> (ZLjava/util/Map;Lstudio/sculk/permission/PermissionContext;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getOperator ()Z
+	public fun getPermissionContext ()Lstudio/sculk/permission/PermissionContext;
+	public fun hasPermission (Ljava/lang/String;)Z
+	public fun hasPermission (Lstudio/sculk/permission/Permission;)Z
+	public final fun set (Ljava/lang/String;Z)V
+	public fun setPermissionContext (Lstudio/sculk/permission/PermissionContext;)V
+	public fun toString ()Ljava/lang/String;
+	public final fun unset (Ljava/lang/String;)V
+}
+
+public final class studio/sculk/testkit/FakePermissions : studio/sculk/permission/SculkPermissions {
+	public fun <init> ()V
+	public final fun getRegistered ()Ljava/util/List;
+	public fun register (Ljava/util/Collection;)Lstudio/sculk/SculkHandle;
+	public fun register (Lstudio/sculk/permission/PermissionGroup;)Lstudio/sculk/SculkHandle;
+	public fun register ([Lstudio/sculk/permission/Permission;)Lstudio/sculk/SculkHandle;
+	public final fun subject (ZLjava/util/Map;Lstudio/sculk/permission/PermissionContext;)Lstudio/sculk/testkit/FakePermissionSubject;
+	public static synthetic fun subject$default (Lstudio/sculk/testkit/FakePermissions;ZLjava/util/Map;Lstudio/sculk/permission/PermissionContext;ILjava/lang/Object;)Lstudio/sculk/testkit/FakePermissionSubject;
 }
 
 public final class studio/sculk/testkit/FakeRuntime : studio/sculk/runtime/AbstractSculkRuntime {

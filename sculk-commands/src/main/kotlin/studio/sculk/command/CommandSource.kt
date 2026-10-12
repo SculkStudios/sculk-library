@@ -3,14 +3,16 @@ package studio.sculk.command
 import net.kyori.adventure.audience.Audience
 import studio.sculk.annotation.SculkStable
 import studio.sculk.execution.ExecutionContext
+import studio.sculk.permission.PermissionSubject
 import java.util.UUID
 
 /**
  * Who ran a command, as every platform describes it. Platform modules wrap their own sender types;
- * code that needs the platform object reads [platformSender].
+ * code that needs the platform object reads [platformSender]. Permissions, and the context that
+ * contextual permissions read, are the sender's as a [PermissionSubject].
  */
 @SculkStable
-public interface CommandSource {
+public interface CommandSource : PermissionSubject {
     /** A player's name, `Console`, or a command block's name. */
     public val name: String
 
@@ -30,8 +32,6 @@ public interface CommandSource {
 
     /** The platform's own sender object, such as Paper's `CommandSourceStack`. */
     public val platformSender: Any
-
-    public fun hasPermission(permission: String): Boolean
 }
 
 /** What kind of sender ran a command. */
