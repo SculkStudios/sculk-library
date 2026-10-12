@@ -36,8 +36,8 @@ withAsync { repository.load(id) }
 
 Each `with*` suspends until the block has run in that context and returns its value. When the
 caller already owns the context, the block runs inline in the same tick. The same contexts are
-available as coroutine dispatchers (`sculk.dispatchers.entity(player)` and so on) and as tick
-schedulers on `sculk.tasks` with entity and region overloads.
+available as coroutine dispatchers through `scope.execution.dispatcher(context)`, and the task
+helpers (`repeating`, `delayed`, `cron`, `batches`) each take the context to run in.
 
 ## Rules
 
@@ -103,7 +103,9 @@ continuation. Closing a scope cancels its coroutines first and only then closes 
 newest first, so no coroutine runs against a resource that is already closed. A repeating, cron or
 batch task whose run throws reports the failure and keeps its schedule.
 
-Scope hierarchy, each a `ResourceScope` with a coroutine scope attached:
+Scope hierarchy, each a `ResourceScope` with a coroutine scope attached. The plugin scope and
+explicit child scopes exist today; the per-player, per-entity, per-world and per-session scopes
+arrive with the modules that own those lifetimes.
 
 | Scope | Closed when |
 | --- | --- |
@@ -146,7 +148,7 @@ of its region API classes; it is never treated as Folia. Its capability provider
 
 | Capability | API | Contract |
 | --- | --- | --- |
-| Regionized data | `canvas.regionData<T> { create { }; merge { from, into, tickOffset -> }; split { from, shift, regions -> } }` over `Server#createRegionizedData` | `merge` and `split` run under the region lock: they must not block, suspend or throw. The façade takes non-suspending lambdas, wraps them in a guard that logs and keeps the server alive, and in development mode fails tests whose callbacks exceed a time budget. Nothing is called when a region dies. |
+| Regionized data | `CanvasRegionData.create(create = { world -> }, merge = { from, into, tickOffset -> }, split = { from, target -> })` over `Server#createRegionizedData` | `merge` and `split` run under the region lock: they must not block, suspend or throw. The façade takes non-suspending lambdas, wraps them in a guard that logs and keeps the server alive, and in development mode fails tests whose callbacks exceed a time budget. Nothing is called when a region dies. |
 | Ownership by bounding box and by position plus velocity | `isOwnedByCurrentRegion(world, aabb)`, `(location, velocity, buffer)` | Exposed as additional ownership checks on the region context. |
 | Async lifecycle events | teleport, post-teleport, portal, post-portal, respawn, post-respawn, world unload | Pre-events fire on the source region and must not mutate entity state; post-events fire on the destination. Mapped onto Sculk's `listen` and `observe`. |
 | World lifecycle | `createWorld` on the global tick, `unloadWorldAsync` with a typed result | Exposed through `sculk-world` as a capability. |
@@ -167,6 +169,7 @@ time. The scope is cancelled in `ProxyShutdownEvent`, before Velocity shuts the 
 
 ## Development thread checker
 
+Planned for M7 and not built yet; `developmentMode` exists so modules can opt in as they land.
 Enabled by a system property or the Gradle plugin's dev run; near-zero cost when off (one
 `static final` branch per guarded call). When on, it reports:
 
