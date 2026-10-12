@@ -54,7 +54,8 @@ planned module is in `REBUILD.md`.
 | --- | --- | --- | --- |
 | `sculk-inventory` | State-driven menus with diff rendering, typed native views, full interaction policy, pagination, entity-owned sessions | items, text | planned |
 | `sculk-dialogs` | `DialogSpec`, typed responses, registered and dynamic dialogs, explicit fallback | text, paper | planned |
-| `sculk-presentation` | Render graph with update policies; sidebar, below-name, tab list, header and footer, action bar, boss bars, titles, nametags; conditions; scoreboard leases | text, placeholders, paper | planned |
+| `sculk-presentation` | Render graph with update policies; sidebar, below-name, tab list, header and footer, action bar, boss bars, titles, nametags; conditions; scoreboard leases. No packet dependency: on Folia, sidebar, below-name and nametag teams report `Unavailable` (ADR-0023) | text, placeholders, paper | planned |
+| `sculk-presentation-packets` | Opt-in packet-backed sidebar, below-name and nametag teams for Folia, through whichever packet backend is installed | presentation, packets-api | planned |
 | `sculk-config-admin` | Opt-in operator editor generated from a config schema, dialog first with explicit fallback | config, dialogs, inventory | planned |
 
 ## Visuals and assets

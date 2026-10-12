@@ -73,8 +73,10 @@ schedulers on `sculk.tasks` with entity and region overloads.
 11. **Inventories are entity work.** Opening, closing and mutating a player's view runs in that
     player's entity context. The platform does not check this; Sculk does in development mode.
 12. **Scoreboards differ by platform.** Folia throws on scoreboard creation and registration, so
-    presentation surfaces there are packet-backed. Canvas restores scoreboards with writes on
-    `Global` and team membership on the entity. Paper allows either.
+    sidebar, below-name and nametag-team surfaces there are `Unavailable` unless the plugin installs
+    `sculk-presentation-packets` and the server runs a packet backend (ADR-0023). Action bar, boss
+    bar, titles and tab header and footer stay native on Folia. Canvas restores scoreboards with
+    writes on `Global` and team membership on the entity. Paper allows either.
 
 ## Coroutines
 

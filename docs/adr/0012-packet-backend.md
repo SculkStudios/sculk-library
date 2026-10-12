@@ -1,6 +1,6 @@
 # ADR-0012: Packet backend strategy
 
-**Status**: Accepted · **Date**: 2026-10-12 · **Supersedes**: —
+**Status**: Superseded by ADR-0023 · **Date**: 2026-10-12 · **Supersedes**: —
 
 ## Context
 

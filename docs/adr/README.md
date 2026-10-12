@@ -30,7 +30,7 @@ consequences matter more than exhaustive option surveys.
 | 0009 | [Command model](0009-command-model.md) | Superseded by ADR-0022 |
 | 0010 | [DSL first, compile-time annotations second](0010-dsl-and-codegen.md) | Accepted |
 | 0011 | [Configuration serialisation](0011-config-serialization.md) | Superseded by ADR-0021 |
-| 0012 | [Packet backend strategy](0012-packet-backend.md) | Accepted |
+| 0012 | [Packet backend strategy](0012-packet-backend.md) | Superseded by ADR-0023 |
 | 0013 | [Resource-pack architecture](0013-resource-packs.md) | Accepted |
 | 0014 | [Persistence architecture](0014-persistence.md) | Accepted |
 | 0015 | [Distribution and publishing](0015-distribution-and-publishing.md) | Accepted |
@@ -41,3 +41,4 @@ consequences matter more than exhaustive option surveys.
 | 0020 | [Two branches, main and dev](0020-two-branches.md) | Accepted |
 | 0021 | [Configuration codec on snakeyaml-engine](0021-config-codec.md) | Accepted |
 | 0022 | [Commands on the platforms' Brigadier](0022-commands-on-platform-brigadier.md) | Accepted |
+| 0023 | [Packet backends and scoreboard surfaces on Folia](0023-packet-backends-and-folia-hud.md) | Accepted |

@@ -48,7 +48,7 @@ platform API must not prevent them later.
 | Persistence | JDBC + HikariCP + bounded IO dispatcher in 6.0. | Mature and predictable. R2DBC and Exposed are 6.x candidates behind the same repository contract. |
 | Code generation | KSP2, Gradle first. Annotations compile into the same models the DSL produces. | One command model, no runtime scanning. Maven KSP only once CI proves it. |
 | Maven | First-class consumption and `sculk-maven-plugin` (metadata and verification goals) in 6.0; the Maven plugin is built in M6 after the Gradle plugin. | Correct metadata and a BOM come first. Maven KSP stays documented as unavailable until CI proves it (ADR-0010). |
-| Packets | PacketEvents primary, ProtocolLib where tests pass. Both `compileOnly`, never bundled. | Upstream tracks protocol changes; Sculk should not. Licence stance in `LICENSING.md`. |
+| Packets | PacketEvents primary, ProtocolLib where tests pass. Both `compileOnly`, never bundled. Scoreboard surfaces on Folia need an opt-in packet module (ADR-0023). | Upstream tracks protocol changes; Sculk should not. Licence stance in `LICENSING.md`. |
 | Documentation | Custom portal, framework chosen after the spike in `docs/research/g-docs-spike.md`. | Navigation and badges are generated from a manifest; a hand-maintained sidebar is a defect. |
 
 Decisions that need research evidence are recorded as ADRs under `docs/adr/`.

@@ -61,7 +61,7 @@ packets, discord, web) are written when those modules land.
 | --- | --- | --- |
 | Command execution thread | Executors ran on the async dispatcher by default, without saying so. | Executors run in the context the spec declares; the default is the sender's ownership context. Async work is explicit. |
 | Sidebar scoreboard | Replaced the player's scoreboard and could not restore it. | Presentation surfaces lease scoreboard state and restore it on close. |
-| Folia | Declared in docs, never booted; HUD, holograms and nametags ran player work from the global task. | Every surface runs on the owning entity or region; tested on real Folia builds. |
+| Folia | Declared in docs, never booted; HUD, holograms and nametags ran player work from the global task. | Every surface runs on the owning entity or region; tested on real Folia builds. Sidebar, below-name and nametag teams need `sculk-presentation-packets` and a packet backend on Folia, otherwise they report `Unavailable` (ADR-0023). |
 | Packet guard | ProtocolLib handlers were unguarded. | Every backend runs handlers through the guard. |
 | Integrations | Reflection resolved per call for Vault and LuckPerms. | Handles resolved once at startup. |
 | Registry misses | Memoised forever. | Negative cache with expiry; providers can reload. |
