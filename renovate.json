@@ -6,7 +6,9 @@
     "group:kotlinx-coroutinesMonorepo",
     "group:junit-frameworkMonorepo"
   ],
-  "baseBranches": ["sculk-6"],
+  "baseBranches": ["dev"],
+  "dependencyDashboard": true,
+  "dependencyDashboardApproval": true,
   "automerge": false,
   "minimumReleaseAge": "7 days",
   "packageRules": [

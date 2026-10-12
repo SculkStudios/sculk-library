@@ -1,6 +1,6 @@
 # ADR-0018: Repository and branches
 
-**Status**: Accepted · **Date**: 2026-10-12 · **Supersedes**: —
+**Status**: Superseded by ADR-0020 · **Date**: 2026-10-12 · **Supersedes**: —
 
 ## Context
 

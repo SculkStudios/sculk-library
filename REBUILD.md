@@ -1,6 +1,6 @@
 # Sculk Studio 6 — Rebuild Charter
 
-Sculk 6 is a ground-up rewrite. The 5.x tree on `release/5.x` is evidence of behaviour users
+Sculk 6 is a ground-up rewrite. The 5.x tree on `main` is evidence of behaviour users
 rely on, lessons already paid for, and mistakes not to repeat. It is not the specification.
 
 ## Goal
@@ -43,7 +43,7 @@ platform API must not prevent them later.
 
 | Decision | Choice | Reason |
 | --- | --- | --- |
-| Repository | Same repo. `release/5.x` carries 5.x maintenance; `sculk-6` becomes `main` at RC. | History stays reachable; no code is copied from 5.x. |
+| Repository | Same repo, two branches: `main` carries 5.x until 6.0 ships, `dev` carries the rewrite (ADR-0020). | History stays reachable; no code is copied from 5.x. |
 | 5.x compatibility facade | Not shipped. `MIGRATION_5_TO_6.md` plus a `sculkMigrate` analysis task instead. | 5.x never reached public distribution; a facade would constrain the new architecture to serve one consumer. |
 | Persistence | JDBC + HikariCP + bounded IO dispatcher in 6.0. | Mature and predictable. R2DBC and Exposed are 6.x candidates behind the same repository contract. |
 | Code generation | KSP2, Gradle first. Annotations compile into the same models the DSL produces. | One command model, no runtime scanning. Maven KSP only once CI proves it. |

@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, sculk-6, "release/**"]
+    branches: [main, dev]
   pull_request:
-    branches: [main, sculk-6, "release/**"]
+    branches: [main, dev]
 
 permissions:
   contents: read

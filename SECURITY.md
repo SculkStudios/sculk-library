@@ -8,7 +8,7 @@ plan within 14 days for anything rated high or critical. Reporters are credited 
 notes unless they ask otherwise.
 
 Supported for security fixes: the latest 6.x minor and, until 6.0 ships, the latest 5.x release
-on `release/5.x`.
+on `main`.
 
 ## Threat model
 

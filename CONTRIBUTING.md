@@ -12,7 +12,7 @@ corrections, and work on the current milestone.
 
 ## Making a change
 
-1. Branch from `sculk-6`.
+1. Branch from `dev`.
 2. For a bug, add a failing test first.
 3. Keep the change to one concern.
 4. `./gradlew build` must pass. It runs ktlint, the tests on Java 21 and 25, the ABI check, the

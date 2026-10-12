@@ -2,11 +2,11 @@
 
 > The Kotlin platform for Paper, Folia, Canvas and Velocity plugins.
 
-[![CI](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml/badge.svg?branch=sculk-6)](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml)
+[![CI](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/SculkStudios/sculk-library/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Sculk 6 is in development on this branch.** It is a ground-up rewrite; nothing here is released
-yet. Sculk 5 lives on [`release/5.x`](https://github.com/SculkStudios/sculk-library/tree/release/5.x).
+yet. Sculk 5 lives on [`main`](https://github.com/SculkStudios/sculk-library/tree/main) until 6.0 ships.
 
 ## What it is
 

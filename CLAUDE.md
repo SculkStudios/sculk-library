@@ -1,7 +1,7 @@
 # Sculk Studio 6 — Contributor & AI Guide
 
 Sculk Studio is a Kotlin platform for Paper, Folia, Canvas and Velocity plugins. Version 6 is a
-ground-up rewrite on branch `sculk-6`; 5.x lives on `release/5.x`. Read `REBUILD.md` first: it has
+ground-up rewrite on branch `dev`; `main` carries 5.x until 6.0 ships. Read `REBUILD.md` first: it has
 the milestones, the decisions already taken and the release blockers.
 
 ## Where things are
@@ -61,4 +61,4 @@ test plugins, never published · `tooling/*` build tooling · `docs` documentati
 ## Git
 
 Conventional commits authored by the maintainer only; no co-author trailers and no AI mentions.
-Work on `sculk-6` or a branch from it; never commit to `main` until 6.0 replaces it.
+Work on `dev` or a branch from it; never commit 6 work to `main` until 6.0 replaces it.

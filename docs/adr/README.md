@@ -36,5 +36,6 @@ consequences matter more than exhaustive option surveys.
 | 0015 | [Distribution and publishing](0015-distribution-and-publishing.md) | Accepted |
 | 0016 | [Documentation platform](0016-docs-platform.md) | Accepted |
 | 0017 | [No Sculk 5 compatibility facade](0017-no-v5-compatibility-facade.md) | Accepted |
-| 0018 | [Repository and branches](0018-repository-and-branches.md) | Accepted |
+| 0018 | [Repository and branches](0018-repository-and-branches.md) | Superseded by ADR-0020 |
 | 0019 | [Event handler semantics](0019-event-handler-semantics.md) | Accepted |
+| 0020 | [Two branches, main and dev](0020-two-branches.md) | Accepted |
