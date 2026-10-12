@@ -22,9 +22,9 @@ planned module is in `REBUILD.md`.
 
 | Module | Capability | Depends on | External | Status |
 | --- | --- | --- | --- | --- |
-| `sculk-paper` | `Sculk.attach`, `SculkPaperPlugin`, Paper and Folia runtime, capability adapters per anchor, bootstrap hook, event bridge. Folia needs no module of its own: Paper exposes the same region schedulers and ownership checks | platform-api | paper-api (compileOnly) | done |
+| `sculk-paper` | `Sculk.attach`, `SculkPaperPlugin`, Paper and Folia runtime, capability adapters per anchor, bootstrap hook, event bridge, permission backend. Folia needs no module of its own: Paper exposes the same region schedulers and ownership checks | platform-api, events, permissions | paper-api (compileOnly) | done |
 | `sculk-canvas` | Canvas capability provider: regionized data, bounding-box and movement ownership checks, async world unload, tick manager | paper | canvas-api (compileOnly) | done |
-| `sculk-velocity` | Velocity runtime: lifecycle over Guice construction, proxy dispatcher, events | platform-api | velocity-api (compileOnly) | done |
+| `sculk-velocity` | Velocity runtime: lifecycle over Guice construction, proxy dispatcher, events, permission backend | platform-api, events, permissions | velocity-api (compileOnly) | done |
 | `sculk-velocity-runtime` | Optional provider plugin carrying Kotlin, kotlinx and Sculk once for every Velocity plugin on a proxy, because Velocity's class loaders share classes across plugins (`LICENSING.md`, Consumers) | velocity | — | planned |
 
 ## Author experience
@@ -34,11 +34,11 @@ planned module is in `REBUILD.md`.
 | `sculk-text` | Themes, semantic styles, trusted-template rendering, translations and plurals, glyph metrics, wrapping, centring | core | adventure, minimessage (compileOnly) | yes | done; translations move onto Adventure's `MiniMessageTranslationStore` and `GlobalTranslator` with CLDR plurals in M3 (ADR-0024) |
 | `sculk-placeholders` | Typed placeholders as `TagResolver`s with refresh policy and change signals; global, audience, relational, contextual | text, coroutines | — | yes | done |
 | `sculk-config` | Typed YAML with comment and unknown-key preservation, migrations, validation, transactional reload, environment placeholders, secrets | core | kotlinx-serialization-core, snakeyaml-engine | yes | done |
-| `sculk-commands` | Immutable `CommandSpec`, DSL, neutral argument model (primitive types and validators), middleware, cooldowns, confirmation, flags, help and usage, server-free test runner that interprets the spec (ADR-0022) | text, coroutines | — (no Brigadier) | yes | in progress (spec, DSL, dispatcher, middleware and help done; flags pending) |
+| `sculk-commands` | Immutable `CommandSpec`, DSL, neutral argument model (primitive types and validators), middleware, cooldowns, confirmation, flags, help and usage, server-free test runner that interprets the spec (ADR-0022) | text, coroutines, permissions | — (no Brigadier) | yes | in progress (spec, DSL, dispatcher, middleware and help done; flags pending) |
 | `sculk-commands-paper` | Compiles a spec through Paper's `io.papermc.paper.command.brigadier` API (`Commands`, `ArgumentTypes`, `LifecycleEvents.COMMANDS`); Paper argument catalogue: players, entity selectors, positions, registry resources | commands, paper | paper-api (compileOnly; brings Brigadier) | no | in progress |
 | `sculk-commands-velocity` | Compiles a spec into a `BrigadierCommand`; proxy catalogue (player, server); backend-only types sent as strings and validated on the proxy, since Velocity supports no custom argument types | commands, velocity | velocity-api (compileOnly; brings velocity-brigadier) | no | in progress |
 | `sculk-events` | `listen` (immediate), `observe` (suspending), awaitable events, lifecycle-bound handles | coroutines, platform-api | — | yes | done |
-| `sculk-permissions` | Permission descriptors, native backend, context-aware checks | core, platform-api | — | yes | planned |
+| `sculk-permissions` | Permission descriptors grouped per plugin, registration over each platform's native system (Bukkit registry on Paper, a per-plugin resolver on Velocity), context-aware checks, command requirements (ADR-0027) | core | — | yes | done |
 
 ## Content
 

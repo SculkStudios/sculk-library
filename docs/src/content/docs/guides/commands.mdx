@@ -49,6 +49,11 @@ plain text, never as markup, so a player name containing `<red>` is printed, not
 ends the command and shows its message as the outcome; it is not logged as an error. An exception
 from an executor gives the sender a short generic message and the full cause goes to the log.
 
+`permission = "economy.pay"` checks a raw node, as the platform checks any string. Pass a
+descriptor instead, `permission(EconomyPermissions.pay)`, so its default applies where nothing sets
+the node, or a contextual check that hides the command outside some worlds or game modes; see
+[Permissions](/guides/permissions/). A sender who fails a branch's permission never sees it.
+
 ## Words, aliases and help
 
 `literal` branches from the word of the block it is written in. Aliases lead to the same branch and

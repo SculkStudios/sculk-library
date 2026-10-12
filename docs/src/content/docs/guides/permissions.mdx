@@ -1,0 +1,179 @@
+---
+title: Permissions
+description: sculk-permissions, permission descriptors declared once in code, registered with each platform's native system, with defaults, children and context-aware checks.
+sidebar:
+  order: 8
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`sculk-permissions` (package `studio.sculk.permission`) replaces permission strings scattered
+through a plugin with descriptors declared once: a node, a description, who holds it by default and
+the nodes it passes on. Checks still go through the platform's own permission system, so LuckPerms
+and every other provider work unchanged. The module is platform-neutral; `sculk-paper` and
+`sculk-velocity` bring it and implement registration.
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-paper:6.0.0-SNAPSHOT") // or sculk-velocity
+}
+```
+
+## Declaring permissions
+
+Declare a plugin's permissions as the properties of a `PermissionGroup` object. The group prefixes
+every node and lists the descriptors for registration, in declaration order:
+
+```kotlin
+import studio.sculk.permission.PermissionDefault
+import studio.sculk.permission.PermissionGroup
+
+object ShopPermissions : PermissionGroup("shop") {
+    val buy = permission("buy", "Buy from the shop", PermissionDefault.EVERYONE)
+    val admin = permission("admin", "Change prices and stock")
+    val restock = permission("restock", "Restock the shop", PermissionDefault.EVERYONE)
+    val all = permission("*", "Every shop permission", children = listOf(buy, admin, restock))
+}
+```
+
+| Default | Holders when nothing sets the node |
+| --- | --- |
+| `EVERYONE` | Everyone. |
+| `OPERATORS` (the default) | Operators only. |
+| `NON_OPERATORS` | Everyone except operators. |
+| `NOBODY` | No one, operators included. |
+
+A node is lower-case words of letters, digits, `-` and `_` joined by dots, and may end in `.*` for a
+parent that gathers children. Anything else throws when the descriptor is created, since it is a
+typo the server would accept silently. A holder of a parent holds each child with the value the
+parent gives it; a subject denied the parent gets the opposite, as on Bukkit. Defaults pass down
+too: operators hold every child of an `OPERATORS` parent, even a `NOBODY` child, so give a parent
+that should only be granted explicitly the default `NOBODY`. A descriptor can also
+be built directly, with `Permission(node, description, default, children)`, and added to a group
+with `include`.
+
+## Registering and checking
+
+Register the group once while the plugin starts, and use the descriptors in commands and checks:
+
+```kotlin
+import org.bukkit.event.player.PlayerInteractEvent
+import studio.sculk.command.command
+import studio.sculk.command.paper.commands
+import studio.sculk.event.listen
+import studio.sculk.paper.SculkPaperPlugin
+import studio.sculk.paper.hasPermission
+import studio.sculk.permission.PermissionContext
+
+val shopCommand = command("shop") {
+    permission(ShopPermissions.buy)
+    executes { reply("<primary>The shop is open.") }
+    literal("restock") {
+        permission(ShopPermissions.restock.where(PermissionContext.GAME_MODE, "creative"))
+        player { reply("<success>Restocked.") }
+    }
+    literal("prices") {
+        permission(ShopPermissions.admin)
+        executes { reply("<muted>Prices are set in prices.yml.") }
+    }
+}
+
+class ShopPlugin : SculkPaperPlugin() {
+    override suspend fun start() {
+        sculk.permissions.register(ShopPermissions)
+        sculk.commands().register(shopCommand)
+        sculk.events.listen<PlayerInteractEvent> { event ->
+            if (!event.player.hasPermission(ShopPermissions.buy)) event.isCancelled = true
+        }
+    }
+}
+```
+
+`register` returns a handle owned by the plugin scope: the permissions are removed when the plugin
+disables, or earlier when the handle is closed. Registering a node the server already knows, from
+`plugin.yml` or another plugin, is a wiring bug and throws; nothing from that call stays
+registered. A plugin that registers its descriptors needs no `permissions:` section in `plugin.yml`.
+
+A descriptor check uses the subject's own value where its permission provider sets one, and the
+descriptor's default otherwise, even if the descriptor was never registered. Children only apply
+once registered. In the command DSL, `permission = "shop.buy"` still declares a raw node, checked
+exactly as the platform checks any string.
+
+## Context-aware checks
+
+`permission.where(key, values)` narrows a descriptor to some contexts: the subject must hold the
+permission and report one of `values` for `key`. Chain `where` for further keys; every condition
+must hold.
+
+| Key | Value | Reported by |
+| --- | --- | --- |
+| `PermissionContext.WORLD` | The world's key, such as `minecraft:the_nether` | Paper, Folia and Canvas, for entities and command blocks |
+| `PermissionContext.GAME_MODE` | `survival`, `creative`, `adventure` or `spectator` | Paper, Folia and Canvas, for players |
+| `PermissionContext.SERVER` | The backend server's name | Velocity, for players |
+
+A subject that reports no value for a key, such as the console for a world, fails that condition.
+
+Clients cache the command tree. When a command requirement reads the world or game mode, Sculk
+resends a player's tree a tick after either changes, on the player's own thread, so the command
+appears and disappears as the player moves. Registering or removing descriptors resends every
+online player's tree. After changing what a `requires { }` condition reads, call
+`sculk.permissions.updateCommands(player)`.
+
+## On each platform
+
+<Aside>
+Register from the enabling thread or the global region: Bukkit's permission registry is not
+thread-safe. A check may run on any thread that may read the subject.
+</Aside>
+
+**Paper, Folia and Canvas.** Descriptors become Bukkit permissions through
+`PluginManager.addPermission`, with their defaults (`TRUE`, `OP`, `NOT_OP`, `FALSE`) and children,
+so `hasPermission` resolves them natively and LuckPerms sees them as it sees `plugin.yml`
+permissions. Paper's own `removePermission` leaves a removed node among the defaults it gives every
+player; Sculk clears the default first, so a removed descriptor is really gone.
+`CommandSender.permissionSubject` adapts any sender, and `CommandSender.hasPermission(check)` checks
+a descriptor or a contextual check directly.
+
+**Velocity.** The proxy has no registry of defaults: a provider such as LuckPerms answers a node or
+leaves it undefined, and without one every player's nodes are undefined while the console holds
+everything. `sculk.permissions` keeps the descriptors for this plugin's checks: where the provider
+leaves a registered node undefined, a parent the provider sets passes its value down, and then the
+descriptor's default decides. The console is the only operator on a proxy, so `OPERATORS` holds for
+no player and `NON_OPERATORS` for every player. Registrations apply to this plugin's command
+requirements and to subjects from `sculk.permissions.subject(source)`; other plugins and Velocity's
+own `hasPermission` do not see them.
+
+## Testing
+
+`sculk-testkit` has `FakePermissions`, which registers as the platforms do and refuses a node
+registered twice, and `FakePermissionSubject`, which resolves defaults and children with Bukkit's
+rules. `FakeCommandSource` applies a descriptor's default unless it was granted the node, and takes
+a `context` for contextual checks.
+
+```kotlin
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import studio.sculk.permission.Permission
+import studio.sculk.permission.PermissionDefault
+import studio.sculk.testkit.FakePermissions
+
+class FakePermissionsTest {
+    private val use = Permission("kits.use", default = PermissionDefault.EVERYONE)
+    private val all = Permission("kits.*", default = PermissionDefault.NOBODY, children = mapOf("kits.use" to true, "kits.give" to true))
+
+    @Test
+    fun `a parent set on the subject grants its registered children`() {
+        val permissions = FakePermissions().apply { register(use, all) }
+        val player = permissions.subject(permissions = mapOf("kits.*" to true))
+        assertTrue(player.hasPermission(Permission("kits.give", default = PermissionDefault.NOBODY)))
+        player.set("kits.*", false)
+        assertFalse(player.hasPermission(use), "a denied parent inverts the child's value")
+        player.unset("kits.*")
+        assertTrue(player.hasPermission(use))
+    }
+}
+```
+
+The design and its trade-offs are recorded in
+[ADR-0027](https://github.com/SculkStudios/sculk-library/blob/dev/docs/adr/0027-permissions.md).
