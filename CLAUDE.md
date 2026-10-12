@@ -1,132 +1,64 @@
-# Sculk Studio — Contributor & AI Guide
+# Sculk Studio 6 — Contributor & AI Guide
 
-Sculk Studio is a **Kotlin-only Paper (Minecraft) plugin framework**: coroutine-friendly, modular,
-Adventure-only. Target: Paper 1.21.11+, Java 21, Kotlin 2.x. Version 5.0 (pre-public).
+Sculk Studio is a Kotlin platform for Paper, Folia, Canvas and Velocity plugins. Version 6 is a
+ground-up rewrite on branch `sculk-6`; 5.x lives on `release/5.x`. Read `REBUILD.md` first: it has
+the milestones, the decisions already taken and the release blockers.
 
-## Module map
+## Where things are
 
-Each docs section maps 1:1 to a module. Packages are `studio.sculk.<area>` (flat — no `.core.`).
+| Need | Read |
+| --- | --- |
+| Why a decision was made | `docs/adr/` |
+| Which module owns what, and what it may depend on | `MODULES.md` |
+| Version and platform support, pinned anchors | `COMPATIBILITY.md` |
+| Execution ownership and the threading contract | `THREADING.md` |
+| Stability markers, ABI, deprecation | `API_POLICY.md` |
+| Licences of optional dependencies | `LICENSING.md` |
+| Evidence behind all of the above | `docs/research/` |
 
-| Module | Package | Purpose |
-| --- | --- | --- |
-| `sculk-common` | `studio.sculk`, `.annotation`, `.coroutine`, `.io`, `.scheduler`, `.task`, `.version` | `SculkResult`/`SculkHandle`, coroutine scope, scheduler contract + `FakeScheduler` fixture, cron/repeating/batch tasks, directory watching |
-| `sculk-text` | `studio.sculk.text` | Theme, MiniMessage rendering, glyph-width measurement, per-player localisation |
-| `sculk-config` | `studio.sculk.config` | Typed YAML on kotlinx-serialization, generated defaults, validation, migrations |
-| `sculk-series` | `studio.sculk.series` | Registry lookups (Material/Sound/Particle), aliases |
-| `sculk-items` | `studio.sculk.items` | Data-component item builders, PDC, descriptors, dyes |
-| `sculk-commands` | `studio.sculk.command` | `CommandSpec` as data, one Brigadier adapter, generated help |
-| `sculk-gui` | `studio.sculk.gui` | Chest/container menus, animations, pagination |
-| `sculk-data` | `studio.sculk.data` | Suspend repositories, query DSL, schema migration, Caffeine + Redis/Valkey cache |
-| `sculk-hud` | `studio.sculk.hud` | Sidebar, action bar, tab list, boss bars — one driver task |
-| `sculk-visual` | `studio.sculk.visual` | Particles, sounds, timelines, packet-only holograms, nametags |
-| `sculk-integrations` | `studio.sculk.integrations` | Optional PlaceholderAPI / Vault / LuckPerms adapters |
-| `sculk-packets-api` (+ `-packetevents`, `-protocollib`) | `studio.sculk.packets` | Backend-neutral packet API, client blocks, virtual entities |
-| `sculk-discord` (+ `-jda`) | `studio.sculk.discord` | Backend-neutral Discord: message tree, slash command specs, typed interactions, collectors, webhooks. **Imports no Bukkit** — a standalone bot uses the same API a plugin does, and a build check enforces it |
-| `sculk-platform` | `studio.sculk.platform` | `SculkPlugin`, `SculkPlatform`, `ServiceRegistry`, events, scheduler impl |
-| `sculk-bom` | — | Version BOM, generated from the subproject list |
+## Layout
 
-### Dependency order (acyclic, flat)
+`sculk-*` published modules · `build-logic` convention plugins (`sculk.jvm`, `sculk.library`,
+`sculk.publish`, `sculk.test-plugin`, `sculk.compatibility`) · `integration-tests/*` server-side
+test plugins, never published · `tooling/*` build tooling · `docs` documentation site.
 
-```
-common          ← (nothing)              + coroutines
-config          ← common                 + serialization, kaml
-text            ← common                 + kaml
-series          ← common
-items           ← common, text, series
-commands        ← common, text
-gui             ← common, text, items
-data            ← common, config
-packets-api     ← common
-packets-*       ← packets-api
-visual          ← common, series, text, packets-api
-hud             ← common, text
-integrations    ← common
-platform        ← everything (api)
-```
+## Rules the build enforces
 
-A module depends **only on what it uses**. Two edges are load-bearing and easy to break:
+- JDK 25 toolchain, JVM 21 bytecode, `-Xjdk-release=21`; a jar above class-file version 65 fails.
+- Unit tests run on Java 21 and Java 25.
+- Explicit API mode, warnings as errors, ktlint (140 columns).
+- Every public declaration carries exactly one of `@SculkStable`, `@SculkExperimental`,
+  `@SculkInternal`.
+- Module boundaries in `MODULES.md` (no platform types in neutral modules, no `net.minecraft`
+  outside internals, no `runBlocking`, no `GlobalScope`, no `kotlin-reflect`).
+- Committed ABI dumps in `<module>/api/`. A public change needs `./gradlew updateKotlinAbi` in the
+  same commit.
 
-- **`sculk-text` must not depend on `sculk-config`.** It would drag the config system onto the
-  compile classpath of gui, items and commands. The bundle loader uses kaml directly.
-- **`sculk-visual` must not depend on a packet backend.** Holograms go through
-  `VirtualEntityService` in `sculk-packets-api`. Importing PacketEvents there is what previously
-  made ProtocolLib unable to serve holograms at all.
+## Rules review enforces
 
-## Non-negotiable rules
-
-1. **Kotlin-only.** No `@JvmStatic`, `@JvmOverloads`, `@JvmName`, no `Consumer`/`Predicate`
-   overloads, no `CompletableFuture` bridges. Reified generics, default arguments, `suspend` and
-   receiver lambdas are the API surface. The single carve-out is
-   `suspend fun <T> CompletableFuture<T>.await()`, which exists because Paper hands *Kotlin*
-   callers futures.
-2. **Adventure/MiniMessage only** — never legacy colour codes (`&c`, `§c`).
-3. **The trust boundary is absolute.** A *template* is trusted and parsed. A *value* is not, and
-   goes in through `Placeholder.unparsed` via `SculkMessages`. Never substitute a value into a
-   template with `replace()` before rendering — that is a markup-injection hole, it has been
-   introduced twice, and both times it looked like ordinary string handling.
-4. **`SculkResult<T>` for fallible I/O and user input.** Nullable only where absence is normal and
-   the caller cannot act on a reason. Throw only for programmer error — a wiring bug that should
-   surface at boot. Never return a `SculkResult` that cannot fail.
-5. **Folia-correct** — route timing through `SculkScheduler`; document the thread a callback runs
-   on. The region overloads are abstract on purpose: an implementation that has not thought about
-   regions must not compile.
-6. **Stability markers** — every public type/member carries `@SculkStable`, `@SculkExperimental`,
-   or `@SculkInternal`.
-7. **ktlint + explicit API + `allWarningsAsErrors`** — `./gradlew build` must be green (max line 140).
-8. **Committed `.api` dumps.** Any change to the public surface must show up in a `.api` diff.
-   Run `./gradlew apiDump` and commit it in the same change.
-
-## How to write it
-
-- **Comments explain *why* a non-obvious decision was made, and name the consequence of the
-  alternative.** Do not narrate what the code does. No banner comments. No KDoc that restates its
-  own identifier (`/** The stack size. */ var amount`). There is no target ratio — a percentage
-  produces deleted-but-useful documentation.
-- **Every interface a consumer *calls* ships a fake for it** in `src/testFixtures` — `FakeScheduler`,
-  `FakeVirtualEntityService`, `FakeRepository`, `FakeHologram`. These are why gui, hud, visual and
-  data test with no server, and they are the framework's answer to "how do I test my plugin".
-  Interfaces consumers *implement* (`ArgumentParser`, `MappingResolver`, `RedisBackend`) need no
-  fake: the consumer writes the implementation, so there is nothing to stand in for.
-  A fake must refuse what it cannot model rather than guess — `FakeRepository` throws without
-  `columnsOf` because silently matching every row makes a wrong filter look correct.
-- **Test names are sentences describing the invariant**, e.g.
-  ``fun `a still centred row is redrawn when the widest row moved`()``.
-- **Prefer a real engine to a mock.** The data layer runs against SQLite and H2 in MySQL mode,
-  because a string-compared query is a query nobody has parsed.
-
-## How to…
-
-- **Add a feature:** smallest fitting module. Mark public types, KDoc them, add tests, add a
-  `docs/src/content/docs/<section>/<page>.mdx` page, wire it into `docs/astro.config.mjs`.
-- **Change the public API:** `./gradlew apiDump` and commit the diff.
-- **Fix a bug:** add a failing test first; keep the change behaviour-scoped.
-
-## Release checklist
-
-1. `./gradlew build` green (all modules + examples + tests + ktlint).
-2. `./gradlew apiCheck` green.
-3. `cd docs && bun run build` green.
-4. `grep -r 'kotlin("reflect")' */build.gradle.kts` returns nothing.
-5. Version bumped in `build.gradle.kts`; `CHANGELOG.md` entry dated.
-6. Tag `vX.Y.Z` and draft release notes from the CHANGELOG.
+- Templates are trusted; values enter MiniMessage only as unparsed or component placeholders.
+  Never `replace()` a value into a template.
+- `SculkResult` for fallible I/O and user input; throw only for programmer error.
+- Every world-touching API states the execution context it requires (`THREADING.md`).
+- Every interface a consumer calls ships a fake in test fixtures; fakes refuse what they cannot model.
+- Prefer a real engine or a real server to a mock.
+- Comments state an invariant, a concurrency requirement, a security boundary, a compatibility
+  reason, an upstream bug or a non-obvious performance choice, in one to three lines. No history,
+  no banners, no narration. KDoc states the contract, never the identifier.
+- No `!!`, no operator-overload DSLs, no ambiguous nested receivers.
+- Test names are sentences describing the invariant.
 
 ## Commands
 
 ```
-./gradlew build           # compile + test + ktlint, all modules + examples
-./gradlew apiCheck        # public surface matches the committed dumps
-./gradlew apiDump         # regenerate them after a deliberate change
-./gradlew ktlintFormat    # auto-fix style
-cd docs && bun run build  # build the docs site   (bun run deploy to publish)
+./gradlew build                               # compile, ktlint, tests on 21 and 25, ABI, architecture, bytecode
+./gradlew updateKotlinAbi                     # after a deliberate public API change
+./gradlew :integration-tests:boot:verifyBoot  # real Paper 1.21.4 on Java 21 and 26.3 on Java 25
+./gradlew :tooling:compatibility:scanPaperApi # regenerate the Paper API compatibility data
+./gradlew publishToMavenLocal
 ```
 
-The Postgres integration tests are skipped unless a server is named:
+## Git
 
-```
-SCULK_POSTGRES_URL="jdbc:postgresql://localhost:5432/sculk?user=…&password=…" ./gradlew :sculk-data:test
-```
-
-## Layout
-
-`sculk-*` library modules · `examples/*` (compile gates, not published) · `build-logic` (convention
-plugins) · `docs` (Astro Starlight).
+Conventional commits authored by the maintainer only; no co-author trailers and no AI mentions.
+Work on `sculk-6` or a branch from it; never commit to `main` until 6.0 replaces it.

@@ -1,125 +1,44 @@
-# Contributing to Sculk Studio
+# Contributing
 
-Thank you for your interest in contributing to Sculk Studio. This document covers everything you need to get started.
+Thanks for helping. Sculk 6 is being rebuilt milestone by milestone (`REBUILD.md`), so the most
+useful contributions right now are bug reports against the architecture documents, research
+corrections, and work on the current milestone.
 
-## Prerequisites
+## Before you start
 
-- JDK 21+
-- Gradle (use the wrapper — `./gradlew`)
-- A Paper 1.21.11 server for integration testing
+- Read `ARCHITECTURE.md`, `MODULES.md` and `THREADING.md`.
+- Open an issue before a large change. A change that crosses module boundaries or adds public API
+  needs agreement first; a new architectural decision needs an ADR in `docs/adr/`.
 
-## Project Structure
+## Making a change
 
-```
-sculk-studio/
- ├── build-logic/        Convention plugins (shared Gradle config)
- ├── sculk-common/       Base: result/handle, coroutines, scheduler, version, annotations
- ├── sculk-adventure/    MiniMessage messaging helpers
- ├── sculk-commands/     Brigadier command DSL
- ├── sculk-gui/          GUI menus
- ├── sculk-events/       Event bus
- ├── sculk-config/       Typed configs, hot reload
- ├── sculk-series/       Registry-based material/sound/particle mapping
- ├── sculk-items/        Item builders, data components, PDC
- ├── sculk-effects/      Particle/sound builders, timelines
- ├── sculk-data/         Suspend repositories, query DSL, cache
- ├── sculk-text/         Localization
- ├── sculk-tasks/        Cron & coroutine scheduling
- ├── sculk-integrations/ Optional PAPI/Vault/LuckPerms adapters
- ├── sculk-packets-*/    Packet API + PacketEvents/ProtocolLib backends
- ├── sculk-content/      Client-side block helpers
- ├── sculk-platform/     Paper bootstrap + SculkPlugin; re-exports everything
- ├── sculk-bom/          Version BOM for à-la-carte use
- ├── examples/           Example plugins (not published)
- ├── benchmarks/         JMH microbenchmarks (not published)
- └── docs/               Documentation site
-```
+1. Branch from `sculk-6`.
+2. For a bug, add a failing test first.
+3. Keep the change to one concern.
+4. `./gradlew build` must pass. It runs ktlint, the tests on Java 21 and 25, the ABI check, the
+   architecture rules and the bytecode gate.
+5. If the public surface changed, run `./gradlew updateKotlinAbi` and commit the dump.
+6. If the change touches a server, run `./gradlew :integration-tests:boot:verifyBoot` and, where it
+   applies, add an integration scenario.
 
-See the [Modules & Architecture](https://docs.sculk.studio/introduction/modules/) page for the full
-section ↔ module ↔ package map.
+## A public feature is done when it has
 
-## Getting Started
+Implementation, tests, integration tests where platform behaviour is involved, KDoc stating the
+contract, a documentation page, a compiled example, its threading and compatibility contracts,
+defined error behaviour, resource cleanup, a stability marker, a performance sanity check and an
+ABI dump.
 
-```bash
-git clone https://github.com/SculkStudios/sculk-library.git
-cd sculk-library
-./gradlew build
-```
+## Style
 
-## Non-Negotiable Rules
+The rules are in `CLAUDE.md` under "Rules review enforces". In short: Kotlin first, immutable
+public data, no `!!`, comments only where they explain a constraint, test names that read as
+sentences.
 
-These rules apply to every line of code in this repository:
+## Commits
 
-- **Kotlin-first only.** No Java builder classes, no `@JvmStatic`/`@JvmOverloads`. DSLs only.
-- **Adventure-only messaging.** MiniMessage strings everywhere. Zero legacy color codes.
-- **No hardcoded config or messages.** Everything must be user-configurable.
-- **Coroutines, not callbacks.** IO/DB is `suspend`; no `CompletableFuture` on public APIs.
-- **Folia-correct.** Route timing through `SculkScheduler` / `SculkCoroutineScope`; document the thread.
-- **Stability markers required.** Every public type carries `@SculkStable`, `@SculkExperimental`, or `@SculkInternal`.
-- **ktlint + explicit API.** Code must pass `./gradlew ktlintCheck` and `explicitApi()` (max line 140).
+Conventional commits (`feat(core): …`, `fix(commands): …`, `build: …`, `docs: …`), written in plain
+English, one logical change each.
 
-## Module Dependency Flow
+## Security
 
-Modules depend only on what they use; the graph is flat and acyclic. `sculk-common` is the base;
-`sculk-platform` re-exports everything. See the
-[Modules & Architecture](https://docs.sculk.studio/introduction/modules/) page for the full graph.
-
-No circular dependencies. Ever.
-
-## Common Commands
-
-```bash
-# Build everything
-./gradlew build
-
-# Run all tests
-./gradlew test
-
-# Check code style
-./gradlew ktlintCheck
-
-# Auto-fix style issues
-./gradlew ktlintFormat
-
-# Run benchmarks
-./gradlew :benchmarks:jmh
-```
-
-## Testing against real databases
-
-`sculk-data` runs against SQLite and H2 in every build, but H2's MySQL mode is not MySQL — it accepts
-statements a real server rejects, which is how a `CREATE INDEX` that no MySQL release supports once
-shipped. The integration tests that cover the real engines skip themselves unless their URL is set,
-so a normal `./gradlew build` stays fast and offline. CI always sets all three; locally:
-
-```bash
-docker run -d --name sculk-mysql   -e MYSQL_ROOT_PASSWORD=root   -e MYSQL_DATABASE=sculk    -p 3306:3306 mysql:8
-docker run -d --name sculk-mariadb -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=sculk  -p 3307:3306 mariadb:11
-docker run -d --name sculk-pg      -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=sculk       -p 5432:5432 postgres:16
-
-# allowPublicKeyRetrieval is needed because MySQL 8 authenticates with caching_sha2_password over a
-# connection this test does not encrypt.
-export SCULK_MYSQL_URL="jdbc:mariadb://127.0.0.1:3306/sculk?user=root&password=root&allowPublicKeyRetrieval=true"
-export SCULK_MARIADB_URL="jdbc:mariadb://127.0.0.1:3307/sculk?user=root&password=root"
-export SCULK_POSTGRES_URL="jdbc:postgresql://127.0.0.1:5432/sculk?user=postgres&password=postgres"
-
-./gradlew :sculk-data:test
-```
-
-Point `SCULK_MYSQL_URL` at **MySQL, not MariaDB**. They share one `SqlDialect`, and MariaDB accepts
-syntax MySQL does not — so a MariaDB server in that slot reports the bugs it exists to catch as
-passes. `SCULK_MARIADB_URL` is the control that keeps a MySQL fix from breaking MariaDB.
-
-## Submitting a Pull Request
-
-1. Fork the repository
-2. Create a branch: `git checkout -b feat/your-feature`
-3. Make your changes — follow the rules above
-4. Ensure `./gradlew build` and `./gradlew ktlintCheck` pass
-5. Open a PR against `main`
-
-Please fill out the PR template completely. PRs without passing CI will not be reviewed.
-
-## Questions
-
-Open a [GitHub Discussion](https://github.com/SculkStudios/sculk-library/discussions) or join us at [sculk.studio](https://sculk.studio).
+Report vulnerabilities privately as described in `SECURITY.md`, never in a public issue.

@@ -11,15 +11,15 @@ body:
     id: version
     attributes:
       label: Sculk Studio Version
-      placeholder: "1.0.0"
+      placeholder: "6.0.0"
     validations:
       required: true
 
   - type: input
     id: paper-version
     attributes:
-      label: Paper Version
-      placeholder: "Paper 1.21.11"
+      label: Server software and version
+      placeholder: "Paper 26.3 build 175, Folia 26.2, Canvas 26.3, Velocity 4.2.0"
     validations:
       required: true
 

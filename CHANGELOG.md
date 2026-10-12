@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+Sculk 6 is a ground-up rewrite in progress on the `sculk-6` branch. Its changes will be recorded here
+when 6.0.0 is released; until then see `REBUILD.md` and `MIGRATION_5_TO_6.md`.
+
 ## [5.2.0] — "Bridged, wired" — 2026-08-13
 
 ### Changed
