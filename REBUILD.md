@@ -68,6 +68,21 @@ No milestone writes bulk code before the previous gate is green.
 | M6 Tooling and docs | Gradle plugin, BOM, catalog, `sculk-paper-all`, Maven plugin and verification, docs portal, generator, Doctor, internals only if benchmarked. | Generated projects build under Gradle and Maven; docs and snippets build in CI. |
 | M7 Hardening and RC | Macro benchmarks, leak and concurrency tests, security audit, pilot migrations, migration guide, reproducible release. | Every release blocker below is checked. |
 
+### Order inside M5: data
+
+The whole data plan ships in 6.0 (ADR-0014). It is built in this order, each step usable and
+tested on real SQLite, MySQL, MariaDB and PostgreSQL before the next starts, so the most-used
+path is solid first:
+
+1. Pool and dispatcher: HikariCP behind the bounded IO dispatcher, driver modules, SQLite settings.
+2. Repositories generated from kotlinx descriptors, executed only through prepared statements with
+   bound parameters, upserts and batching.
+3. Transactions spanning repositories.
+4. Additive entity-table migration, then the versioned script runner with history and checksums.
+5. Dialects completed for every engine in the suite.
+6. Query DSL, compiled to prepared statements by the same dialects; nothing in it concatenates
+   values into SQL.
+
 ## Definition of done for a public feature
 
 Implementation · tests · integration tests where platform behaviour is involved · KDoc contract ·
