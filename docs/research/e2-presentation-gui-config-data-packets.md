@@ -376,3 +376,17 @@ Paper 26.3 javadoc is `paper-api 26.3.build.157-beta` ([jd](https://jd.papermc.i
 3. **`clear()`-then-repopulate redraws and reopen-to-retitle (IF, Triumph, KSpigot)** — they flash, churn allocations and break listeners.
 4. **Reactive SQL (R2DBC) or Exposed as a hard dependency** — no SQLite driver, Netty on the classpath, and `kotlin-reflect` violate three Sculk constraints at once.
 5. **Shading GPL packet or driver libraries (PacketEvents, ProtocolLib, mysql-connector-j, KSpigot)** — the upstream FAQs themselves say not to, and it would make the product unsellable under its MIT licence.
+
+---
+
+## Addendum 2026-10-12 — resource-pack library: `team.unnamed:creative`
+
+| | Finding (GitHub API, Maven Central, 2026-10-12) |
+| --- | --- |
+| Licence | MIT ([unnamed/creative](https://github.com/unnamed/creative)) |
+| Latest release | 1.7.3 · 2024-07-02 (`team.unnamed:creative-api` on Central); predates 1.21.4 item model definitions |
+| `main` | `1.8.4-SNAPSHOT`; item models (`item/*ItemModel`), equipment layers, waypoint styles, `major.minor` pack formats (PR #89, 2026-05-01), deterministic directory read order (PR #93, 2026-07-31) |
+| Publishing | `gradle.properties` targets `s01.oss.sonatype.org` (OSSRH, retired 2025-06-30); no 1.8.x artifact on Central; `repo.unnamed.team` returned nothing |
+| Activity | 217 stars, 19 open issues, commits clustered in 2025-03, 2025-06, 2025-10/12, 2026-05, 2026-07 |
+
+Verdict: fits Sculk's needs in shape, not in availability. Decision and revisit condition in ADR-0025.
