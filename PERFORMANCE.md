@@ -41,6 +41,24 @@ pull request so it cannot rot.
 | Data | Row mapping for 1 and 1,000 rows |
 | Cache | Get, put and stampede-protected load |
 
+### Baselines
+
+Recorded with `./gradlew :benchmarks:benchmark` (JMH 1.37 through kotlinx-benchmark, 3 warm-ups and
+5 one-second iterations, average time). Raw results live in `benchmarks/baselines/`. A change that
+moves one of these by more than its error band needs a reason in the commit.
+
+| Benchmark | What it measures | 2026-10-12, Ryzen 7 9850X3D, JDK 25.0.4 |
+| --- | --- | --- |
+| `CommandBenchmark.execute` | Interpret `eco give Steve 125.5`: permission, literal, two typed arguments, empty executor | 0.19 ± 0.08 µs |
+| `CommandBenchmark.suggest` | Suggestions for `eco gi` | 0.05 ± 0.02 µs |
+| `TextBenchmark.render` | A themed line with two values, template cache warm | 4.5 ± 0.9 µs |
+| `TextBenchmark.header` | A gradient header with two values | 4.6 ± 1.5 µs |
+| `ConfigBenchmark.reload` | Read, decode and validate a small plugin config from disk | 44.7 ± 6.2 µs |
+
+Not measured yet from the table above: compiling specs to Paper and Velocity trees (needs a
+server classpath), glyph measurement and wrapping, and loading a 500-line config with migrations.
+They are added with the modules that follow.
+
 ## Macro benchmarks
 
 Real servers measured with simulated viewers. Run before each release and whenever a

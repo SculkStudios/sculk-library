@@ -11,8 +11,12 @@ ktlint-gradle = "14.2.0"
 dokka = "2.2.0"
 maven-publish = "0.37.0"
 shadow = "9.6.1"
+license-report = "3.1.4"
+kotlinx-benchmark = "0.5.0"
 run-paper = "3.1.0"
-paper-floor = "1.21.4-R0.1-SNAPSHOT"
+# Paper publishes 1.21.x APIs only as snapshots; this is the last 1.21.4 build, pinned so the floor
+# cannot move under a verified build.
+paper-floor = "1.21.4-R0.1-20250925.065901-231"
 paper-current = "26.3.build.175-stable"
 canvas = "26.3.build.978-stable"
 velocity = "4.2.0"
@@ -20,6 +24,7 @@ adventure-floor = "4.20.0"
 adventure-latest = "5.2.0"
 
 [libraries]
+benchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinx-benchmark" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
@@ -47,4 +52,7 @@ gradle-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref =
 gradle-dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 gradle-maven-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "maven-publish" }
 gradle-shadow = { module = "com.gradleup.shadow:shadow-gradle-plugin", version.ref = "shadow" }
+gradle-kotlinx-benchmark = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-plugin", version.ref = "kotlinx-benchmark" }
+gradle-kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
+gradle-license-report = { module = "com.github.jk1:gradle-license-report", version.ref = "license-report" }
 gradle-run-task = { module = "xyz.jpenilla:run-task", version.ref = "run-paper" }

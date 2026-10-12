@@ -13,4 +13,7 @@ dependencies {
     implementation(libs.asm)
     implementation(libs.gradle.shadow)
     implementation(libs.gradle.run.task)
+    implementation(libs.gradle.license.report)
+    implementation(libs.gradle.kotlinx.benchmark)
+    implementation(libs.gradle.kotlin.allopen)
 }

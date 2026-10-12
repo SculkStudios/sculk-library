@@ -48,6 +48,7 @@ include(
 
 // Never published. Each proves something about the published modules on a real server.
 include(
+    ":benchmarks",
     ":integration-tests:boot",
     ":integration-tests:commands",
     ":integration-tests:threading",

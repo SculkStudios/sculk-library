@@ -1,3 +1,4 @@
+import com.github.jk1.license.filter.LicenseBundleNormalizer
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.SourcesJar
@@ -5,6 +6,19 @@ import com.vanniktech.maven.publish.SourcesJar
 plugins {
     id("org.jetbrains.dokka")
     id("com.vanniktech.maven.publish")
+    id("com.github.jk1.dependency-license-report")
+}
+
+// What a published artifact puts on a consumer's runtime classpath must carry an allowed licence;
+// compileOnly platform APIs never reach consumers through Sculk and are not checked here.
+licenseReport {
+    configurations = arrayOf("runtimeClasspath")
+    allowedLicensesFile = rootProject.file("gradle/allowed-licenses.json")
+    filters = arrayOf(LicenseBundleNormalizer())
+}
+
+tasks.named("check") {
+    dependsOn("checkLicense")
 }
 
 mavenPublishing {

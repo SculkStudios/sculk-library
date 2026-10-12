@@ -77,17 +77,15 @@ Three supported ways to ship Sculk inside a plugin, in order of preference:
 
 ## Supply chain
 
-None of the following exists in the build yet. Each is planned, and each is a 6.0 release blocker:
-
-| Item | Lands in |
+| Item | State |
 | --- | --- |
-| Dependency verification metadata (`gradle/verification-metadata.xml`, sha256 and PGP) | M3 |
-| Dependency lockfiles | M3 |
-| Licence report with an allow-list that fails `check` | M3 |
-| Signed releases, CycloneDX SBOM, GitHub build-provenance attestations | M7 |
+| Dependency verification (`gradle/verification-metadata.xml`) | In force since M3. Every resolved artifact must match a recorded SHA-256 and, where the publisher signs, a PGP signature from a key in `gradle/verification-keyring.keys`. A mismatch fails the build. The frozen Paper 1.21.x snapshot APIs are trusted by version pattern: Gradle cannot record timestamped snapshots, and Sculk only compiles against them and never ships them. |
+| Licence allow-list | In force since M3. `check` fails when a published module's runtime classpath reaches a licence not in `gradle/allowed-licenses.json` (Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, public domain). |
+| Dependency lockfiles | Not used. No dependency uses a dynamic version, so resolution is already fixed, and verification fails on any artifact whose checksum is not recorded, which also catches a changed transitive dependency. Lockfiles would add one file per project without catching anything more. |
+| Signed releases, CycloneDX SBOM, GitHub build-provenance attestations | M7, with the reproducible release (ADR-0015) |
 | Second-runner rebuild that diffs checksums against the published artifacts | M7 |
 | Licence report published with each release | M7 |
 
-M3 is the point where the first third-party runtime dependencies beyond kotlinx and snakeyaml-engine
-arrive, so the checks must be in place before them. Release signing and attestations belong with
-the reproducible release in M7 (ADR-0015).
+Build-only tools never reach a published artifact and are outside the allow-list: JMH (GPL-2.0
+with the Classpath Exception) runs only in the unpublished `benchmarks` project; kotlinx-benchmark,
+the licence report plugin and the rest of the build tooling are Apache-2.0.
