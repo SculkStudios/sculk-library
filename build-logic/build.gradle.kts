@@ -8,6 +8,7 @@ dependencies {
     implementation(libs.gradle.dokka)
     implementation(libs.gradle.maven.publish)
     implementation(libs.archunit)
+    implementation(libs.kotlin.metadata)
     implementation(libs.asm)
     implementation(libs.gradle.shadow)
     implementation(libs.gradle.run.task)

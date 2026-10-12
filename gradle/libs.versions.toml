@@ -21,6 +21,7 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
 archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
+kotlin-metadata = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 paper-api-floor = { module = "io.papermc.paper:paper-api", version.ref = "paper-floor" }
 paper-api-current = { module = "io.papermc.paper:paper-api", version.ref = "paper-current" }
 

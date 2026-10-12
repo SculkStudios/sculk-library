@@ -61,7 +61,13 @@ abstract class ArchitectureCheck : DefaultTask() {
         noClasses().should().callMethodWhere(RUN_BLOCKING)
             .because("blocking a thread on a coroutine stalls ticks and event loops")
             .allowEmptyShould(true),
+        noClasses().should().callMethodWhere(SEQUENCED_REVERSED)
+            .because("on Java 21 reversed() resolves to a live SequencedCollection view, not Kotlin's copy; use asReversed() on a copy")
+            .allowEmptyShould(true),
         classes().that(PUBLIC_API).should(CARRY_ONE_STABILITY_MARKER)
+            .because("API_POLICY.md requires every public declaration to state its stability")
+            .allowEmptyShould(true),
+        classes().that(FILE_FACADES).should(MARK_EVERY_TOP_LEVEL_MEMBER)
             .because("API_POLICY.md requires every public declaration to state its stability")
             .allowEmptyShould(true),
     )
@@ -73,13 +79,31 @@ abstract class ArchitectureCheck : DefaultTask() {
             call.target.owner.name == "kotlinx.coroutines.BuildersKt" && call.target.name.startsWith("runBlocking")
         }
 
+        val SEQUENCED_REVERSED = DescribedPredicate.describe<JavaMethodCall>("java.util reversed()") { call ->
+            call.target.name == "reversed" && call.target.rawParameterTypes.isEmpty() && call.target.owner.packageName == "java.util"
+        }
+
         val PUBLIC_API = DescribedPredicate.describe<JavaClass>("public API types") { type ->
-            type.modifiers.contains(JavaModifier.PUBLIC) &&
-                !type.modifiers.contains(JavaModifier.SYNTHETIC) &&
-                !type.simpleName.endsWith("Kt") &&
-                !type.name.contains("\$DefaultImpls") &&
-                !type.name.contains("\$WhenMappings") &&
-                type.enclosingClass.map { it.modifiers.contains(JavaModifier.PUBLIC) }.orElse(true)
+            !type.modifiers.contains(JavaModifier.SYNTHETIC) && isDeclaredPublic(type)
+        }
+
+        val FILE_FACADES = DescribedPredicate.describe<JavaClass>("Kotlin file facades") { type ->
+            KotlinVisibility.of(type) is KotlinVisibility.Facade
+        }
+
+        // A public property compiles to a getter, and its annotations land on a synthetic
+        // `$annotations` method beside it; either carrying a marker marks the property.
+        val MARK_EVERY_TOP_LEVEL_MEMBER = object : ArchCondition<JavaClass>("mark every public top-level function and property") {
+            override fun check(item: JavaClass, events: ConditionEvents) {
+                val facade = KotlinVisibility.of(item) as? KotlinVisibility.Facade ?: return
+                val marked = item.methods.filter { method -> method.annotations.any { it.rawType.name in MARKERS } }.map { it.name }.toSet()
+                facade.functions
+                    .filterNot { name -> marked.any { it == name || it.startsWith("$name-") } }
+                    .forEach { events.add(SimpleConditionEvent.violated(item, "${item.name}.$it carries no stability marker")) }
+                facade.properties
+                    .filterNot { name -> propertyMethodNames(name).any { it in marked } }
+                    .forEach { events.add(SimpleConditionEvent.violated(item, "${item.name}.$it carries no stability marker")) }
+            }
         }
 
         val CARRY_ONE_STABILITY_MARKER = object : ArchCondition<JavaClass>("carry exactly one stability marker") {
@@ -89,6 +113,17 @@ abstract class ArchitectureCheck : DefaultTask() {
                     events.add(SimpleConditionEvent.violated(item, "${item.name} carries $count stability markers"))
                 }
             }
+        }
+
+        fun isDeclaredPublic(type: JavaClass): Boolean {
+            val facts = KotlinVisibility.of(type)
+            if (facts !is KotlinVisibility.Declared || !facts.isPublic) return false
+            return type.enclosingClass.map(::isDeclaredPublic).orElse(true)
+        }
+
+        fun propertyMethodNames(name: String): List<String> {
+            val getter = if (name.startsWith("is") && name.length > 2 && name[2].isUpperCase()) name else "get" + name.replaceFirstChar(Char::uppercaseChar)
+            return listOf(getter, "$getter\$annotations", "$name\$annotations")
         }
     }
 }
