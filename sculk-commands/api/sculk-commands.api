@@ -1,0 +1,353 @@
+public final class studio/sculk/command/ArgumentHandle {
+	public final fun getName ()Ljava/lang/String;
+	public final fun isOptional ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/command/ArgumentShape : java/lang/Enum {
+	public static final field GREEDY Lstudio/sculk/command/ArgumentShape;
+	public static final field QUOTABLE Lstudio/sculk/command/ArgumentShape;
+	public static final field WORD Lstudio/sculk/command/ArgumentShape;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/command/ArgumentShape;
+	public static fun values ()[Lstudio/sculk/command/ArgumentShape;
+}
+
+public abstract interface class studio/sculk/command/ArgumentType {
+	public abstract fun getExpected ()Ljava/lang/String;
+	public abstract fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public abstract fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+	public fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
+public final class studio/sculk/command/ArgumentType$DefaultImpls {
+	public static fun suggest (Lstudio/sculk/command/ArgumentType;Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
+public abstract class studio/sculk/command/BuiltinArgument : studio/sculk/command/ArgumentType {
+	public fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
+public final class studio/sculk/command/BuiltinArgument$BooleanArgument : studio/sculk/command/BuiltinArgument {
+	public fun getExpected ()Ljava/lang/String;
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+	public fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
+public final class studio/sculk/command/BuiltinArgument$ChoiceArgument : studio/sculk/command/BuiltinArgument {
+	public final fun getChoices ()Ljava/util/Map;
+	public fun getExpected ()Ljava/lang/String;
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+	public fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
+public final class studio/sculk/command/BuiltinArgument$DoubleArgument : studio/sculk/command/BuiltinArgument {
+	public fun getExpected ()Ljava/lang/String;
+	public final fun getMax ()D
+	public final fun getMin ()D
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/command/BuiltinArgument$DurationArgument : studio/sculk/command/BuiltinArgument {
+	public fun getExpected ()Ljava/lang/String;
+	public final fun getMax-UwyO8pc ()J
+	public final fun getMin-UwyO8pc ()J
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/command/BuiltinArgument$IntegerArgument : studio/sculk/command/BuiltinArgument {
+	public fun getExpected ()Ljava/lang/String;
+	public final fun getMax ()I
+	public final fun getMin ()I
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/command/BuiltinArgument$KeyArgument : studio/sculk/command/BuiltinArgument {
+	public fun getExpected ()Ljava/lang/String;
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/command/BuiltinArgument$LongArgument : studio/sculk/command/BuiltinArgument {
+	public fun getExpected ()Ljava/lang/String;
+	public final fun getMax ()J
+	public final fun getMin ()J
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/command/BuiltinArgument$StringArgument : studio/sculk/command/BuiltinArgument {
+	public fun getExpected ()Ljava/lang/String;
+	public final fun getMaxLength ()I
+	public final fun getPattern ()Lkotlin/text/Regex;
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/command/BuiltinArgument$UuidArgument : studio/sculk/command/BuiltinArgument {
+	public fun getExpected ()Ljava/lang/String;
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/command/CommandBuilder {
+	public final fun argument (Ljava/lang/String;Lstudio/sculk/command/ArgumentType;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun boolean (Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun choice (Ljava/lang/String;Ljava/util/Map;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun confirm-LRDsOJo (J)V
+	public final fun cooldown-LRDsOJo (J)V
+	public final fun double (Ljava/lang/String;DD)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun double$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;DDILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun duration-5qebJ5I (Ljava/lang/String;JJ)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun duration-5qebJ5I$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;JJILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun executes (Lkotlin/jvm/functions/Function2;)V
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getPermission ()Ljava/lang/String;
+	public final fun greedy (Ljava/lang/String;I)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun greedy$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;IILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun integer (Ljava/lang/String;II)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun integer$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;IIILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun key (Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun literal (Ljava/lang/String;[Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun long (Ljava/lang/String;JJ)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun long$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;JJILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun optional (Lstudio/sculk/command/ArgumentHandle;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun optional (Lstudio/sculk/command/ArgumentHandle;Ljava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun player (Lkotlin/jvm/functions/Function2;)V
+	public final fun requires (Lkotlin/jvm/functions/Function1;)V
+	public final fun setDescription (Ljava/lang/String;)V
+	public final fun setPermission (Ljava/lang/String;)V
+	public final fun string (Ljava/lang/String;ILkotlin/text/Regex;)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun string$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;ILkotlin/text/Regex;ILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun suggests (Lstudio/sculk/command/ArgumentHandle;Lstudio/sculk/command/SuggestionProvider;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun use (Lstudio/sculk/command/CommandMiddleware;)V
+	public final fun uuid (Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun word (Ljava/lang/String;ILkotlin/text/Regex;)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun word$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;ILkotlin/text/Regex;ILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+}
+
+public final class studio/sculk/command/CommandBuilderKt {
+	public static final fun command (Ljava/lang/String;[Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/command/CommandSpec;
+}
+
+public final class studio/sculk/command/CommandContext {
+	public static final field Companion Lstudio/sculk/command/CommandContext$Companion;
+	public final fun fail (Ljava/lang/String;[Lkotlin/Pair;)Ljava/lang/Void;
+	public final fun get (Lstudio/sculk/command/ArgumentHandle;)Ljava/lang/Object;
+	public final fun getInput ()Ljava/lang/String;
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getSource ()Lstudio/sculk/command/CommandSource;
+	public final fun getText ()Lstudio/sculk/text/Text;
+	public final fun isPresent (Lstudio/sculk/command/ArgumentHandle;)Z
+	public final fun reply (Ljava/lang/String;[Lkotlin/Pair;)V
+	public final fun reply (Lnet/kyori/adventure/text/Component;)V
+}
+
+public final class studio/sculk/command/CommandContext$Companion {
+}
+
+public final class studio/sculk/command/CommandDispatcher {
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)V
+	public synthetic fun <init> (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun execute (Lstudio/sculk/command/CommandSource;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getCommands ()Ljava/util/Collection;
+	public final fun getMessages ()Lstudio/sculk/command/CommandMessages;
+	public final fun getText ()Lstudio/sculk/text/Text;
+	public final fun register (Lstudio/sculk/command/CommandSpec;)V
+	public final fun suggest (Lstudio/sculk/command/CommandSource;Ljava/lang/String;)Ljava/util/List;
+	public final fun usage (Lstudio/sculk/command/CommandSpec;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
+public abstract interface annotation class studio/sculk/command/CommandDsl : java/lang/annotation/Annotation {
+}
+
+public final class studio/sculk/command/CommandExecutor {
+	public final fun getMiddleware ()Ljava/util/List;
+	public final fun getRequiresPlayer ()Z
+	public final fun run (Lstudio/sculk/command/CommandContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/command/CommandFailedException : java/lang/RuntimeException {
+	public fun <init> (Lnet/kyori/adventure/text/Component;)V
+	public final fun getReason ()Lnet/kyori/adventure/text/Component;
+}
+
+public final class studio/sculk/command/CommandMessages {
+	public static final field Companion Lstudio/sculk/command/CommandMessages$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getConfirm ()Ljava/lang/String;
+	public final fun getCooldown ()Ljava/lang/String;
+	public final fun getIncompleteCommand ()Ljava/lang/String;
+	public final fun getInternalError ()Ljava/lang/String;
+	public final fun getInvalidArgument ()Ljava/lang/String;
+	public final fun getPlayersOnly ()Ljava/lang/String;
+	public final fun getUnknownCommand ()Ljava/lang/String;
+}
+
+public final class studio/sculk/command/CommandMessages$Companion {
+	public final fun getDEFAULT ()Lstudio/sculk/command/CommandMessages;
+}
+
+public abstract interface class studio/sculk/command/CommandMiddleware {
+	public abstract fun intercept (Lstudio/sculk/command/CommandContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class studio/sculk/command/CommandNode {
+	public abstract fun getChildren ()Ljava/util/List;
+	public abstract fun getExecutor ()Lstudio/sculk/command/CommandExecutor;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getRequirement ()Lstudio/sculk/command/Requirement;
+}
+
+public final class studio/sculk/command/CommandNode$Argument : studio/sculk/command/CommandNode {
+	public fun getChildren ()Ljava/util/List;
+	public fun getExecutor ()Lstudio/sculk/command/CommandExecutor;
+	public final fun getHandle ()Lstudio/sculk/command/ArgumentHandle;
+	public fun getName ()Ljava/lang/String;
+	public fun getRequirement ()Lstudio/sculk/command/Requirement;
+	public final fun getSuggestions ()Lstudio/sculk/command/SuggestionProvider;
+	public final fun getType ()Lstudio/sculk/command/ArgumentType;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/command/CommandNode$Literal : studio/sculk/command/CommandNode {
+	public fun getChildren ()Ljava/util/List;
+	public fun getExecutor ()Lstudio/sculk/command/CommandExecutor;
+	public fun getName ()Ljava/lang/String;
+	public fun getRequirement ()Lstudio/sculk/command/Requirement;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/command/CommandReader {
+	public fun <init> (Ljava/lang/String;I)V
+	public synthetic fun <init> (Ljava/lang/String;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCanRead ()Z
+	public final fun getCursor ()I
+	public final fun getInput ()Ljava/lang/String;
+	public final fun getRemaining ()Ljava/lang/String;
+	public final fun peek ()C
+	public final fun readQuotable ()Ljava/lang/String;
+	public final fun readRest ()Ljava/lang/String;
+	public final fun readWord ()Ljava/lang/String;
+	public final fun reset (I)V
+	public final fun skipSeparator ()Z
+}
+
+public abstract class studio/sculk/command/CommandResult {
+	public abstract fun message (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lnet/kyori/adventure/text/Component;
+}
+
+public final class studio/sculk/command/CommandResult$Error : studio/sculk/command/CommandResult {
+	public fun <init> (Ljava/lang/Exception;)V
+	public final fun getCause ()Ljava/lang/Exception;
+	public fun message (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lnet/kyori/adventure/text/Component;
+}
+
+public final class studio/sculk/command/CommandResult$Failed : studio/sculk/command/CommandResult {
+	public fun <init> (Lnet/kyori/adventure/text/Component;)V
+	public final fun getReason ()Lnet/kyori/adventure/text/Component;
+	public fun message (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lnet/kyori/adventure/text/Component;
+}
+
+public final class studio/sculk/command/CommandResult$Incomplete : studio/sculk/command/CommandResult {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getUsage ()Ljava/lang/String;
+	public fun message (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lnet/kyori/adventure/text/Component;
+}
+
+public final class studio/sculk/command/CommandResult$InvalidArgument : studio/sculk/command/CommandResult {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getArgument ()Ljava/lang/String;
+	public final fun getExpected ()Ljava/lang/String;
+	public final fun getFound ()Ljava/lang/String;
+	public fun message (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lnet/kyori/adventure/text/Component;
+}
+
+public final class studio/sculk/command/CommandResult$PlayersOnly : studio/sculk/command/CommandResult {
+	public static final field INSTANCE Lstudio/sculk/command/CommandResult$PlayersOnly;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun message (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lnet/kyori/adventure/text/Component;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/command/CommandResult$Success : studio/sculk/command/CommandResult {
+	public static final field INSTANCE Lstudio/sculk/command/CommandResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun message (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lnet/kyori/adventure/text/Component;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/command/CommandResult$UnknownCommand : studio/sculk/command/CommandResult {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getInput ()Ljava/lang/String;
+	public fun message (Lstudio/sculk/text/Text;Lstudio/sculk/command/CommandMessages;)Lnet/kyori/adventure/text/Component;
+}
+
+public abstract interface class studio/sculk/command/CommandSource {
+	public abstract fun getAudience ()Lnet/kyori/adventure/audience/Audience;
+	public abstract fun getExecutionContext ()Lstudio/sculk/execution/ExecutionContext;
+	public abstract fun getKind ()Lstudio/sculk/command/SenderKind;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getPlatformSender ()Ljava/lang/Object;
+	public abstract fun getUniqueId ()Ljava/util/UUID;
+	public abstract fun hasPermission (Ljava/lang/String;)Z
+}
+
+public final class studio/sculk/command/CommandSpec {
+	public final fun getAliases ()Ljava/util/List;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRoot ()Lstudio/sculk/command/CommandNode$Literal;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/command/Confirmation : studio/sculk/command/CommandMiddleware {
+	public synthetic fun <init> (JLstudio/sculk/time/SculkClock;Lstudio/sculk/command/CommandMessages;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JLstudio/sculk/time/SculkClock;Lstudio/sculk/command/CommandMessages;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getWindow-UwyO8pc ()J
+	public fun intercept (Lstudio/sculk/command/CommandContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/command/Cooldown : studio/sculk/command/CommandMiddleware {
+	public synthetic fun <init> (JLstudio/sculk/time/SculkClock;Lstudio/sculk/command/CommandMessages;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JLstudio/sculk/time/SculkClock;Lstudio/sculk/command/CommandMessages;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDuration-UwyO8pc ()J
+	public fun intercept (Lstudio/sculk/command/CommandContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/command/Requirement {
+	public static final field Companion Lstudio/sculk/command/Requirement$Companion;
+	public final fun getPermission ()Ljava/lang/String;
+	public final fun test (Lstudio/sculk/command/CommandSource;)Z
+}
+
+public final class studio/sculk/command/Requirement$Companion {
+	public final fun getNONE ()Lstudio/sculk/command/Requirement;
+}
+
+public final class studio/sculk/command/SenderKind : java/lang/Enum {
+	public static final field BLOCK Lstudio/sculk/command/SenderKind;
+	public static final field CONSOLE Lstudio/sculk/command/SenderKind;
+	public static final field ENTITY Lstudio/sculk/command/SenderKind;
+	public static final field PLAYER Lstudio/sculk/command/SenderKind;
+	public static final field REMOTE Lstudio/sculk/command/SenderKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun isPlayer ()Z
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/command/SenderKind;
+	public static fun values ()[Lstudio/sculk/command/SenderKind;
+}
+
+public abstract interface class studio/sculk/command/SuggestionProvider {
+	public abstract fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
