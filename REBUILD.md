@@ -130,7 +130,7 @@ Corrections made to the plan after review. Details are in the commits of that da
 | Scope | Every planned module ships in 6.0; `sculk-viaversion`, internals and `sculk-maven-plugin` moved out of 6.1. |
 | Modules | `MODULES.md` shows done / in progress / planned; `sculk-core` lists no coroutines dependency; `sculk-paper-all` is a POM-only aggregate. |
 | Commands | ADR-0022 supersedes ADR-0009: platform Brigadier only, neutral module without Brigadier, new `sculk-commands-paper` and `sculk-commands-velocity`. |
-| Architecture rule | `com.mojang.brigadier` is platform API (forbidden in neutral modules); the rest of `com.mojang` stays internals-only. `ModuleRules` in `build-logic` still needs the split. |
+| Architecture rule | `com.mojang.brigadier` is platform API (forbidden in neutral modules); the rest of `com.mojang` stays internals-only. Enforced by `ModuleRules` in `build-logic`. |
 | Velocity | Removed the false claim that Velocity accepts custom argument types. |
 | Folia HUD | ADR-0023 supersedes ADR-0012: on Folia, sidebar, below-name and nametag teams are `Unavailable` without the opt-in `sculk-presentation-packets`. |
 | Licences | Paper is GPL-3.0 with no classpath exception; MiniPlaceholders is Apache-2.0; rows added for WorldEdit, FAWE, ViaVersion, spark, PlaceholderAPI, Vault, VaultUnlocked, LuckPerms, Floodgate, Oraxen, Nexo, ItemsAdder; shade refusal list extended. |
@@ -148,3 +148,9 @@ Corrections made to the plan after review. Details are in the commits of that da
 | Research | Stale kaml, 1.21.11-floor and 5.x-name content marked; PacketEvents repository reconciled (CodeMC, not Maven Central). |
 | Migration guide | Dropped the "layered sources" claim, which no decision backs. |
 | Charter | Canary row moved into the platform table. |
+| Region contexts | A region context names a chunk, not a section computed at an assumed width; executors expose the real region shift, read from Folia and Canvas, and batches group by it. Proven on Folia at grid-exponent 4 and 5. |
+| Lifecycle | Phases run in order and every action runs even when one throws; a runtime that never finished starting runs no startup actions while stopping; closing is idempotent and never leaks the scope. |
+| Execution | Scopes cancel coroutines before closing resources; refused dispatches cancel on a dedicated thread; every executor retires its pending work at shutdown; zero delays mean the next tick; repeating, cron and batch tasks survive a failing run; the debouncer never cancels a running action; cron follows daylight-saving changes and refuses impossible dates. |
+| Platforms | Removed entities and unloaded worlds are unowned; async work is bounded per plugin; a failed start logs once and disables at once; Canvas is detected by class as well as brand; Velocity enters READY when the proxy listens. |
+| Test kit | Fakes, including a clock, live in `sculk-testkit` instead of unpublishable test fixtures; the fake executor models ownership per thread. |
+| Build and CI | Root-anchored ignore patterns; unsigned releases refused; Canvas server jar pinned by SHA-256; warnings are errors in test code too; Gradle cache written from dev; canary runs on version changes. |

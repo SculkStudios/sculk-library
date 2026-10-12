@@ -40,7 +40,8 @@ test plugins, never published · `tooling/*` build tooling · `docs` documentati
   Never `replace()` a value into a template.
 - `SculkResult` for fallible I/O and user input; throw only for programmer error.
 - Every world-touching API states the execution context it requires (`THREADING.md`).
-- Every interface a consumer calls ships a fake in test fixtures; fakes refuse what they cannot model.
+- Every interface a consumer calls ships a fake in `sculk-testkit` (published, so plugin authors
+  test with the same fakes); fakes refuse what they cannot model.
 - Prefer a real engine or a real server to a mock.
 - Comments state an invariant, a concurrency requirement, a security boundary, a compatibility
   reason, an upstream bug or a non-obvious performance choice, in one to three lines. No history,
