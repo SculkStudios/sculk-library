@@ -1,0 +1,62 @@
+public final class studio/sculk/runtime/PlatformInfo {
+	public fun <init> (Lstudio/sculk/runtime/PlatformInfo$Kind;Ljava/lang/String;Lstudio/sculk/version/MinecraftVersion;I)V
+	public synthetic fun <init> (Lstudio/sculk/runtime/PlatformInfo$Kind;Ljava/lang/String;Lstudio/sculk/version/MinecraftVersion;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lstudio/sculk/runtime/PlatformInfo$Kind;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lstudio/sculk/version/MinecraftVersion;
+	public final fun component4 ()I
+	public final fun copy (Lstudio/sculk/runtime/PlatformInfo$Kind;Ljava/lang/String;Lstudio/sculk/version/MinecraftVersion;I)Lstudio/sculk/runtime/PlatformInfo;
+	public static synthetic fun copy$default (Lstudio/sculk/runtime/PlatformInfo;Lstudio/sculk/runtime/PlatformInfo$Kind;Ljava/lang/String;Lstudio/sculk/version/MinecraftVersion;IILjava/lang/Object;)Lstudio/sculk/runtime/PlatformInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBrand ()Ljava/lang/String;
+	public final fun getJavaVersion ()I
+	public final fun getKind ()Lstudio/sculk/runtime/PlatformInfo$Kind;
+	public final fun getMinecraft ()Lstudio/sculk/version/MinecraftVersion;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/runtime/PlatformInfo$Kind : java/lang/Enum {
+	public static final field CANVAS Lstudio/sculk/runtime/PlatformInfo$Kind;
+	public static final field FOLIA Lstudio/sculk/runtime/PlatformInfo$Kind;
+	public static final field PAPER Lstudio/sculk/runtime/PlatformInfo$Kind;
+	public static final field VELOCITY Lstudio/sculk/runtime/PlatformInfo$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun isProxy ()Z
+	public final fun isRegionized ()Z
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/runtime/PlatformInfo$Kind;
+	public static fun values ()[Lstudio/sculk/runtime/PlatformInfo$Kind;
+}
+
+public abstract interface class studio/sculk/runtime/SculkLog {
+	public abstract fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public static synthetic fun error$default (Lstudio/sculk/runtime/SculkLog;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+	public abstract fun info (Ljava/lang/String;)V
+	public abstract fun warn (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public static synthetic fun warn$default (Lstudio/sculk/runtime/SculkLog;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+}
+
+public final class studio/sculk/runtime/SculkLog$DefaultImpls {
+	public static synthetic fun error$default (Lstudio/sculk/runtime/SculkLog;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+	public static synthetic fun warn$default (Lstudio/sculk/runtime/SculkLog;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+}
+
+public abstract interface class studio/sculk/runtime/SculkModule {
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun install (Lstudio/sculk/runtime/SculkRuntime;)V
+}
+
+public abstract interface class studio/sculk/runtime/SculkRuntime : studio/sculk/SculkHandle {
+	public abstract fun diagnostics ()Lstudio/sculk/diagnostics/DiagnosticReport;
+	public abstract fun getCapabilities ()Lstudio/sculk/capability/Capabilities;
+	public abstract fun getClock ()Lstudio/sculk/time/SculkClock;
+	public abstract fun getDevelopmentMode ()Z
+	public abstract fun getLifecycle ()Lstudio/sculk/lifecycle/Lifecycle;
+	public abstract fun getLog ()Lstudio/sculk/runtime/SculkLog;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getPlatform ()Lstudio/sculk/runtime/PlatformInfo;
+	public abstract fun getScope ()Lstudio/sculk/execution/SculkScope;
+	public abstract fun getServices ()Lstudio/sculk/service/ServiceRegistry;
+	public abstract fun install (Lstudio/sculk/runtime/SculkModule;)V
+}
+

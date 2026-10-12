@@ -28,6 +28,8 @@ rootProject.name = "sculk-studio"
 include(
     ":sculk-core",
     ":sculk-coroutines",
+    ":sculk-platform-api",
+    ":sculk-testkit",
 )
 
 // Never published. Each proves something about the published modules on a real server.

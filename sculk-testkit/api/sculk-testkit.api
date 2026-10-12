@@ -1,0 +1,53 @@
+public final class studio/sculk/testkit/FakeRuntime : studio/sculk/runtime/AbstractSculkRuntime {
+	public static final field Companion Lstudio/sculk/testkit/FakeRuntime$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Lstudio/sculk/runtime/PlatformInfo;Lstudio/sculk/execution/FakeExecutor;Lstudio/sculk/testkit/RecordingLog;ZLstudio/sculk/time/SculkClock;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/runtime/PlatformInfo;Lstudio/sculk/execution/FakeExecutor;Lstudio/sculk/testkit/RecordingLog;ZLstudio/sculk/time/SculkClock;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getExecutor ()Lstudio/sculk/execution/FakeExecutor;
+	public final fun getLogged ()Lstudio/sculk/testkit/RecordingLog;
+	public final fun start ()V
+}
+
+public final class studio/sculk/testkit/FakeRuntime$Companion {
+	public final fun canvas (Ljava/lang/String;)Lstudio/sculk/runtime/PlatformInfo;
+	public static synthetic fun canvas$default (Lstudio/sculk/testkit/FakeRuntime$Companion;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/runtime/PlatformInfo;
+	public final fun folia (Ljava/lang/String;)Lstudio/sculk/runtime/PlatformInfo;
+	public static synthetic fun folia$default (Lstudio/sculk/testkit/FakeRuntime$Companion;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/runtime/PlatformInfo;
+	public final fun paper (Ljava/lang/String;)Lstudio/sculk/runtime/PlatformInfo;
+	public static synthetic fun paper$default (Lstudio/sculk/testkit/FakeRuntime$Companion;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/runtime/PlatformInfo;
+	public final fun velocity ()Lstudio/sculk/runtime/PlatformInfo;
+}
+
+public final class studio/sculk/testkit/RecordingLog : studio/sculk/runtime/SculkLog {
+	public fun <init> ()V
+	public fun error (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getErrors ()Ljava/util/List;
+	public fun info (Ljava/lang/String;)V
+	public fun warn (Ljava/lang/String;Ljava/lang/Throwable;)V
+}
+
+public final class studio/sculk/testkit/RecordingLog$Entry {
+	public fun <init> (Lstudio/sculk/testkit/RecordingLog$Level;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun component1 ()Lstudio/sculk/testkit/RecordingLog$Level;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Throwable;
+	public final fun copy (Lstudio/sculk/testkit/RecordingLog$Level;Ljava/lang/String;Ljava/lang/Throwable;)Lstudio/sculk/testkit/RecordingLog$Entry;
+	public static synthetic fun copy$default (Lstudio/sculk/testkit/RecordingLog$Entry;Lstudio/sculk/testkit/RecordingLog$Level;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lstudio/sculk/testkit/RecordingLog$Entry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Ljava/lang/Throwable;
+	public final fun getLevel ()Lstudio/sculk/testkit/RecordingLog$Level;
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/testkit/RecordingLog$Level : java/lang/Enum {
+	public static final field ERROR Lstudio/sculk/testkit/RecordingLog$Level;
+	public static final field INFO Lstudio/sculk/testkit/RecordingLog$Level;
+	public static final field WARN Lstudio/sculk/testkit/RecordingLog$Level;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/testkit/RecordingLog$Level;
+	public static fun values ()[Lstudio/sculk/testkit/RecordingLog$Level;
+}
+
