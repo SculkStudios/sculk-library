@@ -31,7 +31,7 @@ planned module is in `REBUILD.md`.
 
 | Module | Capability | Depends on | External | Neutral | Status |
 | --- | --- | --- | --- | --- | --- |
-| `sculk-text` | Themes, semantic styles, trusted-template rendering, translations and plurals, glyph metrics, wrapping, centring | core | adventure, minimessage (compileOnly) | yes | done |
+| `sculk-text` | Themes, semantic styles, trusted-template rendering, translations and plurals, glyph metrics, wrapping, centring | core | adventure, minimessage (compileOnly) | yes | done; translations move onto Adventure's `MiniMessageTranslationStore` and `GlobalTranslator` with CLDR plurals in M3 (ADR-0024) |
 | `sculk-placeholders` | Typed placeholders as `TagResolver`s with refresh policy and change signals; global, audience, relational, contextual | text, coroutines | — | yes | planned |
 | `sculk-config` | Typed YAML with comment and unknown-key preservation, migrations, validation, transactional reload, environment placeholders, secrets | core | kotlinx-serialization-core, snakeyaml-engine | yes | done |
 | `sculk-commands` | Immutable `CommandSpec`, DSL, neutral argument model (primitive types and validators), middleware, cooldowns, confirmation, flags, help and usage, server-free test runner that interprets the spec (ADR-0022) | text, coroutines | — (no Brigadier) | yes | planned (next) |

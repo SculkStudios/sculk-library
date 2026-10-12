@@ -111,7 +111,7 @@ time with the Adventure 5.2.0 jars in place of the floor jars, on Java 25 (`test
 that changed kind. MiniMessage fixtures run on both lines because 5.x tag behaviour is not yet
 verified. Translation builds on `TranslationStore`, `MiniMessageTranslationStore` and
 `GlobalTranslator`, which exist from Adventure 4.20.0 and survive unchanged into 5.2.0, never on
-`TranslationRegistry`.
+`TranslationRegistry` (ADR-0024).
 
 ## Java
 

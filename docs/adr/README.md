@@ -42,3 +42,4 @@ consequences matter more than exhaustive option surveys.
 | 0021 | [Configuration codec on snakeyaml-engine](0021-config-codec.md) | Accepted |
 | 0022 | [Commands on the platforms' Brigadier](0022-commands-on-platform-brigadier.md) | Accepted |
 | 0023 | [Packet backends and scoreboard surfaces on Folia](0023-packet-backends-and-folia-hud.md) | Accepted |
+| 0024 | [Translations on Adventure's translation stores](0024-translations-on-adventure-stores.md) | Accepted |
