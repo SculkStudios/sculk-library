@@ -234,7 +234,9 @@ internal object ConfigLoader {
         }
         if (options.header.isNotEmpty()) {
             val version = tree.value.first().keyNode
-            version.blockComments = YamlEncoding.comments(options.header) + YamlEncoding.comments(emptyList(), blankLineFirst = true) + version.blockComments.orEmpty()
+            version.blockComments =
+                YamlEncoding.comments(options.header) + YamlEncoding.comments(emptyList(), blankLineFirst = true) +
+                version.blockComments.orEmpty()
         }
         val text = YamlTree.print(tree)
         Files.createDirectories(path.toAbsolutePath().parent)
