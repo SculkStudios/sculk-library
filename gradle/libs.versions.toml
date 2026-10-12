@@ -27,7 +27,7 @@ jmh               = "1.37"
 jmh-plugin        = "0.7.3"
 shadow            = "9.6.1"
 run-paper         = "3.0.2"
-packetevents      = "2.13.0"
+packetevents      = "2.14.0"
 protocollib       = "5.4.0"
 jda               = "6.5.0"
 
