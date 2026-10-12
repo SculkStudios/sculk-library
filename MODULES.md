@@ -101,7 +101,7 @@ Each is a thin adapter with handles resolved once at startup. All upstream depen
 | Module | Upstream | Status |
 | --- | --- | --- |
 | `sculk-luckperms` | LuckPerms (contexts, QueryOptions, offline loads, never blocks a tick) | planned |
-| `sculk-vault` | Vault economy | planned |
+| `sculk-vault` | Economy through VaultUnlocked (active, Folia-aware, UUID-based, multi-currency) as the primary target, with the legacy Vault `Economy` service as fallback when only Vault or a Vault-only provider is present | planned |
 | `sculk-placeholderapi` | PlaceholderAPI, Component API where available | planned |
 | `sculk-miniplaceholders` | MiniPlaceholders, both directions | planned |
 | `sculk-floodgate` | Bedrock context for UX adaptation | planned |
