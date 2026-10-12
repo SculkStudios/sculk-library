@@ -1,0 +1,243 @@
+public final class studio/sculk/execution/EntityGoneException : java/util/concurrent/CancellationException, kotlinx/coroutines/CopyableThrowable {
+	public fun <init> (Lstudio/sculk/execution/EntityRef;)V
+	public synthetic fun createCopy ()Ljava/lang/Throwable;
+	public fun createCopy ()Lstudio/sculk/execution/EntityGoneException;
+	public final fun getEntity ()Lstudio/sculk/execution/EntityRef;
+}
+
+public abstract interface class studio/sculk/execution/EntityRef {
+	public abstract fun getDescription ()Ljava/lang/String;
+	public abstract fun getId ()Ljava/util/UUID;
+}
+
+public abstract interface class studio/sculk/execution/EntityResult {
+}
+
+public final class studio/sculk/execution/EntityResult$Gone : studio/sculk/execution/EntityResult {
+	public fun <init> (Lstudio/sculk/execution/EntityRef;)V
+	public final fun component1 ()Lstudio/sculk/execution/EntityRef;
+	public final fun copy (Lstudio/sculk/execution/EntityRef;)Lstudio/sculk/execution/EntityResult$Gone;
+	public static synthetic fun copy$default (Lstudio/sculk/execution/EntityResult$Gone;Lstudio/sculk/execution/EntityRef;ILjava/lang/Object;)Lstudio/sculk/execution/EntityResult$Gone;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntity ()Lstudio/sculk/execution/EntityRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/EntityResult$Ran : studio/sculk/execution/EntityResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lstudio/sculk/execution/EntityResult$Ran;
+	public static synthetic fun copy$default (Lstudio/sculk/execution/EntityResult$Ran;Ljava/lang/Object;ILjava/lang/Object;)Lstudio/sculk/execution/EntityResult$Ran;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class studio/sculk/execution/ExecutionContext {
+}
+
+public final class studio/sculk/execution/ExecutionContext$Async : studio/sculk/execution/ExecutionContext {
+	public static final field INSTANCE Lstudio/sculk/execution/ExecutionContext$Async;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/ExecutionContext$Entity : studio/sculk/execution/ExecutionContext {
+	public fun <init> (Lstudio/sculk/execution/EntityRef;)V
+	public final fun component1 ()Lstudio/sculk/execution/EntityRef;
+	public final fun copy (Lstudio/sculk/execution/EntityRef;)Lstudio/sculk/execution/ExecutionContext$Entity;
+	public static synthetic fun copy$default (Lstudio/sculk/execution/ExecutionContext$Entity;Lstudio/sculk/execution/EntityRef;ILjava/lang/Object;)Lstudio/sculk/execution/ExecutionContext$Entity;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntity ()Lstudio/sculk/execution/EntityRef;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/ExecutionContext$Global : studio/sculk/execution/ExecutionContext {
+	public static final field INSTANCE Lstudio/sculk/execution/ExecutionContext$Global;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/ExecutionContext$Proxy : studio/sculk/execution/ExecutionContext {
+	public static final field INSTANCE Lstudio/sculk/execution/ExecutionContext$Proxy;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/ExecutionContext$Region : studio/sculk/execution/ExecutionContext {
+	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/execution/SectionPosition;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-iPCwBxo ()Ljava/lang/String;
+	public final fun component2 ()Lstudio/sculk/execution/SectionPosition;
+	public final fun copy-WQclf08 (Ljava/lang/String;Lstudio/sculk/execution/SectionPosition;)Lstudio/sculk/execution/ExecutionContext$Region;
+	public static synthetic fun copy-WQclf08$default (Lstudio/sculk/execution/ExecutionContext$Region;Ljava/lang/String;Lstudio/sculk/execution/SectionPosition;ILjava/lang/Object;)Lstudio/sculk/execution/ExecutionContext$Region;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSection ()Lstudio/sculk/execution/SectionPosition;
+	public final fun getWorld-iPCwBxo ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/RegionBatchKt {
+	public static final fun regionBatch (Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/execution/SculkExecution : kotlin/coroutines/AbstractCoroutineContextElement {
+	public static final field Key Lstudio/sculk/execution/SculkExecution$Key;
+	public fun <init> (Lstudio/sculk/execution/SculkExecutor;)V
+	public final fun dispatcher (Lstudio/sculk/execution/ExecutionContext;)Lkotlinx/coroutines/CoroutineDispatcher;
+	public final fun getExecutor ()Lstudio/sculk/execution/SculkExecutor;
+	public final fun getHome ()Lkotlinx/coroutines/CoroutineDispatcher;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/SculkExecution$Key : kotlin/coroutines/CoroutineContext$Key {
+}
+
+public final class studio/sculk/execution/SculkExecutionKt {
+	public static final fun currentExecution (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun delayTicks (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun getOrNull (Lstudio/sculk/execution/EntityResult;)Ljava/lang/Object;
+	public static final fun withAsync (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun withEntity (Lstudio/sculk/execution/EntityRef;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun withExecutionContext (Lstudio/sculk/execution/ExecutionContext;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun withGlobal (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun withRegion-C71q-fI (Ljava/lang/String;Lstudio/sculk/execution/SectionPosition;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class studio/sculk/execution/SculkExecutor {
+	public static final field Companion Lstudio/sculk/execution/SculkExecutor$Companion;
+	public static final field MILLIS_PER_TICK J
+	public abstract fun getPlatform ()Ljava/lang/String;
+	public abstract fun owns (Lstudio/sculk/execution/ExecutionContext;)Z
+	public abstract fun schedule (Lstudio/sculk/execution/ExecutionContext;JLstudio/sculk/execution/SculkExecutor$Work;)Lstudio/sculk/SculkHandle;
+	public abstract fun scheduleRepeating (Lstudio/sculk/execution/ExecutionContext;JJLstudio/sculk/execution/SculkExecutor$Work;)Lstudio/sculk/SculkHandle;
+	public abstract fun supports (Lstudio/sculk/execution/ExecutionContext;)Z
+}
+
+public final class studio/sculk/execution/SculkExecutor$Companion {
+	public static final field MILLIS_PER_TICK J
+}
+
+public abstract interface class studio/sculk/execution/SculkExecutor$Work {
+	public fun retired ()V
+	public abstract fun run ()V
+}
+
+public final class studio/sculk/execution/SculkExecutor$Work$DefaultImpls {
+	public static fun retired (Lstudio/sculk/execution/SculkExecutor$Work;)V
+}
+
+public final class studio/sculk/execution/SculkExecutorKt {
+	public static final fun checkOwned (Lstudio/sculk/execution/SculkExecutor;Lstudio/sculk/execution/ExecutionContext;Ljava/lang/String;)V
+}
+
+public final class studio/sculk/execution/SculkScope : kotlinx/coroutines/CoroutineScope, studio/sculk/SculkHandle {
+	public static final field Companion Lstudio/sculk/execution/SculkScope$Companion;
+	public final fun async (Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/CoroutineStart;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Deferred;
+	public static synthetic fun async$default (Lstudio/sculk/execution/SculkScope;Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/CoroutineStart;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lkotlinx/coroutines/Deferred;
+	public final fun child (Ljava/lang/String;)Lstudio/sculk/execution/SculkScope;
+	public fun close ()V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getExecution ()Lstudio/sculk/execution/SculkExecution;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getResources ()Lstudio/sculk/ResourceScope;
+	public final fun isClosed ()Z
+	public final fun launch (Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/CoroutineStart;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;
+	public static synthetic fun launch$default (Lstudio/sculk/execution/SculkScope;Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/CoroutineStart;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lkotlinx/coroutines/Job;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/SculkScope$Companion {
+	public final fun root (Ljava/lang/String;Lstudio/sculk/execution/SculkExecutor;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/execution/SculkScope;
+}
+
+public final class studio/sculk/execution/SectionPosition {
+	public static final field Companion Lstudio/sculk/execution/SectionPosition$Companion;
+	public static final field DEFAULT_SHIFT I
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lstudio/sculk/execution/SectionPosition;
+	public static synthetic fun copy$default (Lstudio/sculk/execution/SectionPosition;IIILjava/lang/Object;)Lstudio/sculk/execution/SectionPosition;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPacked ()J
+	public final fun getX ()I
+	public final fun getZ ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/SectionPosition$Companion {
+	public final fun ofBlock (III)Lstudio/sculk/execution/SectionPosition;
+	public static synthetic fun ofBlock$default (Lstudio/sculk/execution/SectionPosition$Companion;IIIILjava/lang/Object;)Lstudio/sculk/execution/SectionPosition;
+	public final fun ofChunk (III)Lstudio/sculk/execution/SectionPosition;
+	public static synthetic fun ofChunk$default (Lstudio/sculk/execution/SectionPosition$Companion;IIIILjava/lang/Object;)Lstudio/sculk/execution/SectionPosition;
+}
+
+public final class studio/sculk/execution/UnsupportedContextException : java/lang/UnsupportedOperationException {
+	public fun <init> (Lstudio/sculk/execution/ExecutionContext;Ljava/lang/String;)V
+	public final fun getContext ()Lstudio/sculk/execution/ExecutionContext;
+}
+
+public final class studio/sculk/execution/WorldKey {
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lstudio/sculk/execution/WorldKey;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class studio/sculk/execution/WrongContextException : java/lang/IllegalStateException {
+	public fun <init> (Lstudio/sculk/execution/ExecutionContext;Ljava/lang/String;)V
+	public final fun getRequired ()Lstudio/sculk/execution/ExecutionContext;
+}
+
+public final class studio/sculk/task/CronExpression {
+	public static final field Companion Lstudio/sculk/task/CronExpression$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSource ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun nextAfter (Ljava/time/ZonedDateTime;)Ljava/time/ZonedDateTime;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/task/CronExpression$Companion {
+	public final fun parse (Ljava/lang/String;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/task/Debouncer {
+	public fun <init> (Lstudio/sculk/execution/SculkScope;JLstudio/sculk/execution/ExecutionContext;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lstudio/sculk/execution/SculkScope;JLstudio/sculk/execution/ExecutionContext;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun cancel ()V
+	public final fun trigger ()V
+}
+
+public final class studio/sculk/task/TasksKt {
+	public static final fun batches (Lstudio/sculk/execution/SculkScope;ILstudio/sculk/execution/ExecutionContext;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;
+	public static synthetic fun batches$default (Lstudio/sculk/execution/SculkScope;ILstudio/sculk/execution/ExecutionContext;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lkotlinx/coroutines/Job;
+	public static final fun cron (Lstudio/sculk/execution/SculkScope;Lstudio/sculk/task/CronExpression;Ljava/time/ZoneId;Lstudio/sculk/execution/ExecutionContext;Lstudio/sculk/time/SculkClock;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/Job;
+	public static synthetic fun cron$default (Lstudio/sculk/execution/SculkScope;Lstudio/sculk/task/CronExpression;Ljava/time/ZoneId;Lstudio/sculk/execution/ExecutionContext;Lstudio/sculk/time/SculkClock;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/Job;
+	public static final fun delayed (Lstudio/sculk/execution/SculkScope;JLstudio/sculk/execution/ExecutionContext;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/Job;
+	public static synthetic fun delayed$default (Lstudio/sculk/execution/SculkScope;JLstudio/sculk/execution/ExecutionContext;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/Job;
+	public static final fun repeating (Lstudio/sculk/execution/SculkScope;JLstudio/sculk/execution/ExecutionContext;JLkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/Job;
+	public static synthetic fun repeating$default (Lstudio/sculk/execution/SculkScope;JLstudio/sculk/execution/ExecutionContext;JLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/Job;
+}
+
+public final class studio/sculk/task/Throttler {
+	public fun <init> (Lstudio/sculk/execution/SculkScope;JLstudio/sculk/time/SculkClock;Lstudio/sculk/execution/ExecutionContext;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lstudio/sculk/execution/SculkScope;JLstudio/sculk/time/SculkClock;Lstudio/sculk/execution/ExecutionContext;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun trigger ()Z
+}
+

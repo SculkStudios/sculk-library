@@ -25,7 +25,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "sculk-studio"
 
-include(":sculk-core")
+include(
+    ":sculk-core",
+    ":sculk-coroutines",
+)
 
 // Never published. Each proves something about the published modules on a real server.
 include(":integration-tests:boot")
