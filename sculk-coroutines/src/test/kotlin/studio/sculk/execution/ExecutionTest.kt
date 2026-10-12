@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import studio.sculk.execution.FakeExecutor.ThreadModel
+import studio.sculk.testkit.FakeEntity
+import studio.sculk.testkit.FakeExecutor
+import studio.sculk.testkit.FakeExecutor.ThreadModel
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExecutionTest {
@@ -74,9 +76,9 @@ class ExecutionTest {
     @Test
     fun `delayTicks waits exactly that many ticks and resumes in the same context`() {
         val executor = FakeExecutor()
-        val region = ExecutionContext.Region(world, SectionPosition(0, 0))
+        val region = ExecutionContext.Region(world, 0, 0)
         val (waited, stillOwned) = executor.run {
-            withRegion(world, SectionPosition(0, 0)) {
+            withRegion(world, 0, 0) {
                 val start = executor.currentTick
                 delayTicks(40)
                 (executor.currentTick - start) to executor.owns(region)
@@ -90,9 +92,9 @@ class ExecutionTest {
     fun `asking a proxy for a region fails where it is written`() {
         val executor = FakeExecutor(ThreadModel.PROXY)
         val failure = assertThrows<UnsupportedContextException> {
-            executor.run { withRegion(world, SectionPosition(0, 0)) {} }
+            executor.run { withRegion(world, 0, 0) {} }
         }
-        assertEquals("FakeProxy cannot run work in Region(world=minecraft:overworld, section=SectionPosition(x=0, z=0)).", failure.message)
+        assertEquals("Fake Velocity cannot run work in Region(world=minecraft:overworld, chunkX=0, chunkZ=0).", failure.message)
     }
 
     @Test
@@ -149,22 +151,44 @@ class ExecutionTest {
         val results = executor.run {
             regionBatch(
                 blocks,
-                locate = { (x, z) -> ExecutionContext.Region(world, SectionPosition.ofBlock(x, z)) },
+                locate = { (x, z) -> ExecutionContext.Region.ofBlock(world, x, z) },
             ) { (x, z) ->
-                val owned = executor.owns(ExecutionContext.Region(world, SectionPosition.ofBlock(x, z)))
+                val owned = executor.owns(ExecutionContext.Region.ofBlock(world, x, z))
                 "$x,$z:$owned"
             }
         }
         assertEquals(listOf("0,0:true", "300,0:true", "5,5:true", "-1,-1:true", "310,3:true"), results)
-        val regions = executor.history.filterIsInstance<ExecutionContext.Region>().toSet()
-        assertEquals(setOf(SectionPosition(0, 0), SectionPosition(1, 0), SectionPosition(-1, -1)), regions.map { it.section }.toSet())
+        val sections = executor.history.filterIsInstance<ExecutionContext.Region>().map { it.section(executor.regionShift) }.toSet()
+        assertEquals(setOf(SectionPosition(0, 0), SectionPosition(1, 0), SectionPosition(-1, -1)), sections)
+    }
+
+    @Test
+    fun `a region batch groups by the platform's section width, not a default`() {
+        val executor = FakeExecutor(regionShift = 2)
+        val chunks = listOf(0, 3, 4, 7, 8)
+        executor.run {
+            regionBatch(chunks, locate = { ExecutionContext.Region(world, it, 0) }) { chunk ->
+                check(executor.owns(ExecutionContext.Region(world, chunk, 0))) { "chunk $chunk ran off its region" }
+            }
+        }
+        val groups = executor.history.filterIsInstance<ExecutionContext.Region>().map { it.section(2) }
+        assertEquals(listOf(SectionPosition(0, 0), SectionPosition(1, 0), SectionPosition(2, 0)), groups)
+    }
+
+    @Test
+    fun `a region context names its chunk, so any section width finds the same chunk`() {
+        val region = ExecutionContext.Region.ofBlock(world, 1_600, -1)
+        assertEquals(100, region.chunkX)
+        assertEquals(-1, region.chunkZ)
+        assertEquals(SectionPosition(6, -1), region.section(4))
+        assertEquals(SectionPosition(3, -1), region.section(5))
     }
 
     @Test
     fun `sections floor towards negative infinity like chunk coordinates`() {
-        assertEquals(SectionPosition(-1, -1), SectionPosition.ofChunk(-1, -16))
-        assertEquals(SectionPosition(0, 0), SectionPosition.ofChunk(15, 15))
-        assertEquals(SectionPosition(1, 0), SectionPosition.ofBlock(256, 0))
+        assertEquals(SectionPosition(-1, -1), SectionPosition.ofChunk(-1, -16, 4))
+        assertEquals(SectionPosition(0, 0), SectionPosition.ofChunk(15, 15, 4))
+        assertEquals(SectionPosition(1, 0), SectionPosition.ofBlock(256, 0, 4))
         assertEquals((3L shl 32) or (5L and 0xFFFFFFFFL), SectionPosition(5, 3).packed)
         assertEquals(0xFFFFFFFFL, SectionPosition(-1, 0).packed)
     }
@@ -173,6 +197,45 @@ class ExecutionTest {
     fun `a proxy scope starts its coroutines on the proxy executor`() {
         val executor = FakeExecutor(ThreadModel.PROXY)
         assertTrue(executor.run { executor.owns(ExecutionContext.Proxy) })
+    }
+
+    @Test
+    fun `delayTicks of zero waits for the next tick instead of returning at once`() {
+        val executor = FakeExecutor()
+        val waited = executor.run {
+            withGlobal {
+                val start = executor.currentTick
+                delayTicks(0)
+                executor.currentTick - start
+            }
+        }
+        assertEquals(1L, waited)
+    }
+
+    @Test
+    fun `closing a scope cancels its coroutines before its resources close`() {
+        val executor = FakeExecutor()
+        val scope = SculkScope.root("plugin", executor) {}
+        val job = scope.launch { awaitCancellation() }
+        var cancelledFirst = false
+        scope.resources.onClose { cancelledFirst = job.isCancelled }
+        executor.tick()
+        scope.close()
+        assertTrue(cancelledFirst)
+    }
+
+    @Test
+    fun `ownership belongs to the ticking thread, never to a thread that merely runs at the same time`() {
+        val executor = FakeExecutor()
+        var ownedElsewhere = true
+        executor.run {
+            withGlobal {
+                val other = Thread { ownedElsewhere = executor.owns(ExecutionContext.Global) }
+                other.start()
+                other.join()
+            }
+        }
+        assertFalse(ownedElsewhere)
     }
 
     @Test

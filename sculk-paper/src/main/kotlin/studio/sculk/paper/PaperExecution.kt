@@ -8,9 +8,7 @@ import org.bukkit.event.player.PlayerTeleportEvent
 import studio.sculk.annotation.SculkStable
 import studio.sculk.execution.EntityResult
 import studio.sculk.execution.ExecutionContext
-import studio.sculk.execution.SectionPosition
 import studio.sculk.execution.WorldKey
-import studio.sculk.execution.currentExecution
 import studio.sculk.execution.withEntity
 import studio.sculk.execution.withExecutionContext
 
@@ -21,12 +19,14 @@ public suspend fun <T> withEntity(entity: Entity, block: suspend CoroutineScope.
 /** Runs [block] on the thread owning the chunk at [location]. */
 @SculkStable
 public suspend fun <T> withRegion(location: Location, block: suspend CoroutineScope.() -> T): T =
-    withExecutionContext(location.regionContext(currentSectionShift()), block)
+    withExecutionContext(location.regionContext(), block)
 
 /**
  * Teleports this entity from the thread that owns it and returns whether the teleport happened.
- * Code after the call runs on the thread owning the entity at its destination, which on Folia and
- * Canvas is usually a different region from where it started.
+ *
+ * The caller resumes in its own context afterwards, not at the destination. To keep working on the
+ * entity where it arrived, enter it again with [withEntity]: on Folia and Canvas it is usually owned
+ * by a different region from where it started.
  */
 @SculkStable
 public suspend fun Entity.teleportTo(
@@ -39,17 +39,12 @@ public suspend fun Entity.teleportTo(
  * Results come back in input order; see [studio.sculk.execution.regionBatch] for the guarantees.
  */
 @SculkStable
-public suspend fun <T, R> regionBatch(items: List<T>, locationOf: (T) -> Location, action: suspend (T) -> R): List<R> {
-    val shift = currentSectionShift()
-    return studio.sculk.execution.regionBatch(items, { locationOf(it).regionContext(shift) }, action)
-}
+public suspend fun <T, R> regionBatch(items: List<T>, locationOf: (T) -> Location, action: suspend (T) -> R): List<R> =
+    studio.sculk.execution.regionBatch(items, { locationOf(it).regionContext() }, action)
 
-/** The region context for this location at [sectionShift]. Throws for a location without a world. */
+/** The region context of the chunk containing this location. Throws for a location without a world. */
 @SculkStable
-public fun Location.regionContext(sectionShift: Int = SectionPosition.DEFAULT_SHIFT): ExecutionContext.Region {
+public fun Location.regionContext(): ExecutionContext.Region {
     val world = requireNotNull(world) { "A location without a world has no owning region: $this" }
-    return ExecutionContext.Region(WorldKey(world.key.asString()), SectionPosition.ofBlock(blockX, blockZ, sectionShift))
+    return ExecutionContext.Region.ofBlock(WorldKey(world.key.asString()), blockX, blockZ)
 }
-
-private suspend fun currentSectionShift(): Int =
-    (currentExecution().executor as? PaperExecutor)?.sectionShift ?: SectionPosition.DEFAULT_SHIFT

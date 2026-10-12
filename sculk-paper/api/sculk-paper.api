@@ -26,8 +26,7 @@ public final class studio/sculk/paper/PaperEntityRef : studio/sculk/execution/En
 
 public final class studio/sculk/paper/PaperExecutionKt {
 	public static final fun regionBatch (Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun regionContext (Lorg/bukkit/Location;I)Lstudio/sculk/execution/ExecutionContext$Region;
-	public static synthetic fun regionContext$default (Lorg/bukkit/Location;IILjava/lang/Object;)Lstudio/sculk/execution/ExecutionContext$Region;
+	public static final fun regionContext (Lorg/bukkit/Location;)Lstudio/sculk/execution/ExecutionContext$Region;
 	public static final fun teleportTo (Lorg/bukkit/entity/Entity;Lorg/bukkit/Location;Lorg/bukkit/event/player/PlayerTeleportEvent$TeleportCause;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun teleportTo$default (Lorg/bukkit/entity/Entity;Lorg/bukkit/Location;Lorg/bukkit/event/player/PlayerTeleportEvent$TeleportCause;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static final fun withEntity (Lorg/bukkit/entity/Entity;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -37,7 +36,6 @@ public final class studio/sculk/paper/PaperExecutionKt {
 public abstract interface class studio/sculk/paper/PaperPlatformExtension {
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun resolve (Lstudio/sculk/paper/PaperPlatformExtension$Context;Lstudio/sculk/capability/Capabilities$Builder;)V
-	public fun sectionShift (Lstudio/sculk/paper/PaperPlatformExtension$Context;)Ljava/lang/Integer;
 }
 
 public final class studio/sculk/paper/PaperPlatformExtension$Context {
@@ -47,13 +45,9 @@ public final class studio/sculk/paper/PaperPlatformExtension$Context {
 	public final fun getPlugin ()Lorg/bukkit/plugin/Plugin;
 }
 
-public final class studio/sculk/paper/PaperPlatformExtension$DefaultImpls {
-	public static fun sectionShift (Lstudio/sculk/paper/PaperPlatformExtension;Lstudio/sculk/paper/PaperPlatformExtension$Context;)Ljava/lang/Integer;
-}
-
 public final class studio/sculk/paper/PaperRuntime : studio/sculk/runtime/AbstractSculkRuntime {
 	public final fun getPlugin ()Lorg/bukkit/plugin/Plugin;
-	public final fun getSectionShift ()I
+	public final fun getRegionShift ()I
 }
 
 public final class studio/sculk/paper/Sculk {

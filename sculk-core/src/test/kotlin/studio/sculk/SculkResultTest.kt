@@ -85,4 +85,15 @@ class SculkResultTest {
     fun `the shared ok result is a single instance`() {
         assertSame(SculkResult.ok(), SculkResult.ok())
     }
+
+    @Test
+    fun `catching an interrupt keeps the thread interrupted`() {
+        val result = SculkResult.catching("wait") { throw InterruptedException("stop") }
+        try {
+            assertTrue(result is SculkFailure.OperationFailed)
+            assertTrue(Thread.currentThread().isInterrupted)
+        } finally {
+            Thread.interrupted()
+        }
+    }
 }

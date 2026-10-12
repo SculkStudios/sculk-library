@@ -21,7 +21,6 @@ public final class studio/sculk/canvas/CanvasSupport : studio/sculk/paper/PaperP
 	public final fun getTICK_MANAGER ()Lstudio/sculk/capability/CapabilityKey;
 	public final fun getWORLDS ()Lstudio/sculk/capability/CapabilityKey;
 	public fun resolve (Lstudio/sculk/paper/PaperPlatformExtension$Context;Lstudio/sculk/capability/Capabilities$Builder;)V
-	public fun sectionShift (Lstudio/sculk/paper/PaperPlatformExtension$Context;)Ljava/lang/Integer;
 }
 
 public final class studio/sculk/canvas/CanvasWorlds {

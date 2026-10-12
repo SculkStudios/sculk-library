@@ -11,7 +11,6 @@ import studio.sculk.lifecycle.LifecyclePhase
 import studio.sculk.runtime.AbstractSculkRuntime
 import studio.sculk.runtime.PlatformInfo
 import studio.sculk.runtime.SculkLog
-import java.io.File
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -23,14 +22,15 @@ import java.util.logging.Logger
 public class PaperRuntime internal constructor(
     public val plugin: Plugin,
     platform: PlatformInfo,
-    /** The region section size as a power of two, in chunks; Folia's `grid-exponent`. */
-    public val sectionShift: Int,
     private val executor: PaperExecutor,
     log: SculkLog,
     developmentMode: Boolean,
     private val extensions: List<PaperPlatformExtension>,
     private val extensionContext: PaperPlatformExtension.Context,
 ) : AbstractSculkRuntime(plugin.name, platform, executor, log, developmentMode) {
+    /** Region sections are `2^regionShift` chunks wide; Folia's and Canvas's `grid-exponent`. */
+    public val regionShift: Int get() = executor.regionShift
+
     internal fun begin() {
         lifecycle.advance(LifecyclePhase.CONFIGURE)
         lifecycle.advance(LifecyclePhase.LOAD)
@@ -53,7 +53,7 @@ public class PaperRuntime internal constructor(
 
     override fun DiagnosticReport.Builder.platformSections() {
         section("Paper") {
-            entry("Section shift", "$sectionShift (${1 shl sectionShift} chunks)")
+            entry("Region shift", "$regionShift (${1 shl regionShift} chunks)")
             entry("Live tasks", executor.liveTasks)
             entry("Extensions", extensions.joinToString { it.id }.ifEmpty { "none" })
         }
@@ -80,12 +80,12 @@ public object Sculk {
         developmentMode: Boolean = developmentModeByDefault(),
         extensions: List<PaperPlatformExtension> = emptyList(),
     ): PaperRuntime {
-        val detected = PaperPlatformDetector.detect(File("").absoluteFile)
         val log = PaperLog(plugin.logger)
+        val detected = PaperPlatformDetector.detect(log)
         val context = PaperPlatformExtension.Context(plugin, detected.info, log, developmentMode)
-        val shift = extensions.firstNotNullOfOrNull { it.sectionShift(context) } ?: detected.sectionShift
-        val executor = PaperExecutor(plugin, detected.info.kind.name.lowercase().replaceFirstChar(Char::uppercaseChar), shift)
-        return PaperRuntime(plugin, detected.info, shift, executor, log, developmentMode, extensions, context).also(PaperRuntime::begin)
+        val executor =
+            PaperExecutor(plugin, detected.info.kind.name.lowercase().replaceFirstChar(Char::uppercaseChar), detected.regionShift)
+        return PaperRuntime(plugin, detected.info, executor, log, developmentMode, extensions, context).also(PaperRuntime::begin)
     }
 
     public fun developmentModeByDefault(): Boolean = System.getProperty(DEVELOPMENT_PROPERTY).toBoolean()

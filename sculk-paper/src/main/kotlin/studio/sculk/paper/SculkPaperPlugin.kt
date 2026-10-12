@@ -12,7 +12,8 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * [start] begins on the enabling thread and runs synchronously until its first suspension, so
  * commands and listeners registered before then are in place when `onEnable` returns. If it fails,
- * the failure is logged and the plugin disables itself rather than running half-initialised.
+ * timeouts included, the failure is logged once and the plugin disables itself rather than running
+ * half-initialised: at once when it fails before suspending, otherwise on the next global tick.
  */
 @SculkStable
 public abstract class SculkPaperPlugin : JavaPlugin() {
@@ -36,18 +37,34 @@ public abstract class SculkPaperPlugin : JavaPlugin() {
     final override fun onEnable() {
         val created = Sculk.attach(this, developmentMode, platformExtensions)
         runtime = created
-        val starting = created.scope.launch(start = CoroutineStart.UNDISPATCHED) { start() }
-        starting.invokeOnCompletion { failure ->
-            if (failure == null || failure is CancellationException) return@invokeOnCompletion
-            created.log.error("$name failed to start and will be disabled.", failure)
-            created.scope.execution.executor.schedule(
-                ExecutionContext.Global,
-                1,
-                object : SculkExecutor.Work {
-                    override fun run() = server.pluginManager.disablePlugin(this@SculkPaperPlugin)
-                },
-            )
+        var enabling = true
+        created.scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            try {
+                start()
+            } catch (cancelled: CancellationException) {
+                // A closed scope means the plugin is already disabling; anything else is a failed start.
+                if (created.scope.isClosed) throw cancelled
+                fail(created, cancelled, now = enabling)
+            } catch (failure: Exception) {
+                fail(created, failure, now = enabling)
+            }
         }
+        enabling = false
+    }
+
+    private fun fail(created: PaperRuntime, failure: Throwable, now: Boolean) {
+        created.log.error("$name failed to start and will be disabled.", failure)
+        if (now) {
+            server.pluginManager.disablePlugin(this)
+            return
+        }
+        created.scope.execution.executor.schedule(
+            ExecutionContext.Global,
+            1,
+            object : SculkExecutor.Work {
+                override fun run() = server.pluginManager.disablePlugin(this@SculkPaperPlugin)
+            },
+        )
     }
 
     final override fun onDisable() {

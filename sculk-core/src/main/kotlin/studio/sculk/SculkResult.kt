@@ -26,13 +26,15 @@ public sealed interface SculkResult<out T> {
 
         /**
          * Runs [block] and turns any exception into [SculkFailure.OperationFailed] described as
-         * "Could not [what]". Cancellation is rethrown, never captured as a failure.
+         * "Could not [what]". Cancellation is rethrown, never captured as a failure; an interrupt is
+         * captured but the thread stays interrupted, so the caller can still see it.
          */
         public inline fun <T> catching(what: String, block: () -> T): SculkResult<T> = try {
             Success(block())
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
+            if (error is InterruptedException) Thread.currentThread().interrupt()
             SculkFailure.OperationFailed(what, error)
         }
     }

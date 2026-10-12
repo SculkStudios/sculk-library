@@ -16,6 +16,13 @@ public interface SculkExecutor {
     /** A name for diagnostics, such as `Paper` or `Folia`. */
     public val platform: String
 
+    /**
+     * Region sections are `2^regionShift` chunks wide; two chunks in one section always share an
+     * owner, so work grouped by section runs in one region. Folia's and Canvas's `grid-exponent`.
+     * Any value on a server with one main thread; unused on a proxy.
+     */
+    public val regionShift: Int
+
     /** True when this platform has a thread for [context]. A proxy has no regions or entities. */
     public fun supports(context: ExecutionContext): Boolean
 
@@ -26,7 +33,8 @@ public interface SculkExecutor {
      * Runs [work] in [context] after [delayTicks]. The returned handle cancels it.
      *
      * For [ExecutionContext.Entity], exactly one of [Work.run] and [Work.retired] is called; retired
-     * means the entity was removed first. Throws [UnsupportedContextException] for a context the
+     * means the entity was removed first. Work of any context still pending when the executor shuts
+     * down is retired, never silently dropped. Throws [UnsupportedContextException] for a context the
      * platform does not [support][supports], and [IllegalStateException] once the executor has shut down.
      */
     public fun schedule(context: ExecutionContext, delayTicks: Long, work: Work): SculkHandle
@@ -57,13 +65,16 @@ public interface SculkExecutor {
 public class UnsupportedContextException(public val context: ExecutionContext, platform: String) :
     UnsupportedOperationException("$platform cannot run work in $context.")
 
-/** Code ran in a context that does not own what it touched. Raised by [checkOwned]. */
+/**
+ * Code ran on a thread that does not own what it touched. [requirement] names what it needed, such
+ * as `Global` or `a region thread`.
+ */
 @SculkStable
-public class WrongContextException(public val required: ExecutionContext, operation: String) :
-    IllegalStateException("$operation requires $required, but the calling thread does not own it.")
+public class WrongContextException(public val operation: String, public val requirement: String, cause: Throwable? = null) :
+    IllegalStateException("$operation requires $requirement, but the calling thread does not own it.", cause)
 
 /** Throws [WrongContextException] unless the calling thread owns [context]. */
 @SculkStable
 public fun SculkExecutor.checkOwned(context: ExecutionContext, operation: String) {
-    if (!owns(context)) throw WrongContextException(context, operation)
+    if (!owns(context)) throw WrongContextException(operation, context.toString())
 }

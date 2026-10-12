@@ -100,7 +100,35 @@ class ResourceScopeTest {
         scope.close()
         pool.shutdown()
         assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS))
-        assertEquals(2_000, closed.get())
-        assertTrue(rejected.get() <= closed.get())
+        assertEquals(2_000, closed.get(), "every resource is closed, whether it was registered in time or refused")
+    }
+
+    @Test
+    fun `closing actions run before any owned resource, in registration order`() {
+        val order = mutableListOf<String>()
+        val scope = ResourceScope.root("plugin")
+        scope.onClose { order += "database" }
+        scope.onClosing { order += "stop coroutines" }
+        scope.onClose { order += "listener" }
+        scope.onClosing { order += "refuse work" }
+        scope.close()
+        assertEquals(listOf("stop coroutines", "refuse work", "listener", "database"), order)
+    }
+
+    @Test
+    fun `a closing action on a closed scope runs at once and the call fails`() {
+        val scope = ResourceScope.root("plugin").also { it.close() }
+        var ran = false
+        assertThrows<IllegalStateException> { scope.onClosing { ran = true } }
+        assertTrue(ran)
+    }
+
+    @Test
+    fun `a combined handle closes its handles once, newest first`() {
+        val order = mutableListOf<String>()
+        val handle = SculkHandle.all(listOf(SculkHandle { order += "a" }, SculkHandle { order += "b" }))
+        handle.close()
+        handle.close()
+        assertEquals(listOf("b", "a"), order)
     }
 }

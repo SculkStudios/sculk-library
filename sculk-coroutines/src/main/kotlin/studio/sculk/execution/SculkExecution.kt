@@ -88,10 +88,10 @@ public suspend fun <T> withGlobal(block: suspend CoroutineScope.() -> T): T = wi
 @SculkStable
 public suspend fun <T> withAsync(block: suspend CoroutineScope.() -> T): T = withExecutionContext(ExecutionContext.Async, block)
 
-/** Runs [block] on the thread owning [section] of [world]. */
+/** Runs [block] on the thread owning chunk [chunkX], [chunkZ] of [world]. */
 @SculkStable
-public suspend fun <T> withRegion(world: WorldKey, section: SectionPosition, block: suspend CoroutineScope.() -> T): T =
-    withExecutionContext(ExecutionContext.Region(world, section), block)
+public suspend fun <T> withRegion(world: WorldKey, chunkX: Int, chunkZ: Int, block: suspend CoroutineScope.() -> T): T =
+    withExecutionContext(ExecutionContext.Region(world, chunkX, chunkZ), block)
 
 /**
  * Runs [block] on the thread owning [entity], following it across regions. Returns
@@ -107,29 +107,32 @@ public suspend fun <T> withEntity(entity: EntityRef, block: suspend CoroutineSco
 }
 
 /**
- * Suspends for [ticks] server ticks and resumes in the same execution context. On a proxy or in
- * [ExecutionContext.Async] a tick is [SculkExecutor.MILLIS_PER_TICK] of wall-clock time.
- * Kotlin's `delay` keeps measuring wall-clock time; use this where alignment with ticks matters.
+ * Suspends for [ticks] server ticks and resumes in the same execution context; zero or less waits
+ * for the next tick, as every Sculk delay does. On a proxy or in [ExecutionContext.Async] a tick is
+ * [SculkExecutor.MILLIS_PER_TICK] of wall-clock time. Kotlin's `delay` keeps measuring wall-clock
+ * time; use this where alignment with ticks matters.
+ *
+ * Cancelled, rather than failed, when the executor refuses the wait because it is shutting down.
  */
 @SculkStable
 public suspend fun delayTicks(ticks: Long) {
-    if (ticks <= 0) return
     val coroutineContext = currentCoroutineContext()
     val execution = coroutineContext[SculkExecution] ?: throw IllegalStateException("delayTicks needs a Sculk scope.")
     val context = (coroutineContext[ContinuationInterceptor] as? ContextDispatcher)?.context ?: ExecutionContext.Async
     suspendCancellableCoroutine { continuation ->
-        val handle = execution.executor.schedule(
-            context,
-            ticks,
-            object : SculkExecutor.Work {
-                override fun run() = continuation.resume(Unit)
+        val wake = object : SculkExecutor.Work {
+            override fun run() = continuation.resume(Unit)
 
-                override fun retired() {
-                    val entity = (context as ExecutionContext.Entity).entity
-                    continuation.cancel(EntityGoneException(entity))
-                }
-            },
-        )
+            override fun retired() {
+                continuation.cancel(ContextDispatcher.retirement(context))
+            }
+        }
+        val handle = try {
+            execution.executor.schedule(context, ticks.coerceAtLeast(1), wake)
+        } catch (rejected: RuntimeException) {
+            continuation.cancel(CancellationException("${execution.executor.platform} refused a wait in $context.", rejected))
+            return@suspendCancellableCoroutine
+        }
         continuation.invokeOnCancellation { handle.close() }
     }
 }

@@ -7,11 +7,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import studio.sculk.SculkFailure
 import studio.sculk.getOrThrow
+import studio.sculk.isSuccess
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class CronExpressionTest {
-    private val utc = ZoneId.of("UTC")
+    private val amsterdam = ZoneId.of("Europe/Amsterdam")
 
     private fun at(text: String): ZonedDateTime = ZonedDateTime.parse("${text}Z[UTC]")
 
@@ -32,16 +33,32 @@ class CronExpressionTest {
     }
 
     @Test
-    fun `an impossible date never matches rather than looping forever`() {
-        assertEquals(null, CronExpression.parse("0 0 31 feb *").getOrThrow().nextAfter(ZonedDateTime.now(utc)))
+    fun `an expression that can never run is refused when parsed`() {
+        val failure = CronExpression.parse("0 0 31 feb *") as SculkFailure.InvalidInput
+        assertEquals("a date that exists", failure.expected)
+        assertTrue(CronExpression.parse("0 0 29 feb *").isSuccess)
     }
 
     @Test
-    fun `daylight saving changes are followed rather than skipped`() {
-        val amsterdam = ZoneId.of("Europe/Amsterdam")
+    fun `a time skipped when the clocks go forward still runs that day, after the jump`() {
         val cron = CronExpression.parse("30 2 * * *").getOrThrow()
         val next = cron.nextAfter(ZonedDateTime.of(2026, 3, 29, 1, 0, 0, 0, amsterdam))
-        assertTrue(next != null && next.dayOfMonth >= 29)
+        assertEquals(ZonedDateTime.of(2026, 3, 29, 3, 30, 0, 0, amsterdam), next)
+    }
+
+    @Test
+    fun `a time repeated when the clocks go back runs once`() {
+        val cron = CronExpression.parse("30 2 * * *").getOrThrow()
+        val first = requireNotNull(cron.nextAfter(ZonedDateTime.of(2026, 10, 25, 1, 0, 0, 0, amsterdam)))
+        assertEquals(ZonedDateTime.of(2026, 10, 25, 2, 30, 0, 0, amsterdam).withEarlierOffsetAtOverlap(), first)
+        assertEquals(ZonedDateTime.of(2026, 10, 26, 2, 30, 0, 0, amsterdam), cron.nextAfter(first))
+    }
+
+    @Test
+    fun `a stepped day of month counts as unrestricted, as in Vixie cron`() {
+        val cron = CronExpression.parse("0 9 */2 * mon").getOrThrow()
+        assertEquals(at("2026-10-12T09:00:00"), cron.nextAfter(at("2026-10-12T00:00:00")))
+        assertEquals(at("2026-10-19T09:00:00"), cron.nextAfter(at("2026-10-12T09:00:00")))
     }
 
     @Test

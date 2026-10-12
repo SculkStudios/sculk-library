@@ -6,7 +6,6 @@ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet
 import org.bukkit.Server
 import org.bukkit.World
 import studio.sculk.annotation.SculkStable
-import studio.sculk.execution.ExecutionContext
 import studio.sculk.execution.WrongContextException
 import studio.sculk.runtime.SculkLog
 
@@ -85,11 +84,14 @@ public class CanvasRegionData internal constructor(
 /** One kind of region-local state; read it with [local] from a region thread. */
 @SculkStable
 public class RegionData<T : Any> internal constructor(private val server: Server, private val handle: RegionTickData.IRegionizedData<T>) {
-    /** The value for the region the calling thread is ticking. Off a region thread this is a bug and throws. */
+    /**
+     * The value for the region the calling thread is ticking. Off a region thread this is a bug and
+     * throws [WrongContextException]; run it inside `withRegion` or `withEntity`.
+     */
     public fun local(): T = try {
         server.getLocalRegionizedData(handle)
-    } catch (_: IllegalStateException) {
-        throw WrongContextException(ExecutionContext.Global, "Reading regionized data")
+    } catch (failure: IllegalStateException) {
+        throw WrongContextException("Reading regionized data", "a region thread", failure)
     }
 }
 

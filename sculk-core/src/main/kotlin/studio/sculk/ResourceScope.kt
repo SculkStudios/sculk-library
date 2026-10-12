@@ -13,6 +13,7 @@ import studio.sculk.annotation.SculkStable
 public class ResourceScope private constructor(public val name: String, private val parent: ResourceScope?) : SculkHandle {
     private val lock = Any()
     private val resources = LinkedHashSet<AutoCloseable>()
+    private val closing = mutableListOf<AutoCloseable>()
     private var closed = false
 
     public val isClosed: Boolean get() = synchronized(lock) { closed }
@@ -37,6 +38,24 @@ public class ResourceScope private constructor(public val name: String, private 
         return SculkHandle { release(registration) }
     }
 
+    /**
+     * Runs [action] as soon as closing begins, before any owned resource closes, in registration
+     * order. For stopping intake first: cancelling coroutines so none runs against a resource that
+     * is already closed. On a closed scope [action] runs at once and the call throws.
+     */
+    public fun onClosing(action: () -> Unit): SculkHandle {
+        val registration = Registration(action)
+        val accepted = synchronized(lock) {
+            if (!closed) closing += registration
+            !closed
+        }
+        if (!accepted) {
+            action()
+            throw IllegalStateException("Scope '$name' is closed; the action ran at once instead of being registered.")
+        }
+        return SculkHandle { synchronized(lock) { closing.remove(registration) } }
+    }
+
     /** Stops owning [resource] without closing it. */
     public fun release(resource: AutoCloseable) {
         synchronized(lock) { resources.remove(resource) }
@@ -46,14 +65,18 @@ public class ResourceScope private constructor(public val name: String, private 
     public fun child(name: String): ResourceScope = own(ResourceScope("${this.name}/$name", this))
 
     /**
-     * Closes every owned resource, newest first. Every resource is closed even when one throws; the
-     * first exception is rethrown afterwards with the rest suppressed. Closing twice does nothing.
+     * Runs the [onClosing] actions, then closes every owned resource, newest first. Everything runs
+     * even when one throws; the first exception is rethrown afterwards with the rest suppressed.
+     * Closing twice does nothing.
      */
     override fun close() {
         val snapshot = synchronized(lock) {
             if (closed) return
             closed = true
-            resources.toList().asReversed().also { resources.clear() }
+            (closing.toList() + resources.toList().asReversed()).also {
+                closing.clear()
+                resources.clear()
+            }
         }
         try {
             closeAll(snapshot)

@@ -8,6 +8,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.entity.ArmorStand
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.canvas.CanvasSupport
 import studio.sculk.capability.Capability
 import studio.sculk.execution.EntityResult
@@ -16,8 +17,11 @@ import studio.sculk.execution.SculkExecutor
 import studio.sculk.execution.delayTicks
 import studio.sculk.execution.withAsync
 import studio.sculk.execution.withGlobal
+import studio.sculk.getOrThrow
 import studio.sculk.paper.PaperCapabilities
+import studio.sculk.paper.PaperExecutor
 import studio.sculk.paper.PaperPlatformExtension
+import studio.sculk.paper.Sculk
 import studio.sculk.paper.SculkPaperPlugin
 import studio.sculk.paper.ref
 import studio.sculk.paper.regionBatch
@@ -40,26 +44,20 @@ class ThreadingPlugin : SculkPaperPlugin() {
     override val platformExtensions: List<PaperPlatformExtension> = listOf(CanvasSupport)
 
     private val results = ConcurrentHashMap<String, String>()
-    private val lateTasksRan = AtomicBoolean(false)
 
     override suspend fun start() {
         sculk.scope.launch {
             delayTicks(20)
             runScenarios()
-            scheduleTasksThatShutdownMustCancel()
             write()
             withGlobal { server.shutdown() }
         }
     }
 
-    override fun stop() {
-        results["shutdown-cancels-pending-work"] = if (lateTasksRan.get()) "FAIL: a task scheduled before shutdown ran" else "PASS"
-        write()
-    }
-
     private suspend fun runScenarios() {
         val world = server.worlds.first()
         scenario("platform-detected") { platformDetected() }
+        scenario("region-shift-matches-server") { regionShiftMatchesServer() }
         scenario("entity-work-follows-teleport") { entityWorkFollowsTeleport(world) }
         scenario("teleport-continues-at-destination") { teleportContinuesAtDestination(world) }
         scenario("entity-removed-while-waiting") { entityRemovedWhileWaiting(world) }
@@ -67,6 +65,7 @@ class ThreadingPlugin : SculkPaperPlugin() {
         scenario("ownership-matches-platform") { ownershipMatchesPlatform(world) }
         scenario("zero-delays-run-next-tick") { zeroDelaysRunNextTick() }
         scenario("canvas-region-data-merges") { canvasRegionDataMerges(world) }
+        scenario("shutdown-cancels-pending-work") { closingRetiresPendingWork(world) }
     }
 
     private suspend fun scenario(name: String, block: suspend () -> String) {
@@ -85,10 +84,15 @@ class ThreadingPlugin : SculkPaperPlugin() {
         val minecraft = sculk.platform.minecraft ?: return "FAIL: no Minecraft version detected"
         val postEffects = sculk.capabilities[PaperCapabilities.POST_EFFECTS].isAvailable
         val canvasData = sculk.capabilities[CanvasSupport.REGION_DATA].isAvailable
-        val expectsPostEffects = minecraft >= requireNotNull(MinecraftVersion.parse("26.3"))
+        val expectsPostEffects = minecraft >= MinecraftVersion.parse("26.3").getOrThrow()
         return check(kind == expected && postEffects == expectsPostEffects && canvasData == (kind == PlatformInfo.Kind.CANVAS)) {
             "detected $kind on $minecraft, post effects $postEffects, canvas region data $canvasData"
         }
+    }
+
+    private fun regionShiftMatchesServer(): String {
+        val expected = System.getProperty("sculk.itest.gridExponent")?.toInt() ?: return "SKIP: not a regionized run"
+        return check(sculk.regionShift == expected) { "runtime uses ${sculk.regionShift}, server is configured with $expected" }
     }
 
     private suspend fun spawnStand(at: Location): ArmorStand {
@@ -210,17 +214,39 @@ class ThreadingPlugin : SculkPaperPlugin() {
         return check(merges.get() > 0) { "no merge observed while connecting two regions" }
     }
 
-    private suspend fun scheduleTasksThatShutdownMustCancel() {
-        val executor = sculk.scope.execution.executor
-        val world = server.worlds.first()
+    /**
+     * A second runtime for this plugin schedules work of every kind a few ticks out and is closed at
+     * once, while the server keeps ticking. None of the work may run, all of it must be retired, and
+     * nothing may stay tracked.
+     */
+    @OptIn(SculkInternal::class)
+    private suspend fun closingRetiresPendingWork(world: World): String {
         val anchor = Location(world, 40.0, 100.0, 40.0)
         val stand = spawnStand(anchor)
-        val mark = work { lateTasksRan.set(true) }
+        val ran = AtomicInteger()
+        val retired = AtomicInteger()
+        val tracked = object : SculkExecutor.Work {
+            override fun run() {
+                ran.incrementAndGet()
+            }
+
+            override fun retired() {
+                retired.incrementAndGet()
+            }
+        }
+        val second = Sculk.attach(this, developmentMode = true)
+        val executor = second.scope.execution.executor as PaperExecutor
         withGlobal {
-            executor.schedule(ExecutionContext.Global, 400, mark)
-            executor.schedule(ExecutionContext.Async, 400, mark)
-            executor.schedule(ExecutionContext.Entity(stand.ref), 400, mark)
-            executor.schedule(anchor.regionContext(sculk.sectionShift), 400, mark)
+            executor.schedule(ExecutionContext.Global, 5, tracked)
+            executor.schedule(ExecutionContext.Async, 5, tracked)
+            executor.schedule(ExecutionContext.Entity(stand.ref), 5, tracked)
+            executor.schedule(anchor.regionContext(), 5, tracked)
+            second.close()
+        }
+        withGlobal { delayTicks(40) }
+        withEntity(stand) { stand.remove() }
+        return check(ran.get() == 0 && retired.get() == 4 && executor.liveTasks == 0) {
+            "ran ${ran.get()}, retired ${retired.get()}, still tracked ${executor.liveTasks}"
         }
     }
 

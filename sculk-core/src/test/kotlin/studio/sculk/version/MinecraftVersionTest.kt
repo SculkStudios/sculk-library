@@ -2,15 +2,16 @@ package studio.sculk.version
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import studio.sculk.SculkFailure
+import studio.sculk.getOrThrow
 
 class MinecraftVersionTest {
-    private fun v(text: String): MinecraftVersion = requireNotNull(MinecraftVersion.parse(text)) { "expected $text to parse" }
+    private fun v(text: String): MinecraftVersion = MinecraftVersion.parse(text).getOrThrow()
 
     @ParameterizedTest
     @ValueSource(strings = ["1.21", "1.21.4", "1.21.11", "26.1", "26.1.2", "26.3", "26.3-pre-2", "26.3-rc-1"])
@@ -21,7 +22,8 @@ class MinecraftVersionTest {
     @ParameterizedTest
     @ValueSource(strings = ["", "1", "1.", "1.21.x", "26w41a", "1.21.4.1", "-1.21", "1.21-pre-0", "1.21-beta-1", "v1.21"])
     fun `anything that is not a release or pre-release is refused`(text: String) {
-        assertNull(MinecraftVersion.parse(text))
+        val failure = MinecraftVersion.parse(text) as SculkFailure.InvalidInput
+        assertEquals("'$text'", failure.received)
     }
 
     @Test

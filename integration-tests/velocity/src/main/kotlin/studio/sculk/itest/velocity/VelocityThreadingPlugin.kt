@@ -7,13 +7,13 @@ import com.velocitypowered.api.proxy.ProxyServer
 import kotlinx.coroutines.withTimeout
 import org.slf4j.Logger
 import studio.sculk.execution.ExecutionContext
-import studio.sculk.execution.SectionPosition
 import studio.sculk.execution.UnsupportedContextException
 import studio.sculk.execution.WorldKey
 import studio.sculk.execution.delayTicks
 import studio.sculk.execution.withAsync
 import studio.sculk.execution.withExecutionContext
 import studio.sculk.execution.withRegion
+import studio.sculk.lifecycle.LifecyclePhase
 import studio.sculk.runtime.PlatformInfo
 import studio.sculk.velocity.SculkVelocityPlugin
 import java.nio.file.Files
@@ -52,11 +52,16 @@ class VelocityThreadingPlugin @Inject constructor(
             }
             scenario("regions-are-refused-where-written") {
                 try {
-                    withRegion(WorldKey("minecraft:overworld"), SectionPosition(0, 0)) {}
+                    withRegion(WorldKey("minecraft:overworld"), 0, 0) {}
                     "FAIL: a proxy accepted region work"
                 } catch (_: UnsupportedContextException) {
                     "PASS"
                 }
+            }
+            scenario("ready-once-the-proxy-listens") {
+                var waited = 0
+                while (!sculk.lifecycle.hasReached(LifecyclePhase.READY) && waited++ < 400) delayTicks(1)
+                check(sculk.lifecycle.phase == LifecyclePhase.READY) { "phase ${sculk.lifecycle.phase} after ${waited * 50} ms" }
             }
             write()
             proxy.shutdown()

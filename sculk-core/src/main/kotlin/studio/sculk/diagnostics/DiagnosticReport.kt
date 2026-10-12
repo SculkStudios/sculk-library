@@ -8,8 +8,13 @@ import studio.sculk.annotation.SculkStable
  */
 @SculkStable
 public class DiagnosticReport private constructor(public val sections: List<Section>) {
+    /** One titled block of aligned entries. */
     @SculkStable
-    public data class Section(public val title: String, public val entries: List<Pair<String, String>>)
+    public class Section(public val title: String, entries: List<Pair<String, String>>) {
+        public val entries: List<Pair<String, String>> = entries.toList()
+
+        override fun toString(): String = "Section($title, $entries)"
+    }
 
     /** Aligned, human-readable text suitable for a log or a pasted support request. */
     public fun render(): String = buildString {

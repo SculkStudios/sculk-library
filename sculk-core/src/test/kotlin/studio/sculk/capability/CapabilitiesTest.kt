@@ -22,9 +22,9 @@ class CapabilitiesTest {
     }
 
     @Test
-    fun `require explains which feature is missing and why`() {
+    fun `asking for a missing service explains which feature is missing and why`() {
         val capabilities = Capabilities.Builder().resolve(postEffects, Capability.Unavailable("added in Minecraft 26.3")).build()
-        val result = capabilities.require(postEffects) as SculkFailure.UnsupportedCapability
+        val result = capabilities.service(postEffects) as SculkFailure.UnsupportedCapability
         assertEquals("Player post-processing effects is not available on this server: added in Minecraft 26.3.", result.message)
     }
 
@@ -33,7 +33,7 @@ class CapabilitiesTest {
         val capabilities = Capabilities.Builder()
             .resolve(dialogs, Capability.Degraded("inventory form", listOf("text input")))
             .build()
-        assertEquals(SculkResult.Success("inventory form"), capabilities.require(dialogs))
+        assertEquals(SculkResult.Success("inventory form"), capabilities.service(dialogs))
         assertTrue(capabilities[dialogs].isAvailable)
         assertEquals("degraded", capabilities[dialogs].level)
     }
@@ -45,8 +45,15 @@ class CapabilitiesTest {
     }
 
     @Test
-    fun `keys are equal by id and ids are validated`() {
-        assertEquals(dialogs, CapabilityKey<Int>("paper.dialogs", "anything"))
+    fun `two keys sharing an id cannot both be resolved, so a lookup never returns another key's type`() {
+        val impostor = CapabilityKey<Int>("paper.dialogs", "Dialogs")
+        val builder = Capabilities.Builder().resolve(dialogs, Capability.Native("native"))
+        assertThrows<IllegalStateException> { builder.resolve(impostor, Capability.Native(1)) }
+        assertFalse(builder.build()[impostor].isAvailable)
+    }
+
+    @Test
+    fun `capability ids are validated`() {
         assertThrows<IllegalArgumentException> { CapabilityKey<String>("Paper Dialogs", "x") }
     }
 

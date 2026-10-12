@@ -1,9 +1,62 @@
+public final class studio/sculk/testkit/FakeClock : studio/sculk/time/SculkClock {
+	public fun <init> ()V
+	public fun <init> (Ljava/time/Instant;)V
+	public synthetic fun <init> (Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun advance (Ljava/time/Duration;)V
+	public final fun advanceTicks (J)V
+	public fun monotonicNanos ()J
+	public fun now ()Ljava/time/Instant;
+}
+
+public final class studio/sculk/testkit/FakeEntity : studio/sculk/execution/EntityRef {
+	public fun <init> (Ljava/lang/String;Ljava/util/UUID;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/UUID;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDescription ()Ljava/lang/String;
+	public fun getId ()Ljava/util/UUID;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/testkit/FakeExecutor : studio/sculk/execution/SculkExecutor {
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/testkit/FakeExecutor$ThreadModel;ILjava/lang/String;)V
+	public synthetic fun <init> (Lstudio/sculk/testkit/FakeExecutor$ThreadModel;ILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCurrentTick ()J
+	public final fun getHistory ()Ljava/util/List;
+	public final fun getModel ()Lstudio/sculk/testkit/FakeExecutor$ThreadModel;
+	public final fun getPendingCount ()I
+	public fun getPlatform ()Ljava/lang/String;
+	public fun getRegionShift ()I
+	public fun owns (Lstudio/sculk/execution/ExecutionContext;)Z
+	public final fun remove (Lstudio/sculk/execution/EntityRef;)V
+	public final fun run (IJLkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public static synthetic fun run$default (Lstudio/sculk/testkit/FakeExecutor;IJLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun schedule (Lstudio/sculk/execution/ExecutionContext;JLstudio/sculk/execution/SculkExecutor$Work;)Lstudio/sculk/SculkHandle;
+	public fun scheduleRepeating (Lstudio/sculk/execution/ExecutionContext;JJLstudio/sculk/execution/SculkExecutor$Work;)Lstudio/sculk/SculkHandle;
+	public final fun shutdown ()V
+	public fun supports (Lstudio/sculk/execution/ExecutionContext;)Z
+	public final fun tick (I)V
+	public static synthetic fun tick$default (Lstudio/sculk/testkit/FakeExecutor;IILjava/lang/Object;)V
+	public final fun tickUntil (IJLkotlin/jvm/functions/Function0;)V
+	public static synthetic fun tickUntil$default (Lstudio/sculk/testkit/FakeExecutor;IJLkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+}
+
+public final class studio/sculk/testkit/FakeExecutor$ThreadModel : java/lang/Enum {
+	public static final field PROXY Lstudio/sculk/testkit/FakeExecutor$ThreadModel;
+	public static final field REGIONIZED Lstudio/sculk/testkit/FakeExecutor$ThreadModel;
+	public static final field SINGLE_THREAD Lstudio/sculk/testkit/FakeExecutor$ThreadModel;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/testkit/FakeExecutor$ThreadModel;
+	public static fun values ()[Lstudio/sculk/testkit/FakeExecutor$ThreadModel;
+}
+
 public final class studio/sculk/testkit/FakeRuntime : studio/sculk/runtime/AbstractSculkRuntime {
 	public static final field Companion Lstudio/sculk/testkit/FakeRuntime$Companion;
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Lstudio/sculk/runtime/PlatformInfo;Lstudio/sculk/execution/FakeExecutor;Lstudio/sculk/testkit/RecordingLog;ZLstudio/sculk/time/SculkClock;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/runtime/PlatformInfo;Lstudio/sculk/execution/FakeExecutor;Lstudio/sculk/testkit/RecordingLog;ZLstudio/sculk/time/SculkClock;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getExecutor ()Lstudio/sculk/execution/FakeExecutor;
+	public fun <init> (Ljava/lang/String;Lstudio/sculk/runtime/PlatformInfo;Lstudio/sculk/testkit/FakeExecutor;Lstudio/sculk/testkit/RecordingLog;ZLstudio/sculk/time/SculkClock;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/runtime/PlatformInfo;Lstudio/sculk/testkit/FakeExecutor;Lstudio/sculk/testkit/RecordingLog;ZLstudio/sculk/time/SculkClock;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getExecutor ()Lstudio/sculk/testkit/FakeExecutor;
 	public final fun getLogged ()Lstudio/sculk/testkit/RecordingLog;
 	public final fun start ()V
 }

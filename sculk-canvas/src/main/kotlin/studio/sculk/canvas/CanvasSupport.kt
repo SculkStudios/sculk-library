@@ -2,6 +2,7 @@ package studio.sculk.canvas
 
 import io.canvasmc.canvas.region.RegionThreadingTickManager
 import org.bukkit.Bukkit
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
 import studio.sculk.capability.Capabilities
 import studio.sculk.capability.Capability
@@ -26,11 +27,13 @@ public object CanvasSupport : PaperPlatformExtension {
     @SculkStable
     public val WORLDS: CapabilityKey<CanvasWorlds> = CapabilityKey("canvas.worlds", "Canvas async world unloading")
 
-    @SculkStable
+    /** Canvas's own tick manager type, so this key follows Canvas's API rather than Sculk's stability promise. */
+    @SculkExperimental
     public val TICK_MANAGER: CapabilityKey<RegionThreadingTickManager> = CapabilityKey("canvas.tick-manager", "Canvas region tick manager")
 
     override val id: String = "sculk-canvas"
 
+    @OptIn(SculkExperimental::class)
     override fun resolve(context: PaperPlatformExtension.Context, capabilities: Capabilities.Builder) {
         if (context.platform.kind != PlatformInfo.Kind.CANVAS) {
             val reason = "requires Canvas; this server is ${context.platform.kind.name.lowercase()}"
@@ -45,11 +48,5 @@ public object CanvasSupport : PaperPlatformExtension {
         capabilities.resolve(OWNERSHIP, Capability.Native(CanvasOwnership(server)))
         capabilities.resolve(WORLDS, Capability.Native(CanvasWorlds(server)))
         capabilities.resolve(TICK_MANAGER, Capability.Native(server.regionThreadingTickRateManager))
-    }
-
-    /** Canvas reports its section shift directly; the configuration file is only a fallback. */
-    override fun sectionShift(context: PaperPlatformExtension.Context): Int? {
-        if (context.platform.kind != PlatformInfo.Kind.CANVAS) return null
-        return Bukkit.getWorlds().firstOrNull()?.regionizer?.sectionShift
     }
 }

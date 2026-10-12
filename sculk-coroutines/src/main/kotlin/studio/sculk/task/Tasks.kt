@@ -1,8 +1,13 @@
 package studio.sculk.task
 
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import studio.sculk.annotation.SculkStable
 import studio.sculk.execution.ExecutionContext
 import studio.sculk.execution.SculkScope
@@ -11,38 +16,42 @@ import studio.sculk.time.SculkClock
 import java.time.Duration
 import java.time.ZoneId
 import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Runs [action] every [periodTicks] in [context], first after [initialDelayTicks], until the job is
- * cancelled or the scope closes. The next wait starts when [action] finishes, so a slow action is
- * never run twice at once.
+ * cancelled or the scope closes. Delays below one tick mean the next tick. The next wait starts
+ * when [action] finishes, so a slow action is never run twice at once.
+ *
+ * A run that throws is reported to the scope's failure handler and the schedule continues, as a
+ * server's repeating task does; cancel the job to stop it.
  */
 @SculkStable
 public fun SculkScope.repeating(
     periodTicks: Long,
     context: ExecutionContext = ExecutionContext.Global,
-    initialDelayTicks: Long = 0,
+    initialDelayTicks: Long = 1,
     action: suspend () -> Unit,
-): Job = launch(execution.dispatcher(context)) {
+): Job = startIn(context) {
     delayTicks(initialDelayTicks)
-    while (isActive) {
-        action()
-        delayTicks(periodTicks.coerceAtLeast(1))
+    while (currentCoroutineContext().isActive) {
+        runReporting(action)
+        delayTicks(periodTicks)
     }
 }
 
-/** Runs [action] once in [context] after [delayTicks]. */
+/** Runs [action] once in [context] after [delayTicks]; below one tick means the next tick. */
 @SculkStable
 public fun SculkScope.delayed(delayTicks: Long, context: ExecutionContext = ExecutionContext.Global, action: suspend () -> Unit): Job =
-    launch(execution.dispatcher(context)) {
+    startIn(context) {
         delayTicks(delayTicks)
         action()
     }
 
 /**
  * Runs [action] on the [cron] schedule in [zone], in [context]. Each wait is recomputed from the
- * [clock], so daylight-saving changes and a slow action never accumulate drift.
+ * [clock], so daylight-saving changes and a slow action never accumulate drift. A run that throws
+ * is reported and the schedule continues.
  */
 @SculkStable
 public fun SculkScope.cron(
@@ -51,19 +60,20 @@ public fun SculkScope.cron(
     context: ExecutionContext = ExecutionContext.Global,
     clock: SculkClock = SculkClock.SYSTEM,
     action: suspend () -> Unit,
-): Job = launch(execution.dispatcher(context)) {
-    while (isActive) {
+): Job = startIn(context) {
+    while (currentCoroutineContext().isActive) {
         val now = clock.now().atZone(zone)
-        val next = cron.nextAfter(now) ?: return@launch
+        val next = checkNotNull(cron.nextAfter(now)) { "'$cron' has no future run." }
         delay(Duration.between(now, next).toMillis().coerceAtLeast(1))
-        action()
+        runReporting(action)
     }
 }
 
 /**
  * Walks a changing collection [perTick] items per tick, resuming where it left off, and starts
  * over once it reaches the end. For work too large for one tick: refreshing every player's
- * display, auditing every loaded chunk.
+ * display, auditing every loaded chunk. The first items are read on the next tick, in [context].
+ * An item whose action throws is reported and skipped.
  */
 @SculkStable
 public fun <T> SculkScope.batches(
@@ -73,21 +83,24 @@ public fun <T> SculkScope.batches(
     action: suspend (T) -> Unit,
 ): Job {
     require(perTick > 0) { "A batch must process at least one item per tick, but was $perTick." }
-    return launch(execution.dispatcher(context)) {
+    return startIn(context) {
         var cursor = 0
-        while (isActive) {
+        while (currentCoroutineContext().isActive) {
+            delayTicks(1)
             val snapshot = source().toList()
             if (cursor >= snapshot.size) cursor = 0
-            snapshot.subList(cursor, minOf(cursor + perTick, snapshot.size)).forEach { action(it) }
+            snapshot.subList(cursor, minOf(cursor + perTick, snapshot.size)).forEach { runReporting { action(it) } }
             cursor += perTick
-            delayTicks(1)
         }
     }
 }
 
 /**
  * Collapses bursts: [action] runs once, [waitTicks] after the last [trigger] of a burst. For
- * saving after a run of edits or reloading after several file events. Thread-safe.
+ * saving after a run of edits or reloading after several file events.
+ *
+ * A trigger only ever cancels a wait, never a run in progress: a burst that arrives while
+ * [action] runs schedules one more run after it. Runs never overlap. Thread-safe.
  */
 @SculkStable
 public class Debouncer(
@@ -96,15 +109,28 @@ public class Debouncer(
     private val context: ExecutionContext = ExecutionContext.Global,
     private val action: suspend () -> Unit,
 ) {
-    private val pending = AtomicReference<Job?>()
+    private val lock = Any()
+    private val running = Mutex()
+    private var waiting: Job? = null
 
     public fun trigger() {
-        val next = scope.delayed(waitTicks, context, action)
-        pending.getAndSet(next)?.cancel()
+        synchronized(lock) {
+            waiting?.cancel()
+            var self: Job? = null
+            self = scope.delayed(waitTicks, context) {
+                val claimed = synchronized(lock) { (waiting === self).also { if (it) waiting = null } }
+                if (claimed) running.withLock { action() }
+            }
+            waiting = self
+        }
     }
 
+    /** Cancels a pending run. A run already in progress finishes. */
     public fun cancel() {
-        pending.getAndSet(null)?.cancel()
+        synchronized(lock) {
+            waiting?.cancel()
+            waiting = null
+        }
     }
 }
 
@@ -135,5 +161,23 @@ public class Throttler(
 
     private companion object {
         const val NANOS_PER_TICK = 50_000_000L
+    }
+}
+
+/**
+ * Starts undispatched so the first wait is scheduled from the caller at once: a delay of n ticks
+ * is n ticks, not n plus the tick it would take to reach [context] first.
+ */
+private fun SculkScope.startIn(context: ExecutionContext, block: suspend () -> Unit): Job =
+    launch(execution.dispatcher(context), CoroutineStart.UNDISPATCHED) { block() }
+
+private suspend fun runReporting(action: suspend () -> Unit) {
+    try {
+        action()
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (failure: Exception) {
+        val context = currentCoroutineContext()
+        context[CoroutineExceptionHandler]?.handleException(context, failure) ?: throw failure
     }
 }

@@ -48,9 +48,12 @@ public interface SculkRuntime : SculkHandle {
     public fun diagnostics(): DiagnosticReport
 }
 
-/** The server or proxy the runtime is running on, detected once at startup. */
+/**
+ * The server or proxy the runtime is running on, detected once at startup. A plain class rather
+ * than a data class, so detection can learn a new fact in a minor release without breaking callers.
+ */
 @SculkStable
-public data class PlatformInfo(
+public class PlatformInfo(
     /** Paper, Folia, Canvas or Velocity. */
     public val kind: Kind,
     /** The brand and build the server reports, for diagnostics. */
@@ -59,6 +62,14 @@ public data class PlatformInfo(
     public val minecraft: MinecraftVersion?,
     public val javaVersion: Int = Runtime.version().feature(),
 ) {
+    override fun equals(other: Any?): Boolean =
+        other is PlatformInfo && other.kind == kind && other.brand == brand && other.minecraft == minecraft &&
+            other.javaVersion == javaVersion
+
+    override fun hashCode(): Int = listOf(kind, brand, minecraft, javaVersion).hashCode()
+
+    override fun toString(): String = "PlatformInfo($kind, $brand, minecraft=${minecraft ?: "proxy"}, java=$javaVersion)"
+
     @SculkStable
     public enum class Kind {
         PAPER,

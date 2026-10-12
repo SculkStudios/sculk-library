@@ -23,7 +23,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.release = targetJdk
 }
 
-tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>("compileKotlin") {
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions.allWarningsAsErrors = true
 }
 

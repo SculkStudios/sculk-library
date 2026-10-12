@@ -17,12 +17,16 @@ import kotlinx.coroutines.async as launchAsync
 import kotlinx.coroutines.launch as launchJob
 
 /**
- * A [ResourceScope] with coroutines attached: closing it cancels every coroutine started in it,
- * and cancelling never outlives it. Plugin, player, entity and session lifetimes are each one.
+ * A [ResourceScope] with coroutines attached. Closing it first cancels every coroutine started in
+ * it, then closes its resources newest first, so no coroutine runs against a resource that is
+ * already closed. Plugin, player, entity and session lifetimes are each one.
  *
  * Coroutines start in the platform's home context, [ExecutionContext.Global] on a server and
  * [ExecutionContext.Proxy] on a proxy, unless told otherwise; never silently off-thread.
  * A failure in one coroutine is reported and does not cancel its siblings.
+ *
+ * [close] does not wait for cancelled coroutines to finish unwinding: on Folia the closing thread
+ * may own the region they need. Their `finally` blocks run as their dispatchers allow.
  */
 @SculkStable
 public class SculkScope private constructor(public val resources: ResourceScope, override val coroutineContext: CoroutineContext) :
@@ -35,12 +39,7 @@ public class SculkScope private constructor(public val resources: ResourceScope,
     public val isClosed: Boolean get() = resources.isClosed
 
     /** A scope that closes with this one, or earlier on its own. */
-    public fun child(name: String): SculkScope {
-        val job = SupervisorJob(coroutineContext[Job])
-        val child = SculkScope(resources.child(name), coroutineContext + job)
-        child.resources.onClose { job.cancel(CancellationException("Scope '${child.name}' closed.")) }
-        return child
-    }
+    public fun child(name: String): SculkScope = attach(resources.child(name), coroutineContext + SupervisorJob(coroutineContext[Job]))
 
     /** Starts a coroutine in this scope. Starting one after the scope closed is a bug and throws. */
     public fun launch(
@@ -74,11 +73,13 @@ public class SculkScope private constructor(public val resources: ResourceScope,
          */
         public fun root(name: String, executor: SculkExecutor, onFailure: (Throwable) -> Unit): SculkScope {
             val execution = SculkExecution(executor)
-            val job = SupervisorJob()
-            val context =
-                job + execution + execution.home + CoroutineExceptionHandler { _, error -> onFailure(error) }
-            val scope = SculkScope(ResourceScope.root(name), context)
-            scope.resources.onClose { job.cancel(CancellationException("Scope '$name' closed.")) }
+            val handler = CoroutineExceptionHandler { _, error -> onFailure(error) }
+            return attach(ResourceScope.root(name), SupervisorJob() + execution + execution.home + handler)
+        }
+
+        private fun attach(resources: ResourceScope, context: CoroutineContext): SculkScope {
+            val scope = SculkScope(resources, context)
+            resources.onClosing { context.cancel(CancellationException("Scope '${resources.name}' closed.")) }
             return scope
         }
     }

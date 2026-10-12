@@ -5,6 +5,7 @@ public final class studio/sculk/ResourceScope : studio/sculk/SculkHandle {
 	public final fun getName ()Ljava/lang/String;
 	public final fun isClosed ()Z
 	public final fun onClose (Lkotlin/jvm/functions/Function0;)Lstudio/sculk/SculkHandle;
+	public final fun onClosing (Lkotlin/jvm/functions/Function0;)Lstudio/sculk/SculkHandle;
 	public final fun own (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
 	public final fun release (Ljava/lang/AutoCloseable;)V
 	public fun toString ()Ljava/lang/String;
@@ -81,6 +82,7 @@ public abstract interface class studio/sculk/SculkHandle : java/lang/AutoCloseab
 public final class studio/sculk/SculkHandle$Companion {
 	public final fun all (Ljava/util/List;)Lstudio/sculk/SculkHandle;
 	public final fun getNONE ()Lstudio/sculk/SculkHandle;
+	public final fun once (Lkotlin/jvm/functions/Function0;)Lstudio/sculk/SculkHandle;
 }
 
 public abstract interface class studio/sculk/SculkResult {
@@ -152,7 +154,7 @@ public final class studio/sculk/capability/Capabilities {
 	public static final field Companion Lstudio/sculk/capability/Capabilities$Companion;
 	public final fun all ()Ljava/util/List;
 	public final fun get (Lstudio/sculk/capability/CapabilityKey;)Lstudio/sculk/capability/Capability;
-	public final fun require (Lstudio/sculk/capability/CapabilityKey;)Lstudio/sculk/SculkResult;
+	public final fun service (Lstudio/sculk/capability/CapabilityKey;)Lstudio/sculk/SculkResult;
 }
 
 public final class studio/sculk/capability/Capabilities$Builder {
@@ -165,81 +167,56 @@ public final class studio/sculk/capability/Capabilities$Companion {
 	public final fun getNONE ()Lstudio/sculk/capability/Capabilities;
 }
 
-public abstract interface class studio/sculk/capability/Capability {
-	public fun getLevel ()Ljava/lang/String;
+public abstract class studio/sculk/capability/Capability {
+	public abstract fun getLevel ()Ljava/lang/String;
 	public abstract fun getService ()Ljava/lang/Object;
-	public fun isAvailable ()Z
-}
-
-public final class studio/sculk/capability/Capability$DefaultImpls {
-	public static fun getLevel (Lstudio/sculk/capability/Capability;)Ljava/lang/String;
-	public static fun isAvailable (Lstudio/sculk/capability/Capability;)Z
+	public final fun isAvailable ()Z
 }
 
 public final class studio/sculk/capability/Capability$Degraded : studio/sculk/capability/Capability {
 	public fun <init> (Ljava/lang/Object;Ljava/util/List;)V
-	public final fun component1 ()Ljava/lang/Object;
-	public final fun component2 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/Object;Ljava/util/List;)Lstudio/sculk/capability/Capability$Degraded;
-	public static synthetic fun copy$default (Lstudio/sculk/capability/Capability$Degraded;Ljava/lang/Object;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/capability/Capability$Degraded;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getLevel ()Ljava/lang/String;
 	public final fun getMissing ()Ljava/util/List;
 	public fun getService ()Ljava/lang/Object;
 	public fun hashCode ()I
-	public fun isAvailable ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class studio/sculk/capability/Capability$Emulated : studio/sculk/capability/Capability {
 	public fun <init> (Ljava/lang/Object;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/Object;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/Object;Ljava/lang/String;)Lstudio/sculk/capability/Capability$Emulated;
-	public static synthetic fun copy$default (Lstudio/sculk/capability/Capability$Emulated;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/capability/Capability$Emulated;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getHow ()Ljava/lang/String;
 	public fun getLevel ()Ljava/lang/String;
 	public fun getService ()Ljava/lang/Object;
 	public fun hashCode ()I
-	public fun isAvailable ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class studio/sculk/capability/Capability$Native : studio/sculk/capability/Capability {
 	public fun <init> (Ljava/lang/Object;)V
-	public final fun component1 ()Ljava/lang/Object;
-	public final fun copy (Ljava/lang/Object;)Lstudio/sculk/capability/Capability$Native;
-	public static synthetic fun copy$default (Lstudio/sculk/capability/Capability$Native;Ljava/lang/Object;ILjava/lang/Object;)Lstudio/sculk/capability/Capability$Native;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getLevel ()Ljava/lang/String;
 	public fun getService ()Ljava/lang/Object;
 	public fun hashCode ()I
-	public fun isAvailable ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class studio/sculk/capability/Capability$Unavailable : studio/sculk/capability/Capability {
 	public fun <init> (Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lstudio/sculk/capability/Capability$Unavailable;
-	public static synthetic fun copy$default (Lstudio/sculk/capability/Capability$Unavailable;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/capability/Capability$Unavailable;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getLevel ()Ljava/lang/String;
 	public final fun getReason ()Ljava/lang/String;
 	public synthetic fun getService ()Ljava/lang/Object;
 	public fun getService ()Ljava/lang/Void;
 	public fun hashCode ()I
-	public fun isAvailable ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class studio/sculk/capability/CapabilityKey {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDescription ()Ljava/lang/String;
 	public final fun getId ()Ljava/lang/String;
-	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -261,14 +238,8 @@ public final class studio/sculk/diagnostics/DiagnosticReport$Companion {
 
 public final class studio/sculk/diagnostics/DiagnosticReport$Section {
 	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;Ljava/util/List;)Lstudio/sculk/diagnostics/DiagnosticReport$Section;
-	public static synthetic fun copy$default (Lstudio/sculk/diagnostics/DiagnosticReport$Section;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/diagnostics/DiagnosticReport$Section;
-	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEntries ()Ljava/util/List;
 	public final fun getTitle ()Ljava/lang/String;
-	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -295,6 +266,7 @@ public final class studio/sculk/lifecycle/LifecyclePhase : java/lang/Enum {
 	public static final field STOPPED Lstudio/sculk/lifecycle/LifecyclePhase;
 	public static final field STOPPING Lstudio/sculk/lifecycle/LifecyclePhase;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun isStartup ()Z
 	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/lifecycle/LifecyclePhase;
 	public static fun values ()[Lstudio/sculk/lifecycle/LifecyclePhase;
 }
@@ -336,7 +308,7 @@ public final class studio/sculk/version/MinecraftVersion : java/lang/Comparable 
 public final class studio/sculk/version/MinecraftVersion$Companion {
 	public final fun of (IIILstudio/sculk/version/MinecraftVersion$PreRelease;)Lstudio/sculk/version/MinecraftVersion;
 	public static synthetic fun of$default (Lstudio/sculk/version/MinecraftVersion$Companion;IIILstudio/sculk/version/MinecraftVersion$PreRelease;ILjava/lang/Object;)Lstudio/sculk/version/MinecraftVersion;
-	public final fun parse (Ljava/lang/String;)Lstudio/sculk/version/MinecraftVersion;
+	public final fun parse (Ljava/lang/String;)Lstudio/sculk/SculkResult;
 }
 
 public final class studio/sculk/version/MinecraftVersion$PreRelease : java/lang/Comparable {

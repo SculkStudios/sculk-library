@@ -1,5 +1,7 @@
 package studio.sculk.velocity
 
+import com.velocitypowered.api.event.proxy.ListenerBoundEvent
+import com.velocitypowered.api.network.ListenerType
 import com.velocitypowered.api.plugin.PluginContainer
 import com.velocitypowered.api.proxy.ProxyServer
 import org.slf4j.Logger
@@ -35,11 +37,20 @@ public class VelocityRuntime internal constructor(
         lifecycle.advance(LifecyclePhase.LOAD)
         lifecycle.advance(LifecyclePhase.START)
         resolveCapabilities(Capabilities.NONE)
+        readyWhenListening()
     }
 
-    /** Called once the plugin has registered what it needs; Velocity has no first tick to wait for. */
-    internal fun ready() {
-        if (!lifecycle.hasReached(LifecyclePhase.READY)) lifecycle.advance(LifecyclePhase.READY)
+    /**
+     * Enters READY when the proxy starts accepting players, after every plugin's initialisation,
+     * as Paper's first tick does for a server.
+     */
+    private fun readyWhenListening() {
+        val plugin = container.instance.orElseThrow { IllegalStateException("${container.description.id} has no instance yet.") }
+        proxy.eventManager.register(plugin, ListenerBoundEvent::class.java) { event ->
+            if (event.listenerType == ListenerType.MINECRAFT && !lifecycle.hasReached(LifecyclePhase.READY)) {
+                lifecycle.advance(LifecyclePhase.READY)
+            }
+        }
     }
 
     override fun DiagnosticReport.Builder.platformSections() {
@@ -61,7 +72,10 @@ public object SculkVelocity {
     /** System property that turns development checks on: `-Dsculk.development=true`. */
     public const val DEVELOPMENT_PROPERTY: String = "sculk.development"
 
-    /** Creates the runtime. Call from `ProxyInitializeEvent`; close it in `ProxyShutdownEvent`. */
+    /**
+     * Creates the runtime. Call from `ProxyInitializeEvent`, so READY follows when the proxy starts
+     * listening; close it in `ProxyShutdownEvent`.
+     */
     public fun attach(
         proxy: ProxyServer,
         container: PluginContainer,
@@ -70,7 +84,6 @@ public object SculkVelocity {
     ): VelocityRuntime {
         val runtime = VelocityRuntime(proxy, container, VelocityExecutor(proxy, container), Slf4jLog(logger), developmentMode)
         runtime.begin()
-        runtime.ready()
         return runtime
     }
 }

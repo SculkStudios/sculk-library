@@ -21,9 +21,22 @@ public sealed interface ExecutionContext {
     @SculkStable
     public data object Proxy : ExecutionContext
 
-    /** The chunks and blocks of one region section. */
+    /**
+     * One chunk of [world] and the blocks in it, run by whichever region owns that chunk when the
+     * work runs. A region context names a chunk rather than a section because only the platform
+     * knows how wide its sections are; see [SculkExecutor.regionShift].
+     */
     @SculkStable
-    public data class Region(public val world: WorldKey, public val section: SectionPosition) : ExecutionContext
+    public data class Region(public val world: WorldKey, public val chunkX: Int, public val chunkZ: Int) : ExecutionContext {
+        /** The section holding this chunk when sections are `2^shift` chunks wide. */
+        public fun section(shift: Int): SectionPosition = SectionPosition.ofChunk(chunkX, chunkZ, shift)
+
+        @SculkStable
+        public companion object {
+            /** The region context of the chunk containing block [blockX], [blockZ]. */
+            public fun ofBlock(world: WorldKey, blockX: Int, blockZ: Int): Region = Region(world, blockX shr 4, blockZ shr 4)
+        }
+    }
 
     /** One entity, wherever it moves. */
     @SculkStable
@@ -44,8 +57,8 @@ public value class WorldKey(public val value: String) {
 }
 
 /**
- * The region section containing a chunk. A section is `2^shift` chunks wide and is always owned by
- * exactly one region, which is what makes grouping work by section safe on Folia and Canvas.
+ * A square of `2^shift` by `2^shift` chunks. On Folia and Canvas a section is always owned by exactly
+ * one region, which is what makes grouping work by section safe.
  */
 @SculkStable
 public data class SectionPosition(public val x: Int, public val z: Int) {
@@ -57,13 +70,12 @@ public data class SectionPosition(public val x: Int, public val z: Int) {
         /** Folia's and Canvas's default `grid-exponent`: sections of 16 by 16 chunks. */
         public const val DEFAULT_SHIFT: Int = 4
 
-        public fun ofChunk(chunkX: Int, chunkZ: Int, shift: Int = DEFAULT_SHIFT): SectionPosition {
+        public fun ofChunk(chunkX: Int, chunkZ: Int, shift: Int): SectionPosition {
             require(shift in 0..31) { "A section shift is between 0 and 31, but was $shift." }
             return SectionPosition(chunkX shr shift, chunkZ shr shift)
         }
 
-        public fun ofBlock(blockX: Int, blockZ: Int, shift: Int = DEFAULT_SHIFT): SectionPosition =
-            ofChunk(blockX shr 4, blockZ shr 4, shift)
+        public fun ofBlock(blockX: Int, blockZ: Int, shift: Int): SectionPosition = ofChunk(blockX shr 4, blockZ shr 4, shift)
     }
 }
 

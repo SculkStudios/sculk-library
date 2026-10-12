@@ -2,7 +2,7 @@ package studio.sculk.testkit
 
 import studio.sculk.annotation.SculkStable
 import studio.sculk.capability.Capabilities
-import studio.sculk.execution.FakeExecutor
+import studio.sculk.getOrThrow
 import studio.sculk.lifecycle.LifecyclePhase
 import studio.sculk.runtime.AbstractSculkRuntime
 import studio.sculk.runtime.PlatformInfo
@@ -40,13 +40,13 @@ public class FakeRuntime(
     @SculkStable
     public companion object {
         public fun paper(version: String = "26.3"): PlatformInfo =
-            PlatformInfo(PlatformInfo.Kind.PAPER, "Fake Paper", MinecraftVersion.parse(version))
+            PlatformInfo(PlatformInfo.Kind.PAPER, "Fake Paper", MinecraftVersion.parse(version).getOrThrow())
 
         public fun folia(version: String = "26.2"): PlatformInfo =
-            PlatformInfo(PlatformInfo.Kind.FOLIA, "Fake Folia", MinecraftVersion.parse(version))
+            PlatformInfo(PlatformInfo.Kind.FOLIA, "Fake Folia", MinecraftVersion.parse(version).getOrThrow())
 
         public fun canvas(version: String = "26.3"): PlatformInfo =
-            PlatformInfo(PlatformInfo.Kind.CANVAS, "Fake Canvas", MinecraftVersion.parse(version))
+            PlatformInfo(PlatformInfo.Kind.CANVAS, "Fake Canvas", MinecraftVersion.parse(version).getOrThrow())
 
         public fun velocity(): PlatformInfo = PlatformInfo(PlatformInfo.Kind.VELOCITY, "Fake Velocity", null)
 

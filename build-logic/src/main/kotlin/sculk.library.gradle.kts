@@ -4,7 +4,6 @@ import studio.sculk.gradle.ArchitectureCheck
 plugins {
     id("sculk.jvm")
     `java-library`
-    `java-test-fixtures`
     id("org.jlleitschuh.gradle.ktlint")
 }
 

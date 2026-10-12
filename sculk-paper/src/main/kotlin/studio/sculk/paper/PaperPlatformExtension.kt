@@ -21,9 +21,6 @@ public interface PaperPlatformExtension {
      */
     public fun resolve(context: Context, capabilities: Capabilities.Builder)
 
-    /** A section shift the platform reports more precisely than the configuration file, or null. */
-    public fun sectionShift(context: Context): Int? = null
-
     /** What an extension may use while resolving. */
     @SculkStable
     public class Context internal constructor(

@@ -1,5 +1,7 @@
 package studio.sculk.version
 
+import studio.sculk.SculkFailure
+import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
 
 /**
@@ -76,18 +78,19 @@ public class MinecraftVersion private constructor(
 
         /**
          * Parses `1.21.4`, `26.3`, `26.3-pre-2` or `26.3-rc-1` (the hyphen before the number is
-         * optional, matching both Mojang's and Paper's spellings). Returns null for anything else,
+         * optional, matching both Mojang's and Paper's spellings). Anything else is invalid input,
          * including snapshots such as `26w41a`, which have no place in a release ordering.
          */
-        public fun parse(text: String): MinecraftVersion? {
-            val match = PATTERN.matchEntire(text.trim()) ?: return null
+        public fun parse(text: String): SculkResult<MinecraftVersion> {
+            fun invalid() = SculkFailure.InvalidInput("Minecraft version", "a release such as 1.21.4, 26.3 or 26.3-rc-1", "'$text'")
+            val match = PATTERN.matchEntire(text.trim()) ?: return invalid()
             val (major, minor, patch, kind, number) = match.destructured
             val preRelease = kind.takeIf(String::isNotEmpty)?.let { token ->
                 val parsedNumber = number.toInt()
-                if (parsedNumber < 1) return null
+                if (parsedNumber < 1) return invalid()
                 PreRelease(PreRelease.Kind.entries.first { it.token == token }, parsedNumber)
             }
-            return MinecraftVersion(major.toInt(), minor.toInt(), patch.ifEmpty { "0" }.toInt(), preRelease)
+            return SculkResult.success(MinecraftVersion(major.toInt(), minor.toInt(), patch.ifEmpty { "0" }.toInt(), preRelease))
         }
     }
 }

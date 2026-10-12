@@ -1,6 +1,7 @@
 package studio.sculk.itest.boot
 
 import org.bukkit.plugin.java.JavaPlugin
+import studio.sculk.getOrNull
 import studio.sculk.version.MinecraftVersion
 import java.io.File
 
@@ -16,7 +17,7 @@ class SculkBootPlugin : JavaPlugin() {
 
     private fun report() {
         val raw = server.minecraftVersion
-        val parsed = MinecraftVersion.parse(raw)
+        val parsed = MinecraftVersion.parse(raw).getOrNull()
         val folia = runCatching { Class.forName("io.papermc.paper.threadedregions.RegionizedServer") }.isSuccess
         dataFolder.mkdirs()
         File(dataFolder, "result.properties").writeText(

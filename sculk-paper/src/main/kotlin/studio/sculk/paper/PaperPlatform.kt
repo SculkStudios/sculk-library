@@ -6,47 +6,70 @@ import studio.sculk.capability.Capabilities
 import studio.sculk.capability.Capability
 import studio.sculk.capability.CapabilityKey
 import studio.sculk.execution.SectionPosition
+import studio.sculk.getOrNull
 import studio.sculk.runtime.PlatformInfo
+import studio.sculk.runtime.SculkLog
 import studio.sculk.version.MinecraftVersion
-import java.io.File
+import java.lang.invoke.MethodHandles
+import java.lang.invoke.MethodType
 
 /** What the running server is, detected once from its build info and its API. */
-internal data class DetectedPlatform(val info: PlatformInfo, val sectionShift: Int)
+internal class DetectedPlatform(val info: PlatformInfo, val regionShift: Int)
 
 internal object PaperPlatformDetector {
     private const val CANVAS_BRAND = "canvasmc:canvas"
+    private const val CANVAS_CLASS = "io.canvasmc.canvas.region.RegionTickData"
     private const val REGIONIZED_SERVER = "io.papermc.paper.threadedregions.RegionizedServer"
+    private const val TICK_REGIONS = "io.papermc.paper.threadedregions.TickRegions"
 
-    fun detect(serverRoot: File): DetectedPlatform {
+    fun detect(log: SculkLog): DetectedPlatform {
         val build = ServerBuildInfo.buildInfo()
-        val brand = build.brandId().asString()
         val kind = when {
-            brand == CANVAS_BRAND -> PlatformInfo.Kind.CANVAS
+            build.brandId().asString() == CANVAS_BRAND || classExists(CANVAS_CLASS) -> PlatformInfo.Kind.CANVAS
             classExists(REGIONIZED_SERVER) -> PlatformInfo.Kind.FOLIA
             else -> PlatformInfo.Kind.PAPER
         }
         val buildNumber = build.buildNumber().let { if (it.isPresent) " build ${it.asInt}" else "" }
-        val info =
-            PlatformInfo(
-                kind,
-                "${build.brandName()} ${build.minecraftVersionName()}$buildNumber",
-                MinecraftVersion.parse(build.minecraftVersionId()),
-            )
-        val shift = if (kind.isRegionized) gridExponent(serverRoot) else SectionPosition.DEFAULT_SHIFT
-        return DetectedPlatform(info, shift)
+        val versionId = build.minecraftVersionId()
+        val minecraft = MinecraftVersion.parse(versionId).getOrNull()
+        if (minecraft ==
+            null
+        ) {
+            log.warn("Sculk cannot read the Minecraft version '$versionId'; version-dependent features assume the newest.")
+        }
+        val info = PlatformInfo(kind, "${build.brandName()} ${build.minecraftVersionName()}$buildNumber", minecraft)
+        return DetectedPlatform(info, if (kind.isRegionized) liveRegionShift(log) else SectionPosition.DEFAULT_SHIFT)
     }
 
     /**
-     * Reads `threaded-regions.grid-exponent` from paper-global.yml without a YAML parser: the key is
-     * unique in that file. Missing or unreadable means Folia's default.
+     * Folia and Canvas fix the section shift at startup and expose it only on an internal class, so
+     * it is read once through a method handle. Guessing wrong would send region work to the wrong
+     * region, so a failure is logged loudly rather than silently defaulted.
      */
-    private fun gridExponent(serverRoot: File): Int {
-        val config = File(serverRoot, "config/paper-global.yml").takeIf(File::isFile) ?: return SectionPosition.DEFAULT_SHIFT
-        val value = config.readLines().firstNotNullOfOrNull { line -> GRID_EXPONENT.matchEntire(line)?.groupValues?.get(1)?.toIntOrNull() }
-        return value?.coerceIn(0, 31) ?: SectionPosition.DEFAULT_SHIFT
+    private fun liveRegionShift(log: SculkLog): Int = try {
+        val type = Class.forName(TICK_REGIONS, false, PaperPlatformDetector::class.java.classLoader)
+        val handle = MethodHandles.publicLookup().findStatic(
+            type,
+            "getRegionChunkShift",
+            MethodType.methodType(Int::class.javaPrimitiveType),
+        )
+        (handle.invoke() as Int).also { require(it in 0..31) { "shift $it is out of range" } }
+    } catch (failure: ReflectiveOperationException) {
+        fallbackShift(log, failure)
+    } catch (failure: IllegalArgumentException) {
+        fallbackShift(log, failure)
+    } catch (failure: LinkageError) {
+        fallbackShift(log, failure)
     }
 
-    private val GRID_EXPONENT = Regex("""\s+grid-exponent:\s*(\d+)\s*""")
+    private fun fallbackShift(log: SculkLog, failure: Throwable): Int {
+        log.error(
+            "Sculk cannot read this server's region size and assumes grid-exponent ${SectionPosition.DEFAULT_SHIFT}. " +
+                "If threaded-regions.grid-exponent is set to anything else, region batches may run off their region.",
+            failure,
+        )
+        return SectionPosition.DEFAULT_SHIFT
+    }
 
     fun classExists(name: String): Boolean = try {
         Class.forName(name, false, PaperPlatformDetector::class.java.classLoader)
@@ -89,7 +112,7 @@ public object PaperCapabilities {
     @SculkStable
     public val POST_EFFECTS: CapabilityKey<Unit> = CapabilityKey("paper.post-effects", "Player post-processing effects")
 
-    private data class Probe(val key: CapabilityKey<Unit>, val className: String, val since: String)
+    private class Probe(val key: CapabilityKey<Unit>, val className: String, val since: String)
 
     private val PROBES = listOf(
         Probe(DATA_COMPONENTS, "io.papermc.paper.datacomponent.DataComponentTypes", "Minecraft 1.21.3"),
@@ -104,15 +127,8 @@ public object PaperCapabilities {
 
     internal fun resolve(builder: Capabilities.Builder) {
         PROBES.forEach { probe ->
-            val capability = if (PaperPlatformDetector.classExists(
-                    probe.className,
-                )
-            ) {
-                Capability.Native(Unit)
-            } else {
-                Capability.Unavailable("added in ${probe.since}")
-            }
-            builder.resolve(probe.key, capability)
+            val present = PaperPlatformDetector.classExists(probe.className)
+            builder.resolve(probe.key, if (present) Capability.Native(Unit) else Capability.Unavailable("added in ${probe.since}"))
         }
     }
 }

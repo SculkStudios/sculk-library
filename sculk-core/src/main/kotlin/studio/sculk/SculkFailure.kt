@@ -8,8 +8,9 @@ import kotlin.time.Duration
  * ([hint]) and what caused it ([cause]); subtypes add where, what was expected and what was received.
  *
  * Modules define their own subtypes (a database failure, an invalid config file). [message] and
- * [hint] are shown to server owners, so they never contain secrets; wrap sensitive values in
- * [Secret] before they reach a failure.
+ * [hint] are shown to server owners, so they never contain secrets: wrap sensitive values in
+ * [Secret], and sanitise an exception whose message may carry one (a JDBC URL with a password)
+ * before it becomes the cause of an [OperationFailed], which repeats that message.
  */
 @SculkStable
 public abstract class SculkFailure : SculkResult<Nothing> {

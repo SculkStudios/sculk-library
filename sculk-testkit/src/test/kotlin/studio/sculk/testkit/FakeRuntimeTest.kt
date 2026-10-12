@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import studio.sculk.capability.Capability
 import studio.sculk.capability.CapabilityKey
-import studio.sculk.execution.FakeEntity
 import studio.sculk.execution.withEntity
 import studio.sculk.lifecycle.LifecyclePhase
 import studio.sculk.runtime.SculkModule
@@ -59,8 +58,48 @@ class FakeRuntimeTest {
         runtime.scope.resources.onClose { error("close failed") }
         runtime.close()
         val errors = runtime.logged.errors.map { it.message }
-        assertEquals(listOf("A coroutine in Shop failed.", "Closing Shop's resources failed; the rest were still closed."), errors)
+        assertEquals(listOf("A coroutine in Shop failed.", "Closing Shop's resources failed; shutdown continued."), errors)
         assertEquals(LifecyclePhase.STOPPED, runtime.lifecycle.phase)
+    }
+
+    @Test
+    fun `stopping a runtime whose start failed runs its shutdown actions but none of its startup actions`() {
+        val runtime = FakeRuntime()
+        val seen = mutableListOf<String>()
+        runtime.lifecycle.on(LifecyclePhase.START) { seen += "register commands" }
+        runtime.lifecycle.on(LifecyclePhase.STOPPING) { seen += "save data" }
+        runtime.lifecycle.advance(LifecyclePhase.CONFIGURE)
+        runtime.close()
+        runtime.close()
+        assertEquals(listOf("save data"), seen)
+        assertEquals(LifecyclePhase.STOPPED, runtime.lifecycle.phase)
+    }
+
+    @Test
+    fun `a failing shutdown action is logged and the scope still closes`() {
+        val runtime = FakeRuntime()
+        runtime.start()
+        runtime.lifecycle.on(LifecyclePhase.STOPPING) { error("save failed") }
+        runtime.close()
+        assertTrue(runtime.scope.isClosed)
+        assertEquals(listOf("Running TestPlugin's shutdown actions failed; shutdown continued."), runtime.logged.errors.map { it.message })
+    }
+
+    @Test
+    fun `a module whose install fails can be installed again once fixed`() {
+        val runtime = FakeRuntime()
+        var broken = true
+        val module = object : SculkModule {
+            override val id = "flaky"
+
+            override fun install(runtime: SculkRuntime) {
+                check(!broken) { "not yet" }
+            }
+        }
+        assertThrows<IllegalStateException> { runtime.install(module) }
+        broken = false
+        runtime.install(module)
+        assertTrue("flaky" in runtime.diagnostics().render())
     }
 
     @Test

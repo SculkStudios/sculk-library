@@ -40,6 +40,40 @@ class CoreSupportTest {
     }
 
     @Test
+    fun `passing several phases runs their actions in phase order, not registration order`() {
+        val lifecycle = Lifecycle()
+        val seen = mutableListOf<LifecyclePhase>()
+        lifecycle.on(LifecyclePhase.READY) { seen += LifecyclePhase.READY }
+        lifecycle.on(LifecyclePhase.START) { seen += LifecyclePhase.START }
+        lifecycle.on(LifecyclePhase.LOAD) { seen += LifecyclePhase.LOAD }
+        lifecycle.advance(LifecyclePhase.READY)
+        assertEquals(listOf(LifecyclePhase.LOAD, LifecyclePhase.START, LifecyclePhase.READY), seen)
+    }
+
+    @Test
+    fun `a failing action does not stop the others, and its failure surfaces afterwards`() {
+        val lifecycle = Lifecycle()
+        val seen = mutableListOf<String>()
+        lifecycle.on(LifecyclePhase.START) { error("commands broke") }
+        lifecycle.on(LifecyclePhase.START) { seen += "listeners" }
+        lifecycle.on(LifecyclePhase.READY) { seen += "ready" }
+        val thrown = assertThrows<IllegalStateException> { lifecycle.advance(LifecyclePhase.READY) }
+        assertEquals("commands broke", thrown.message)
+        assertEquals(listOf("listeners", "ready"), seen)
+    }
+
+    @Test
+    fun `stopping a runtime that never started discards its startup actions`() {
+        val lifecycle = Lifecycle()
+        val seen = mutableListOf<String>()
+        lifecycle.on(LifecyclePhase.START) { seen += "register commands" }
+        lifecycle.on(LifecyclePhase.STOPPING) { seen += "save data" }
+        lifecycle.advance(LifecyclePhase.LOAD)
+        lifecycle.advance(LifecyclePhase.STOPPING)
+        assertEquals(listOf("save data"), seen)
+    }
+
+    @Test
     fun `a lifecycle never goes backwards and rejects actions for phases already entered`() {
         val lifecycle = Lifecycle(LifecyclePhase.READY)
         assertThrows<IllegalStateException> { lifecycle.advance(LifecyclePhase.START) }

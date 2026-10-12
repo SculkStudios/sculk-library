@@ -3,6 +3,8 @@ package studio.sculk.task
 import studio.sculk.SculkFailure
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
+import java.time.LocalDateTime
+import java.time.Month
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.BitSet
@@ -12,7 +14,12 @@ import java.util.BitSet
  *
  * Fields accept `*`, numbers, `a-b` ranges, `/n` steps and comma lists; months and days of the
  * week also accept three-letter English names, and day of week 7 is Sunday like 0. When both day
- * fields are restricted, a day matches if either does, as in Vixie cron.
+ * fields are restricted (neither starts with `*`), a day matches if either does, as in Vixie cron.
+ *
+ * Times are wall-clock times in the zone of the time passed to [nextAfter]. A time skipped by a
+ * daylight-saving jump runs that many minutes after the jump; a time repeated when the clocks go
+ * back runs once, at its first occurrence. An expression that can never match, such as
+ * `0 0 31 feb *`, is refused by [parse].
  */
 @SculkStable
 public class CronExpression private constructor(
@@ -25,23 +32,31 @@ public class CronExpression private constructor(
     private val dayOfMonthRestricted: Boolean,
     private val dayOfWeekRestricted: Boolean,
 ) {
-    /** The first matching minute strictly after [time], or null when none exists within five years. */
+    /** The first matching time strictly after [time], or null when none exists within five years. */
     public fun nextAfter(time: ZonedDateTime): ZonedDateTime? {
-        var candidate = time.truncatedTo(ChronoUnit.MINUTES).plusMinutes(1)
-        val limit = time.plusYears(SEARCH_YEARS)
+        var candidate = time.toLocalDateTime().truncatedTo(ChronoUnit.MINUTES).plusMinutes(1)
+        val limit = candidate.plusYears(SEARCH_YEARS)
         while (candidate.isBefore(limit)) {
             candidate = when {
                 !months[candidate.monthValue] -> candidate.withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS).plusMonths(1)
+
                 !dayMatches(candidate) -> candidate.truncatedTo(ChronoUnit.DAYS).plusDays(1)
+
                 !hours[candidate.hour] -> candidate.truncatedTo(ChronoUnit.HOURS).plusHours(1)
+
                 !minutes[candidate.minute] -> candidate.plusMinutes(1)
-                else -> return candidate
+
+                else -> {
+                    val zoned = ZonedDateTime.of(candidate, time.zone)
+                    if (zoned.isAfter(time)) return zoned
+                    candidate.plusMinutes(1)
+                }
             }
         }
         return null
     }
 
-    private fun dayMatches(time: ZonedDateTime): Boolean {
+    private fun dayMatches(time: LocalDateTime): Boolean {
         val dom = daysOfMonth[time.dayOfMonth]
         val dow = daysOfWeek[time.dayOfWeek.value % 7]
         return when {
@@ -50,6 +65,12 @@ public class CronExpression private constructor(
             dayOfWeekRestricted -> dow
             else -> true
         }
+    }
+
+    /** False when only day-of-month is restricted and no selected month has any selected day. */
+    private fun canMatch(): Boolean {
+        if (!dayOfMonthRestricted || dayOfWeekRestricted) return true
+        return (1..12).any { month -> months[month] && (1..Month.of(month).maxLength()).any { daysOfMonth[it] } }
     }
 
     override fun equals(other: Any?): Boolean = other is CronExpression && other.source == source
@@ -70,23 +91,23 @@ public class CronExpression private constructor(
             if (fields.size != 5) {
                 return invalid(expression, "five fields separated by spaces", "${fields.size} field(s)")
             }
-            return try {
+            val cron = try {
                 val dow = field(fields[4], 0, 7, DAY_NAMES, offset = 0).also { if (it[7]) it.set(0) }
-                SculkResult.success(
-                    CronExpression(
-                        source = fields.joinToString(" "),
-                        minutes = field(fields[0], 0, 59),
-                        hours = field(fields[1], 0, 23),
-                        daysOfMonth = field(fields[2], 1, 31),
-                        months = field(fields[3], 1, 12, MONTH_NAMES, offset = 1),
-                        daysOfWeek = dow,
-                        dayOfMonthRestricted = fields[2] != "*",
-                        dayOfWeekRestricted = fields[4] != "*",
-                    ),
+                CronExpression(
+                    source = fields.joinToString(" "),
+                    minutes = field(fields[0], 0, 59),
+                    hours = field(fields[1], 0, 23),
+                    daysOfMonth = field(fields[2], 1, 31),
+                    months = field(fields[3], 1, 12, MONTH_NAMES, offset = 1),
+                    daysOfWeek = dow,
+                    dayOfMonthRestricted = !fields[2].startsWith("*"),
+                    dayOfWeekRestricted = !fields[4].startsWith("*"),
                 )
             } catch (bad: IllegalArgumentException) {
-                invalid(expression, "a valid cron field", bad.message ?: "an invalid field")
+                return invalid(expression, "a valid cron field", bad.message ?: "an invalid field")
             }
+            if (!cron.canMatch()) return invalid(expression, "a date that exists", "no selected month has the selected day")
+            return SculkResult.success(cron)
         }
 
         private fun invalid(expression: String, expected: String, received: String) =
