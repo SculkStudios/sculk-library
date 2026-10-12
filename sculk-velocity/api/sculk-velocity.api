@@ -22,9 +22,27 @@ public final class studio/sculk/velocity/VelocityEvents : studio/sculk/event/Awa
 	public fun observe (Lkotlin/reflect/KClass;ZLkotlin/jvm/functions/Function2;)Lstudio/sculk/SculkHandle;
 }
 
+public final class studio/sculk/velocity/VelocityPermissionSubject : studio/sculk/permission/PermissionSubject {
+	public fun <init> (Lcom/velocitypowered/api/command/CommandSource;Lstudio/sculk/velocity/VelocityPermissions;)V
+	public synthetic fun <init> (Lcom/velocitypowered/api/command/CommandSource;Lstudio/sculk/velocity/VelocityPermissions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getPermissionContext ()Lstudio/sculk/permission/PermissionContext;
+	public final fun getSource ()Lcom/velocitypowered/api/command/CommandSource;
+	public fun hasPermission (Ljava/lang/String;)Z
+	public fun hasPermission (Lstudio/sculk/permission/Permission;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/velocity/VelocityPermissions : studio/sculk/permission/SculkPermissions {
+	public fun register (Ljava/util/Collection;)Lstudio/sculk/SculkHandle;
+	public fun register (Lstudio/sculk/permission/PermissionGroup;)Lstudio/sculk/SculkHandle;
+	public fun register ([Lstudio/sculk/permission/Permission;)Lstudio/sculk/SculkHandle;
+	public final fun subject (Lcom/velocitypowered/api/command/CommandSource;)Lstudio/sculk/permission/PermissionSubject;
+}
+
 public final class studio/sculk/velocity/VelocityRuntime : studio/sculk/runtime/AbstractSculkRuntime {
 	public final fun getContainer ()Lcom/velocitypowered/api/plugin/PluginContainer;
 	public final fun getEvents ()Lstudio/sculk/velocity/VelocityEvents;
+	public final fun getPermissions ()Lstudio/sculk/velocity/VelocityPermissions;
 	public final fun getProxy ()Lcom/velocitypowered/api/proxy/ProxyServer;
 }
 

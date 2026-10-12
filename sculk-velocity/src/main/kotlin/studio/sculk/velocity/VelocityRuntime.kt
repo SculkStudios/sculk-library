@@ -35,6 +35,9 @@ public class VelocityRuntime internal constructor(
     /** Velocity events through Sculk's listen, observe and await handlers, owned by the plugin scope. */
     public val events: VelocityEvents by lazy { VelocityEvents(this) }
 
+    /** Permission descriptors this plugin's checks resolve against, removed when the plugin scope closes. */
+    public val permissions: VelocityPermissions by lazy { VelocityPermissions(this) }
+
     internal fun begin() {
         lifecycle.advance(LifecyclePhase.CONFIGURE)
         lifecycle.advance(LifecyclePhase.LOAD)

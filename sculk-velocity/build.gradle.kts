@@ -8,6 +8,7 @@ description = "Sculk Studio runtime for Velocity: lifecycle, proxy execution and
 dependencies {
     api(project(":sculk-platform-api"))
     api(project(":sculk-events"))
+    api(project(":sculk-permissions"))
     compileOnly(libs.velocity.api)
 }
 

@@ -31,9 +31,13 @@ import studio.sculk.command.CommandSource
 import studio.sculk.command.CommandSpec
 import studio.sculk.command.SenderKind
 import studio.sculk.execution.ExecutionContext
+import studio.sculk.permission.Permission
+import studio.sculk.permission.PermissionContext
 import studio.sculk.service.find
 import studio.sculk.service.register
 import studio.sculk.text.Text
+import studio.sculk.velocity.VelocityPermissionSubject
+import studio.sculk.velocity.VelocityPermissions
 import studio.sculk.velocity.VelocityRuntime
 import java.util.UUID
 import com.mojang.brigadier.arguments.ArgumentType as BrigadierType
@@ -68,6 +72,8 @@ public class VelocityCommands internal constructor(
         specs.forEach(::register)
     }
 
+    private fun sourceOf(source: VelocitySource): VelocityCommandSource = VelocityCommandSource(source, runtime.proxy, runtime.permissions)
+
     private fun compile(spec: CommandSpec): LiteralArgumentBuilder<VelocitySource> {
         @Suppress("UNCHECKED_CAST")
         return compileNode(spec.root, emptyList()) as LiteralArgumentBuilder<VelocitySource>
@@ -92,7 +98,7 @@ public class VelocityCommands internal constructor(
             is CommandNode.Argument<*> -> argumentBuilder(node)
         }
         val requirement = node.requirement
-        builder.requires { source -> requirement.test(VelocityCommandSource(source, runtime.proxy)) }
+        builder.requires { source -> requirement.test(sourceOf(source)) }
         node.executor?.let { executor -> builder.executes { context -> execute(executor, here, context) } }
         node.children.forEach { child -> compileWithAliases(child, here).forEach(builder::then) }
         return builder
@@ -101,7 +107,7 @@ public class VelocityCommands internal constructor(
     private fun argumentBuilder(node: CommandNode.Argument<*>): RequiredArgumentBuilder<VelocitySource, *> {
         val builder = BrigadierCommand.requiredArgumentBuilder(node.name, nativeType(node.type))
         return builder.suggests { context, suggestions ->
-            val source = VelocityCommandSource(context.source, runtime.proxy)
+            val source = sourceOf(context.source)
             val offered = node.suggestions?.suggest(suggestions.remaining, source) ?: node.type.suggest(suggestions.remaining, source)
             offered.forEach(suggestions::suggest)
             suggestions.buildFuture()
@@ -125,7 +131,7 @@ public class VelocityCommands internal constructor(
     }
 
     private fun execute(executor: CommandExecutor, path: List<CommandNode.Argument<*>>, context: CommandContext<VelocitySource>): Int {
-        val source = VelocityCommandSource(context.source, runtime.proxy)
+        val source = sourceOf(context.source)
         val values = LinkedHashMap<ArgumentHandle<*>, Any?>()
         for (node in path) {
             val raw = context.getArgument(node.name, Any::class.java)
@@ -167,10 +173,17 @@ public class VelocityCommands internal constructor(
 
 /**
  * A Velocity command sender. Every command on a proxy starts on the plugin's executor, so the
- * context is always [ExecutionContext.Proxy].
+ * context is always [ExecutionContext.Proxy]. Permission checks apply the descriptors registered in
+ * [permissions] where Velocity's provider leaves a node undefined.
  */
 @SculkStable
-public class VelocityCommandSource(public val source: VelocitySource, public val proxy: ProxyServer) : CommandSource {
+public class VelocityCommandSource(
+    public val source: VelocitySource,
+    public val proxy: ProxyServer,
+    permissions: VelocityPermissions? = null,
+) : CommandSource {
+    private val subject = VelocityPermissionSubject(source, permissions)
+
     override val name: String get() = (source as? Player)?.username ?: "Console"
 
     override val kind: SenderKind get() = if (source is Player) SenderKind.PLAYER else SenderKind.CONSOLE
@@ -183,7 +196,11 @@ public class VelocityCommandSource(public val source: VelocitySource, public val
 
     override val platformSender: Any get() = source
 
-    override fun hasPermission(permission: String): Boolean = source.hasPermission(permission)
+    override val permissionContext: PermissionContext get() = subject.permissionContext
+
+    override fun hasPermission(permission: String): Boolean = subject.hasPermission(permission)
+
+    override fun hasPermission(permission: Permission): Boolean = subject.hasPermission(permission)
 
     override fun toString(): String = "VelocityCommandSource($kind $name)"
 }

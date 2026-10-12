@@ -48,7 +48,9 @@ class VelocityThreadingPlugin @Inject constructor(
     container: PluginContainer,
 ) : SculkVelocityPlugin(proxy, logger, dataDirectory, container) {
     private val results = ConcurrentHashMap<String, String>()
-    private val recorded = ConcurrentLinkedQueue<String>()
+    internal val recorded = ConcurrentLinkedQueue<String>()
+    internal val proxyServer: ProxyServer get() = proxy
+    private val permissionScenarios = ProxyPermissionScenarios(this)
 
     private val specs: List<CommandSpec> = listOf(
         command("vtest-pay") {
@@ -105,6 +107,8 @@ class VelocityThreadingPlugin @Inject constructor(
                 executes { recorded += "server ${this[target].serverInfo.name}" }
             },
         )
+        commands.register(*permissionScenarios.specs.toTypedArray())
+        permissionScenarios.register()
         sculk.scope.launch {
             scenario("platform-detected") {
                 check(sculk.platform.kind == PlatformInfo.Kind.VELOCITY && sculk.platform.minecraft == null) { "detected ${sculk.platform}" }
@@ -168,6 +172,7 @@ class VelocityThreadingPlugin @Inject constructor(
                 while (!sculk.lifecycle.hasReached(LifecyclePhase.READY) && waited++ < 400) delayTicks(1)
                 check(sculk.lifecycle.phase == LifecyclePhase.READY) { "phase ${sculk.lifecycle.phase} after ${waited * 50} ms" }
             }
+            permissionScenarios.run()
             write()
             proxy.shutdown()
         }
@@ -178,7 +183,7 @@ class VelocityThreadingPlugin @Inject constructor(
         write()
     }
 
-    private suspend fun scenario(name: String, block: suspend () -> String) {
+    internal suspend fun scenario(name: String, block: suspend () -> String) {
         results[name] = try {
             withTimeout(30.seconds) { block() }
         } catch (failure: Throwable) {
@@ -186,7 +191,7 @@ class VelocityThreadingPlugin @Inject constructor(
         }
     }
 
-    private fun check(condition: Boolean, detail: () -> String): String = if (condition) "PASS" else "FAIL: ${detail()}"
+    internal fun check(condition: Boolean, detail: () -> String): String = if (condition) "PASS" else "FAIL: ${detail()}"
 
     private suspend fun conformance(): String {
         val interpreter = CommandDispatcher().apply { specs.forEach(::register) }

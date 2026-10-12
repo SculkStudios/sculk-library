@@ -6,7 +6,8 @@ public final class studio/sculk/command/velocity/ProxyArgument : studio/sculk/co
 }
 
 public final class studio/sculk/command/velocity/VelocityCommandSource : studio/sculk/command/CommandSource {
-	public fun <init> (Lcom/velocitypowered/api/command/CommandSource;Lcom/velocitypowered/api/proxy/ProxyServer;)V
+	public fun <init> (Lcom/velocitypowered/api/command/CommandSource;Lcom/velocitypowered/api/proxy/ProxyServer;Lstudio/sculk/velocity/VelocityPermissions;)V
+	public synthetic fun <init> (Lcom/velocitypowered/api/command/CommandSource;Lcom/velocitypowered/api/proxy/ProxyServer;Lstudio/sculk/velocity/VelocityPermissions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getAudience ()Lnet/kyori/adventure/audience/Audience;
 	public fun getExecutionContext ()Lstudio/sculk/execution/ExecutionContext;
 	public fun getKind ()Lstudio/sculk/command/SenderKind;
