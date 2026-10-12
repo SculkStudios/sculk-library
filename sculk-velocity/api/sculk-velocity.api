@@ -1,0 +1,23 @@
+public final class studio/sculk/velocity/SculkVelocity {
+	public static final field DEVELOPMENT_PROPERTY Ljava/lang/String;
+	public static final field INSTANCE Lstudio/sculk/velocity/SculkVelocity;
+	public final fun attach (Lcom/velocitypowered/api/proxy/ProxyServer;Lcom/velocitypowered/api/plugin/PluginContainer;Lorg/slf4j/Logger;Z)Lstudio/sculk/velocity/VelocityRuntime;
+	public static synthetic fun attach$default (Lstudio/sculk/velocity/SculkVelocity;Lcom/velocitypowered/api/proxy/ProxyServer;Lcom/velocitypowered/api/plugin/PluginContainer;Lorg/slf4j/Logger;ZILjava/lang/Object;)Lstudio/sculk/velocity/VelocityRuntime;
+}
+
+public abstract class studio/sculk/velocity/SculkVelocityPlugin {
+	public fun <init> (Lcom/velocitypowered/api/proxy/ProxyServer;Lorg/slf4j/Logger;Ljava/nio/file/Path;Lcom/velocitypowered/api/plugin/PluginContainer;)V
+	protected final fun getContainer ()Lcom/velocitypowered/api/plugin/PluginContainer;
+	protected final fun getDataDirectory ()Ljava/nio/file/Path;
+	protected final fun getLogger ()Lorg/slf4j/Logger;
+	protected final fun getProxy ()Lcom/velocitypowered/api/proxy/ProxyServer;
+	public final fun getSculk ()Lstudio/sculk/velocity/VelocityRuntime;
+	protected abstract fun start (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected fun stop ()V
+}
+
+public final class studio/sculk/velocity/VelocityRuntime : studio/sculk/runtime/AbstractSculkRuntime {
+	public final fun getContainer ()Lcom/velocitypowered/api/plugin/PluginContainer;
+	public final fun getProxy ()Lcom/velocitypowered/api/proxy/ProxyServer;
+}
+

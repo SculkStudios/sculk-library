@@ -18,6 +18,7 @@ dependencyResolutionManagement {
                 includeGroupAndSubgroups("io.papermc")
                 includeGroup("net.md-5")
                 includeGroup("com.mojang")
+                includeGroup("com.velocitypowered")
             }
         }
         maven("https://maven.canvasmc.io/releases") {
@@ -35,6 +36,7 @@ include(
     ":sculk-testkit",
     ":sculk-paper",
     ":sculk-canvas",
+    ":sculk-velocity",
 )
 
 // Never published. Each proves something about the published modules on a real server.
