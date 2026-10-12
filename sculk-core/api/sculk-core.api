@@ -1,0 +1,53 @@
+public abstract interface annotation class studio/sculk/annotation/SculkExperimental : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class studio/sculk/annotation/SculkInternal : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class studio/sculk/annotation/SculkStable : java/lang/annotation/Annotation {
+}
+
+public final class studio/sculk/version/MinecraftVersion : java/lang/Comparable {
+	public static final field Companion Lstudio/sculk/version/MinecraftVersion$Companion;
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun compareTo (Lstudio/sculk/version/MinecraftVersion;)I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMajor ()I
+	public final fun getMinor ()I
+	public final fun getPatch ()I
+	public final fun getPreRelease ()Lstudio/sculk/version/MinecraftVersion$PreRelease;
+	public fun hashCode ()I
+	public final fun isPreRelease ()Z
+	public final fun release ()Lstudio/sculk/version/MinecraftVersion;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/version/MinecraftVersion$Companion {
+	public final fun of (IIILstudio/sculk/version/MinecraftVersion$PreRelease;)Lstudio/sculk/version/MinecraftVersion;
+	public static synthetic fun of$default (Lstudio/sculk/version/MinecraftVersion$Companion;IIILstudio/sculk/version/MinecraftVersion$PreRelease;ILjava/lang/Object;)Lstudio/sculk/version/MinecraftVersion;
+	public final fun parse (Ljava/lang/String;)Lstudio/sculk/version/MinecraftVersion;
+}
+
+public final class studio/sculk/version/MinecraftVersion$PreRelease : java/lang/Comparable {
+	public fun <init> (Lstudio/sculk/version/MinecraftVersion$PreRelease$Kind;I)V
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun compareTo (Lstudio/sculk/version/MinecraftVersion$PreRelease;)I
+	public final fun component1 ()Lstudio/sculk/version/MinecraftVersion$PreRelease$Kind;
+	public final fun component2 ()I
+	public final fun copy (Lstudio/sculk/version/MinecraftVersion$PreRelease$Kind;I)Lstudio/sculk/version/MinecraftVersion$PreRelease;
+	public static synthetic fun copy$default (Lstudio/sculk/version/MinecraftVersion$PreRelease;Lstudio/sculk/version/MinecraftVersion$PreRelease$Kind;IILjava/lang/Object;)Lstudio/sculk/version/MinecraftVersion$PreRelease;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lstudio/sculk/version/MinecraftVersion$PreRelease$Kind;
+	public final fun getNumber ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/version/MinecraftVersion$PreRelease$Kind : java/lang/Enum {
+	public static final field PRE Lstudio/sculk/version/MinecraftVersion$PreRelease$Kind;
+	public static final field RC Lstudio/sculk/version/MinecraftVersion$PreRelease$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/version/MinecraftVersion$PreRelease$Kind;
+	public static fun values ()[Lstudio/sculk/version/MinecraftVersion$PreRelease$Kind;
+}
+

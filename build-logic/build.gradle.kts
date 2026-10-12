@@ -2,9 +2,13 @@ plugins {
     `kotlin-dsl`
 }
 
-// build-logic/settings.gradle.kts imports the root catalog, so these can reference it rather
-// than being hardcoded and drifting — which is what happened to the Kotlin version previously.
 dependencies {
-    implementation(libs.build.kotlin.plugin)
-    implementation(libs.build.ktlint.plugin)
+    implementation(libs.gradle.kotlin)
+    implementation(libs.gradle.ktlint)
+    implementation(libs.gradle.dokka)
+    implementation(libs.gradle.maven.publish)
+    implementation(libs.archunit)
+    implementation(libs.asm)
+    implementation(libs.gradle.shadow)
+    implementation(libs.gradle.run.task)
 }
