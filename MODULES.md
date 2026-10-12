@@ -83,7 +83,8 @@ planned module is in `REBUILD.md`.
 | `sculk-cache` | Cache contract, TTL, negative caching, stampede protection, invalidation | core, coroutines | — | yes | planned |
 | `sculk-cache-caffeine` | Local backend | cache | Caffeine | yes | planned |
 | `sculk-cache-valkey` | Shared backend with pub/sub invalidation | cache | Lettuce (compileOnly) | yes | planned |
-| `sculk-network` | Typed messages, transports (plugin channel, Valkey), RPC, frame security | core, coroutines, platform-api | kotlinx-serialization-cbor | yes | planned |
+| `sculk-network` | Typed messages, RPC, frame security, transport SPI, and the plugin-messaging transport over the platform-api messaging contract. Plugin messaging needs a connected player on the target server: with none, the transport reports no carrier as a capability and a send fails with `NoCarrier` rather than queueing silently | core, coroutines, platform-api | kotlinx-serialization-cbor | yes | planned |
+| `sculk-network-valkey` | Valkey pub/sub transport, which reaches servers with no players online | network | Lettuce (compileOnly) | yes | planned |
 
 ## Packets
 

@@ -42,7 +42,7 @@ when the operator has installed the upstream plugin or library.
 | JDA | Apache-2.0, reaches LGPL-2.1 (`trove4j`, `jna`) | `sculk-discord-jda` | Consumers add JDA through Paper's `libraries` loader or as a runtime dependency; it is never shaded. |
 | MariaDB Connector/J | LGPL-2.1 | `sculk-data-mariadb` | Loaded from the server or the consumer's `libraries` entry. |
 | MySQL Connector/J | GPL-2.0 with Universal FOSS Exception | `sculk-data-mysql` | Paper ships it as a server runtime library, so nothing needs bundling. |
-| Lettuce | MIT (Netty 4.2 and Reactor required) | `sculk-cache-valkey` | Never shaded, because an unrelocated Netty is silently replaced by the server's copy. |
+| Lettuce | MIT (Netty 4.2 and Reactor required) | `sculk-cache-valkey`, `sculk-network-valkey` | Never shaded, because an unrelocated Netty is silently replaced by the server's copy. |
 
 Adapter source is MIT. The commonly held positions on compiling against a GPL API without
 distributing it range from "a combined work when linked at runtime" to "separate works, combined
