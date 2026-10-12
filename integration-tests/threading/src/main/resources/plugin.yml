@@ -1,0 +1,5 @@
+name: SculkThreading
+version: "${version}"
+main: studio.sculk.itest.threading.ThreadingPlugin
+api-version: "1.21"
+folia-supported: true

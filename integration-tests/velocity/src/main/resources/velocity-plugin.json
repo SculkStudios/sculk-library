@@ -1,0 +1,7 @@
+{
+  "id": "sculk-threading",
+  "name": "SculkThreading",
+  "version": "${version}",
+  "main": "studio.sculk.itest.velocity.VelocityThreadingPlugin",
+  "dependencies": []
+}

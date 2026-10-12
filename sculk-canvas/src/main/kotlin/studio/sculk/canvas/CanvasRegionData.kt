@@ -12,7 +12,8 @@ import studio.sculk.runtime.SculkLog
 
 /**
  * Creates region-local state on Canvas: one value per region, merged when regions merge and split
- * when they split (THREADING.md, Canvas).
+ * when they split (THREADING.md, Canvas). A region's value is created the first time it is read on
+ * that region's thread, and only values that exist are merged or split.
  *
  * The merge and split callbacks run while Canvas holds its region lock. They must be quick, must not
  * block, suspend or touch the world, and must not throw: an exception there leaves the server in an

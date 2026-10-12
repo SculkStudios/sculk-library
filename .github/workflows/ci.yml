@@ -44,8 +44,8 @@ jobs:
           name: build-reports
           path: "**/build/reports/"
 
-  boot:
-    name: Boot on real servers
+  servers:
+    name: Real servers
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -60,12 +60,20 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Paper 1.21.4 on Java 21, Paper 26.3 on Java 25
+      - name: Boot on Paper 1.21.4 (Java 21) and Paper 26.3 (Java 25)
         run: ./gradlew :integration-tests:boot:verifyBoot
+
+      - name: Threading on Paper 1.21.4, Paper 26.3, Folia 26.1.2 and Canvas 26.3
+        run: ./gradlew :integration-tests:threading:verifyThreading
+
+      - name: Velocity 4.2.0
+        run: ./gradlew :integration-tests:velocity:verifyVelocity
 
       - name: Upload server logs
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: server-logs
-          path: integration-tests/*/build/servers/*/logs/
+          path: |
+            integration-tests/*/build/servers/*/logs/
+            integration-tests/velocity/build/proxy/logs/

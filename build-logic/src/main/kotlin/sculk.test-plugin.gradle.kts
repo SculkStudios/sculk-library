@@ -21,7 +21,9 @@ tasks.jar {
 tasks.shadowJar {
     archiveClassifier = ""
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    relocate("kotlin", "studio.sculk.itest.${project.name.replace('-', '_')}.libs.kotlin")
+    val prefix = "studio.sculk.itest.${project.name.replace('-', '_')}.libs"
+    relocate("kotlinx", "$prefix.kotlinx")
+    relocate("kotlin", "$prefix.kotlin")
 }
 
 tasks.named<VerifyBytecodeLevel>("verifyBytecodeLevel") {

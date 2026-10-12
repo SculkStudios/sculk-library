@@ -40,7 +40,11 @@ include(
 )
 
 // Never published. Each proves something about the published modules on a real server.
-include(":integration-tests:boot")
+include(
+    ":integration-tests:boot",
+    ":integration-tests:threading",
+    ":integration-tests:velocity",
+)
 
 // Build tooling that is not itself a Gradle plugin.
 include(":tooling:compatibility")
