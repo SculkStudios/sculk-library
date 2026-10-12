@@ -1,0 +1,39 @@
+---
+title: Roadmap
+description: Every Sculk 6 module and whether it is done, in progress or planned, generated from MODULES.md.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import ModuleRoadmap from '../../../components/ModuleRoadmap.astro';
+
+Every module below ships in 6.0; nothing is deferred to a later minor release. The status says
+where the implementation stands on the `dev` branch today:
+
+- **done**: exists, is tested and has a committed ABI dump. You can build it with
+  `publishToMavenLocal` today.
+- **in progress**: exists but is incomplete.
+- **planned**: designed, with no code yet. **Not available**: there is no artifact to depend on,
+  and the API described in the design documents may change before it is built.
+
+<Aside type="caution">
+  Nothing is published to Maven Central yet, including the modules marked done. See
+  [installation](/start/installation/).
+</Aside>
+
+<ModuleRoadmap />
+
+## Milestones
+
+The order in which the planned modules are built, and the gate each milestone must pass, is in
+[`REBUILD.md`](https://github.com/SculkStudios/sculk-library/blob/dev/REBUILD.md#milestones-and-gates).
+In short: M0 (research and architecture), M1 (build engineering) and M2 (core and platforms) are
+done, except the supply-chain checks planned in M1, which moved to M3 and M7. M3 (author
+experience: text, config, then commands, events and permissions) is in progress. M4 (items,
+inventory, dialogs, presentation), M5 (scenes, assets, world, data, network, packets,
+integrations), M6 (Gradle plugin, BOM, docs portal, project generator) and M7 (hardening and the
+release candidate) follow.
+
+Sculk 6.0 does not ship while any planned module is missing, a supported platform fails in CI, or
+a documentation example fails to compile.

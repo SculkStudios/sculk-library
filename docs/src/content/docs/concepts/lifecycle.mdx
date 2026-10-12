@@ -1,0 +1,168 @@
+---
+title: Lifecycle and scopes
+description: Lifecycle phases, ResourceScope, SculkScope, SculkHandle and how a runtime shuts down.
+sidebar:
+  order: 3
+---
+
+Everything Sculk creates belongs to a scope and closes with it. A plugin's runtime moves through a
+fixed sequence of phases, and closing it closes everything the plugin created through Sculk, in
+reverse order of creation.
+
+## Lifecycle phases
+
+`LifecyclePhase` (package `studio.sculk.lifecycle`, module `sculk-core`), in order:
+
+| Phase | Meaning |
+| --- | --- |
+| `BOOTSTRAP` | Paper plugins only, before the server loads. Reserved; no runtime enters it today. |
+| `CONFIGURE` | Configuration is read and validated. |
+| `LOAD` | Services are created; nothing is registered with the server yet. |
+| `START` | Commands, listeners and tasks are registered. |
+| `READY` | The server is running and every capability is resolved. |
+| `STOPPING` | Shutdown has begun; resources are closing. |
+| `STOPPED` | Everything is closed. |
+
+`runtime.lifecycle` is a `Lifecycle`. Register an action for a phase with `on(phase) { }`; it runs
+when the runtime enters that phase, in registration order. Phases are never revisited, and
+registering for a phase already entered is a wiring bug that throws. `hasReached(phase)` and
+`phase` tell you where the runtime is.
+
+```kotlin
+import studio.sculk.lifecycle.LifecyclePhase
+import studio.sculk.paper.PaperRuntime
+
+fun registerPhases(sculk: PaperRuntime, saveAll: () -> Unit) {
+    sculk.lifecycle.on(LifecyclePhase.READY) { sculk.log.info("Every plugin has enabled.") }
+    sculk.lifecycle.on(LifecyclePhase.STOPPING) { saveAll() }
+}
+```
+
+Every due action runs even when one throws; the first failure is rethrown afterwards with the
+rest attached as suppressed. Entering `STOPPING` discards startup actions that never ran, so a
+plugin that failed during startup does not register commands while it shuts down.
+
+### What the platforms do
+
+| | Paper, Folia, Canvas | Velocity |
+| --- | --- | --- |
+| On attach | `CONFIGURE`, `LOAD`, `START`, then capabilities are resolved | the same; no capabilities are resolved |
+| `READY` | on the first global tick, after every plugin has enabled | when the proxy binds its Minecraft listener |
+| On close | `STOPPING` actions, plugin scope closed, pending platform tasks retired, `STOPPED` | the same |
+
+When `attach` returns, the runtime is at `START`, so the phases you can still register for are
+`READY`, `STOPPING` and `STOPPED`.
+
+Closing a runtime never throws: a failure in any shutdown step is logged and the next step still
+runs, because one plugin's disable must not stop the server's shutdown. Closing twice does
+nothing.
+
+## ResourceScope
+
+`ResourceScope` (package `studio.sculk`) owns `AutoCloseable` resources and closes them together,
+newest first. Scopes nest: a child is a resource of its parent, so closing a plugin scope closes
+every scope below it.
+
+| Member | Behaviour |
+| --- | --- |
+| `own(resource)` | Registers a resource and returns it. On a closed scope the resource is closed at once and the call throws, because whatever created it is running after shutdown. |
+| `onClose { }` | Runs an action when the scope closes. The returned handle cancels the registration. |
+| `onClosing { }` | Runs an action as soon as closing begins, before any owned resource closes. For stopping intake first. |
+| `release(resource)` | Stops owning a resource without closing it. |
+| `child(name)` | A scope closed with this one, or earlier on its own. Its name is `parent/name`. |
+| `close()` | Runs the `onClosing` actions, then closes every resource newest first. Everything runs even when one throws; the first failure is rethrown with the rest suppressed. Idempotent. |
+| `isClosed`, `name` | State and a name for diagnostics. |
+
+`ResourceScope.root(name)` creates a scope with no parent; the caller closes it. From Sculk's
+tests:
+
+```kotlin
+import studio.sculk.ResourceScope
+
+fun closingOrder(): List<String> {
+    val order = mutableListOf<String>()
+    val scope = ResourceScope.root("plugin")
+    scope.onClose { order += "listener" }
+    scope.onClose { order += "task" }
+    scope.onClose { order += "menu" }
+    scope.close()
+    return order // [menu, task, listener]
+}
+```
+
+Thread-safe: resources can be registered from any thread while another closes the scope, and none
+is lost.
+
+## SculkScope
+
+`SculkScope` (package `studio.sculk.execution`, module `sculk-coroutines`) is a `ResourceScope`
+with coroutines attached. `runtime.scope` is the plugin's root scope.
+
+- `launch { }` and `async { }` start coroutines in the scope. Starting one after the scope closed
+  is a bug and throws, naming the scope, rather than silently never running.
+- Coroutines start in the platform's home context, `Global` on a server and `Proxy` on a proxy,
+  unless told otherwise; never silently off-thread.
+- A failure in one coroutine is reported to the scope's failure handler (the runtime logs it as
+  "A coroutine in *plugin* failed.") and does not cancel its siblings.
+- `resources` is the underlying `ResourceScope`; `execution` gives access to the platform's
+  executor and dispatchers.
+- `child(name)` creates a scope that closes with this one or earlier on its own: use one per
+  player session, per minigame round, per open menu.
+- `close()` first cancels every coroutine started in the scope, then closes its resources newest
+  first, so no coroutine runs against a resource that is already closed. It does not wait for the
+  cancelled coroutines to unwind: on Folia the closing thread may own the region they need.
+
+```kotlin
+import kotlinx.coroutines.awaitCancellation
+import studio.sculk.execution.SculkScope
+
+class Round(plugin: SculkScope, id: Int) {
+    private val scope = plugin.child("round-$id")
+
+    fun begin() {
+        scope.resources.onClose { /* remove the round's boss bar */ }
+        scope.launch {
+            try {
+                awaitCancellation()
+            } finally {
+                // runs when the round or the plugin ends
+            }
+        }
+    }
+
+    fun end() = scope.close()
+}
+```
+
+Scopes that close themselves when a player disconnects, an entity is removed or a world unloads
+are part of the design in `THREADING.md` and arrive with the modules that own those lifetimes. Today
+you create child scopes and close them yourself.
+
+## SculkHandle
+
+`SculkHandle` is a `fun interface` extending `AutoCloseable`: it undoes whatever created it.
+Every handle Sculk returns is idempotent. `SculkHandle.once { }` makes a lambda handle idempotent
+and thread-safe, `SculkHandle.all(handles)` closes several in reverse order, and `SculkHandle.NONE`
+does nothing. Hand a handle to a scope with `scope.own(handle)` to tie its lifetime to the scope.
+
+## Services and modules
+
+`runtime.services` is a `ServiceRegistry`: one instance per type, registered once, found by type.
+It replaces static singletons, so two plugins shading Sculk never share state by accident.
+
+```kotlin
+import studio.sculk.paper.PaperRuntime
+import studio.sculk.service.find
+import studio.sculk.service.register
+
+class Economy
+
+fun wire(sculk: PaperRuntime) {
+    sculk.services.register(Economy())
+    val economy: Economy? = sculk.services.find<Economy>()
+}
+```
+
+`require<T>()` returns the service or throws naming the missing type. A `SculkModule` is a feature
+contributed to a runtime with `runtime.install(module)`; installing the same module id twice
+throws, and a module whose `install` throws is not recorded, so it can be fixed and installed again.

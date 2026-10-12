@@ -1,100 +1,111 @@
 ---
 title: Sculk Studio
-description: A Kotlin framework for building modern Paper plugins.
+description: The Kotlin platform for Paper, Folia, Canvas and Velocity plugins.
 template: splash
 hero:
-  title: '<span style="color:var(--sl-color-accent)">Sculk Studio</span>'
-  tagline: Commands, menus, typed config, data, themed text and HUDs — as Kotlin, not as a port of a Java API.
+  title: '<span style="color:var(--sl-color-accent)">Sculk Studio 6</span>'
+  tagline: The Kotlin platform for Paper, Folia, Canvas and Velocity plugins. Work declares what it must own; the platform decides the thread.
   actions:
-    - text: Get Started
-      link: /getting-started/installation/
+    - text: Get started
+      link: /start/installation/
       icon: right-arrow
       variant: primary
+    - text: Why Sculk
+      link: /start/why-sculk/
+      variant: secondary
     - text: View on GitHub
-      link: https://github.com/SculkStudios/sculk-library
+      link: https://github.com/SculkStudios/sculk-library/tree/dev
       icon: external
       variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Aside, Card, CardGrid } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="In development">
+  Sculk 6 is a ground-up rewrite on the `dev` branch and is not released. Artifacts are not on
+  Maven Central yet; you build them yourself with `publishToMavenLocal`. Only the modules marked
+  done on the [roadmap](/reference/roadmap/) exist today.
+</Aside>
 
 <CardGrid>
-  <Card title="Kotlin, not Kotlin-flavoured Java" icon="seti:kotlin">
-    Reified generics, default arguments, `suspend` functions and receiver lambdas are the API, not a
-    compromise around a second language.
+  <Card title="Ownership, not sync" icon="random">
+    Work declares whether it needs the global region, a region, an entity, or no game thread at
+    all. The same code is correct on Paper, Folia and Canvas. See [execution contexts](/concepts/execution/).
   </Card>
-  <Card title="Safe by construction" icon="approve-check">
-    Values reach a message unparsed, so a player-supplied name cannot inject markup. A packet
-    handler that throws cannot disconnect the player. A config rewrite cannot delete a setting.
+  <Card title="Capabilities, not version checks" icon="approve-check">
+    Paper 1.21.4 through 26.3 behind one API. Each feature reports whether it is native, emulated,
+    degraded or unavailable on the running server. See [capabilities](/concepts/capabilities/).
   </Card>
-  <Card title="Testable without a server" icon="puzzle">
-    Command specs, help output and sidebar rules are plain data. `FakeScheduler` ships as a
-    published fixture so your timing tests do not need Bukkit.
+  <Card title="Everything has an owner" icon="puzzle">
+    Coroutines, tasks and resources belong to a scope and close with it, newest first, when the
+    plugin disables. See [lifecycle and scopes](/concepts/lifecycle/).
   </Card>
-  <Card title="Folia-correct" icon="rocket">
-    One scheduling path for both platforms. The region overloads are abstract, so an implementation
-    that has not thought about threads will not compile.
+  <Card title="Testable without a server" icon="laptop">
+    `sculk-testkit` runs your scheduling logic on a deterministic executor that answers ownership
+    the way Paper, Folia or Velocity would. See [testing](/guides/testing/).
   </Card>
 </CardGrid>
 
 ## What it looks like
 
-A theme, a typed config and a command — the whole plugin.
-
 ```kotlin
-class MyPlugin : SculkPlugin() {
-    // Messages are written against meaning, not colour: changing what "value" looks like is one
-    // edit here rather than a search for every coloured string.
-    override val theme = SculkTheme(
-        mapOf("value" to ThemeStyle.Gradient(listOf("#8be9fd", "#50fa7b"))),
-    )
+import net.kyori.adventure.text.Component
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
+import studio.sculk.execution.EntityResult
+import studio.sculk.execution.withAsync
+import studio.sculk.paper.SculkPaperPlugin
+import studio.sculk.paper.withEntity
+import studio.sculk.task.repeating
+import java.nio.file.Files
+import java.util.UUID
 
-    override fun setup() {
-        val settings = sculk.config.load<Settings>().getOrThrow()
-
-        // command { } builds the command; the leading + registers it with the plugin.
-        +command("gifts") {
-            description = "Says how many gifts a player gets."
-            executes {
-                // count goes in as a value, never substituted into the template.
-                reply("<value><count></value> per player.", "count" to settings.giftAmount.toString())
-            }
+class MyPlugin : SculkPaperPlugin(), Listener {
+    override suspend fun start() {
+        server.pluginManager.registerEvents(this, this)
+        sculk.scope.repeating(periodTicks = 20L * 60 * 10) {
+            server.dispatchCommand(server.consoleSender, "save-all")
         }
+    }
+
+    @EventHandler
+    fun onJoin(event: PlayerJoinEvent) {
+        val player = event.player
+        sculk.scope.launch {
+            val visits = withAsync { readVisits(player.uniqueId) }
+            val greeted = withEntity(player) {
+                player.sendMessage(Component.text("Welcome back. This is visit $visits."))
+            }
+            if (greeted is EntityResult.Gone) logger.info("${player.name} left before the greeting.")
+        }
+    }
+
+    // Blocking file I/O, which is why it runs inside withAsync.
+    private fun readVisits(id: UUID): Int {
+        val file = dataFolder.toPath().resolve("visits/$id")
+        return if (Files.exists(file)) Files.readString(file).trim().toInt() else 0
     }
 }
 ```
 
-## Start here
+`withAsync` runs off every game thread, `withEntity` runs on whichever thread owns the player at
+that moment, and the outcome says whether the player was still there. On Paper both game
+contexts are the main thread; on Folia and Canvas they are not, and the code does not change.
 
-- [Installation](/getting-started/installation/) — one dependency, or pick modules with the BOM
-- [Your first plugin](/getting-started/first-plugin/) — a theme, a config, a command and a menu
-- [What's new in 5.0](/advanced/whats-new-in-5/) — if you used 4.x
+## What exists today
 
-## Recipes
+| Module | What it gives you |
+| --- | --- |
+| `sculk-core` | `SculkResult`, failures, `ResourceScope`, lifecycle, capabilities, `MinecraftVersion`, clock, services, diagnostics |
+| `sculk-coroutines` | Execution contexts, `withGlobal` / `withRegion` / `withEntity` / `withAsync`, scopes, tasks |
+| `sculk-platform-api` | The runtime contract every platform implements |
+| `sculk-paper` | `Sculk.attach`, `SculkPaperPlugin`, the Paper, Folia and Canvas runtime |
+| `sculk-canvas` | Canvas regionized data, extra ownership checks, async world unload |
+| `sculk-velocity` | `SculkVelocity.attach`, `SculkVelocityPlugin`, the proxy runtime |
+| `sculk-testkit` | `FakeExecutor`, `FakeRuntime`, `FakeClock` |
+| `sculk-text` | Themes and safe MiniMessage rendering (API settling) |
+| `sculk-config` | Typed YAML configuration (API settling) |
 
-Complete plugins, each mirroring an example that CI compiles:
-
-- [Economy plugin](/recipes/economy-plugin/) — repositories, a cache, a leaderboard, transactions
-- [Server menu](/recipes/server-menu/) — borders, click types, pagination
-- [Staff tools](/recipes/staff-tools/) — subcommands, permissions, cooldowns, client-side blocks
-
-## Reference
-
-<CardGrid>
-  <Card title="Text" icon="pencil">
-    [Messages](/text/overview/) · [Themes](/text/theme/) ·
-    [Placeholders](/text/placeholders/) · [Localisation](/text/localisation/)
-  </Card>
-  <Card title="Interface" icon="laptop">
-    [Menus](/gui/overview/) · [HUD](/hud/overview/) · [Items](/items/overview/) ·
-    [Visual](/visual/holograms/)
-  </Card>
-  <Card title="Behaviour" icon="setting">
-    [Commands](/commands/overview/) · [Config](/config/overview/) · [Data](/data/overview/) ·
-    [Scheduler](/core/scheduler/)
-  </Card>
-  <Card title="Depth" icon="open-book">
-    [Testing](/core/testing/) · [Services](/platform/services/) · [Packets](/packets/overview/) ·
-    [Folia](/advanced/folia/)
-  </Card>
-</CardGrid>
+Commands, events, menus, items, presentation, data and the integrations are designed but not
+built yet. The [roadmap](/reference/roadmap/) lists every module and its state.

@@ -1,0 +1,229 @@
+---
+title: Execution contexts
+description: Global, Region, Entity, Async and Proxy work; withGlobal, withRegion, withEntity, withAsync, EntityResult, delayTicks, regionBatch and the threading rules.
+sidebar:
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Sculk replaces "sync or async" with ownership. Every piece of work that touches the game says what
+it must own, and the platform decides which thread that is. On Paper one main thread owns
+everything; on Folia and Canvas each region of the world and the global state tick on separate
+threads. One program written against execution contexts is correct on all of them.
+
+The authoritative contract is [`THREADING.md`](https://github.com/SculkStudios/sculk-library/blob/dev/THREADING.md).
+This page summarises it and shows the API that exists today, in `sculk-coroutines` (package
+`studio.sculk.execution`) and `sculk-paper` (package `studio.sculk.paper`).
+
+## The contexts
+
+| Context | Owns | Paper | Folia and Canvas | Velocity |
+| --- | --- | --- | --- | --- |
+| `Global` | Time, weather, game rules, console commands, the world border | main thread | global region thread | not available |
+| `Region(world, chunkX, chunkZ)` | One chunk and the blocks in it | main thread | the region owning that chunk when the work runs | not available |
+| `Entity(entity)` | One entity, wherever it moves | main thread | the entity's region; follows teleports | not available |
+| `Async` | No game state | at most 16 threads per plugin, borrowed from the coroutine IO pool | same | plugin executor or Velocity scheduler |
+| `Proxy` | The proxy plugin's work | not available | not available | plugin executor |
+
+`ExecutionContext` is a sealed interface with exactly these five members. A region context names a
+**chunk**, never a section: only the platform knows how wide its sections are, and the work runs on
+whichever region owns that chunk at the moment it runs.
+
+Worlds are identified by `WorldKey`, a namespaced key such as `minecraft:overworld`, not by name.
+
+## Running work in a context
+
+Every function below suspends until the block has run in that context and returns its value. When
+the caller already owns the context, the block runs inline in the same tick.
+
+```kotlin
+import org.bukkit.Location
+import org.bukkit.Material
+import org.bukkit.Server
+import org.bukkit.entity.Player
+import studio.sculk.execution.EntityResult
+import studio.sculk.execution.withAsync
+import studio.sculk.execution.withGlobal
+import studio.sculk.paper.withEntity
+import studio.sculk.paper.withRegion
+
+suspend fun examples(server: Server, player: Player, location: Location) {
+    withGlobal { server.dispatchCommand(server.consoleSender, "save-all") }
+    withRegion(location) { location.block.type = Material.STONE }
+    val health: EntityResult<Double> = withEntity(player) { player.health }
+    val size: Long = withAsync { java.nio.file.Files.size(java.nio.file.Path.of("world/level.dat")) }
+}
+```
+
+| Function | Package | Context |
+| --- | --- | --- |
+| `withGlobal { }` | `studio.sculk.execution` | `Global` |
+| `withAsync { }` | `studio.sculk.execution` | `Async` |
+| `withRegion(world: WorldKey, chunkX, chunkZ) { }` | `studio.sculk.execution` | `Region` |
+| `withRegion(location: Location) { }` | `studio.sculk.paper` | the region of the chunk containing `location` |
+| `withEntity(entity: EntityRef) { }` | `studio.sculk.execution` | `Entity`; returns `EntityResult` |
+| `withEntity(entity: Entity) { }` | `studio.sculk.paper` | `Entity` for a Bukkit entity; returns `EntityResult` |
+| `withExecutionContext(context) { }` | `studio.sculk.execution` | any context |
+
+These functions find the platform through the coroutine context, so they work in any coroutine
+started from a Sculk scope (`sculk.scope.launch { }`, `SculkPaperPlugin.start`, tasks). Outside one
+they throw, naming the problem.
+
+On Paper, `Entity.ref` wraps a Bukkit entity as an `EntityRef`, and `Location.regionContext()`
+returns the `Region` context of the chunk containing a location. Paper's executor accepts only
+entities wrapped this way.
+
+## Entity work has an explicit outcome
+
+An entity can be removed (a player disconnects, a mob dies) between the moment work is scheduled
+and the moment it would run. `withEntity` therefore returns an `EntityResult`:
+
+- `EntityResult.Ran(value)`: the block ran on the entity's owner and returned `value`.
+- `EntityResult.Gone(entity)`: the entity was removed first, or while the block was suspended. The
+  rest of the block never runs.
+
+```kotlin
+import org.bukkit.entity.Player
+import studio.sculk.execution.EntityResult
+import studio.sculk.execution.getOrNull
+import studio.sculk.paper.withEntity
+
+suspend fun heal(player: Player) {
+    when (val outcome = withEntity(player) { player.health = 20.0 }) {
+        is EntityResult.Ran -> Unit
+        is EntityResult.Gone -> println("${outcome.entity.description} left first")
+    }
+    val level: Int? = withEntity(player) { player.level }.getOrNull()
+}
+```
+
+`Gone` is not an exception. Internally the work is cancelled with `EntityGoneException`, which
+cancels only the work bound to that entity; `withEntity` turns it into `Gone` for its caller.
+
+## Teleporting
+
+`Entity.teleportTo(location, cause)` (in `studio.sculk.paper`) calls Paper's `teleportAsync` from
+the thread that owns the entity and returns `EntityResult<Boolean>`. The caller resumes in its own
+context afterwards, not at the destination. To keep working on the entity where it arrived, enter
+it again with `withEntity`: on Folia and Canvas it is usually owned by a different region by then.
+Synchronous teleport is not exposed.
+
+## Waiting for ticks
+
+`delayTicks(n)` suspends for `n` server ticks and resumes in the same context. Zero or less waits
+for the next tick, never returns at once. On a proxy and in `Async` a tick is 50 ms of wall-clock
+time. Kotlin's `delay(ms)` keeps measuring wall-clock time and then re-dispatches to the context;
+use `delayTicks` where alignment with ticks matters.
+
+```kotlin
+import org.bukkit.Location
+import org.bukkit.Material
+import studio.sculk.execution.delayTicks
+import studio.sculk.paper.withRegion
+
+suspend fun flash(location: Location) {
+    withRegion(location) {
+        location.block.type = Material.GLOWSTONE
+        delayTicks(20)
+        location.block.type = Material.AIR // still on the owning region
+    }
+}
+```
+
+## Region-safe batches
+
+`regionBatch` runs an action for many locations, each on the thread that owns it, and returns the
+results in input order. Items are grouped by region section at the server's real section size
+(`regionShift`, read from Folia's and Canvas's `grid-exponent` at startup); each group is scheduled
+once and runs its items one after another, in input order.
+
+```kotlin
+import org.bukkit.Location
+import org.bukkit.Material
+import studio.sculk.paper.regionBatch
+
+suspend fun paint(targets: List<Location>): List<Boolean> =
+    regionBatch(targets, { it }) { target ->
+        target.block.type = Material.STONE
+        target.block.type == Material.STONE
+    }
+```
+
+The platform-neutral form takes a function returning `ExecutionContext.Region`:
+`regionBatch(items, locate = { ExecutionContext.Region.ofBlock(world, x, z) }) { ... }`.
+
+| Guaranteed | Not guaranteed |
+| --- | --- |
+| Items in one group run sequentially in submission order, within one tick of one region | Ordering across groups |
+| The result is available once every group completes | Same-tick completion across regions |
+| Every item runs on a thread owning its location | That the region owning a group at run time owned it at submission |
+
+Nothing is atomic across groups. On Paper every location in a world forms one group on the main
+thread. Loading chunks before a batch and splitting a group whose ownership changed are planned
+for `sculk-world` and do not exist yet: load the chunks you touch first, as you would without
+Sculk.
+
+## Dispatchers and ownership checks
+
+The contexts are also available as coroutine dispatchers, through the scope's `SculkExecution`:
+
+```kotlin
+import kotlinx.coroutines.withContext
+import org.bukkit.entity.Player
+import studio.sculk.execution.ExecutionContext
+import studio.sculk.paper.PaperRuntime
+import studio.sculk.paper.ref
+
+suspend fun onPlayerThread(sculk: PaperRuntime, player: Player) {
+    val dispatcher = sculk.scope.execution.dispatcher(ExecutionContext.Entity(player.ref))
+    withContext(dispatcher) { player.level += 1 }
+}
+```
+
+`dispatcher(context)` throws `UnsupportedContextException` at once for a context the platform has
+no thread for, such as a region on a proxy. A dispatcher dispatches only when the current thread
+does not already own the context. Prefer `withEntity` for entities: a raw dispatcher cancels the
+coroutine with `EntityGoneException` instead of returning `Gone`.
+
+`sculk.scope.execution.executor` is the platform's `SculkExecutor`. Its `owns(context)` answers
+whether the calling thread owns a context, and `checkOwned(context, "what")` throws
+`WrongContextException` naming the requirement when it does not.
+
+## The rules
+
+From [`THREADING.md`](https://github.com/SculkStudios/sculk-library/blob/dev/THREADING.md#rules),
+the ones that apply to the modules that exist today:
+
+1. **Ownership checks are the only correctness oracle.** "Eight chunks away" is not a contract.
+2. **Delays are normalised at the Sculk boundary.** A delay of zero or less means the next tick,
+   and a period below one tick means every tick, because the platform schedulers throw for both.
+   `Async` delays are wall-clock.
+3. **Entity work has an explicit outcome**, `Ran` or `Gone`. When an entity is retired, Sculk only
+   completes the outcome; it never runs your block in the retired callback, where Paper forbids
+   world access.
+4. **Teleport re-enters entity ownership.** After `teleportTo`, nothing captured from the source
+   region is valid; enter the entity again.
+5. **Platform futures re-dispatch.** Awaiting a `CompletableFuture` inside a Sculk context resumes
+   in that context, whichever thread completed the future.
+6. **Nothing is cached across a suspension in a region context.** A `Chunk` or `Block` read before a
+   suspension may be stale after it; regions merge and split while a coroutine waits.
+7. **Sculk tracks its own tasks.** Every task Sculk schedules is tracked until it runs; closing the
+   runtime retires every one still pending, so a coroutine waiting on one is cancelled rather than
+   left suspended forever.
+8. **Shutdown does not schedule.** On Folia and Canvas, `onDisable` runs after the tick threads have
+   stopped. Save synchronously in `stop()` or a `STOPPING` action; scheduled work would never run.
+9. **Listeners run in parallel across regions.** State shared between listeners must be
+   thread-safe or partitioned by region.
+10. **A refused dispatch cancels; it is never lost.** If the platform rejects work (plugin disabled,
+    scheduler retired), the coroutine is cancelled and its `finally` blocks run on a dedicated
+    `sculk-abandoned` thread that owns nothing, so cleanup there must not touch the world.
+
+`GlobalScope` and `runBlocking` are forbidden in Sculk's own code; the build fails on either.
+They are a bad idea in a plugin for the same reasons.
+
+<Aside>
+  `THREADING.md` also covers commands, inventories, scoreboards, a scope per player, entity, world
+  and session, and a development thread checker. Those belong to modules that are planned but not
+  built yet; see the [roadmap](/reference/roadmap/).
+</Aside>

@@ -1,0 +1,72 @@
+---
+title: Why Sculk
+description: What Sculk Studio 6 is, the problems it takes on, and what it deliberately does not do.
+sidebar:
+  order: 1
+---
+
+Sculk Studio is a Kotlin platform for Paper, Folia, Canvas and Velocity plugins. It aims to be the
+one dependency a Kotlin developer starts with, so that the usual collection of unrelated helper
+libraries is unnecessary, while a small plugin can still depend on one small module.
+
+Version 6 is a ground-up rewrite. Nothing from Sculk 5 is carried over, and there is no
+compatibility layer for 5.x code ([ADR-0017](https://github.com/SculkStudios/sculk-library/blob/dev/docs/adr/0017-no-v5-compatibility-facade.md)).
+
+## The problems it takes on
+
+**Threads.** Paper has one main thread; Folia and Canvas tick each region of the world on its own
+thread and throw when code touches a block, an entity or the world from the wrong one. Code
+written as "run this sync" is wrong on Folia. Sculk replaces "sync or async" with ownership: work
+says whether it needs the global region, a chunk's region, an entity, or no game thread, and the
+platform adapter picks the thread. One program is correct on all three servers.
+See [execution contexts](/concepts/execution/).
+
+**Versions.** Paper 1.21.4 and Paper 26.3 differ in which APIs exist, and Paper backports features
+in the middle of a release line, so a version number is not a reliable test. Sculk probes the
+running server once at startup and reports each feature as a capability: native, emulated,
+degraded or unavailable. Application code branches on the capability, never on a version.
+See [capabilities](/concepts/capabilities/).
+
+**Leaks at shutdown.** On disable, Paper cancels a plugin's global and async tasks but has no API
+to cancel its region or entity tasks. Sculk tracks every task it schedules and retires the ones
+still pending when the plugin stops, so a coroutine waiting on one is cancelled instead of
+suspended forever. Everything a plugin creates through Sculk belongs to a scope and closes with
+it. See [lifecycle and scopes](/concepts/lifecycle/).
+
+**Failures that reach server owners.** Expected failures (a missing capability, invalid input, an
+I/O error) are values, `SculkResult`, with a message that says what happened and a hint that says
+what to do. Exceptions are reserved for programmer errors. See [results and failures](/concepts/results/).
+
+**Testing.** Threading bugs that race on Folia should fail in a unit test. `sculk-testkit` runs
+coroutines on a deterministic executor that answers ownership questions the way Paper, Folia or
+Velocity would. See [testing](/guides/testing/).
+
+## Principles
+
+| Principle | What it means in code |
+| --- | --- |
+| Kotlin first | `suspend`, structured concurrency, sealed hierarchies, value classes, immutable data. |
+| Composition before inheritance | `Sculk.attach(plugin)` is the primary entry point; `SculkPaperPlugin` is a convenience. |
+| Capability, not version | Version checks live only in platform adapters. |
+| Ownership, not sync | Work is `Global`, `Region`, `Entity`, `Async` or `Proxy`. |
+| Resource ownership | Everything Sculk creates belongs to a `ResourceScope`. |
+| Templates trusted, values not | Untrusted text enters MiniMessage only as an unparsed or component placeholder. |
+| Modular | One module, one capability. A module depends only on what it uses. |
+
+The full charter, including the milestones and release blockers, is
+[`REBUILD.md`](https://github.com/SculkStudios/sculk-library/blob/dev/REBUILD.md).
+
+## What Sculk is not
+
+Not another LuckPerms, WorldEdit, PacketEvents, Adventure, Ktor, JDA or ORM. Not a reflection
+dependency-injection container, a runtime annotation scanner, an NMS-first or packets-first
+framework, or a compatibility layer for versions before 1.21.4. Those projects are integrated
+through thin adapter modules, not rebuilt.
+
+Fabric, Sponge, Minestom and BungeeCord are out of scope for 6.0.
+
+## Licence
+
+Sculk Studio is open source under the MIT licence. Optional integrations with GPL projects such as
+PacketEvents and ProtocolLib are compile-only and never bundled; the licence of every optional
+dependency is listed in [`LICENSING.md`](https://github.com/SculkStudios/sculk-library/blob/dev/LICENSING.md).

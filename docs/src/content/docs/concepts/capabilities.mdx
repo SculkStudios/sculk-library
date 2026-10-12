@@ -1,0 +1,112 @@
+---
+title: Capabilities
+description: Native, Emulated, Degraded and Unavailable; asking the runtime what the server provides instead of comparing versions.
+sidebar:
+  order: 4
+---
+
+Application code never compares Minecraft versions. Paper backports features in the middle of a
+release line, so "1.21.7 or newer" is wrong on one side of a backport or the other. Instead the
+runtime probes the server once at startup and reports each feature as a capability.
+
+## The four states
+
+`Capability<S>` (package `studio.sculk.capability`, module `sculk-core`) is a sealed class:
+
+| State | Meaning | What to do |
+| --- | --- | --- |
+| `Native(service)` | The platform provides it directly. | Use it. |
+| `Emulated(service, how)` | Sculk reproduces it with other APIs at equal fidelity; `how` says with what. | Use it. |
+| `Degraded(service, missing)` | Sculk reproduces part of it; `missing` lists what does not work. | Use it knowingly. |
+| `Unavailable(reason)` | Nothing reasonable exists on this server; `reason` names what would provide it. | Branch, or let the operation fail with `UnsupportedCapability`. |
+
+Every state has `isAvailable` and `level` (`"native"`, `"emulated"`, `"degraded"`,
+`"unavailable"`), and the three available states carry a `service`.
+
+## Asking for a capability
+
+A `CapabilityKey<S>` names a capability and the type of service it resolves to. `runtime.capabilities`
+is the server's resolved set:
+
+```kotlin
+import studio.sculk.capability.Capability
+import studio.sculk.paper.PaperCapabilities
+import studio.sculk.paper.PaperRuntime
+
+fun describeDialogs(sculk: PaperRuntime): String =
+    when (val dialogs = sculk.capabilities[PaperCapabilities.DIALOGS]) {
+        is Capability.Native -> "Dialogs are available."
+        is Capability.Emulated -> "Dialogs are emulated: ${dialogs.how}."
+        is Capability.Degraded -> "Dialogs work without ${dialogs.missing.joinToString()}."
+        is Capability.Unavailable -> "No dialogs: ${dialogs.reason}."
+    }
+```
+
+A key nobody provides is `Unavailable`, never missing. When any available level will do,
+`service(key)` returns the service as a [`SculkResult`](/concepts/results/), or an
+`UnsupportedCapability` failure whose message names the feature and the reason:
+
+```kotlin
+import studio.sculk.SculkFailure
+import studio.sculk.SculkResult
+import studio.sculk.canvas.CanvasRegionData
+import studio.sculk.canvas.CanvasSupport
+import studio.sculk.paper.PaperRuntime
+
+fun regionDataOrNull(sculk: PaperRuntime): CanvasRegionData? =
+    when (val regionData = sculk.capabilities.service(CanvasSupport.REGION_DATA)) {
+        is SculkResult.Success -> regionData.value
+        is SculkFailure -> {
+            sculk.log.info(regionData.describe())
+            null
+        }
+    }
+```
+
+A missing capability is a fact about the server, not a bug, so `service` returns a result rather
+than throwing. `capabilities.all()` lists every resolved capability ordered by id; `diagnostics()`
+prints them.
+
+Capabilities are resolved during `attach` and fixed from `READY` on; they never change while the
+server runs.
+
+## Paper capabilities
+
+`PaperCapabilities` declares the keys `sculk-paper` resolves, each probed by class presence:
+
+| Key | Feature | Native from |
+| --- | --- | --- |
+| `DATA_COMPONENTS` | Item data components | Minecraft 1.21.3, so every supported version |
+| `MENU_TYPES` | Typed menu views | 1.21.1, so every supported version |
+| `DATAPACK_DISCOVERY` | Plugin datapack discovery | 1.21.4 |
+| `DIALOGS` | Dialogs | 1.21.7 |
+| `CONFIGURATION_PHASE` | Configuration-phase connections | 1.21.7 |
+| `MANNEQUINS` | Mannequin entities | 1.21.11 |
+| `REMOVAL_REASONS` | Entity removal reasons | 26.2 build 109 |
+| `POST_EFFECTS` | Player post-processing effects | 26.3 |
+
+Each resolves to `Native(Unit)` or `Unavailable("added in ...")` today. The feature modules that
+use them (items, menus, dialogs and so on) are planned; they will attach real services, and some
+will offer `Emulated` or `Degraded` fallbacks. The full capability table, with the fallback planned
+for each feature, is in [`COMPATIBILITY.md`](https://github.com/SculkStudios/sculk-library/blob/dev/COMPATIBILITY.md#capabilities).
+
+[Canvas](/guides/canvas/) adds `CanvasSupport.REGION_DATA`, `OWNERSHIP`, `WORLDS` and the
+experimental `TICK_MANAGER`, which resolve as `Unavailable` on Paper and Folia.
+
+## Declaring your own
+
+A key is declared once, as a top-level value, because keys compare by identity:
+
+```kotlin
+import studio.sculk.capability.CapabilityKey
+
+interface Payouts
+
+val PAYOUTS: CapabilityKey<Payouts> = CapabilityKey("myplugin.payouts", "Economy payouts")
+```
+
+Ids are lower-case words separated by dots or hyphens. Two keys sharing an id are a wiring bug
+that `Capabilities.Builder` rejects, which is what keeps a lookup from returning another key's
+type. Capabilities are added to a Paper runtime by a `PaperPlatformExtension` passed to
+`Sculk.attach(plugin, extensions = listOf(...))`; its `resolve` is called once during attach, on
+every platform, and must resolve each of its keys, as unavailable where it does not apply.

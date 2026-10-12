@@ -1,0 +1,132 @@
+---
+title: Installation
+description: Build Sculk 6 locally, add it to a Gradle Kotlin DSL project and package it into a plugin.
+sidebar:
+  order: 2
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Not published yet">
+  Sculk 6 artifacts are **not on Maven Central** yet, and there is no release. The coordinates are
+  `studio.sculk:<module>:6.0.0-SNAPSHOT`, and today the only way to get them is to build them
+  yourself and install them into your local Maven repository. Publishing to Maven Central through
+  the Central Portal is decided ([ADR-0015](https://github.com/SculkStudios/sculk-library/blob/dev/docs/adr/0015-distribution-and-publishing.md))
+  but not done. The 5.x JitPack coordinates do not apply to Sculk 6.
+</Aside>
+
+## Requirements
+
+| What | Version |
+| --- | --- |
+| Server | Paper 1.21.4, 1.21.11, 26.1.2, 26.2 or 26.3; Folia and Canvas builds in that range; or Velocity 4.2.0. See [compatibility](/reference/compatibility/). |
+| Java at runtime | 21 for Paper 1.21.x, 25 for Paper 26.x, Canvas and Velocity 4 |
+| Java to build Sculk | JDK 25 and JDK 21; the Gradle toolchain resolver downloads them when missing |
+| Kotlin | The version Sculk is built with: 2.4.21 today (`gradle/libs.versions.toml`) |
+
+Every Sculk artifact is JVM 21 bytecode, so one plugin jar runs on both Java generations.
+
+## Build Sculk into your local Maven repository
+
+<Steps>
+
+1. Clone the repository and switch to the `dev` branch, where Sculk 6 lives. `main` still carries 5.x.
+
+   ```sh
+   git clone https://github.com/SculkStudios/sculk-library.git
+   cd sculk-library
+   git switch dev
+   ```
+
+2. Publish every module to `~/.m2/repository`:
+
+   ```sh
+   ./gradlew publishToMavenLocal
+   ```
+
+   This installs `studio.sculk:sculk-core`, `sculk-coroutines`, `sculk-platform-api`,
+   `sculk-paper`, `sculk-canvas`, `sculk-velocity`, `sculk-testkit`, `sculk-text` and
+   `sculk-config`, each at `6.0.0-SNAPSHOT`.
+
+</Steps>
+
+Rebuild after pulling: a snapshot changes without its version changing.
+
+## Add Sculk to a Paper plugin
+
+`build.gradle.kts`:
+
+```kotlin
+plugins {
+    kotlin("jvm") version "2.4.21"
+    id("com.gradleup.shadow") version "9.6.1"
+}
+
+repositories {
+    mavenLocal() // Sculk 6 snapshots, until they are on Maven Central
+    mavenCentral()
+    maven("https://repo.papermc.io/repository/maven-public/")
+}
+
+dependencies {
+    // Compile against the oldest Paper you support; Sculk itself compiles against 1.21.4.
+    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    implementation("studio.sculk:sculk-paper:6.0.0-SNAPSHOT")
+
+    testImplementation("studio.sculk:sculk-testkit:6.0.0-SNAPSHOT")
+}
+
+kotlin {
+    jvmToolchain(21)
+}
+```
+
+`sculk-paper` brings `sculk-platform-api`, `sculk-coroutines`, `sculk-core` and
+`kotlinx-coroutines-core` with it. Add `sculk-canvas`, `sculk-text` or `sculk-config` only when you
+use them.
+
+If your plugin supports only Paper 26.x, compile against `io.papermc.paper:paper-api:26.3.build.175-stable`
+with `jvmToolchain(25)` instead.
+
+## Package Kotlin and Sculk into the jar
+
+Paper does not provide Kotlin, kotlinx or Sculk, so the plugin jar has to carry them. Shade them
+and relocate them under your own package, so two plugins on one server never share or replace each
+other's copies:
+
+```kotlin
+tasks.shadowJar {
+    archiveClassifier = ""
+    val libs = "com.example.myplugin.libs"
+    relocate("studio.sculk", "$libs.sculk")
+    relocate("kotlinx", "$libs.kotlinx")
+    relocate("kotlin", "$libs.kotlin")
+}
+```
+
+Leave `minimize()` off, as the consumer rules in `LICENSING.md` require. Never shade the Paper or
+Velocity API, and never shade a GPL or proprietary plugin API; the reasons are in
+[`LICENSING.md`](https://github.com/SculkStudios/sculk-library/blob/dev/LICENSING.md).
+
+<Aside>
+  Once Sculk is on Maven Central, the preferred route on Paper is to let the server download it
+  through Paper's library loader instead of shading, and the planned Sculk Gradle plugin will
+  configure either route for you. Neither exists yet.
+</Aside>
+
+## Declare Folia support
+
+Sculk's scheduling is correct on Folia and Canvas, but the server only loads a plugin there when
+its descriptor says so. Declare it once every part of your plugin uses execution contexts rather
+than the Bukkit scheduler:
+
+```yaml
+# plugin.yml
+name: MyPlugin
+version: 1.0.0
+main: com.example.myplugin.MyPlugin
+api-version: "1.21"
+folia-supported: true
+```
+
+Next: [your first plugin](/start/first-plugin/).

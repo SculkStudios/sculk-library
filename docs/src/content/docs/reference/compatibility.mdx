@@ -1,0 +1,82 @@
+---
+title: Compatibility
+description: Supported Paper, Folia, Canvas and Velocity versions, support tiers, Java requirements and what CI proves today.
+sidebar:
+  order: 1
+---
+
+Summarised from [`COMPATIBILITY.md`](https://github.com/SculkStudios/sculk-library/blob/dev/COMPATIBILITY.md),
+which is authoritative and carries the evidence.
+
+## Support tiers
+
+| Tier | Targets | Promise |
+| --- | --- | --- |
+| Current | Paper 26.3 | Every applicable capability. |
+| Compatible | Paper 1.21.4 (floor), 1.21.11, 26.1.2, 26.2 | The same high-level API where the semantics hold; capabilities report where they do not. |
+| Platform-specialised | Folia, Canvas | Region-aware implementations and platform-exclusive features, tested on obtainable builds only. |
+| Proxy | Velocity 4.2 | A first-class runtime, not a utility. |
+| Canary | Upcoming Paper, Folia, Canvas and Velocity builds | A CI signal. Never advertised as stable. |
+
+## Pinned targets
+
+Sculk pins builds, not versions: Paper backports features in the middle of a release line, so a
+version threshold would be wrong on one side of a backport.
+
+| Tier | Target | Pinned artifact | Java | Adventure |
+| --- | --- | --- | --- | --- |
+| Current | Paper 26.3 | `26.3.build.175-stable` | 25 | 5.2.0 |
+| Compatible | Paper 26.2 | `26.2.build.133-stable` | 25 | 5.2.0 |
+| Compatible | Paper 26.1.2 | `26.1.2.build.74-stable` | 25 | 4.26.1 |
+| Compatible | Paper 1.21.11 | `1.21.11-R0.1-20260511.115010-91` | 21 | 4.26.1 |
+| Floor | Paper 1.21.4 | `1.21.4-R0.1-20250925.065901-231` | 21 | 4.20.0 |
+| Platform | Folia | Obtainable builds only: 26.2 (beta builds only), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4. Folia 26.3 had no build on 2026-10-12. | as Paper | as Paper |
+| Platform | Canvas | 26.3 stable (builds 976 to 978), 26.2, 26.1.2, 1.21.11, 1.21.8 | 25 | as Paper |
+| Proxy | Velocity | `com.velocitypowered:velocity-api:4.2.0` | 25 | 5.2.0 |
+
+## Not supported
+
+| Version | Reason |
+| --- | --- |
+| 1.21, 1.21.1, 1.21.3 | Each lacks APIs the floor relies on (data components, `editPersistentDataContainer`, `Attribute` as an interface); end of life since March 2025. No fallback code exists for them. |
+| 1.21.2, 26.1 | Paper never shipped them. |
+| 1.21.5, 1.21.9, 26.1.1 | Never had a stable Paper build. |
+| 26.4 | Pre-release; canary only. |
+
+The floor is 1.21.4: the hard-fork line Paper told plugins to compile against, the first version
+with data components, `editPersistentDataContainer`, datapack discovery and
+`RegistryBuilderFactory`, and the oldest 1.21 Folia build.
+
+## Java
+
+Every published artifact is JVM 21 bytecode. Paper 1.21.x runs on Java 21; Paper 26.x, Canvas and
+Velocity 4 run on Java 25. Sculk is built with a JDK 25 toolchain targeting 21, a gate fails the
+build on any class file above version 65, and the unit tests run on both Java 21 and Java 25.
+
+## Versions in code
+
+`MinecraftVersion` (in `sculk-core`) is the only place Sculk parses a version string. It reads both
+`1.21.11` and `26.1.2`, orders them correctly across the change of format, and orders
+pre-releases before their release (`26.3-pre-2 < 26.3-rc-1 < 26.3`). `MinecraftVersion.parse`
+returns a `SculkResult`; snapshots such as `26w41a` are refused. On a server the runtime reports
+the version as `runtime.platform.minecraft`; on a proxy it is `null`.
+
+Application code should not compare versions: ask for a [capability](/concepts/capabilities/)
+instead.
+
+## Adventure
+
+Paper 1.21.x bundles Adventure 4.20 to 4.26; Paper 26.2+ and Velocity 4 bundle Adventure 5.2.
+Shared modules such as `sculk-text` compile once against the floor's Adventure, then run their
+tests a second time against the Adventure 5.2.0 jars on Java 25, so the same bytecode is proven on
+both lines.
+
+## What CI proves today
+
+Every pull request boots Paper 1.21.4 on Java 21 and Paper 26.3 on Java 25, runs the threading
+scenarios from `THREADING.md` on Paper 1.21.4, Paper 26.3, Folia 26.1.2 and Canvas 26.3, and runs
+the proxy scenarios on Velocity 4.2.0. The servers are listed by hand in the CI workflow today.
+
+The target matrix (every Paper anchor, Folia 26.3 once published, nightly runs of intermediate
+versions, and canary runs against the newest builds) is planned for milestone M3 and is generated
+from the pinned anchors rather than written by hand. There is no nightly job yet.

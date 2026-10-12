@@ -1,0 +1,110 @@
+---
+title: Results and failures
+description: SculkResult for failures a caller is expected to handle, SculkFailure and its subtypes, and Secret.
+sidebar:
+  order: 5
+---
+
+Sculk separates two kinds of failure:
+
+- **Expected failures**: I/O, user input, a file with the wrong shape, a capability the server
+  does not have. They are returned as values, `SculkResult`, and the caller decides what to do.
+- **Programmer errors**: calling an API wrongly, wiring a module twice, launching into a closed
+  scope. They throw, usually `IllegalStateException` or `IllegalArgumentException`, with a message
+  that says what was wrong.
+
+## SculkResult
+
+`SculkResult<T>` (package `studio.sculk`, module `sculk-core`) is a sealed interface with two
+branches: `SculkResult.Success(value)` and `SculkFailure`. A failure is itself a result, so `when`
+is exhaustive without a wrapper:
+
+```kotlin
+import studio.sculk.SculkFailure
+import studio.sculk.SculkResult
+import studio.sculk.version.MinecraftVersion
+
+fun describe(text: String): String = when (val parsed = MinecraftVersion.parse(text)) {
+    is SculkResult.Success -> "Minecraft ${parsed.value}"
+    is SculkFailure -> parsed.describe()
+}
+```
+
+`describe("26.3")` is `Minecraft 26.3`; `describe("26w41a")` is
+`Minecraft version: expected a release such as 1.21.4, 26.3 or 26.3-rc-1, found '26w41a'.`
+
+### Creating results
+
+| Call | Result |
+| --- | --- |
+| `SculkResult.success(value)` | A success. |
+| `SculkResult.ok()` | The shared `Success(Unit)`. |
+| `SculkResult.catching("read storage.yml") { ... }` | The block's value, or `OperationFailed` described as "Could not read storage.yml: *cause*." Cancellation is rethrown, never captured; an interrupt is captured but the thread stays interrupted. |
+| A `SculkFailure` | A failure. |
+
+### Using results
+
+| Function | Behaviour |
+| --- | --- |
+| `map`, `flatMap` | Transform a success; a failure passes through untouched. |
+| `fold(onSuccess, onFailure)` | Collapse both branches into one value. |
+| `getOrNull()`, `failureOrNull()` | The value or the failure, else `null`. |
+| `getOrElse { failure -> }`, `recover { failure -> }` | A fallback value, or a success built from one. |
+| `onSuccess { }`, `onFailure { }` | Side effects on one branch; return the result unchanged. |
+| `getOrThrow()` | The value, or throws `SculkFailureException` carrying the failure and its cause. |
+| `isSuccess`, `isFailure` | Which branch it is. |
+
+```kotlin
+import studio.sculk.SculkResult
+import studio.sculk.getOrElse
+import studio.sculk.map
+import java.nio.file.Files
+import java.nio.file.Path
+
+fun readMotd(path: Path): String =
+    SculkResult.catching("read ${path.fileName}") { Files.readString(path) }
+        .map(String::trim)
+        .getOrElse { failure -> "Welcome! (${failure.message})" }
+```
+
+## SculkFailure
+
+Every failure answers what happened (`message`), what can be done about it (`hint`, optional) and
+what caused it (`cause`, optional). `describe()` is the message followed by the hint: the sentence
+a log line or a chat message shows. Messages and hints are shown to server owners, so they never
+contain secrets.
+
+| Subtype | Use | Message |
+| --- | --- | --- |
+| `UnsupportedCapability(capability, reason)` | The running server lacks a feature | "*capability* is not available on this server: *reason*." |
+| `MissingIntegration(integration)` | An optional plugin is not installed or enabled | "*integration* is not installed or not enabled." with a hint to install it |
+| `InvalidInput(location, expected, received)` | Input of the wrong shape | "*location*: expected *expected*, found *received*." |
+| `Timeout(operation, limit)` | An operation that did not finish in time | "*operation* did not complete within *limit*." |
+| `OperationFailed(operation, cause)` | An operation that threw; made by `catching` | "Could not *operation*: *cause message*." |
+
+Modules define their own subtypes; `sculk-config` reports `InvalidConfig` with the file, key and
+line. A plugin can too:
+
+```kotlin
+import studio.sculk.SculkFailure
+
+class ShopClosed(private val shop: String) : SculkFailure() {
+    override val message: String get() = "The shop $shop is closed."
+    override val hint: String? get() = "Open it with /shop open $shop."
+}
+```
+
+## Secret
+
+`Secret` wraps a value that must never appear in logs, failures, diagnostics or generated files.
+Every string conversion prints `<redacted>`; only `reveal()` returns the value.
+
+```kotlin
+import studio.sculk.Secret
+
+val password = Secret(System.getenv("DB_PASSWORD") ?: "")
+// "password=$password" is "password=<redacted>"
+```
+
+An exception whose message may carry a secret, such as a JDBC URL with a password, must be
+sanitised before it becomes the cause of an `OperationFailed`, which repeats that message.

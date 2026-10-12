@@ -1,0 +1,147 @@
+---
+title: Your first plugin
+description: The two ways to adopt Sculk on Paper, Folia and Canvas, Sculk.attach and SculkPaperPlugin, and what each does.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+There are two ways to use Sculk in a Paper plugin. Both produce the same `PaperRuntime`; they
+differ only in who owns the plugin class.
+
+| Style | Use it when |
+| --- | --- |
+| `Sculk.attach(this)` in your own `JavaPlugin` | You keep your plugin class, or adopt Sculk in an existing plugin one feature at a time. This is the primary entry point. |
+| `SculkPaperPlugin` with `suspend fun start()` | You start a new plugin and want startup to be a coroutine, with failed starts handled for you. |
+
+Neither needs a different `plugin.yml`: both are `JavaPlugin` subclasses.
+
+## Attach to your own plugin
+
+```kotlin
+package com.example.myplugin
+
+import org.bukkit.plugin.java.JavaPlugin
+import studio.sculk.execution.ExecutionContext
+import studio.sculk.paper.PaperRuntime
+import studio.sculk.paper.Sculk
+import studio.sculk.task.repeating
+
+class MyPlugin : JavaPlugin() {
+    private var sculk: PaperRuntime? = null
+
+    override fun onEnable() {
+        val runtime = Sculk.attach(this)
+        sculk = runtime
+
+        runtime.scope.repeating(periodTicks = 20L * 60, context = ExecutionContext.Async) {
+            logger.info("Still running on ${runtime.platform.brand}.")
+        }
+    }
+
+    override fun onDisable() {
+        sculk?.close()
+        sculk = null
+    }
+}
+```
+
+`Sculk.attach` must be called from `onEnable`, and the runtime it returns must be closed in
+`onDisable`. Sculk cannot close it for you: Paper fires its plugin-disable event before
+`onDisable` runs, so a runtime that closed itself on that event would pull resources out from
+under your own shutdown code.
+
+`attach` takes two optional arguments:
+
+| Argument | Default | Meaning |
+| --- | --- | --- |
+| `developmentMode` | the `sculk.development` system property | Development checks; see below. |
+| `extensions` | none | Platform extensions such as [`CanvasSupport`](/guides/canvas/). |
+
+## Extend SculkPaperPlugin
+
+```kotlin
+package com.example.myplugin
+
+import studio.sculk.lifecycle.LifecyclePhase
+import studio.sculk.paper.SculkPaperPlugin
+import studio.sculk.task.repeating
+
+class MyPlugin : SculkPaperPlugin() {
+    override suspend fun start() {
+        sculk.lifecycle.on(LifecyclePhase.READY) { logger.info("Every plugin has enabled.") }
+        sculk.scope.repeating(periodTicks = 20L * 60 * 10) {
+            server.dispatchCommand(server.consoleSender, "save-all")
+        }
+    }
+
+    override fun stop() {
+        logger.info("Stopping; the runtime closes after this returns.")
+    }
+}
+```
+
+`SculkPaperPlugin` makes `onEnable` and `onDisable` final and calls `Sculk.attach` and `close` for
+you. `sculk` is the runtime, available from `start` until the plugin disables.
+
+`start` begins on the enabling thread and runs synchronously until its first suspension, so
+listeners and tasks registered before then are in place when `onEnable` returns. After a
+suspension it continues in the scope's home context, `Global`. If `start` throws, the failure is
+logged once and the plugin disables itself rather than running half-initialised: at once when it
+fails before suspending, otherwise on the next global tick.
+
+`stop` runs in `onDisable`, before the runtime closes. It must not suspend or schedule work: no
+task runs after shutdown begins.
+
+Override `developmentMode` or `platformExtensions` to change what `attach` receives:
+
+```kotlin
+import studio.sculk.canvas.CanvasSupport
+import studio.sculk.paper.PaperPlatformExtension
+import studio.sculk.paper.SculkPaperPlugin
+
+class MyPlugin : SculkPaperPlugin() {
+    override val platformExtensions: List<PaperPlatformExtension> = listOf(CanvasSupport)
+
+    override suspend fun start() {}
+}
+```
+
+## What the runtime gives you
+
+`PaperRuntime` implements `SculkRuntime`:
+
+| Member | What it is |
+| --- | --- |
+| `scope` | The plugin's `SculkScope`: launch coroutines and start [tasks](/concepts/tasks/) here. Closed when the plugin disables. |
+| `lifecycle` | The [lifecycle](/concepts/lifecycle/) phases. |
+| `capabilities` | What this server provides; see [capabilities](/concepts/capabilities/). |
+| `platform` | `PlatformInfo`: `kind` (`PAPER`, `FOLIA`, `CANVAS`), `brand`, `minecraft`, `javaVersion`. |
+| `regionShift` | The server's region section size as a power of two; Folia's and Canvas's `grid-exponent`. |
+| `services` | A type-keyed `ServiceRegistry`, so plugins shading Sculk never share static state. |
+| `log` | Sculk's logger, adapted to the plugin's logger. |
+| `clock` | The `SculkClock` Sculk measures time with. |
+| `diagnostics()` | A plain-text report of platform, versions, phase, modules and capabilities, for support requests. Never sent anywhere. |
+| `install(module)` | Installs a `SculkModule` once. Sculk never scans the classpath for modules. |
+
+## When the runtime is ready
+
+`attach` moves the runtime through `CONFIGURE`, `LOAD` and `START` before it returns and resolves
+the server's capabilities. It enters `READY` on the first global tick, which Paper runs after
+every plugin has enabled. Register `READY` actions before then; registering an action for a phase
+the runtime has already entered is a wiring bug and throws.
+
+## Development mode
+
+Start the server with `-Dsculk.development=true`, or pass `developmentMode = true`, to turn on
+development checks. Today that shows in `diagnostics()` and makes [Canvas](/guides/canvas/)
+report region-data callbacks that exceed their time budget. The full development thread checker
+described in [`THREADING.md`](https://github.com/SculkStudios/sculk-library/blob/dev/THREADING.md#development-thread-checker)
+is not built yet.
+
+<Aside>
+  Commands and a Sculk event API are planned (`sculk-commands`, `sculk-events`) but do not exist
+  yet. Until they do, register Bukkit listeners and commands as usual and enter the context you
+  need with [`withEntity`, `withRegion` or `withGlobal`](/concepts/execution/).
+</Aside>

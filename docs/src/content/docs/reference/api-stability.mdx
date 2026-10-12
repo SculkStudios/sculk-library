@@ -1,0 +1,74 @@
+---
+title: API stability
+description: Stability markers, binary compatibility, versioning and deprecation in Sculk 6.
+sidebar:
+  order: 2
+---
+
+Summarised from [`API_POLICY.md`](https://github.com/SculkStudios/sculk-library/blob/dev/API_POLICY.md).
+Until 6.0.0 is released, every artifact is a snapshot and any API may still change; the promises
+below apply from 6.0.0 on.
+
+## Stability markers
+
+Every public type and member carries exactly one marker, and the build fails on an unmarked one.
+The markers live in `studio.sculk.annotation`.
+
+| Marker | Promise | Allowed changes within 6.x |
+| --- | --- | --- |
+| `@SculkStable` | Source and binary compatible across all 6.x releases. | Additive only: new members with defaults, new types, new overloads that do not change resolution. |
+| `@SculkExperimental` | May change in any minor release. | Anything, recorded in the changelog. |
+| `@SculkInternal` | Not API. Public only so Sculk modules can share it. | Anything, silently. |
+
+Using an experimental symbol produces a warning until you opt in, so the dependency is visible at
+the call site:
+
+```kotlin
+import studio.sculk.annotation.SculkExperimental
+import studio.sculk.canvas.CanvasSupport
+import studio.sculk.paper.PaperRuntime
+
+@OptIn(SculkExperimental::class)
+fun hasTickManager(sculk: PaperRuntime): Boolean = sculk.capabilities[CanvasSupport.TICK_MANAGER].isAvailable
+```
+
+Using an internal symbol is an error unless you opt in with `@OptIn(SculkInternal::class)`. Don't:
+it is excluded from the ABI dumps and from this documentation and may change at any time.
+
+## Binary compatibility
+
+Every published module commits an ABI dump under `<module>/api/`. CI fails when the public surface
+changes without a matching dump change, and reviewers treat an API diff as seriously as an
+implementation diff.
+
+## Versioning
+
+Semantic versioning on the artifact set as a whole: all `studio.sculk` artifacts in a release share
+one version and are published together.
+
+| Change | Version bump |
+| --- | --- |
+| Removing or changing a `@SculkStable` symbol | Major |
+| Changing a `@SculkExperimental` symbol | Minor |
+| Adding stable API, raising a minimum platform version within a supported tier | Minor |
+| A bug fix with no public surface change | Patch |
+
+Raising the bytecode level above JVM 21 or dropping a platform is a major change. Raising the
+minimum supported Minecraft version within the 1.21 to 26.x range is a minor change announced one
+minor release in advance.
+
+## Deprecation
+
+A stable API is never deleted in the release that replaces it:
+
+1. The replacement ships, marked stable.
+2. The old symbol is deprecated with a message and a `ReplaceWith` naming the exact migration, and
+   the changelog carries a before-and-after example.
+3. It stays for at least two minor releases.
+4. The deprecation level rises to `ERROR` for at least one more minor release.
+5. It is removed in the next major release.
+
+Experimental APIs may skip steps 3 and 4, never step 2.
+
+The `sculk-internals-*` modules, if any ship, are experimental in their entirety and may break on
+a Minecraft update without a major version bump.

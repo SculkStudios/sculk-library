@@ -1,0 +1,84 @@
+---
+title: Configuration
+description: sculk-config, typed YAML files that keep operators' comments, explain errors precisely and reload transactionally.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="API settling">
+  `sculk-config` exists and is tested, but parts of its API are changing right now: validation on
+  save, escaping of environment placeholders and the validation helpers are being revised. This
+  page describes the concepts; for exact signatures, see the KDoc.
+</Aside>
+
+`sculk-config` (package `studio.sculk.config`) reads a YAML file into a Kotlin data class with
+kotlinx.serialization. It depends only on `sculk-core` and runs anywhere, including on a proxy.
+
+```kotlin
+plugins {
+    kotlin("plugin.serialization") version "2.4.21"
+}
+
+dependencies {
+    implementation("studio.sculk:sculk-config:6.0.0-SNAPSHOT")
+}
+```
+
+## The shape of it
+
+A configuration is a `@Serializable` class whose properties all have defaults, so the file can be
+generated. Loading returns a [`SculkResult`](/concepts/results/): a file that does not parse,
+migrate or validate is a failure that names the file, the key, the line, what was expected and
+what was found.
+
+```kotlin
+import kotlinx.serialization.Serializable
+import studio.sculk.SculkFailure
+import studio.sculk.SculkResult
+import studio.sculk.config.Comment
+import studio.sculk.config.ConfigFile
+import studio.sculk.config.Range
+import studio.sculk.config.SculkConfig
+import java.nio.file.Path
+
+@Serializable
+data class Settings(
+    @Comment("Shown to players when they join.")
+    val welcomeMessage: String = "<primary>Welcome!",
+    @Range(min = 1, max = 500)
+    val maxPlayers: Int = 100,
+)
+
+fun loadSettings(dataFolder: Path): ConfigFile<Settings>? =
+    when (val loaded = SculkConfig.load<Settings>(dataFolder.resolve("config.yml"))) {
+        is SculkResult.Success -> loaded.value
+        is SculkFailure -> {
+            System.err.println(loaded.describe())
+            null
+        }
+    }
+```
+
+A bad value produces a message a server owner can act on without reading code, such as
+`config.yml: max-players (line 1): expected an integer between 1 and 500, found 900.`
+
+## What it does
+
+- **Generates and completes files.** A missing file is written from the defaults, with `@Comment`
+  lines and a `config-version` key; keys the file lacks are added.
+- **Keeps what the operator wrote.** Comments, key order and unknown keys survive loading and
+  saving. Saves are atomic.
+- **kebab-case keys.** `maxPlayers` is written `max-players`. Sealed hierarchies are selected with a
+  `type:` key; enums accept any case.
+- **Reloads transactionally.** `ConfigFile.value` is always a complete, valid configuration. A
+  reload that fails to parse, migrate or validate leaves it untouched and returns why. A file
+  watcher can reload on change, ignoring Sculk's own writes.
+- **Migrations.** A schema version and migration steps (rename, remove, set) upgrade old files
+  while keeping comments.
+- **Validation.** Annotations such as `@Range`, `@DecimalRange` and `@NotBlank`, plus custom rules;
+  every violation fails the load.
+- **Environment placeholders.** `${NAME}` and `${NAME:-default}` resolve from the environment on
+  load and are never written back on save.
+- **Secrets.** A `Secret`-typed value is never echoed in an error message.

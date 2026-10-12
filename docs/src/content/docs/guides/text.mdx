@@ -1,0 +1,66 @@
+---
+title: Text
+description: sculk-text, semantic themes and safe MiniMessage rendering where templates are trusted and values are not.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="API settling">
+  `sculk-text` exists and is tested, but its API is changing right now: translations are moving
+  onto Adventure's `MiniMessageTranslationStore` and `GlobalTranslator` with CLDR plural rules
+  ([ADR-0024](https://github.com/SculkStudios/sculk-library/blob/dev/docs/adr/0024-translations-on-adventure-stores.md)).
+  This page describes the concepts that will not change. For exact signatures, see the KDoc.
+</Aside>
+
+`sculk-text` (package `studio.sculk.text`) turns templates into Adventure components. It depends
+only on `sculk-core` and is platform-neutral: the server provides Adventure, and the module runs on
+Paper's Adventure 4.x and on the Adventure 5.2 that Paper 26.2+ and Velocity 4 ship.
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-text:6.0.0-SNAPSHOT")
+}
+```
+
+## Templates are trusted, values are not
+
+A template comes from your code, your configuration or a translation file, and may contain any
+MiniMessage. A value (a player name, a database row, another plugin's output) is not trusted. It
+enters a message only as an unparsed placeholder, or as a component that is already built, so
+`<red>` inside a player's name is printed, not obeyed.
+
+```kotlin
+import net.kyori.adventure.text.Component
+import org.bukkit.entity.Player
+import studio.sculk.text.Text
+
+private val text = Text()
+
+fun greet(player: Player): Component = text.render("<primary>Welcome, <name>!", "name" to player.name)
+```
+
+Never build a template by substituting a value into it, for example with `replace` or string
+interpolation, before rendering: that is exactly the injection this design exists to prevent.
+
+## Themes
+
+A theme gives semantic names to styles: templates say `<primary>`, `<muted>` or `<danger>` instead
+of a colour, so restyling a plugin is one edit to the theme rather than a search through every
+message. Theme styles are expanded in the template before parsing, never in values, so a value
+cannot pull in a style. A style name may not shadow a MiniMessage tag, and a placeholder may not
+share its name with a style. The default theme defines `primary`, `secondary`, `value`, `muted`,
+`success`, `warning` and `danger`; each plugin is expected to choose its own colours.
+
+## Measuring text
+
+`GlyphWidths` holds the pixel advances of a font's glyphs, with a table for Minecraft's default
+font, for measuring and centring components in chat.
+
+## Translations and plurals
+
+Per-locale message templates with fallback from the exact locale to its language to a default
+exist today and are being rebuilt on Adventure's translation stores with CLDR plural rules.
+Translated templates are trusted like any other template: translators may style them, players may
+not.

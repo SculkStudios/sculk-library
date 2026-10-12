@@ -1,0 +1,172 @@
+---
+title: Tasks
+description: Repeating, delayed and cron tasks, batches spread over ticks, Debouncer and Throttler.
+sidebar:
+  order: 2
+---
+
+Tasks are coroutines in a `SculkScope`, started with the extension functions in
+`studio.sculk.task` (module `sculk-coroutines`). Each returns a kotlinx `Job`: cancel the job to
+stop the task, or let the scope stop it when it closes. In a plugin the scope is `sculk.scope`.
+
+Every task takes an [execution context](/concepts/execution/), `Global` by default, and runs its
+action there. Pass `ExecutionContext.Async` for work that touches no game state, or a `Region` or
+`Entity` context for work tied to a place or an entity.
+
+## Repeating
+
+```kotlin
+import studio.sculk.execution.ExecutionContext
+import studio.sculk.paper.PaperRuntime
+import studio.sculk.task.repeating
+
+fun startAutosave(sculk: PaperRuntime) {
+    sculk.scope.repeating(periodTicks = 20L * 60 * 5, context = ExecutionContext.Global, initialDelayTicks = 20) {
+        sculk.plugin.server.dispatchCommand(sculk.plugin.server.consoleSender, "save-all")
+    }
+}
+```
+
+`repeating(periodTicks, context, initialDelayTicks = 1, action)` waits `initialDelayTicks`, runs the
+action, then waits `periodTicks` after the action finishes, so a slow action never runs twice at
+once. A run that throws is reported to the scope's failure handler (the runtime logs it) and the
+schedule continues, as a server's repeating task does.
+
+## Delayed
+
+```kotlin
+import studio.sculk.execution.ExecutionContext
+import studio.sculk.execution.SculkScope
+import studio.sculk.task.delayed
+
+fun remindLater(scope: SculkScope) {
+    scope.delayed(delayTicks = 20L * 30, context = ExecutionContext.Async) {
+        // runs once, 30 seconds from now, off the game threads
+    }
+}
+```
+
+A delay below one tick means the next tick. The first wait is scheduled from the caller at once:
+a delay of `n` ticks is `n` ticks, not `n` plus the tick it takes to reach the context.
+
+## Cron
+
+```kotlin
+import studio.sculk.execution.SculkScope
+import studio.sculk.getOrThrow
+import studio.sculk.task.CronExpression
+import studio.sculk.task.cron
+import java.time.ZoneId
+
+fun dailyRestartWarning(scope: SculkScope) {
+    val schedule = CronExpression.parse("55 3 * * *").getOrThrow()
+    scope.cron(schedule, zone = ZoneId.of("Europe/Amsterdam")) {
+        // 03:55 every day, Amsterdam time, on the global region
+    }
+}
+```
+
+`CronExpression.parse` takes five fields (minute, hour, day of month, month, day of week) with `*`,
+numbers, ranges, `/n` steps, comma lists, and three-letter month and weekday names; weekday 7 is
+Sunday like 0. When both day fields are restricted, a day matches if either does, as in Vixie cron.
+It returns a `SculkResult`: an invalid field, or an expression that can never match such as
+`0 0 31 feb *`, is an `InvalidInput` failure explaining which field is wrong.
+
+`cron(expression, zone, context, clock, action)` recomputes each wait from the clock, so daylight
+saving changes and slow actions never accumulate drift. A time skipped by a daylight-saving jump
+runs that many minutes after the jump; a time repeated when the clocks go back runs once. Cron
+waits are wall-clock, not ticks.
+
+## Batches over ticks
+
+`batches` walks a changing collection a few items per tick, resuming where it left off and
+starting over at the end. Use it for work too large for one tick: refreshing every player's
+display, auditing every loaded chunk.
+
+```kotlin
+import org.bukkit.Server
+import studio.sculk.execution.SculkScope
+import studio.sculk.task.batches
+
+fun auditPlayers(scope: SculkScope, server: Server) {
+    scope.batches(perTick = 5, source = { server.onlinePlayers }) { player ->
+        // five players per tick, round and round
+    }
+}
+```
+
+The source is read again every tick, so additions and removals are picked up. An item whose action
+throws is reported and skipped.
+
+## Debouncer
+
+A `Debouncer` collapses bursts: the action runs once, `waitTicks` after the last `trigger()` of a
+burst. Use it to save after a run of edits or reload after several file events.
+
+```kotlin
+import studio.sculk.execution.ExecutionContext
+import studio.sculk.execution.SculkScope
+import studio.sculk.task.Debouncer
+
+class ShopEditor(scope: SculkScope) {
+    private val save = Debouncer(scope, waitTicks = 40, context = ExecutionContext.Async) {
+        // write the shop file
+    }
+
+    fun onEdit() = save.trigger()
+}
+```
+
+A trigger only cancels a pending wait, never a run in progress: a burst that arrives while the
+action runs schedules exactly one more run after it. Runs never overlap. `cancel()` drops a pending
+run. Thread-safe.
+
+## Throttler
+
+A `Throttler` lets its action run at most once per interval: the first `trigger()` runs it and
+returns `true`; later triggers inside the interval are dropped and return `false`.
+
+```kotlin
+import studio.sculk.execution.SculkScope
+import studio.sculk.task.Throttler
+
+class AlertChannel(scope: SculkScope) {
+    private val alert = Throttler(scope, intervalTicks = 20L * 10) {
+        // at most one alert every ten seconds
+    }
+
+    fun onSuspiciousActivity(): Boolean = alert.trigger()
+}
+```
+
+The interval is measured on the throttler's `SculkClock` at 50 ms per tick, so it is wall-clock
+time; pass a `FakeClock` in tests. Thread-safe.
+
+## Testing tasks
+
+With [`sculk-testkit`](/guides/testing/) a task runs on a `FakeExecutor` that only advances when
+the test ticks it. From Sculk's own tests:
+
+```kotlin
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import studio.sculk.execution.SculkScope
+import studio.sculk.task.repeating
+import studio.sculk.testkit.FakeExecutor
+
+class TasksTest {
+    private val executor = FakeExecutor()
+    private val failures = mutableListOf<Throwable>()
+    private val scope = SculkScope.root("plugin", executor) { failures += it }
+
+    @Test
+    fun `repeating work runs on its period and stops with its job`() {
+        val runs = mutableListOf<Long>()
+        val job = scope.repeating(periodTicks = 10, initialDelayTicks = 5) { runs += executor.currentTick }
+        executor.tick(40)
+        job.cancel()
+        executor.tick(40)
+        assertEquals(listOf(5L, 15L, 25L, 35L), runs)
+    }
+}
+```

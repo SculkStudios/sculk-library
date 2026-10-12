@@ -1,0 +1,143 @@
+---
+title: Canvas
+description: CanvasSupport, regionized data, bounding-box and movement ownership checks, and async world unloading on Canvas.
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Canvas is a fork of Folia with region threading and some APIs of its own. Everything in Sculk that
+works on Folia works on Canvas unchanged; `sculk-canvas` adds Canvas's extras as
+[capabilities](/concepts/capabilities/). Canvas is detected by its brand (`canvasmc:canvas`) or,
+for a fork with another brand, by the presence of its region API classes. It is never treated as
+Folia.
+
+## Setup
+
+```kotlin
+repositories {
+    maven("https://maven.canvasmc.io/releases")
+}
+
+dependencies {
+    // canvas-api contains the whole Paper API, so it replaces paper-api.
+    compileOnly("io.canvasmc.canvas:canvas-api:26.3.build.978-stable")
+    implementation("studio.sculk:sculk-canvas:6.0.0-SNAPSHOT")
+}
+
+kotlin {
+    jvmToolchain(25) // Canvas publishes its API for Java 25 and runs only on Java 25
+}
+```
+
+A plugin that must also run on Paper 1.21.x keeps JVM 21 bytecode (`jvmToolchain(21)`) and marks
+only the compile classpath as Java 25, as `sculk-canvas` and Sculk's threading test plugin do:
+
+```kotlin
+configurations.compileClasspath {
+    attributes { attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25) }
+}
+```
+
+`canvas-api` then stands in for the newest Paper API, so the compiler no longer stops you from
+calling something 1.21.4 lacks; guard such calls with [capabilities](/concepts/capabilities/).
+
+Then pass `CanvasSupport` to the runtime:
+
+```kotlin
+import studio.sculk.canvas.CanvasSupport
+import studio.sculk.paper.PaperPlatformExtension
+import studio.sculk.paper.SculkPaperPlugin
+
+class MyPlugin : SculkPaperPlugin() {
+    override val platformExtensions: List<PaperPlatformExtension> = listOf(CanvasSupport)
+
+    override suspend fun start() {}
+}
+```
+
+or, with your own plugin class, `Sculk.attach(this, extensions = listOf(CanvasSupport))`.
+
+On Paper and Folia every Canvas capability resolves as `Unavailable` ("requires Canvas; this
+server is paper"), so code that branches on them runs everywhere. Sculk's integration suite runs
+the same plugin with `CanvasSupport` on Paper, Folia and Canvas.
+
+## Capabilities
+
+| Key | Service | What it gives you |
+| --- | --- | --- |
+| `CanvasSupport.REGION_DATA` | `CanvasRegionData` | State that lives per region and follows region merges and splits |
+| `CanvasSupport.OWNERSHIP` | `CanvasOwnership` | Ownership checks for a bounding box and for a moving object |
+| `CanvasSupport.WORLDS` | `CanvasWorlds` | Region-safe asynchronous world unloading |
+| `CanvasSupport.TICK_MANAGER` | Canvas's `RegionThreadingTickManager` | Experimental (`@SculkExperimental`): it exposes Canvas's own type, so it follows Canvas's API rather than Sculk's stability promise |
+
+## Regionized data
+
+A value per region: created the first time it is read on that region's thread, merged when two
+regions merge and distributed when one splits. From Sculk's Canvas integration test:
+
+```kotlin
+import org.bukkit.Location
+import studio.sculk.canvas.CanvasSupport
+import studio.sculk.capability.Capability
+import studio.sculk.paper.PaperRuntime
+import studio.sculk.paper.withRegion
+import java.util.concurrent.atomic.AtomicInteger
+
+suspend fun countPerRegion(sculk: PaperRuntime, somewhere: Location) {
+    val capability = sculk.capabilities[CanvasSupport.REGION_DATA]
+    if (capability !is Capability.Native) return
+
+    val visits = capability.service.create(
+        create = { _ -> AtomicInteger() },
+        merge = { from, into, _ -> into.addAndGet(from.get()) },
+        split = { _, _ -> },
+    )
+
+    withRegion(somewhere) { visits.local().incrementAndGet() }
+}
+```
+
+`create(create, merge, split)`:
+
+- `create(world)` makes the value for a new region.
+- `merge(from, into, tickOffset)` folds `from` into `into`; deadlines in `from` are `tickOffset`
+  ticks behind `into`'s clock.
+- `split(from, target)` distributes `from` over the new regions. `target.forChunk(chunkX, chunkZ)`
+  returns the new region's value for a chunk, or null; `target.all` lists every new value.
+
+`RegionData.local()` returns the value for the region the calling thread is ticking. Off a region
+thread it throws `WrongContextException`; call it inside `withRegion` or `withEntity`.
+
+<Aside type="caution">
+  `merge` and `split` run while Canvas holds its region lock. They must be quick and must not
+  block, suspend, touch the world or throw. An exception there would leave the server in an
+  unrecoverable state, so Sculk catches it, logs it and carries on. In development mode a callback
+  slower than one millisecond (`CanvasRegionData.CALLBACK_BUDGET_NANOS`) is reported. Nothing is
+  called when a region dies.
+</Aside>
+
+## Ownership checks
+
+```kotlin
+import org.bukkit.entity.Projectile
+import studio.sculk.canvas.CanvasOwnership
+
+fun canSteer(ownership: CanvasOwnership, projectile: Projectile): Boolean =
+    ownership.ownsPath(projectile.location, projectile.velocity, bufferChunks = 1)
+```
+
+- `ownsBox(world, box)`: the calling thread owns every chunk the bounding box touches.
+- `ownsPath(location, velocity, bufferChunks = 1)`: the calling thread owns where something at
+  `location` moving at `velocity` will be, plus a buffer. For projectiles and vehicles about to
+  cross a region edge.
+
+## Unloading worlds
+
+`CanvasWorlds.unload(world, save = true)` suspends while Canvas unloads the world the region-safe
+way: regions finish their teleports, return their players, save and stop, then the global region
+completes the unload. It returns Canvas's `WorldUnloadResult`.
+
+Canvas's scheduler algorithm (deadlines, affinity, work stealing) is not observable, and Sculk
+never depends on it.

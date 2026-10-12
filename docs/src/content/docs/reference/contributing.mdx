@@ -1,0 +1,56 @@
+---
+title: Contributing
+description: How to contribute to Sculk Studio 6, and where the design documents live.
+sidebar:
+  order: 4
+---
+
+Sculk 6 is rebuilt milestone by milestone, so the most useful contributions right now are bug
+reports against the architecture documents, research corrections and work on the current
+milestone. The full guide is [`CONTRIBUTING.md`](https://github.com/SculkStudios/sculk-library/blob/dev/CONTRIBUTING.md).
+
+## In short
+
+1. Read `ARCHITECTURE.md`, `MODULES.md` and `THREADING.md`. Open an issue before a large change; a
+   change that crosses module boundaries or adds public API needs agreement first, and a new
+   architectural decision needs an ADR.
+2. Branch from `dev`. Sculk 6 work never goes to `main`, which carries 5.x until 6.0 replaces it.
+3. For a bug, add a failing test first. Keep a change to one concern.
+4. `./gradlew build` must pass: ktlint, the tests on Java 21 and 25, the ABI check, the
+   architecture rules and the bytecode gate.
+5. If the public surface changed, run `./gradlew updateKotlinAbi` and commit the dump with the
+   change.
+6. If the change touches a server, run `./gradlew :integration-tests:boot:verifyBoot` and, where it
+   applies, add an integration scenario.
+
+Commits follow Conventional Commits (`feat(core): ...`, `fix(paper): ...`, `docs: ...`), in plain
+English, one logical change each. Report security issues privately as described in
+[`SECURITY.md`](https://github.com/SculkStudios/sculk-library/blob/dev/SECURITY.md), never in a public issue.
+
+## Design documents
+
+| Document | What it answers |
+| --- | --- |
+| [`REBUILD.md`](https://github.com/SculkStudios/sculk-library/blob/dev/REBUILD.md) | The charter: milestones, decisions already taken, release blockers |
+| [`MODULES.md`](https://github.com/SculkStudios/sculk-library/blob/dev/MODULES.md) | Which module owns what, what it may depend on, and its status |
+| [`THREADING.md`](https://github.com/SculkStudios/sculk-library/blob/dev/THREADING.md) | Execution ownership and the threading contract |
+| [`COMPATIBILITY.md`](https://github.com/SculkStudios/sculk-library/blob/dev/COMPATIBILITY.md) | Version and platform support, pinned builds |
+| [`API_POLICY.md`](https://github.com/SculkStudios/sculk-library/blob/dev/API_POLICY.md) | Stability markers, ABI, deprecation |
+| [`LICENSING.md`](https://github.com/SculkStudios/sculk-library/blob/dev/LICENSING.md) | Licences of optional dependencies and how to bundle Sculk |
+| [`DOCS_ARCHITECTURE.md`](https://github.com/SculkStudios/sculk-library/blob/dev/DOCS_ARCHITECTURE.md) | How this documentation site is meant to be generated |
+| [`docs/adr/`](https://github.com/SculkStudios/sculk-library/tree/dev/docs/adr) | Why each decision was made |
+
+## This site
+
+The site lives in `docs/` and is built with Astro Starlight and Bun:
+
+```sh
+cd docs
+bun install --frozen-lockfile
+bun run dev    # local preview
+bun run build  # what CI builds
+```
+
+The roadmap page is generated from `MODULES.md` at build time. Code examples on these pages are
+written against the current API; the compiled-snippet pipeline described in `DOCS_ARCHITECTURE.md`,
+which will import examples from compiled sources instead, is planned for milestone M6.

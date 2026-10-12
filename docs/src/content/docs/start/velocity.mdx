@@ -1,0 +1,177 @@
+---
+title: Velocity
+description: Use Sculk in a Velocity 4.2 proxy plugin with SculkVelocityPlugin or SculkVelocity.attach.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Sculk runs on Velocity 4.2.0 with the same core, scopes, tasks and results as on Paper. A proxy
+has no main thread, no regions and no entities, so only two execution contexts exist there:
+`Proxy`, the plugin's executor, and `Async`.
+
+## Dependencies
+
+```kotlin
+plugins {
+    kotlin("jvm") version "2.4.21"
+    id("com.gradleup.shadow") version "9.6.1"
+}
+
+repositories {
+    mavenLocal() // Sculk 6 snapshots; see Installation
+    mavenCentral()
+    maven("https://repo.papermc.io/repository/maven-public/")
+}
+
+dependencies {
+    compileOnly("com.velocitypowered:velocity-api:4.2.0")
+    implementation("studio.sculk:sculk-velocity:6.0.0-SNAPSHOT")
+}
+
+kotlin {
+    jvmToolchain(25) // Velocity 4 runs only on Java 25
+}
+
+tasks.shadowJar {
+    archiveClassifier = ""
+    val libs = "com.example.proxy.libs"
+    relocate("studio.sculk", "$libs.sculk")
+    relocate("kotlinx", "$libs.kotlinx")
+    relocate("kotlin", "$libs.kotlin")
+}
+```
+
+Relocation matters more on Velocity than on Paper: Velocity's plugin class loaders fall through to
+every other plugin's loader, so two plugins that shade Kotlin without relocating it collide. The
+planned `sculk-velocity-runtime` provider plugin will carry Kotlin, kotlinx and Sculk once per
+proxy; it does not exist yet.
+
+The plugin descriptor is a `velocity-plugin.json` in `src/main/resources` (or generate one with
+Velocity's `@Plugin` annotation processor):
+
+```json
+{
+  "id": "myproxyplugin",
+  "name": "MyProxyPlugin",
+  "version": "1.0.0",
+  "main": "com.example.proxy.MyProxyPlugin",
+  "dependencies": []
+}
+```
+
+## Extend SculkVelocityPlugin
+
+Velocity constructs the main class through Guice, so the subclass declares an `@Inject`
+constructor and passes its arguments up:
+
+```kotlin
+package com.example.proxy
+
+import com.google.inject.Inject
+import com.velocitypowered.api.plugin.PluginContainer
+import com.velocitypowered.api.plugin.annotation.DataDirectory
+import com.velocitypowered.api.proxy.ProxyServer
+import org.slf4j.Logger
+import studio.sculk.execution.ExecutionContext
+import studio.sculk.task.repeating
+import studio.sculk.velocity.SculkVelocityPlugin
+import java.nio.file.Path
+
+class MyProxyPlugin @Inject constructor(
+    proxy: ProxyServer,
+    logger: Logger,
+    @DataDirectory dataDirectory: Path,
+    container: PluginContainer,
+) : SculkVelocityPlugin(proxy, logger, dataDirectory, container) {
+    override suspend fun start() {
+        sculk.scope.repeating(periodTicks = 20L * 60, context = ExecutionContext.Proxy) {
+            logger.info("${proxy.playerCount} players online.")
+        }
+    }
+
+    override fun stop() {
+        logger.info("Proxy shutting down.")
+    }
+}
+```
+
+`start` runs during `ProxyInitializeEvent`, synchronously until its first suspension, then on the
+plugin executor. A failure in `start` is logged through the runtime; Velocity has no way to
+disable the plugin. `stop` runs during `ProxyShutdownEvent`, before the runtime closes and while
+Velocity's executors still accept work. It must not suspend.
+
+## Attach to your own plugin class
+
+```kotlin
+package com.example.proxy
+
+import com.google.inject.Inject
+import com.velocitypowered.api.event.Subscribe
+import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
+import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
+import com.velocitypowered.api.plugin.PluginContainer
+import com.velocitypowered.api.proxy.ProxyServer
+import org.slf4j.Logger
+import studio.sculk.velocity.SculkVelocity
+import studio.sculk.velocity.VelocityRuntime
+
+class MyProxyPlugin @Inject constructor(
+    private val proxy: ProxyServer,
+    private val logger: Logger,
+    private val container: PluginContainer,
+) {
+    private var sculk: VelocityRuntime? = null
+
+    @Subscribe
+    fun onInitialize(event: ProxyInitializeEvent) {
+        sculk = SculkVelocity.attach(proxy, container, logger)
+    }
+
+    @Subscribe
+    fun onShutdown(event: ProxyShutdownEvent) {
+        sculk?.close()
+        sculk = null
+    }
+}
+```
+
+Call `attach` in `ProxyInitializeEvent` and close the runtime in `ProxyShutdownEvent`, while
+Velocity's executors are still running. Development checks follow the `sculk.development` system
+property unless you pass `developmentMode`.
+
+## How the proxy runtime behaves
+
+- **Contexts.** `Proxy` is the scope's home context. `Proxy` and `Async` work runs on the plugin's
+  executor, or on Velocity's scheduler threads when it is delayed, and never on a network event
+  loop. Code entering from a Velocity event hops onto the executor once.
+- **Regions and entities fail where they are written.** `withRegion`, `withEntity` or a dispatcher
+  for either throws `UnsupportedContextException` at the call, not later when it would first run.
+- **A tick is 50 ms of wall-clock time.** `delayTicks`, `repeating` and `delayed` use it, because
+  a proxy does not tick.
+- **Ready means listening.** The runtime enters `READY` when the proxy binds its Minecraft
+  listener, after every plugin has initialised, as Paper's first tick does for a server.
+- **Capabilities.** The proxy runtime resolves no capabilities today; every key reports
+  `Unavailable`.
+
+Inside `start`, or any coroutine in the plugin scope, blocking work moves to `Async` and the code
+after it continues on the plugin executor:
+
+```kotlin
+import studio.sculk.execution.withAsync
+import java.nio.file.Files
+
+// in MyProxyPlugin
+override suspend fun start() {
+    sculk.scope.launch {
+        val motd = withAsync { Files.readString(dataDirectory.resolve("motd.txt")) }
+        logger.info("Loaded a message of the day of ${motd.length} characters.")
+    }
+}
+```
+
+<Aside>
+  Velocity-specific modules are planned: `sculk-commands-velocity` (commands compiled into a
+  `BrigadierCommand`) and `sculk-velocity-runtime`. Neither exists yet.
+</Aside>

@@ -1,0 +1,225 @@
+---
+title: Testing
+description: Test scheduling and ownership logic without a server using sculk-testkit's FakeExecutor, FakeRuntime and FakeClock.
+sidebar:
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`sculk-testkit` runs Sculk code in a unit test, with no server. Its executor is deterministic:
+nothing runs until the test advances it, and it answers ownership questions the way Paper, Folia
+or Velocity would. A wrong-context bug that would race on Folia fails here, every time.
+
+```kotlin
+dependencies {
+    testImplementation("studio.sculk:sculk-testkit:6.0.0-SNAPSHOT")
+    testImplementation(platform("org.junit:junit-bom:6.1.3"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+```
+
+The test kit brings `kotlinx-coroutines-test` with it. Any test framework works; Sculk's own tests
+use JUnit Jupiter, and the examples below are taken from them.
+
+<Aside>
+The fakes model Sculk's interfaces, not Bukkit. Write the logic you want to test against
+`SculkScope`, `ExecutionContext` and `EntityRef`, and adapt Bukkit types at the edge with
+`Entity.ref` and `Location.regionContext()`. Code that calls Bukkit itself needs a real server; Sculk
+tests that on real Paper, Folia, Canvas and Velocity in its integration suite.
+</Aside>
+
+## FakeExecutor
+
+`FakeExecutor(model, regionShift = 4)` is a `SculkExecutor` with three thread models:
+
+| `ThreadModel` | Behaves like | Ownership |
+| --- | --- | --- |
+| `SINGLE_THREAD` | Paper | One main thread owns `Global`, every region and every entity. |
+| `REGIONIZED` (default) | Folia and Canvas | Every region section, every entity and the global region are separate owners. |
+| `PROXY` | Velocity | Only `Proxy` and `Async` exist; regions and entities are unsupported. |
+
+| Member | What it does |
+| --- | --- |
+| `tick(count = 1)` | Advances that many ticks on the calling thread, running all work due in each, in scheduling order. |
+| `run { }` | Runs a suspending block in a fresh root scope, ticking until it completes, and returns its result. Fails if the block never completes. |
+| `tickUntil { condition }` | Ticks until the condition holds, also waiting briefly for continuations finishing on background threads. |
+| `currentTick` | The current tick, starting at 0. |
+| `history` | Every context work ran in, in order. |
+| `pendingCount` | Pending work not yet cancelled. |
+| `remove(entity)` | Removes an entity: its pending work is retired now, and later work for it is retired on scheduling. |
+| `shutdown()` | Retires every pending task and makes further scheduling throw, as a stopping server does. |
+| `owns(context)` | Whether the calling thread owns a context under the chosen model. |
+
+`FakeEntity(description)` is an `EntityRef` for tests.
+
+Ownership is per thread, as on a server: work owns its context on the ticking thread only.
+
+```kotlin
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Test
+import studio.sculk.execution.EntityResult
+import studio.sculk.execution.ExecutionContext
+import studio.sculk.execution.withEntity
+import studio.sculk.execution.withGlobal
+import studio.sculk.testkit.FakeEntity
+import studio.sculk.testkit.FakeExecutor
+import studio.sculk.testkit.FakeExecutor.ThreadModel
+
+class ExecutionTest {
+    private val zombie = FakeEntity("Zombie")
+
+    @Test
+    fun `on a regionized server global ownership does not grant entity ownership`() {
+        val executor = FakeExecutor(ThreadModel.REGIONIZED)
+        val ownsEntityFromGlobal = executor.run { withGlobal { executor.owns(ExecutionContext.Entity(zombie)) } }
+        assertFalse(ownsEntityFromGlobal)
+    }
+
+    @Test
+    fun `on Paper the main thread owns everything, so moving from global to an entity costs no tick`() {
+        val executor = FakeExecutor(ThreadModel.SINGLE_THREAD)
+        val ticks = executor.run {
+            withGlobal {
+                val before = executor.currentTick
+                withEntity(zombie) { executor.currentTick - before }
+            }
+        }
+        assertEquals(EntityResult.Ran(0L), ticks)
+    }
+
+    @Test
+    fun `an entity removed before its work runs yields Gone, not an exception`() {
+        val executor = FakeExecutor()
+        executor.remove(zombie)
+        val result = executor.run { withEntity(zombie) { "ran" } }
+        assertEquals(EntityResult.Gone(zombie), result)
+    }
+}
+```
+
+### Testing scopes and tasks
+
+Create a root scope on the fake executor with `SculkScope.root(name, executor) { failure -> }` and
+advance time with `tick`:
+
+```kotlin
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import studio.sculk.execution.SculkScope
+import studio.sculk.execution.delayTicks
+import studio.sculk.task.Debouncer
+import studio.sculk.testkit.FakeExecutor
+
+class DebouncerTest {
+    private val executor = FakeExecutor()
+    private val scope = SculkScope.root("plugin", executor) {}
+
+    @Test
+    fun `a trigger during a run never cancels it, and schedules one more run after it`() {
+        val finished = mutableListOf<Long>()
+        val debouncer = Debouncer(scope, waitTicks = 2) {
+            delayTicks(5)
+            finished += executor.currentTick
+        }
+        debouncer.trigger()
+        executor.tick(4)
+        debouncer.trigger()
+        executor.tick(20)
+        assertEquals(listOf(7L, 12L), finished)
+    }
+}
+```
+
+## FakeClock
+
+`FakeClock(start)` is a `SculkClock` that moves only when the test moves it, with `advance(duration)`
+and `advanceTicks(ticks)` at 50 ms per tick. Pass it wherever Sculk takes a clock: `Throttler`,
+`cron`, `FakeRuntime`.
+
+```kotlin
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import studio.sculk.execution.SculkScope
+import studio.sculk.task.Throttler
+import studio.sculk.testkit.FakeClock
+import studio.sculk.testkit.FakeExecutor
+
+class ThrottlerTest {
+    private val executor = FakeExecutor()
+    private val scope = SculkScope.root("plugin", executor) {}
+
+    @Test
+    fun `a throttler drops triggers inside its interval`() {
+        val clock = FakeClock()
+        var runs = 0
+        val throttler = Throttler(scope, intervalTicks = 20, clock = clock) { runs++ }
+        assertTrue(throttler.trigger())
+        clock.advanceTicks(10)
+        assertFalse(throttler.trigger())
+        clock.advanceTicks(10)
+        assertTrue(throttler.trigger())
+        executor.tick(3)
+        assertEquals(2, runs)
+    }
+}
+```
+
+## FakeRuntime
+
+`FakeRuntime` is a whole `SculkRuntime` for unit tests: lifecycle, plugin scope, services,
+capabilities and diagnostics, over a `FakeExecutor` whose thread model follows the platform.
+
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| `name` | `"TestPlugin"` | The plugin name used in logs and diagnostics. |
+| `platform` | `FakeRuntime.paper()` | `paper(version)`, `folia(version)`, `canvas(version)` or `velocity()`. Selects the thread model. |
+| `executor` | a `FakeExecutor` for the platform | Tick it to run work. |
+| `logged` | a `RecordingLog` | Every log line, with `entries` and `errors`. |
+| `developmentMode` | `true` | As on a server. |
+| `clock` | `SculkClock.SYSTEM` | Pass a `FakeClock` for time-dependent code. |
+| trailing lambda | none | Resolves capabilities on a `Capabilities.Builder`. |
+
+`start()` walks the lifecycle to `READY`, as a server does on enable. `close()` stops it.
+
+```kotlin
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import studio.sculk.capability.Capability
+import studio.sculk.capability.CapabilityKey
+import studio.sculk.testkit.FakeRuntime
+
+class FakeRuntimeTest {
+    @Test
+    fun `starting fixes the capabilities`() {
+        val key = CapabilityKey<String>("test.feature", "Test feature")
+        val runtime = FakeRuntime { resolve(key, Capability.Native("on")) }
+        runtime.start()
+        assertEquals("native", runtime.capabilities[key].level)
+    }
+
+    @Test
+    fun `a failing coroutine is logged against the plugin, and closing reports instead of throwing`() {
+        val runtime = FakeRuntime(name = "Shop")
+        runtime.start()
+        runtime.scope.launch { error("broken") }
+        runtime.executor.tick()
+        runtime.scope.resources.onClose { error("close failed") }
+        runtime.close()
+        val errors = runtime.logged.errors.map { it.message }
+        assertEquals(listOf("A coroutine in Shop failed.", "Closing Shop's resources failed; shutdown continued."), errors)
+    }
+}
+```
+
+To test a feature on several platforms, run the same assertions against
+`FakeRuntime(platform = FakeRuntime.folia())` and `FakeRuntime(platform = FakeRuntime.paper())`:
+code that only works because Paper has one main thread fails on the Folia model.

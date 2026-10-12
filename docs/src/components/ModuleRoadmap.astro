@@ -1,0 +1,82 @@
+---
+// Renders the module tables of MODULES.md at build time, so the roadmap cannot drift from the
+// document that defines each module's status. An unknown status fails the build.
+import { Badge } from '@astrojs/starlight/components';
+import { inlineHtml, moduleStatus, readRepoDoc, tablesOf, type ModuleStatus } from '../lib/repo-tables';
+
+const variants: Record<ModuleStatus, 'success' | 'caution' | 'note'> = {
+	done: 'success',
+	'in progress': 'caution',
+	planned: 'note',
+};
+
+const sections = tablesOf(readRepoDoc('MODULES.md'))
+	.filter((table) => table.columns[0] === 'Module' && table.columns.at(-1) === 'Status')
+	.map((table) => {
+		const describedBy = table.columns.findIndex((column) => column === 'Capability' || column === 'Upstream');
+		return {
+			heading: table.heading,
+			modules: table.rows.map((row) => {
+				const status = row.at(-1) ?? '';
+				return {
+					name: row[0],
+					description: describedBy >= 0 ? row[describedBy] : '',
+					status: moduleStatus(status),
+					note: status,
+				};
+			}),
+		};
+	});
+
+if (sections.length === 0) throw new Error('MODULES.md has no module tables; the roadmap would be empty.');
+
+const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const all = sections.flatMap((section) => section.modules);
+const count = (status: ModuleStatus) => all.filter((module) => module.status === status).length;
+---
+
+<p>
+	Of the {all.length} entries in
+	<a href="https://github.com/SculkStudios/sculk-library/blob/dev/MODULES.md"><code>MODULES.md</code></a> when this site
+	was built (some entries cover several closely related modules), {count('done')} are done,
+	{count('in progress')} in progress and {count('planned')} planned.
+</p>
+
+{
+	sections.map((section) => (
+		<>
+			<h2 id={slug(section.heading)}>{section.heading}</h2>
+			<table>
+				<thead>
+					<tr>
+						<th>Module</th>
+						<th>Status</th>
+						<th>What it does</th>
+					</tr>
+				</thead>
+				<tbody>
+					{section.modules.map((module) => (
+						<tr>
+							<td set:html={inlineHtml(module.name)} />
+							<td>
+								<Badge text={module.status} variant={variants[module.status]} />
+								{module.note.toLowerCase() !== module.status && (
+									<div class="roadmap-note" set:html={inlineHtml(module.note)} />
+								)}
+							</td>
+							<td set:html={inlineHtml(module.description)} />
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</>
+	))
+}
+
+<style>
+	.roadmap-note {
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-2);
+		margin-top: 0.25rem;
+	}
+</style>
