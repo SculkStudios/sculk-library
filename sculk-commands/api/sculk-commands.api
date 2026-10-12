@@ -24,6 +24,24 @@ public final class studio/sculk/command/ArgumentType$DefaultImpls {
 	public static fun suggest (Lstudio/sculk/command/ArgumentType;Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
 }
 
+public final class studio/sculk/command/Arguments {
+	public static final field INSTANCE Lstudio/sculk/command/Arguments;
+	public final fun boolean ()Lstudio/sculk/command/ArgumentType;
+	public final fun choice (Ljava/util/Map;)Lstudio/sculk/command/ArgumentType;
+	public final fun double (DD)Lstudio/sculk/command/ArgumentType;
+	public static synthetic fun double$default (Lstudio/sculk/command/Arguments;DDILjava/lang/Object;)Lstudio/sculk/command/ArgumentType;
+	public final fun duration-QTBD994 (JJ)Lstudio/sculk/command/ArgumentType;
+	public static synthetic fun duration-QTBD994$default (Lstudio/sculk/command/Arguments;JJILjava/lang/Object;)Lstudio/sculk/command/ArgumentType;
+	public final fun integer (II)Lstudio/sculk/command/ArgumentType;
+	public static synthetic fun integer$default (Lstudio/sculk/command/Arguments;IIILjava/lang/Object;)Lstudio/sculk/command/ArgumentType;
+	public final fun key ()Lstudio/sculk/command/ArgumentType;
+	public final fun long (JJ)Lstudio/sculk/command/ArgumentType;
+	public static synthetic fun long$default (Lstudio/sculk/command/Arguments;JJILjava/lang/Object;)Lstudio/sculk/command/ArgumentType;
+	public final fun uuid ()Lstudio/sculk/command/ArgumentType;
+	public final fun word (ILkotlin/text/Regex;)Lstudio/sculk/command/ArgumentType;
+	public static synthetic fun word$default (Lstudio/sculk/command/Arguments;ILkotlin/text/Regex;ILjava/lang/Object;)Lstudio/sculk/command/ArgumentType;
+}
+
 public abstract class studio/sculk/command/BuiltinArgument : studio/sculk/command/ArgumentType {
 	public fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
 }
@@ -107,6 +125,10 @@ public final class studio/sculk/command/CommandBuilder {
 	public final fun duration-5qebJ5I (Ljava/lang/String;JJ)Lstudio/sculk/command/ArgumentHandle;
 	public static synthetic fun duration-5qebJ5I$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;JJILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun executes (Lkotlin/jvm/functions/Function2;)V
+	public final fun flag (Ljava/lang/String;Ljava/lang/Character;)Lstudio/sculk/command/ArgumentHandle;
+	public final fun flag (Ljava/lang/String;Lstudio/sculk/command/ArgumentType;Ljava/lang/Character;)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun flag$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;Ljava/lang/Character;ILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun flag$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;Lstudio/sculk/command/ArgumentType;Ljava/lang/Character;ILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun getDescription ()Ljava/lang/String;
 	public final fun getPermission ()Ljava/lang/String;
 	public final fun greedy (Ljava/lang/String;I)Lstudio/sculk/command/ArgumentHandle;
@@ -334,6 +356,31 @@ public final class studio/sculk/command/Cooldown : studio/sculk/command/CommandM
 	public synthetic fun <init> (JLstudio/sculk/time/SculkClock;Lstudio/sculk/command/CommandMessages;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getDuration-UwyO8pc ()J
 	public fun intercept (Lstudio/sculk/command/CommandContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/command/FlagDefinition {
+	public final fun getName ()Ljava/lang/String;
+	public final fun getShort ()Ljava/lang/Character;
+	public final fun getType ()Lstudio/sculk/command/ArgumentType;
+}
+
+public final class studio/sculk/command/FlagValues {
+	public static final field Companion Lstudio/sculk/command/FlagValues$Companion;
+	public final fun contains (Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+	public final fun value (Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/command/FlagValues$Companion {
+	public final fun getNONE ()Lstudio/sculk/command/FlagValues;
+}
+
+public final class studio/sculk/command/FlagsArgument : studio/sculk/command/ArgumentType {
+	public fun getExpected ()Ljava/lang/String;
+	public final fun getFlags ()Ljava/util/List;
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+	public fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
 }
 
 public final class studio/sculk/command/Requirement {

@@ -24,7 +24,16 @@ public class CommandSpec internal constructor(
             if (!node.requirement.test(source)) return
             val here = when (node) {
                 is CommandNode.Literal -> "$path ${node.name}"
-                is CommandNode.Argument<*> -> if (node.handle.isOptional) "$path [${node.name}]" else "$path <${node.name}>"
+
+                is CommandNode.Argument<*> -> when {
+                    node.type is FlagsArgument -> "$path " + node.type.flags.joinToString(" ") { flag ->
+                        "[--${flag.name}" + (flag.type?.let { " <value>" }.orEmpty()) + "]"
+                    }
+
+                    node.handle.isOptional -> "$path [${node.name}]"
+
+                    else -> "$path <${node.name}>"
+                }
             }
             val executor = node.executor
             val delegatesToOptional = node.children.any { child ->
@@ -106,6 +115,9 @@ internal class ArgumentDeclaration(val name: String, val type: ArgumentType<*>) 
     var optional = false
     var default: Any? = null
     var suggestions: SuggestionProvider? = null
+
+    /** For a flag: the trailing flags argument it is read from. */
+    var flags: ArgumentDeclaration? = null
 }
 
 /** What runs a command: middleware wrapped around the body, outermost first. */

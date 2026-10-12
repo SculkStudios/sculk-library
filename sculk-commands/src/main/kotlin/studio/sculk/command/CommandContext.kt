@@ -25,7 +25,9 @@ public class CommandContext internal constructor(
      */
     public operator fun <T> get(argument: ArgumentHandle<T>): T {
         val declaration = argument.declaration
+        val group = declaration.flags
         val value = when {
+            group != null -> (values[group] as? FlagValues)?.value(declaration.name) ?: declaration.default
             declaration in values -> values[declaration]
             declaration.optional -> declaration.default
             else -> throw IllegalStateException("$argument is not part of the command path that ran.")
@@ -51,7 +53,10 @@ public class CommandContext internal constructor(
     }
 
     /** True when the sender typed [argument], rather than leaving an optional one out. */
-    public fun isPresent(argument: ArgumentHandle<*>): Boolean = argument.declaration in values
+    public fun isPresent(argument: ArgumentHandle<*>): Boolean {
+        val group = argument.declaration.flags ?: return argument.declaration in values
+        return (values[group] as? FlagValues)?.contains(argument.name) == true
+    }
 
     /** Sends [template], rendered with the plugin's theme, to the sender. Values are never parsed as markup. */
     public fun reply(template: String, vararg values: Pair<String, Any?>) {

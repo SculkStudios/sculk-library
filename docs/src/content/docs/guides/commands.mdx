@@ -96,6 +96,28 @@ private val balance = command("balance", "bal") {
 }
 ```
 
+## Flags
+
+Flags come after a command's arguments, in any order: `--silent` or `-s` for a presence flag,
+`--amount 5` or `-n 5` for a value flag. Short presence flags combine as `-sa`. A presence flag reads
+as true or false; a value flag reads as its value, or null when left out.
+
+```kotlin
+private val grant = command("grant") {
+    val target = word("player")
+    val silent = flag("silent", short = 's')
+    val amount = flag("amount", Arguments.double(min = 0.01), short = 'n')
+    executes {
+        balances.merge(this[target], this[amount] ?: 100.0, Double::plus)
+        if (!this[silent]) reply("<success>Granted coins to <target>.", "target" to this[target])
+    }
+}
+```
+
+Brigadier has no flag nodes, so all of a command's flags travel in one trailing argument that the
+client sees as text; Sculk parses it with the same rules on every platform and suggests the flags not
+yet written. Declare flags after the arguments and before the executor.
+
 ## Argument types
 
 | Function | Reads | Native on Paper | Native on Velocity |

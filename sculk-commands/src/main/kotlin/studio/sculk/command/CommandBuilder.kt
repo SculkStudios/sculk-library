@@ -103,6 +103,7 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
     /** An argument of any [type], appended to the chain. */
     public fun <T : Any> argument(name: String, type: ArgumentType<T>): ArgumentHandle<T> {
         checkName(name)
+        check(tail.argument?.type !is FlagsArgument) { "<$name> follows the flags; declare arguments before flags." }
         check(tail.argument?.type?.shape != ArgumentShape.GREEDY) { "Nothing can follow the greedy argument <${tail.name}>." }
         val declaration = ArgumentDeclaration(name, type)
         val node = Draft.argument(declaration)
@@ -151,6 +152,41 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
     public fun duration(name: String, min: Duration = Duration.ZERO, max: Duration = Duration.INFINITE): ArgumentHandle<Duration> {
         require(min <= max) { "<$name> has min $min above max $max." }
         return argument(name, BuiltinArgument.DurationArgument(min, max))
+    }
+
+    /**
+     * A presence flag after the arguments, `--name` or `-short`; it reads as true when written.
+     * Flags come after every argument of the chain and may be written in any order.
+     */
+    public fun flag(name: String, short: Char? = null): ArgumentHandle<Boolean> = declareFlag(name, short, null, default = false)
+
+    /** A value flag after the arguments, `--name value`; it reads as null when left out. [type] reads one word. */
+    public fun <T : Any> flag(name: String, type: ArgumentType<T>, short: Char? = null): ArgumentHandle<T?> {
+        require(type.shape == ArgumentShape.WORD) { "--$name takes one word, so its type must read a word." }
+        return declareFlag(name, short, type, default = null)
+    }
+
+    private fun <T> declareFlag(name: String, short: Char?, type: ArgumentType<*>?, default: Any?): ArgumentHandle<T> {
+        require(ARGUMENT_NAME.matches(name)) { "Flag name '$name' must be lower-case letters, digits, '-' or '_'." }
+        require(short == null || short.isLetter()) { "A short flag is one letter, but was '$short'." }
+        val group = tail.argument?.takeIf { it.type is FlagsArgument } ?: run {
+            check(tail.argument?.type?.shape != ArgumentShape.GREEDY) { "Flags cannot follow the greedy argument <${tail.name}>." }
+            check(tail.executor == null) { "--$name is declared after executes; declare flags before the executor so it sees them." }
+            val declaration = ArgumentDeclaration("flags", FlagsArgument()).apply {
+                optional = true
+                this.default = FlagValues.NONE
+            }
+            Draft.argument(declaration).also { node ->
+                attach(tail, node)
+                tail = node
+            }.argument
+        }
+        (group?.type as FlagsArgument).add(FlagDefinition(name, short, type))
+        val declaration = ArgumentDeclaration(name, type ?: BuiltinArgument.BooleanArgument()).apply {
+            this.default = default
+            flags = group
+        }
+        return ArgumentHandle(name, declaration)
     }
 
     /** Makes this argument optional; it reads as null when left out. Only the last arguments of a chain can be optional. */

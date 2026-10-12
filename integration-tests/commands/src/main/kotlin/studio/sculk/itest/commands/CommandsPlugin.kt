@@ -4,6 +4,7 @@ import kotlinx.coroutines.withTimeout
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import org.bukkit.command.CommandException
+import studio.sculk.command.Arguments
 import studio.sculk.command.CommandDispatcher
 import studio.sculk.command.CommandResult
 import studio.sculk.command.CommandSource
@@ -72,6 +73,12 @@ class CommandsPlugin : SculkPaperPlugin() {
             val code = word("code", maxLength = 4, pattern = Regex("[A-Z0-9]+"))
             executes { record("code ${this[code]}") }
         },
+        command("itest-give") {
+            val player = word("player")
+            val silent = flag("silent", short = 's')
+            val amount = flag("amount", Arguments.integer(1, 64), short = 'n')
+            executes { record("give ${this[player]} silent=${this[silent]} amount=${this[amount]}") }
+        },
         command("itest-context") {
             executes { record("global ${sculk.scope.execution.executor.owns(ExecutionContext.Global)}") }
         },
@@ -108,6 +115,11 @@ class CommandsPlugin : SculkPaperPlugin() {
         "itest-code AB12",
         "itest-code toolong",
         "itest-code ab",
+        "itest-give Steve",
+        "itest-give Steve --silent --amount 5",
+        "itest-give Steve -s -n 7",
+        "itest-give Steve --amount 99",
+        "itest-give Steve --loud",
     )
 
     override suspend fun start() {

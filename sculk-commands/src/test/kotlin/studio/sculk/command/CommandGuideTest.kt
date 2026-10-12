@@ -61,6 +61,28 @@ class CommandGuideTest {
     }
     // end
 
+    // guide:flags
+    private val grant = command("grant") {
+        val target = word("player")
+        val silent = flag("silent", short = 's')
+        val amount = flag("amount", Arguments.double(min = 0.01), short = 'n')
+        executes {
+            balances.merge(this[target], this[amount] ?: 100.0, Double::plus)
+            if (!this[silent]) reply("<success>Granted coins to <target>.", "target" to this[target])
+        }
+    }
+    // end
+
+    @Test
+    fun `flags are optional and may come in any order`() = runTest {
+        val dispatcher = CommandDispatcher().apply { register(grant) }
+        val console = FakeCommandSource.console()
+        dispatcher.execute(console, "grant Alex -s --amount 5")
+        dispatcher.execute(console, "grant Alex")
+        assertEquals(125.0, balances["Alex"])
+        assertEquals(listOf("Granted coins to Alex."), console.plainMessages)
+    }
+
     @Test
     fun `the guide's commands behave as the page says`() = runTest {
         // guide:dispatch

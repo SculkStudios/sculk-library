@@ -10,6 +10,7 @@ import kotlinx.coroutines.withTimeout
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import org.slf4j.Logger
+import studio.sculk.command.Arguments
 import studio.sculk.command.CommandDispatcher
 import studio.sculk.command.CommandResult
 import studio.sculk.command.CommandSource
@@ -78,6 +79,12 @@ class VelocityThreadingPlugin @Inject constructor(
             val body = greedy("body")
             executes { recorded += "note ${this[title]}|${this[body]}" }
         },
+        command("vtest-give") {
+            val player = word("player")
+            val silent = flag("silent", short = 's')
+            val amount = flag("amount", Arguments.integer(1, 64), short = 'n')
+            executes { recorded += "give ${this[player]} silent=${this[silent]} amount=${this[amount]}" }
+        },
         command("vtest-context") {
             executes { recorded += "proxy ${sculk.scope.execution.executor.owns(ExecutionContext.Proxy)}" }
         },
@@ -95,6 +102,8 @@ class VelocityThreadingPlugin @Inject constructor(
         "vtest-mute 2h nonsense",
         "vtest-mute 31h",
         "vtest-note \"shopping list\" eggs and milk",
+        "vtest-give Steve -s -n 7",
+        "vtest-give Steve --amount 99",
         "vtest-context",
     )
 
