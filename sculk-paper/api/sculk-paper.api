@@ -38,6 +38,30 @@ public final class studio/sculk/paper/PaperExecutionKt {
 	public static final fun withRegion (Lorg/bukkit/Location;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class studio/sculk/paper/PaperPermissionSubject : studio/sculk/permission/PermissionSubject {
+	public fun <init> (Lorg/bukkit/command/CommandSender;Lorg/bukkit/entity/Entity;)V
+	public synthetic fun <init> (Lorg/bukkit/command/CommandSender;Lorg/bukkit/entity/Entity;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEntity ()Lorg/bukkit/entity/Entity;
+	public fun getPermissionContext ()Lstudio/sculk/permission/PermissionContext;
+	public final fun getSender ()Lorg/bukkit/command/CommandSender;
+	public fun hasPermission (Ljava/lang/String;)Z
+	public fun hasPermission (Lstudio/sculk/permission/Permission;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/paper/PaperPermissionSubjectKt {
+	public static final fun getPermissionSubject (Lorg/bukkit/command/CommandSender;)Lstudio/sculk/permission/PermissionSubject;
+	public static final fun hasPermission (Lorg/bukkit/command/CommandSender;Lstudio/sculk/permission/PermissionCheck;)Z
+}
+
+public final class studio/sculk/paper/PaperPermissions : studio/sculk/permission/SculkPermissions {
+	public final fun follow (Lstudio/sculk/permission/PermissionCheck;)V
+	public fun register (Ljava/util/Collection;)Lstudio/sculk/SculkHandle;
+	public fun register (Lstudio/sculk/permission/PermissionGroup;)Lstudio/sculk/SculkHandle;
+	public fun register ([Lstudio/sculk/permission/Permission;)Lstudio/sculk/SculkHandle;
+	public final fun updateCommands (Lorg/bukkit/entity/Player;)V
+}
+
 public abstract interface class studio/sculk/paper/PaperPlatformExtension {
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun resolve (Lstudio/sculk/paper/PaperPlatformExtension$Context;Lstudio/sculk/capability/Capabilities$Builder;)V
@@ -52,6 +76,7 @@ public final class studio/sculk/paper/PaperPlatformExtension$Context {
 
 public final class studio/sculk/paper/PaperRuntime : studio/sculk/runtime/AbstractSculkRuntime {
 	public final fun getEvents ()Lstudio/sculk/event/SculkEvents;
+	public final fun getPermissions ()Lstudio/sculk/paper/PaperPermissions;
 	public final fun getPlugin ()Lorg/bukkit/plugin/Plugin;
 	public final fun getRegionShift ()I
 }

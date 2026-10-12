@@ -77,6 +77,8 @@ class CommandsPlugin : SculkPaperPlugin() {
         },
     )
 
+    private val permissionScenarios = PermissionScenarios(this)
+
     private val nativeOnly = command("itest-world") {
         val world = world("world")
         executes { record("world ${this[world].name}") }
@@ -112,6 +114,8 @@ class CommandsPlugin : SculkPaperPlugin() {
         val commands = sculk.commands()
         commands.register(*specs.toTypedArray())
         commands.register(nativeOnly)
+        commands.register(*permissionScenarios.specs.toTypedArray())
+        permissionScenarios.register()
         sculk.scope.launch {
             delayTicks(20)
             scenario("late-registration-is-refused") {
@@ -132,6 +136,7 @@ class CommandsPlugin : SculkPaperPlugin() {
                 val outcome = runOnPaper("itest-context")
                 check(outcome == "global true") { "recorded '$outcome'" }
             }
+            permissionScenarios.run()
             write()
             withGlobal { server.shutdown() }
         }
@@ -154,7 +159,7 @@ class CommandsPlugin : SculkPaperPlugin() {
      * or null. Paper 26 throws syntax errors out of dispatchCommand where 1.21 only reports them to
      * the sender; both mean the executor did not run.
      */
-    private suspend fun runOnPaper(input: String): String? {
+    internal suspend fun runOnPaper(input: String): String? {
         recorded.clear()
         withGlobal {
             try {
@@ -167,11 +172,11 @@ class CommandsPlugin : SculkPaperPlugin() {
         return recorded.poll().also { recorded.clear() }
     }
 
-    private fun record(outcome: String) {
+    internal fun record(outcome: String) {
         recorded += outcome
     }
 
-    private suspend fun scenario(name: String, block: suspend () -> String) {
+    internal suspend fun scenario(name: String, block: suspend () -> String) {
         results[name] = try {
             withTimeout(60.seconds) { block() }
         } catch (failure: Throwable) {
@@ -180,7 +185,7 @@ class CommandsPlugin : SculkPaperPlugin() {
         }
     }
 
-    private fun check(condition: Boolean, detail: () -> String): String = if (condition) "PASS" else "FAIL: ${detail()}"
+    internal fun check(condition: Boolean, detail: () -> String): String = if (condition) "PASS" else "FAIL: ${detail()}"
 
     @Synchronized
     private fun write() {

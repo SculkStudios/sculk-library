@@ -13,12 +13,16 @@ import studio.sculk.command.CommandSource
 import studio.sculk.command.SenderKind
 import studio.sculk.execution.ExecutionContext
 import studio.sculk.execution.WorldKey
+import studio.sculk.paper.PaperPermissionSubject
 import studio.sculk.paper.ref
+import studio.sculk.permission.Permission
+import studio.sculk.permission.PermissionContext
 import java.util.UUID
 
 /**
- * A Paper command sender. Under `/execute as`, the executing entity decides the kind, name and
- * context, while permissions stay the original sender's, as vanilla commands do.
+ * A Paper command sender. Under `/execute as`, the executing entity decides the kind, name,
+ * execution context and permission context, while permissions stay the original sender's, as
+ * vanilla commands do.
  */
 @SculkStable
 public class PaperCommandSource(public val stack: CommandSourceStack) : CommandSource {
@@ -53,7 +57,13 @@ public class PaperCommandSource(public val stack: CommandSourceStack) : CommandS
 
     override val platformSender: Any get() = stack
 
-    override fun hasPermission(permission: String): Boolean = stack.sender.hasPermission(permission)
+    private val subject = PaperPermissionSubject(stack.sender, entity)
+
+    override val permissionContext: PermissionContext get() = subject.permissionContext
+
+    override fun hasPermission(permission: String): Boolean = subject.hasPermission(permission)
+
+    override fun hasPermission(permission: Permission): Boolean = subject.hasPermission(permission)
 
     override fun toString(): String = "PaperCommandSource($kind $name)"
 }

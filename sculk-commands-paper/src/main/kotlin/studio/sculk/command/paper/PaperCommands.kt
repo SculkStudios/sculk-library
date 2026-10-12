@@ -71,11 +71,18 @@ public class PaperCommands internal constructor(
 
     /**
      * Adds [spec]. Commands must be registered while the plugin enables, before the server builds
-     * its command tree; registering later is a wiring bug and throws.
+     * its command tree; registering later is a wiring bug and throws. A requirement that reads the
+     * sender's world or game mode resends a player's tree when it changes.
      */
     public fun register(spec: CommandSpec) {
         check(!published) { "/${spec.name} was registered after the server built its command tree; register commands in start()." }
         specs += spec
+        followContext(spec.root)
+    }
+
+    private fun followContext(node: CommandNode) {
+        node.requirement.check?.takeIf { it.contextKeys.isNotEmpty() }?.let(runtime.permissions::follow)
+        node.children.forEach(::followContext)
     }
 
     public fun register(vararg specs: CommandSpec) {

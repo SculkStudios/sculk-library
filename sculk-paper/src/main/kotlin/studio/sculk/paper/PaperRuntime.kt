@@ -35,6 +35,9 @@ public class PaperRuntime internal constructor(
     /** Paper events through Sculk's listen and observe handlers, owned by the plugin scope. */
     public val events: SculkEvents by lazy { PaperEvents(this) }
 
+    /** Permission descriptors registered with Bukkit, removed when the plugin scope closes. */
+    public val permissions: PaperPermissions by lazy { PaperPermissions(this) }
+
     internal fun begin() {
         lifecycle.advance(LifecyclePhase.CONFIGURE)
         lifecycle.advance(LifecyclePhase.LOAD)
