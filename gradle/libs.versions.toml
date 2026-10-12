@@ -14,6 +14,8 @@ paper-floor = "1.21.4-R0.1-SNAPSHOT"
 paper-current = "26.3.build.175-stable"
 canvas = "26.3.build.978-stable"
 velocity = "4.2.0"
+adventure-floor = "4.20.0"
+adventure-latest = "5.2.0"
 
 [libraries]
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -28,6 +30,12 @@ paper-api-floor = { module = "io.papermc.paper:paper-api", version.ref = "paper-
 paper-api-current = { module = "io.papermc.paper:paper-api", version.ref = "paper-current" }
 canvas-api = { module = "io.canvasmc.canvas:canvas-api", version.ref = "canvas" }
 velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity" }
+adventure-api = { module = "net.kyori:adventure-api", version.ref = "adventure-floor" }
+adventure-minimessage = { module = "net.kyori:adventure-text-minimessage", version.ref = "adventure-floor" }
+adventure-plain = { module = "net.kyori:adventure-text-serializer-plain", version.ref = "adventure-floor" }
+adventure-latest-api = { module = "net.kyori:adventure-api", version.ref = "adventure-latest" }
+adventure-latest-minimessage = { module = "net.kyori:adventure-text-minimessage", version.ref = "adventure-latest" }
+adventure-latest-plain = { module = "net.kyori:adventure-text-serializer-plain", version.ref = "adventure-latest" }
 
 gradle-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradle-ktlint = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint-gradle" }

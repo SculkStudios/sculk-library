@@ -1,0 +1,99 @@
+public final class studio/sculk/text/GlyphWidths {
+	public static final field CHAT_WIDTH I
+	public static final field Companion Lstudio/sculk/text/GlyphWidths$Companion;
+	public fun <init> (Ljava/util/Map;I)V
+	public synthetic fun <init> (Ljava/util/Map;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun centre (Lnet/kyori/adventure/text/Component;I)Lnet/kyori/adventure/text/Component;
+	public static synthetic fun centre$default (Lstudio/sculk/text/GlyphWidths;Lnet/kyori/adventure/text/Component;IILjava/lang/Object;)Lnet/kyori/adventure/text/Component;
+	public final fun getFallback ()I
+	public final fun width (CZ)I
+	public final fun width (Ljava/lang/String;Z)I
+	public final fun width (Lnet/kyori/adventure/text/Component;)I
+	public static synthetic fun width$default (Lstudio/sculk/text/GlyphWidths;CZILjava/lang/Object;)I
+	public static synthetic fun width$default (Lstudio/sculk/text/GlyphWidths;Ljava/lang/String;ZILjava/lang/Object;)I
+	public final fun wrap (Ljava/lang/String;IZ)Ljava/util/List;
+	public static synthetic fun wrap$default (Lstudio/sculk/text/GlyphWidths;Ljava/lang/String;IZILjava/lang/Object;)Ljava/util/List;
+}
+
+public final class studio/sculk/text/GlyphWidths$Companion {
+	public final fun getDEFAULT ()Lstudio/sculk/text/GlyphWidths;
+}
+
+public final class studio/sculk/text/Text {
+	public static final field Companion Lstudio/sculk/text/Text$Companion;
+	public static final field DEFAULT_CACHE_SIZE I
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/text/Theme;Lnet/kyori/adventure/text/minimessage/MiniMessage;I)V
+	public synthetic fun <init> (Lstudio/sculk/text/Theme;Lnet/kyori/adventure/text/minimessage/MiniMessage;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getTheme ()Lstudio/sculk/text/Theme;
+	public final fun render (Ljava/lang/String;Ljava/util/Map;)Lnet/kyori/adventure/text/Component;
+	public final fun render (Ljava/lang/String;Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;)Lnet/kyori/adventure/text/Component;
+	public final fun render (Ljava/lang/String;[Lkotlin/Pair;)Lnet/kyori/adventure/text/Component;
+	public final fun withTheme (Lstudio/sculk/text/Theme;)Lstudio/sculk/text/Text;
+}
+
+public final class studio/sculk/text/Text$Companion {
+}
+
+public final class studio/sculk/text/Theme {
+	public static final field Companion Lstudio/sculk/text/Theme$Companion;
+	public final fun get (Ljava/lang/String;)Lstudio/sculk/text/ThemeStyle;
+	public final fun getNames ()Ljava/util/Set;
+	public final fun with (Ljava/lang/String;Lstudio/sculk/text/ThemeStyle;)Lstudio/sculk/text/Theme;
+}
+
+public final class studio/sculk/text/Theme$Companion {
+	public final fun getDEFAULT ()Lstudio/sculk/text/Theme;
+	public final fun getEMPTY ()Lstudio/sculk/text/Theme;
+	public final fun of ([Lkotlin/Pair;)Lstudio/sculk/text/Theme;
+}
+
+public abstract interface class studio/sculk/text/ThemeStyle {
+	public abstract fun getClose ()Ljava/lang/String;
+	public abstract fun getOpen ()Ljava/lang/String;
+}
+
+public final class studio/sculk/text/ThemeStyle$Gradient : studio/sculk/text/ThemeStyle {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lstudio/sculk/text/ThemeStyle$Gradient;
+	public static synthetic fun copy$default (Lstudio/sculk/text/ThemeStyle$Gradient;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/text/ThemeStyle$Gradient;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getClose ()Ljava/lang/String;
+	public final fun getColours ()Ljava/util/List;
+	public fun getOpen ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/text/ThemeStyle$Solid : studio/sculk/text/ThemeStyle {
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/util/List;)Lstudio/sculk/text/ThemeStyle$Solid;
+	public static synthetic fun copy$default (Lstudio/sculk/text/ThemeStyle$Solid;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/text/ThemeStyle$Solid;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getClose ()Ljava/lang/String;
+	public final fun getDecorations ()Ljava/util/List;
+	public final fun getHex ()Ljava/lang/String;
+	public fun getOpen ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/text/Translations {
+	public static final field Companion Lstudio/sculk/text/Translations$Companion;
+	public final fun getDefaultLocale ()Ljava/util/Locale;
+	public final fun getLocales ()Ljava/util/Set;
+	public final fun plural (Ljava/lang/String;JLjava/util/Locale;)Ljava/lang/String;
+	public static synthetic fun plural$default (Lstudio/sculk/text/Translations;Ljava/lang/String;JLjava/util/Locale;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun template (Ljava/lang/String;Ljava/util/Locale;)Ljava/lang/String;
+	public static synthetic fun template$default (Lstudio/sculk/text/Translations;Ljava/lang/String;Ljava/util/Locale;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class studio/sculk/text/Translations$Companion {
+	public final fun load (Ljava/nio/file/Path;Ljava/util/Locale;)Lstudio/sculk/SculkResult;
+	public final fun of (Ljava/util/Locale;Ljava/util/Map;)Lstudio/sculk/text/Translations;
+}
+

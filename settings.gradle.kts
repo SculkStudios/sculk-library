@@ -33,6 +33,7 @@ include(
     ":sculk-core",
     ":sculk-coroutines",
     ":sculk-platform-api",
+    ":sculk-text",
     ":sculk-testkit",
     ":sculk-paper",
     ":sculk-canvas",
