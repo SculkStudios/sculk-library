@@ -35,6 +35,7 @@ include(
     ":sculk-coroutines",
     ":sculk-platform-api",
     ":sculk-text",
+    ":sculk-placeholders",
     ":sculk-config",
     ":sculk-events",
     ":sculk-commands",

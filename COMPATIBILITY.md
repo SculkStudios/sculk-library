@@ -108,7 +108,7 @@ deprecated `ClickEvent` and `HoverEvent` API, and made `ClickEvent.Action` a non
 modules (`sculk-text`, `sculk-placeholders`, `sculk-presentation`, `sculk-dialogs`) compile once,
 against the floor Adventure of the lowest anchor they support. Their test suite then runs a second
 time with the Adventure 5.2.0 jars in place of the floor jars, on Java 25 (`testAdventureLatest` in
-`sculk-text` today), so the same bytecode is proven on both lines. No `when` over an Adventure type
+`sculk-text` and `sculk-placeholders` today), so the same bytecode is proven on both lines. No `when` over an Adventure type
 that changed kind. MiniMessage fixtures run on both lines because 5.x tag behaviour is not yet
 verified. Translation builds on `TranslationStore`, `MiniMessageTranslationStore` and
 `GlobalTranslator`, which exist from Adventure 4.20.0 and survive unchanged into 5.2.0, never on

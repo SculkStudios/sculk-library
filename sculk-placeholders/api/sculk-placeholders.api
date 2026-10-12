@@ -1,0 +1,186 @@
+public final class studio/sculk/placeholder/AudienceContext : studio/sculk/placeholder/PlaceholderContext {
+	public final fun getAudience ()Lnet/kyori/adventure/audience/Audience;
+	public final fun getUniqueId ()Ljava/util/UUID;
+}
+
+public final class studio/sculk/placeholder/AudiencePlaceholder : studio/sculk/placeholder/SculkPlaceholder {
+	public fun invalidate ()V
+	public final fun invalidate (Ljava/util/UUID;)V
+	public final fun invalidate (Lnet/kyori/adventure/audience/Audience;)V
+	public final fun value (Lnet/kyori/adventure/audience/Audience;Ljava/util/List;)Lstudio/sculk/SculkResult;
+	public static synthetic fun value$default (Lstudio/sculk/placeholder/AudiencePlaceholder;Lnet/kyori/adventure/audience/Audience;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/placeholder/GlobalPlaceholder : studio/sculk/placeholder/SculkPlaceholder {
+	public fun invalidate ()V
+	public final fun value (Ljava/util/List;)Lstudio/sculk/SculkResult;
+	public static synthetic fun value$default (Lstudio/sculk/placeholder/GlobalPlaceholder;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/placeholder/PlaceholderArgument {
+	public static final field Companion Lstudio/sculk/placeholder/PlaceholderArgument$Companion;
+	public final fun getDefault ()Ljava/lang/Object;
+	public final fun getExpected ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun isOptional ()Z
+	public final fun optional (Ljava/lang/Object;)Lstudio/sculk/placeholder/PlaceholderArgument;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/placeholder/PlaceholderArgument$Companion {
+	public final fun choice (Ljava/lang/String;Ljava/util/Map;)Lstudio/sculk/placeholder/PlaceholderArgument;
+	public final fun integer (Ljava/lang/String;II)Lstudio/sculk/placeholder/PlaceholderArgument;
+	public static synthetic fun integer$default (Lstudio/sculk/placeholder/PlaceholderArgument$Companion;Ljava/lang/String;IIILjava/lang/Object;)Lstudio/sculk/placeholder/PlaceholderArgument;
+	public final fun of (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/placeholder/PlaceholderArgument;
+	public final fun text (Ljava/lang/String;Lkotlin/text/Regex;)Lstudio/sculk/placeholder/PlaceholderArgument;
+	public static synthetic fun text$default (Lstudio/sculk/placeholder/PlaceholderArgument$Companion;Ljava/lang/String;Lkotlin/text/Regex;ILjava/lang/Object;)Lstudio/sculk/placeholder/PlaceholderArgument;
+}
+
+public abstract interface class studio/sculk/placeholder/PlaceholderChange {
+	public abstract fun getKey ()Lstudio/sculk/placeholder/PlaceholderKey;
+}
+
+public final class studio/sculk/placeholder/PlaceholderChange$Audience : studio/sculk/placeholder/PlaceholderChange {
+	public fun <init> (Lstudio/sculk/placeholder/PlaceholderKey;Ljava/util/UUID;)V
+	public final fun component1 ()Lstudio/sculk/placeholder/PlaceholderKey;
+	public final fun component2 ()Ljava/util/UUID;
+	public final fun copy (Lstudio/sculk/placeholder/PlaceholderKey;Ljava/util/UUID;)Lstudio/sculk/placeholder/PlaceholderChange$Audience;
+	public static synthetic fun copy$default (Lstudio/sculk/placeholder/PlaceholderChange$Audience;Lstudio/sculk/placeholder/PlaceholderKey;Ljava/util/UUID;ILjava/lang/Object;)Lstudio/sculk/placeholder/PlaceholderChange$Audience;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKey ()Lstudio/sculk/placeholder/PlaceholderKey;
+	public final fun getUniqueId ()Ljava/util/UUID;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/placeholder/PlaceholderChange$Everyone : studio/sculk/placeholder/PlaceholderChange {
+	public fun <init> (Lstudio/sculk/placeholder/PlaceholderKey;)V
+	public final fun component1 ()Lstudio/sculk/placeholder/PlaceholderKey;
+	public final fun copy (Lstudio/sculk/placeholder/PlaceholderKey;)Lstudio/sculk/placeholder/PlaceholderChange$Everyone;
+	public static synthetic fun copy$default (Lstudio/sculk/placeholder/PlaceholderChange$Everyone;Lstudio/sculk/placeholder/PlaceholderKey;ILjava/lang/Object;)Lstudio/sculk/placeholder/PlaceholderChange$Everyone;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKey ()Lstudio/sculk/placeholder/PlaceholderKey;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/placeholder/PlaceholderChange$Relation : studio/sculk/placeholder/PlaceholderChange {
+	public fun <init> (Lstudio/sculk/placeholder/PlaceholderKey;Ljava/util/UUID;Ljava/util/UUID;)V
+	public final fun component1 ()Lstudio/sculk/placeholder/PlaceholderKey;
+	public final fun component2 ()Ljava/util/UUID;
+	public final fun component3 ()Ljava/util/UUID;
+	public final fun copy (Lstudio/sculk/placeholder/PlaceholderKey;Ljava/util/UUID;Ljava/util/UUID;)Lstudio/sculk/placeholder/PlaceholderChange$Relation;
+	public static synthetic fun copy$default (Lstudio/sculk/placeholder/PlaceholderChange$Relation;Lstudio/sculk/placeholder/PlaceholderKey;Ljava/util/UUID;Ljava/util/UUID;ILjava/lang/Object;)Lstudio/sculk/placeholder/PlaceholderChange$Relation;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getKey ()Lstudio/sculk/placeholder/PlaceholderKey;
+	public final fun getTarget ()Ljava/util/UUID;
+	public final fun getViewer ()Ljava/util/UUID;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public class studio/sculk/placeholder/PlaceholderContext {
+	public final fun get (Lstudio/sculk/placeholder/PlaceholderArgument;)Ljava/lang/Object;
+	public final fun getKey ()Lstudio/sculk/placeholder/PlaceholderKey;
+}
+
+public final class studio/sculk/placeholder/PlaceholderKey {
+	public static final field Companion Lstudio/sculk/placeholder/PlaceholderKey$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getNamespace ()Ljava/lang/String;
+	public final fun getTag ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/placeholder/PlaceholderKey$Companion {
+	public final fun of (Ljava/lang/String;Ljava/lang/String;)Lstudio/sculk/placeholder/PlaceholderKey;
+	public final fun parse (Ljava/lang/String;)Lstudio/sculk/placeholder/PlaceholderKey;
+}
+
+public final class studio/sculk/placeholder/PlaceholderRegistry : studio/sculk/SculkHandle {
+	public static final field Companion Lstudio/sculk/placeholder/PlaceholderRegistry$Companion;
+	public static final field DEFAULT_CACHE_SIZE I
+	public fun <init> (Lstudio/sculk/execution/SculkScope;Lstudio/sculk/time/SculkClock;I)V
+	public synthetic fun <init> (Lstudio/sculk/execution/SculkScope;Lstudio/sculk/time/SculkClock;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun audience (Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/placeholder/AudiencePlaceholder;
+	public static synthetic fun audience$default (Lstudio/sculk/placeholder/PlaceholderRegistry;Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/placeholder/AudiencePlaceholder;
+	public final fun audienceAsync (Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/lang/Object;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lstudio/sculk/placeholder/AudiencePlaceholder;
+	public static synthetic fun audienceAsync$default (Lstudio/sculk/placeholder/PlaceholderRegistry;Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/lang/Object;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lstudio/sculk/placeholder/AudiencePlaceholder;
+	public fun close ()V
+	public final fun getCacheSize ()I
+	public final fun getRegistered ()Ljava/util/List;
+	public final fun global (Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/placeholder/GlobalPlaceholder;
+	public static synthetic fun global$default (Lstudio/sculk/placeholder/PlaceholderRegistry;Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/placeholder/GlobalPlaceholder;
+	public final fun globalAsync (Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/lang/Object;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lstudio/sculk/placeholder/GlobalPlaceholder;
+	public static synthetic fun globalAsync$default (Lstudio/sculk/placeholder/PlaceholderRegistry;Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/lang/Object;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lstudio/sculk/placeholder/GlobalPlaceholder;
+	public final fun onChange (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
+	public final fun relational (Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/placeholder/RelationalPlaceholder;
+	public static synthetic fun relational$default (Lstudio/sculk/placeholder/PlaceholderRegistry;Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/placeholder/RelationalPlaceholder;
+	public final fun relationalAsync (Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/lang/Object;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lstudio/sculk/placeholder/RelationalPlaceholder;
+	public static synthetic fun relationalAsync$default (Lstudio/sculk/placeholder/PlaceholderRegistry;Ljava/lang/String;Lstudio/sculk/placeholder/Refresh;Ljava/lang/Object;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lstudio/sculk/placeholder/RelationalPlaceholder;
+	public final fun resolver ()Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;
+	public final fun resolver (Lnet/kyori/adventure/audience/Audience;)Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;
+	public final fun resolver (Lnet/kyori/adventure/audience/Audience;Lnet/kyori/adventure/audience/Audience;)Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;
+}
+
+public final class studio/sculk/placeholder/PlaceholderRegistry$Companion {
+}
+
+public abstract interface class studio/sculk/placeholder/Refresh {
+}
+
+public final class studio/sculk/placeholder/Refresh$Every : studio/sculk/placeholder/Refresh {
+	public synthetic fun <init> (JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-UwyO8pc ()J
+	public final fun copy-LRDsOJo (J)Lstudio/sculk/placeholder/Refresh$Every;
+	public static synthetic fun copy-LRDsOJo$default (Lstudio/sculk/placeholder/Refresh$Every;JILjava/lang/Object;)Lstudio/sculk/placeholder/Refresh$Every;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInterval-UwyO8pc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/placeholder/Refresh$Live : studio/sculk/placeholder/Refresh {
+	public static final field INSTANCE Lstudio/sculk/placeholder/Refresh$Live;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/placeholder/Refresh$UntilInvalidated : studio/sculk/placeholder/Refresh {
+	public static final field INSTANCE Lstudio/sculk/placeholder/Refresh$UntilInvalidated;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/placeholder/RelationalContext : studio/sculk/placeholder/PlaceholderContext {
+	public final fun getTarget ()Lnet/kyori/adventure/audience/Audience;
+	public final fun getTargetId ()Ljava/util/UUID;
+	public final fun getViewer ()Lnet/kyori/adventure/audience/Audience;
+	public final fun getViewerId ()Ljava/util/UUID;
+}
+
+public final class studio/sculk/placeholder/RelationalPlaceholder : studio/sculk/placeholder/SculkPlaceholder {
+	public fun invalidate ()V
+	public final fun invalidate (Lnet/kyori/adventure/audience/Audience;Lnet/kyori/adventure/audience/Audience;)V
+	public final fun value (Lnet/kyori/adventure/audience/Audience;Lnet/kyori/adventure/audience/Audience;Ljava/util/List;)Lstudio/sculk/SculkResult;
+	public static synthetic fun value$default (Lstudio/sculk/placeholder/RelationalPlaceholder;Lnet/kyori/adventure/audience/Audience;Lnet/kyori/adventure/audience/Audience;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public abstract class studio/sculk/placeholder/SculkPlaceholder : studio/sculk/SculkHandle {
+	public synthetic fun <init> (Lstudio/sculk/placeholder/PlaceholderKey;Lstudio/sculk/placeholder/Refresh;ZLjava/util/List;Lkotlin/jvm/functions/Function1;Lstudio/sculk/placeholder/PlaceholderRegistry;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun getArguments ()Ljava/util/List;
+	public final fun getKey ()Lstudio/sculk/placeholder/PlaceholderKey;
+	public final fun getRefresh ()Lstudio/sculk/placeholder/Refresh;
+	public abstract fun invalidate ()V
+	public final fun invalidateWith (Lstudio/sculk/placeholder/SculkPlaceholder;)V
+	public final fun isAsync ()Z
+	public final fun isClosed ()Z
+	public final fun render (Ljava/lang/Object;)Lnet/kyori/adventure/text/Component;
+	public fun toString ()Ljava/lang/String;
+}
+

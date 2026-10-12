@@ -19,6 +19,7 @@ framework enforces and the module that owns it.
 | Threat | Control | Owner |
 | --- | --- | --- |
 | MiniMessage injection via player-controlled text | Templates are trusted, values are not. Values enter only through unparsed or component placeholders. No `replace()` on a template before parsing. Enforced by API shape and a test that renders `<red>` from a value as literal text. | `sculk-text` |
+| A placeholder value or tag argument containing markup | A value is shown as its string form, unparsed, or as a component its placeholder built; arguments reach resolvers as strings. Tested by rendering a value carrying `<red>` and a click event, and an argument carrying `<red>`, as literal text. | `sculk-placeholders` |
 | PlaceholderAPI or MiniPlaceholders output containing markup | External placeholder results are treated as values unless the integration is explicitly configured to trust an expansion. | `sculk-placeholders` |
 | Plugin-message spoofing from a client pretending to be the proxy | Frames carry a protocol magic, version and declared origin; the Paper side rejects frames whose channel is not registered or whose origin is a player connection when the transport expects a proxy. Optional HMAC for deployments that cannot trust the network. | `sculk-network` |
 | Oversized or malformed network frames, replay | Hard maximum frame size, bounded serializer, correlation IDs with expiry, rejection without deserialising further. No arbitrary object deserialisation anywhere. | `sculk-network` |
