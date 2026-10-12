@@ -1,3 +1,144 @@
+public final class studio/sculk/ResourceScope : studio/sculk/SculkHandle {
+	public static final field Companion Lstudio/sculk/ResourceScope$Companion;
+	public final fun child (Ljava/lang/String;)Lstudio/sculk/ResourceScope;
+	public fun close ()V
+	public final fun getName ()Ljava/lang/String;
+	public final fun isClosed ()Z
+	public final fun onClose (Lkotlin/jvm/functions/Function0;)Lstudio/sculk/SculkHandle;
+	public final fun own (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
+	public final fun release (Ljava/lang/AutoCloseable;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/ResourceScope$Companion {
+	public final fun root (Ljava/lang/String;)Lstudio/sculk/ResourceScope;
+}
+
+public abstract class studio/sculk/SculkFailure : studio/sculk/SculkResult {
+	public fun <init> ()V
+	public final fun describe ()Ljava/lang/String;
+	public fun getCause ()Ljava/lang/Throwable;
+	public fun getHint ()Ljava/lang/String;
+	public abstract fun getMessage ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/SculkFailure$InvalidInput : studio/sculk/SculkFailure {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getExpected ()Ljava/lang/String;
+	public fun getHint ()Ljava/lang/String;
+	public final fun getLocation ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getReceived ()Ljava/lang/String;
+}
+
+public final class studio/sculk/SculkFailure$MissingIntegration : studio/sculk/SculkFailure {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getHint ()Ljava/lang/String;
+	public final fun getIntegration ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+}
+
+public final class studio/sculk/SculkFailure$OperationFailed : studio/sculk/SculkFailure {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCause ()Ljava/lang/Throwable;
+	public fun getHint ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getOperation ()Ljava/lang/String;
+}
+
+public final class studio/sculk/SculkFailure$Timeout : studio/sculk/SculkFailure {
+	public synthetic fun <init> (Ljava/lang/String;JLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;JLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getHint ()Ljava/lang/String;
+	public final fun getLimit-UwyO8pc ()J
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getOperation ()Ljava/lang/String;
+}
+
+public final class studio/sculk/SculkFailure$UnsupportedCapability : studio/sculk/SculkFailure {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCapability ()Ljava/lang/String;
+	public fun getHint ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+}
+
+public final class studio/sculk/SculkFailureException : java/lang/RuntimeException {
+	public fun <init> (Lstudio/sculk/SculkFailure;)V
+	public final fun getFailure ()Lstudio/sculk/SculkFailure;
+}
+
+public abstract interface class studio/sculk/SculkHandle : java/lang/AutoCloseable {
+	public static final field Companion Lstudio/sculk/SculkHandle$Companion;
+	public abstract fun close ()V
+}
+
+public final class studio/sculk/SculkHandle$Companion {
+	public final fun all (Ljava/util/List;)Lstudio/sculk/SculkHandle;
+	public final fun getNONE ()Lstudio/sculk/SculkHandle;
+}
+
+public abstract interface class studio/sculk/SculkResult {
+	public static final field Companion Lstudio/sculk/SculkResult$Companion;
+}
+
+public final class studio/sculk/SculkResult$Companion {
+	public final fun catching (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Lstudio/sculk/SculkResult;
+	public final fun ok ()Lstudio/sculk/SculkResult;
+	public final fun success (Ljava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/SculkResult$Success : studio/sculk/SculkResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lstudio/sculk/SculkResult$Success;
+	public static synthetic fun copy$default (Lstudio/sculk/SculkResult$Success;Ljava/lang/Object;ILjava/lang/Object;)Lstudio/sculk/SculkResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/SculkResultKt {
+	public static final fun failureOrNull (Lstudio/sculk/SculkResult;)Lstudio/sculk/SculkFailure;
+	public static final fun flatMap (Lstudio/sculk/SculkResult;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public static final fun fold (Lstudio/sculk/SculkResult;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static final fun getOrElse (Lstudio/sculk/SculkResult;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static final fun getOrNull (Lstudio/sculk/SculkResult;)Ljava/lang/Object;
+	public static final fun getOrThrow (Lstudio/sculk/SculkResult;)Ljava/lang/Object;
+	public static final fun isFailure (Lstudio/sculk/SculkResult;)Z
+	public static final fun isSuccess (Lstudio/sculk/SculkResult;)Z
+	public static final fun map (Lstudio/sculk/SculkResult;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public static final fun onFailure (Lstudio/sculk/SculkResult;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public static final fun onSuccess (Lstudio/sculk/SculkResult;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+	public static final fun recover (Lstudio/sculk/SculkResult;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/Secret {
+	public static final field Companion Lstudio/sculk/Secret$Companion;
+	public static final field REDACTED Ljava/lang/String;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lstudio/sculk/Secret;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public static final fun isEmpty-impl (Ljava/lang/String;)Z
+	public static final fun reveal-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class studio/sculk/Secret$Companion {
+}
+
 public abstract interface annotation class studio/sculk/annotation/SculkExperimental : java/lang/annotation/Annotation {
 }
 
@@ -5,6 +146,176 @@ public abstract interface annotation class studio/sculk/annotation/SculkInternal
 }
 
 public abstract interface annotation class studio/sculk/annotation/SculkStable : java/lang/annotation/Annotation {
+}
+
+public final class studio/sculk/capability/Capabilities {
+	public static final field Companion Lstudio/sculk/capability/Capabilities$Companion;
+	public final fun all ()Ljava/util/List;
+	public final fun get (Lstudio/sculk/capability/CapabilityKey;)Lstudio/sculk/capability/Capability;
+	public final fun require (Lstudio/sculk/capability/CapabilityKey;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/capability/Capabilities$Builder {
+	public fun <init> ()V
+	public final fun build ()Lstudio/sculk/capability/Capabilities;
+	public final fun resolve (Lstudio/sculk/capability/CapabilityKey;Lstudio/sculk/capability/Capability;)Lstudio/sculk/capability/Capabilities$Builder;
+}
+
+public final class studio/sculk/capability/Capabilities$Companion {
+	public final fun getNONE ()Lstudio/sculk/capability/Capabilities;
+}
+
+public abstract interface class studio/sculk/capability/Capability {
+	public fun getLevel ()Ljava/lang/String;
+	public abstract fun getService ()Ljava/lang/Object;
+	public fun isAvailable ()Z
+}
+
+public final class studio/sculk/capability/Capability$DefaultImpls {
+	public static fun getLevel (Lstudio/sculk/capability/Capability;)Ljava/lang/String;
+	public static fun isAvailable (Lstudio/sculk/capability/Capability;)Z
+}
+
+public final class studio/sculk/capability/Capability$Degraded : studio/sculk/capability/Capability {
+	public fun <init> (Ljava/lang/Object;Ljava/util/List;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/Object;Ljava/util/List;)Lstudio/sculk/capability/Capability$Degraded;
+	public static synthetic fun copy$default (Lstudio/sculk/capability/Capability$Degraded;Ljava/lang/Object;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/capability/Capability$Degraded;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getLevel ()Ljava/lang/String;
+	public final fun getMissing ()Ljava/util/List;
+	public fun getService ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun isAvailable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/capability/Capability$Emulated : studio/sculk/capability/Capability {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/Object;Ljava/lang/String;)Lstudio/sculk/capability/Capability$Emulated;
+	public static synthetic fun copy$default (Lstudio/sculk/capability/Capability$Emulated;Ljava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/capability/Capability$Emulated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHow ()Ljava/lang/String;
+	public fun getLevel ()Ljava/lang/String;
+	public fun getService ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun isAvailable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/capability/Capability$Native : studio/sculk/capability/Capability {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lstudio/sculk/capability/Capability$Native;
+	public static synthetic fun copy$default (Lstudio/sculk/capability/Capability$Native;Ljava/lang/Object;ILjava/lang/Object;)Lstudio/sculk/capability/Capability$Native;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getLevel ()Ljava/lang/String;
+	public fun getService ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun isAvailable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/capability/Capability$Unavailable : studio/sculk/capability/Capability {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lstudio/sculk/capability/Capability$Unavailable;
+	public static synthetic fun copy$default (Lstudio/sculk/capability/Capability$Unavailable;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/capability/Capability$Unavailable;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getLevel ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+	public synthetic fun getService ()Ljava/lang/Object;
+	public fun getService ()Ljava/lang/Void;
+	public fun hashCode ()I
+	public fun isAvailable ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/capability/CapabilityKey {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/diagnostics/DiagnosticReport {
+	public static final field Companion Lstudio/sculk/diagnostics/DiagnosticReport$Companion;
+	public final fun getSections ()Ljava/util/List;
+	public final fun render ()Ljava/lang/String;
+}
+
+public final class studio/sculk/diagnostics/DiagnosticReport$Builder {
+	public fun <init> ()V
+	public final fun build ()Lstudio/sculk/diagnostics/DiagnosticReport;
+	public final fun section (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/diagnostics/DiagnosticReport$Builder;
+}
+
+public final class studio/sculk/diagnostics/DiagnosticReport$Companion {
+	public final fun build (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/diagnostics/DiagnosticReport;
+}
+
+public final class studio/sculk/diagnostics/DiagnosticReport$Section {
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/util/List;)Lstudio/sculk/diagnostics/DiagnosticReport$Section;
+	public static synthetic fun copy$default (Lstudio/sculk/diagnostics/DiagnosticReport$Section;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lstudio/sculk/diagnostics/DiagnosticReport$Section;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/diagnostics/DiagnosticReport$SectionBuilder {
+	public final fun entry (Ljava/lang/String;Ljava/lang/Object;)V
+}
+
+public final class studio/sculk/lifecycle/Lifecycle {
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/lifecycle/LifecyclePhase;)V
+	public synthetic fun <init> (Lstudio/sculk/lifecycle/LifecyclePhase;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun advance (Lstudio/sculk/lifecycle/LifecyclePhase;)V
+	public final fun getPhase ()Lstudio/sculk/lifecycle/LifecyclePhase;
+	public final fun hasReached (Lstudio/sculk/lifecycle/LifecyclePhase;)Z
+	public final fun on (Lstudio/sculk/lifecycle/LifecyclePhase;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class studio/sculk/lifecycle/LifecyclePhase : java/lang/Enum {
+	public static final field BOOTSTRAP Lstudio/sculk/lifecycle/LifecyclePhase;
+	public static final field CONFIGURE Lstudio/sculk/lifecycle/LifecyclePhase;
+	public static final field LOAD Lstudio/sculk/lifecycle/LifecyclePhase;
+	public static final field READY Lstudio/sculk/lifecycle/LifecyclePhase;
+	public static final field START Lstudio/sculk/lifecycle/LifecyclePhase;
+	public static final field STOPPED Lstudio/sculk/lifecycle/LifecyclePhase;
+	public static final field STOPPING Lstudio/sculk/lifecycle/LifecyclePhase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/lifecycle/LifecyclePhase;
+	public static fun values ()[Lstudio/sculk/lifecycle/LifecyclePhase;
+}
+
+public final class studio/sculk/service/ServiceRegistry {
+	public fun <init> ()V
+	public final fun find (Lkotlin/reflect/KClass;)Ljava/lang/Object;
+	public final fun getTypes ()Ljava/util/Set;
+	public final fun has (Lkotlin/reflect/KClass;)Z
+	public final fun register (Lkotlin/reflect/KClass;Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun require (Lkotlin/reflect/KClass;)Ljava/lang/Object;
+}
+
+public abstract interface class studio/sculk/time/SculkClock {
+	public static final field Companion Lstudio/sculk/time/SculkClock$Companion;
+	public abstract fun monotonicNanos ()J
+	public abstract fun now ()Ljava/time/Instant;
+}
+
+public final class studio/sculk/time/SculkClock$Companion {
+	public final fun getSYSTEM ()Lstudio/sculk/time/SculkClock;
 }
 
 public final class studio/sculk/version/MinecraftVersion : java/lang/Comparable {
