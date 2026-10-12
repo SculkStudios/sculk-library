@@ -11,6 +11,9 @@ import org.bukkit.entity.ArmorStand
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.canvas.CanvasSupport
 import studio.sculk.capability.Capability
+import studio.sculk.event.EventPriority
+import studio.sculk.event.listen
+import studio.sculk.event.observe
 import studio.sculk.execution.EntityResult
 import studio.sculk.execution.ExecutionContext
 import studio.sculk.execution.SculkExecutor
@@ -66,6 +69,8 @@ class ThreadingPlugin : SculkPaperPlugin() {
         scenario("zero-delays-run-next-tick") { zeroDelaysRunNextTick() }
         scenario("canvas-region-data-merges") { canvasRegionDataMerges(world) }
         scenario("shutdown-cancels-pending-work") { closingRetiresPendingWork(world) }
+        scenario("events-cancel-and-observe-the-outcome") { eventsCancelAndObserve() }
+        scenario("events-observers-resume-on-the-entity") { observersResumeOnTheEntity(world) }
     }
 
     private suspend fun scenario(name: String, block: suspend () -> String) {
@@ -248,6 +253,47 @@ class ThreadingPlugin : SculkPaperPlugin() {
         return check(ran.get() == 0 && retired.get() == 4 && executor.liveTasks == 0) {
             "ran ${ran.get()}, retired ${retired.get()}, still tracked ${executor.liveTasks}"
         }
+    }
+
+    /**
+     * A low-priority listener cancels expensive purchases; a later listener that skips cancelled
+     * events never sees them; a failing listener does not stop the others; an observer sees the
+     * final outcome on the global region, where the event was fired.
+     */
+    private suspend fun eventsCancelAndObserve(): String {
+        val laterSaw = AtomicInteger()
+        val observed = ConcurrentHashMap<Int, String>()
+        val handles = listOf(
+            sculk.events.listen<PurchaseEvent>(EventPriority.LOW) { if (it.price > 100) it.isCancelled = true },
+            sculk.events.listen<PurchaseEvent>(EventPriority.NORMAL) { error("a broken handler") },
+            sculk.events.listen<PurchaseEvent>(EventPriority.HIGH) { laterSaw.incrementAndGet() },
+            sculk.events.observe<PurchaseEvent>(includeCancelled = true) { event ->
+                delayTicks(1)
+                observed[event.price] = "${event.isCancelled}:${Bukkit.isGlobalTickThread()}"
+            },
+        )
+        val outcomes = withGlobal { listOf(5, 500).map { price -> PurchaseEvent(price).also(server.pluginManager::callEvent).isCancelled } }
+        withGlobal { delayTicks(5) }
+        handles.forEach { it.close() }
+        return check(outcomes == listOf(false, true) && laterSaw.get() == 1 && observed == mapOf(5 to "false:true", 500 to "true:true")) {
+            "cancelled $outcomes, later handler saw ${laterSaw.get()}, observed $observed"
+        }
+    }
+
+    private suspend fun observersResumeOnTheEntity(world: World): String {
+        val stand = spawnStand(far(world, 6_144))
+        val owned = AtomicBoolean(false)
+        val ran = AtomicBoolean(false)
+        val handle = sculk.events.observe<InspectEvent> { event ->
+            delayTicks(2)
+            owned.set(Bukkit.isOwnedByCurrentRegion(event.entity))
+            ran.set(true)
+        }
+        withEntity(stand) { server.pluginManager.callEvent(InspectEvent(stand)) }
+        withGlobal { delayTicks(10) }
+        handle.close()
+        withEntity(stand) { stand.remove() }
+        return check(ran.get() && owned.get()) { "observer ran ${ran.get()}, owned the entity ${owned.get()}" }
     }
 
     private fun work(action: () -> Unit) = object : SculkExecutor.Work {

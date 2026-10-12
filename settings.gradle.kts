@@ -36,6 +36,7 @@ include(
     ":sculk-platform-api",
     ":sculk-text",
     ":sculk-config",
+    ":sculk-events",
     ":sculk-commands",
     ":sculk-commands-paper",
     ":sculk-commands-velocity",

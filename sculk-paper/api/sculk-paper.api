@@ -24,6 +24,11 @@ public final class studio/sculk/paper/PaperEntityRef : studio/sculk/execution/En
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class studio/sculk/paper/PaperEvents : studio/sculk/event/SculkEvents {
+	public fun listen (Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;ZLkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
+	public fun observe (Lkotlin/reflect/KClass;ZLkotlin/jvm/functions/Function2;)Lstudio/sculk/SculkHandle;
+}
+
 public final class studio/sculk/paper/PaperExecutionKt {
 	public static final fun regionBatch (Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun regionContext (Lorg/bukkit/Location;)Lstudio/sculk/execution/ExecutionContext$Region;
@@ -46,6 +51,7 @@ public final class studio/sculk/paper/PaperPlatformExtension$Context {
 }
 
 public final class studio/sculk/paper/PaperRuntime : studio/sculk/runtime/AbstractSculkRuntime {
+	public final fun getEvents ()Lstudio/sculk/event/SculkEvents;
 	public final fun getPlugin ()Lorg/bukkit/plugin/Plugin;
 	public final fun getRegionShift ()I
 }

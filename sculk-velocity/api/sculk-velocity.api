@@ -16,8 +16,15 @@ public abstract class studio/sculk/velocity/SculkVelocityPlugin {
 	protected fun stop ()V
 }
 
+public final class studio/sculk/velocity/VelocityEvents : studio/sculk/event/AwaitableEvents, studio/sculk/event/SculkEvents {
+	public fun await (Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;JLkotlin/jvm/functions/Function2;)Lstudio/sculk/SculkHandle;
+	public fun listen (Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;ZLkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
+	public fun observe (Lkotlin/reflect/KClass;ZLkotlin/jvm/functions/Function2;)Lstudio/sculk/SculkHandle;
+}
+
 public final class studio/sculk/velocity/VelocityRuntime : studio/sculk/runtime/AbstractSculkRuntime {
 	public final fun getContainer ()Lcom/velocitypowered/api/plugin/PluginContainer;
+	public final fun getEvents ()Lstudio/sculk/velocity/VelocityEvents;
 	public final fun getProxy ()Lcom/velocitypowered/api/proxy/ProxyServer;
 }
 

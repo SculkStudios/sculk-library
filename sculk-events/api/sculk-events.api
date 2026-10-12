@@ -1,0 +1,52 @@
+public abstract interface class studio/sculk/event/AwaitableEvents {
+	public static final field Companion Lstudio/sculk/event/AwaitableEvents$Companion;
+	public static final field DEFAULT_TIMEOUT_MILLIS J
+	public abstract fun await (Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;JLkotlin/jvm/functions/Function2;)Lstudio/sculk/SculkHandle;
+	public static synthetic fun await$default (Lstudio/sculk/event/AwaitableEvents;Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/event/AwaitableEvents$Companion {
+	public static final field DEFAULT_TIMEOUT_MILLIS J
+}
+
+public final class studio/sculk/event/AwaitableEvents$DefaultImpls {
+	public static synthetic fun await$default (Lstudio/sculk/event/AwaitableEvents;Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lstudio/sculk/SculkHandle;
+}
+
+public abstract interface class studio/sculk/event/Cancellable {
+	public abstract fun isCancelled ()Z
+	public abstract fun setCancelled (Z)V
+}
+
+public final class studio/sculk/event/EventPriority : java/lang/Enum {
+	public static final field HIGH Lstudio/sculk/event/EventPriority;
+	public static final field HIGHEST Lstudio/sculk/event/EventPriority;
+	public static final field LOW Lstudio/sculk/event/EventPriority;
+	public static final field LOWEST Lstudio/sculk/event/EventPriority;
+	public static final field MONITOR Lstudio/sculk/event/EventPriority;
+	public static final field NORMAL Lstudio/sculk/event/EventPriority;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/event/EventPriority;
+	public static fun values ()[Lstudio/sculk/event/EventPriority;
+}
+
+public final class studio/sculk/event/LocalEventBus : studio/sculk/event/AwaitableEvents, studio/sculk/event/SculkEvents {
+	public fun <init> (Lstudio/sculk/execution/SculkScope;Lkotlin/jvm/functions/Function2;)V
+	public fun await (Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;JLkotlin/jvm/functions/Function2;)Lstudio/sculk/SculkHandle;
+	public final fun fire (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun listen (Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;ZLkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
+	public fun observe (Lkotlin/reflect/KClass;ZLkotlin/jvm/functions/Function2;)Lstudio/sculk/SculkHandle;
+}
+
+public abstract interface class studio/sculk/event/SculkEvents {
+	public abstract fun listen (Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;ZLkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
+	public static synthetic fun listen$default (Lstudio/sculk/event/SculkEvents;Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkHandle;
+	public abstract fun observe (Lkotlin/reflect/KClass;ZLkotlin/jvm/functions/Function2;)Lstudio/sculk/SculkHandle;
+	public static synthetic fun observe$default (Lstudio/sculk/event/SculkEvents;Lkotlin/reflect/KClass;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/event/SculkEvents$DefaultImpls {
+	public static synthetic fun listen$default (Lstudio/sculk/event/SculkEvents;Lkotlin/reflect/KClass;Lstudio/sculk/event/EventPriority;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkHandle;
+	public static synthetic fun observe$default (Lstudio/sculk/event/SculkEvents;Lkotlin/reflect/KClass;ZLkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lstudio/sculk/SculkHandle;
+}
+

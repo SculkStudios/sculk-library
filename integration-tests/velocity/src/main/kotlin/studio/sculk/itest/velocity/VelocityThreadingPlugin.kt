@@ -1,6 +1,7 @@
 package studio.sculk.itest.velocity
 
 import com.google.inject.Inject
+import com.velocitypowered.api.event.ResultedEvent
 import com.velocitypowered.api.plugin.PluginContainer
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
@@ -17,6 +18,10 @@ import studio.sculk.command.SenderKind
 import studio.sculk.command.command
 import studio.sculk.command.velocity.commands
 import studio.sculk.command.velocity.server
+import studio.sculk.event.EventPriority
+import studio.sculk.event.await
+import studio.sculk.event.listen
+import studio.sculk.event.observe
 import studio.sculk.execution.ExecutionContext
 import studio.sculk.execution.UnsupportedContextException
 import studio.sculk.execution.WorldKey
@@ -132,6 +137,32 @@ class VelocityThreadingPlugin @Inject constructor(
                 val outcome = runOnProxy("vtest-server nowhere")
                 check(outcome == null) { "recorded '$outcome'" }
             }
+            scenario("await-handlers-decide-after-suspending") {
+                val laterSaw = java.util.concurrent.atomic.AtomicBoolean(false)
+                val observed = java.util.concurrent.atomic.AtomicBoolean(false)
+                val handles = listOf(
+                    sculk.events.await<LoginCheck> { event ->
+                        delayTicks(2)
+                        if (event.name == "griefer") event.result = ResultedEvent.GenericResult.denied()
+                    },
+                    sculk.events.listen<LoginCheck>(EventPriority.HIGH) { laterSaw.set(true) },
+                    sculk.events.observe<LoginCheck>(includeCancelled = true) { observed.set(true) },
+                )
+                val denied = proxy.eventManager.fire(LoginCheck("griefer")).await()
+                delayTicks(4)
+                handles.forEach { it.close() }
+                check(!denied.result.isAllowed && !laterSaw.get() && observed.get()) {
+                    "allowed ${denied.result.isAllowed}, later handler ran ${laterSaw.get()}, observed ${observed.get()}"
+                }
+            }
+            scenario("stuck-await-handler-times-out") {
+                val handle = sculk.events.await<LoginCheck>(timeoutMillis = 200) { kotlinx.coroutines.awaitCancellation() }
+                val started = System.nanoTime()
+                val event = proxy.eventManager.fire(LoginCheck("anyone")).await()
+                val waitedMillis = (System.nanoTime() - started) / 1_000_000
+                handle.close()
+                check(event.result.isAllowed && waitedMillis in 150..5_000) { "allowed ${event.result.isAllowed} after $waitedMillis ms" }
+            }
             scenario("ready-once-the-proxy-listens") {
                 var waited = 0
                 while (!sculk.lifecycle.hasReached(LifecyclePhase.READY) && waited++ < 400) delayTicks(1)
@@ -168,6 +199,17 @@ class VelocityThreadingPlugin @Inject constructor(
             if (agree) null else "'$input': proxy '$proxied', interpreter '$interpreted' (${outcome::class.simpleName})"
         }
         return if (mismatches.isEmpty()) "PASS (${inputs.size} inputs)" else "FAIL: ${mismatches.joinToString("; ")}"
+    }
+
+    /** A resulted event the suite fires itself, as a login check would be. */
+    class LoginCheck(val name: String) : ResultedEvent<ResultedEvent.GenericResult> {
+        private var current: ResultedEvent.GenericResult = ResultedEvent.GenericResult.allowed()
+
+        override fun getResult(): ResultedEvent.GenericResult = current
+
+        override fun setResult(result: ResultedEvent.GenericResult) {
+            current = result
+        }
     }
 
     /** Runs [input] as the proxy console and returns what the executor recorded, or null. */

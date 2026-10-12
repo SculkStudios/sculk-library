@@ -5,6 +5,7 @@ import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkStable
 import studio.sculk.capability.Capabilities
 import studio.sculk.diagnostics.DiagnosticReport
+import studio.sculk.event.SculkEvents
 import studio.sculk.execution.ExecutionContext
 import studio.sculk.execution.SculkExecutor
 import studio.sculk.lifecycle.LifecyclePhase
@@ -30,6 +31,9 @@ public class PaperRuntime internal constructor(
 ) : AbstractSculkRuntime(plugin.name, platform, executor, log, developmentMode) {
     /** Region sections are `2^regionShift` chunks wide; Folia's and Canvas's `grid-exponent`. */
     public val regionShift: Int get() = executor.regionShift
+
+    /** Paper events through Sculk's listen and observe handlers, owned by the plugin scope. */
+    public val events: SculkEvents by lazy { PaperEvents(this) }
 
     internal fun begin() {
         lifecycle.advance(LifecyclePhase.CONFIGURE)

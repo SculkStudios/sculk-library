@@ -32,6 +32,9 @@ public class VelocityRuntime internal constructor(
     log,
     developmentMode,
 ) {
+    /** Velocity events through Sculk's listen, observe and await handlers, owned by the plugin scope. */
+    public val events: VelocityEvents by lazy { VelocityEvents(this) }
+
     internal fun begin() {
         lifecycle.advance(LifecyclePhase.CONFIGURE)
         lifecycle.advance(LifecyclePhase.LOAD)

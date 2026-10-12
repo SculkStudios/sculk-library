@@ -37,7 +37,7 @@ planned module is in `REBUILD.md`.
 | `sculk-commands` | Immutable `CommandSpec`, DSL, neutral argument model (primitive types and validators), middleware, cooldowns, confirmation, flags, help and usage, server-free test runner that interprets the spec (ADR-0022) | text, coroutines | — (no Brigadier) | yes | in progress (spec, DSL, dispatcher, middleware and help done; flags pending) |
 | `sculk-commands-paper` | Compiles a spec through Paper's `io.papermc.paper.command.brigadier` API (`Commands`, `ArgumentTypes`, `LifecycleEvents.COMMANDS`); Paper argument catalogue: players, entity selectors, positions, registry resources | commands, paper | paper-api (compileOnly; brings Brigadier) | no | in progress |
 | `sculk-commands-velocity` | Compiles a spec into a `BrigadierCommand`; proxy catalogue (player, server); backend-only types sent as strings and validated on the proxy, since Velocity supports no custom argument types | commands, velocity | velocity-api (compileOnly; brings velocity-brigadier) | no | in progress |
-| `sculk-events` | `listen` (immediate), `observe` (suspending), awaitable events, lifecycle-bound handles | coroutines, platform-api | — | yes | planned |
+| `sculk-events` | `listen` (immediate), `observe` (suspending), awaitable events, lifecycle-bound handles | coroutines, platform-api | — | yes | done |
 | `sculk-permissions` | Permission descriptors, native backend, context-aware checks | core, platform-api | — | yes | planned |
 
 ## Content
