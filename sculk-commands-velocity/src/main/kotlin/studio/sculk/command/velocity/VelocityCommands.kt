@@ -73,16 +73,28 @@ public class VelocityCommands internal constructor(
         return compileNode(spec.root, emptyList()) as LiteralArgumentBuilder<VelocitySource>
     }
 
-    private fun compileNode(node: CommandNode, path: List<CommandNode.Argument<*>>): ArgumentBuilder<VelocitySource, *> {
+    /** A literal's aliases become sibling literals with the same subtree, which is how Brigadier spells an alias. */
+    private fun compileWithAliases(node: CommandNode, path: List<CommandNode.Argument<*>>): List<ArgumentBuilder<VelocitySource, *>> =
+        if (node is CommandNode.Literal) {
+            (listOf(node.name) + node.aliases).map { word -> compileNode(node, path, word) }
+        } else {
+            listOf(compileNode(node, path))
+        }
+
+    private fun compileNode(
+        node: CommandNode,
+        path: List<CommandNode.Argument<*>>,
+        word: String = node.name,
+    ): ArgumentBuilder<VelocitySource, *> {
         val here = if (node is CommandNode.Argument<*>) path + node else path
         val builder: ArgumentBuilder<VelocitySource, *> = when (node) {
-            is CommandNode.Literal -> BrigadierCommand.literalArgumentBuilder(node.name)
+            is CommandNode.Literal -> BrigadierCommand.literalArgumentBuilder(word)
             is CommandNode.Argument<*> -> argumentBuilder(node)
         }
         val requirement = node.requirement
         builder.requires { source -> requirement.test(VelocityCommandSource(source, runtime.proxy)) }
         node.executor?.let { executor -> builder.executes { context -> execute(executor, here, context) } }
-        node.children.forEach { child -> builder.then(compileNode(child, here)) }
+        node.children.forEach { child -> compileWithAliases(child, here).forEach(builder::then) }
         return builder
     }
 

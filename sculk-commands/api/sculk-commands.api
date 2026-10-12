@@ -222,10 +222,12 @@ public final class studio/sculk/command/CommandNode$Argument : studio/sculk/comm
 }
 
 public final class studio/sculk/command/CommandNode$Literal : studio/sculk/command/CommandNode {
+	public final fun getAliases ()Ljava/util/List;
 	public fun getChildren ()Ljava/util/List;
 	public fun getExecutor ()Lstudio/sculk/command/CommandExecutor;
 	public fun getName ()Ljava/lang/String;
 	public fun getRequirement ()Lstudio/sculk/command/Requirement;
+	public final fun matches (Ljava/lang/String;)Z
 	public fun toString ()Ljava/lang/String;
 }
 

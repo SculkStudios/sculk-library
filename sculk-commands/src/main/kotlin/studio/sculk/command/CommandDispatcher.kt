@@ -70,7 +70,7 @@ public class CommandDispatcher(public val text: Text = Text(), public val messag
             when {
                 !reader.canRead -> offers(child, partial, source)
 
-                child is CommandNode.Literal && token.equals(child.name, ignoreCase = true) -> completions(child, reader, source)
+                child is CommandNode.Literal && child.matches(token) -> completions(child, reader, source)
 
                 child is CommandNode.Argument<*> && child.type.parse(
                     token,
@@ -83,7 +83,7 @@ public class CommandDispatcher(public val text: Text = Text(), public val messag
     }
 
     private fun offers(node: CommandNode, partial: String, source: CommandSource): List<String> = when (node) {
-        is CommandNode.Literal -> listOf(node.name).filter { it.startsWith(partial.lowercase()) }
+        is CommandNode.Literal -> (listOf(node.name) + node.aliases).filter { it.startsWith(partial.lowercase()) }
         is CommandNode.Argument<*> -> (node.suggestions?.suggest(partial, source) ?: node.type.suggest(partial, source))
     }
 
@@ -103,11 +103,7 @@ public class CommandDispatcher(public val text: Text = Text(), public val messag
             reader.reset(start)
             val token = read(child, reader) ?: continue
             val next = when (child) {
-                is CommandNode.Literal -> if (token.equals(
-                        child.name,
-                        ignoreCase = true,
-                    )
-                ) {
+                is CommandNode.Literal -> if (child.matches(token)) {
                     match(child, reader, source, values)
                 } else {
                     continue

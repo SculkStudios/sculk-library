@@ -55,11 +55,19 @@ public sealed class CommandNode {
     @SculkStable
     public class Literal internal constructor(
         override val name: String,
+        aliases: List<String>,
         children: List<CommandNode>,
         override val executor: CommandExecutor?,
         override val requirement: Requirement,
     ) : CommandNode() {
+        /** Other words that lead to this node; help shows only [name]. */
+        public val aliases: List<String> = aliases.toList()
+
         override val children: List<CommandNode> = children.toList()
+
+        /** True when [word] is this literal or one of its aliases, ignoring case. */
+        public fun matches(word: String): Boolean =
+            name.equals(word, ignoreCase = true) || aliases.any { it.equals(word, ignoreCase = true) }
 
         override fun toString(): String = "Literal($name)"
     }

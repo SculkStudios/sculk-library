@@ -87,10 +87,22 @@ public class PaperCommands internal constructor(
         return compileNode(spec.root, emptyList()).build() as LiteralCommandNode<CommandSourceStack>
     }
 
-    private fun compileNode(node: CommandNode, path: List<CommandNode.Argument<*>>): ArgumentBuilder<CommandSourceStack, *> {
+    /** A literal's aliases become sibling literals with the same subtree, which is how Brigadier spells an alias. */
+    private fun compileWithAliases(node: CommandNode, path: List<CommandNode.Argument<*>>): List<ArgumentBuilder<CommandSourceStack, *>> =
+        if (node is CommandNode.Literal) {
+            (listOf(node.name) + node.aliases).map { word -> compileNode(node, path, word) }
+        } else {
+            listOf(compileNode(node, path))
+        }
+
+    private fun compileNode(
+        node: CommandNode,
+        path: List<CommandNode.Argument<*>>,
+        word: String = node.name,
+    ): ArgumentBuilder<CommandSourceStack, *> {
         val here = if (node is CommandNode.Argument<*>) path + node else path
         val builder = when (node) {
-            is CommandNode.Literal -> Commands.literal(node.name)
+            is CommandNode.Literal -> Commands.literal(word)
 
             is CommandNode.Argument<*> -> Commands.argument(node.name, nativeType(node)).also { argument ->
                 node.suggestions?.let { provider -> argument.suggests { context, suggestions -> suggest(provider, context, suggestions) } }
@@ -99,7 +111,7 @@ public class PaperCommands internal constructor(
         val requirement = node.requirement
         builder.requires { stack -> requirement.test(PaperCommandSource(stack)) }
         node.executor?.let { executor -> builder.executes { context -> execute(executor, here, context) } }
-        node.children.forEach { child -> builder.then(compileNode(child, here)) }
+        node.children.forEach { child -> compileWithAliases(child, here).forEach(builder::then) }
         return builder
     }
 

@@ -259,11 +259,11 @@ internal class Draft private constructor(val name: String, val aliases: List<Str
 
     fun freeze(): CommandNode {
         checkOptionalChain()
-        val frozenChildren = children.flatMap { it.freezeWithAliases() }
+        val frozenChildren = children.map { it.freeze() }
         val runs = executor ?: inheritedFromOptionalChild()
         val compiled = runs?.let { CommandExecutor(it.builder.middlewareChain(), it.requiresPlayer, it.body) }
         return if (argument == null) {
-            CommandNode.Literal(name, frozenChildren, compiled, requirement)
+            CommandNode.Literal(name, aliases, frozenChildren, compiled, requirement)
         } else {
             CommandNode.Argument(
                 ArgumentHandle<Any?>(argument.name, argument),
@@ -274,13 +274,6 @@ internal class Draft private constructor(val name: String, val aliases: List<Str
                 requirement,
             )
         }
-    }
-
-    private fun freezeWithAliases(): List<CommandNode> {
-        val frozen = freeze()
-        if (argument != null || aliases.isEmpty()) return listOf(frozen)
-        val literal = frozen as CommandNode.Literal
-        return listOf(frozen) + aliases.map { CommandNode.Literal(it, literal.children, literal.executor, literal.requirement) }
     }
 
     /** A node runs the executor of an optional argument after it, as if the sender stopped here. */
