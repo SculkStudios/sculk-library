@@ -75,6 +75,9 @@ jobs:
       - name: Commands on Paper 1.21.4, Paper 26.3 and Folia 26.1.2
         run: ./gradlew :integration-tests:commands:verifyCommands
 
+      - name: Example plugins on every server
+        run: ./gradlew :integration-tests:examples:verifyExamples
+
       - name: Velocity 4.2.0
         run: ./gradlew :integration-tests:velocity:verifyVelocity
 

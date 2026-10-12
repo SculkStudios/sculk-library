@@ -51,8 +51,10 @@ include(
 // Never published. Each proves something about the published modules on a real server.
 include(
     ":benchmarks",
+    ":examples:economy",
     ":integration-tests:boot",
     ":integration-tests:commands",
+    ":integration-tests:examples",
     ":integration-tests:threading",
     ":integration-tests:velocity",
 )

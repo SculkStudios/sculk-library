@@ -68,6 +68,8 @@ fun Project.registerServerRun(
     port: Int,
     gridExponent: Int? = null,
     systemProperties: Map<String, String> = emptyMap(),
+    /** Other plugins to load beside [pluginJar], such as an example the plugin checks. */
+    otherPlugins: List<Provider<RegularFile>> = emptyList(),
 ): TaskProvider<RunServer> {
     val runDirectory = layout.buildDirectory.dir("servers/${taskName.removePrefix("run")}")
     val download = server.jar?.let { (url, sha256) -> registerVerifiedDownload(server.id, url, sha256) }
@@ -84,6 +86,7 @@ fun Project.registerServerRun(
             server.build?.let { build.set(DownloadsAPIService.Build.Specific(it)) }
         }
         pluginJars(pluginJar)
+        otherPlugins.forEach { pluginJars(it) }
         this.runDirectory.set(runDirectory)
         javaLauncher.set(toolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(server.java)) })
         jvmArgs("-Xmx2g", "-Dcom.mojang.eula.agree=true", "-Dsculk.development=true", "-Dsculk.itest.platform=${server.platform}")

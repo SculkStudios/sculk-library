@@ -1,0 +1,6 @@
+name: SculkEconomy
+version: "${version}"
+main: studio.sculk.example.economy.EconomyPlugin
+api-version: "1.21"
+folia-supported: true
+description: An economy built on Sculk Studio.
