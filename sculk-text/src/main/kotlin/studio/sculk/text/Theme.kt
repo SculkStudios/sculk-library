@@ -70,30 +70,46 @@ public sealed interface ThemeStyle {
     /** The MiniMessage tags that close it, in reverse order. */
     public val close: String
 
-    /** One colour, optionally with decorations such as `bold` or `italic`. */
+    /** One colour, optionally with decorations such as `bold` or `italic`. Keeps a copy of [decorations]. */
     @SculkStable
-    public data class Solid(public val hex: String, public val decorations: List<String> = emptyList()) : ThemeStyle {
+    public class Solid(public val hex: String, decorations: List<String> = emptyList()) : ThemeStyle {
+        public val decorations: List<String> = decorations.toList()
+
         init {
             require(HEX.matches(hex)) { "'$hex' is not a #rrggbb colour." }
-            decorations.forEach { require(it in DECORATIONS) { "'$it' is not a text decoration; use one of $DECORATIONS." } }
+            this.decorations.forEach { require(it in DECORATIONS) { "'$it' is not a text decoration; use one of $DECORATIONS." } }
         }
 
-        override val open: String get() = "<$hex>" + decorations.joinToString("") { "<$it>" }
+        override val open: String = "<$hex>" + this.decorations.joinToString("") { "<$it>" }
 
-        override val close: String get() = decorations.asReversed().joinToString("") { "</$it>" } + "</$hex>"
+        override val close: String = this.decorations.asReversed().joinToString("") { "</$it>" } + "</$hex>"
+
+        override fun equals(other: Any?): Boolean = other is Solid && other.hex == hex && other.decorations == decorations
+
+        override fun hashCode(): Int = 31 * hex.hashCode() + decorations.hashCode()
+
+        override fun toString(): String = "Solid(hex=$hex, decorations=$decorations)"
     }
 
-    /** A gradient across two or more colours. */
+    /** A gradient across two or more colours. Keeps a copy of [colours]. */
     @SculkStable
-    public data class Gradient(public val colours: List<String>) : ThemeStyle {
+    public class Gradient(colours: List<String>) : ThemeStyle {
+        public val colours: List<String> = colours.toList()
+
         init {
-            require(colours.size >= 2) { "A gradient needs at least two colours, but has ${colours.size}." }
-            colours.forEach { require(HEX.matches(it)) { "'$it' is not a #rrggbb colour." } }
+            require(this.colours.size >= 2) { "A gradient needs at least two colours, but has ${this.colours.size}." }
+            this.colours.forEach { require(HEX.matches(it)) { "'$it' is not a #rrggbb colour." } }
         }
 
-        override val open: String get() = "<gradient:${colours.joinToString(":")}>"
+        override val open: String = "<gradient:${this.colours.joinToString(":")}>"
 
-        override val close: String get() = "</gradient>"
+        override val close: String = "</gradient>"
+
+        override fun equals(other: Any?): Boolean = other is Gradient && other.colours == colours
+
+        override fun hashCode(): Int = colours.hashCode()
+
+        override fun toString(): String = "Gradient(colours=$colours)"
     }
 
     private companion object {

@@ -1,11 +1,14 @@
 package studio.sculk.text
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.Style
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -84,9 +87,36 @@ class TextTest {
         val style = ThemeStyle.Solid("#abcdef", listOf("bold", "italic"))
         assertEquals("<#abcdef><bold><italic>", style.open)
         assertEquals("</italic></bold></#abcdef>", style.close)
-        val rendered = Text(Theme.of("loud" to style)).render("<loud>hey</loud>")
-        val hey = rendered.flatten().first { plain.serialize(it) == "hey" && it.hasDecoration(TextDecoration.ITALIC) }
-        assertEquals(true, hey.hasDecoration(TextDecoration.BOLD) || rendered.flatten().any { it.hasDecoration(TextDecoration.BOLD) })
+        val rendered = Text(Theme.of("loud" to style)).render("<loud>hey</loud> quiet")
+        val styles = rendered.effectiveStyles()
+        val hey = styles.getValue("hey")
+        assertEquals(TextColor.fromHexString("#abcdef"), hey.color())
+        assertEquals(TextDecoration.State.TRUE, hey.decoration(TextDecoration.BOLD))
+        assertEquals(TextDecoration.State.TRUE, hey.decoration(TextDecoration.ITALIC))
+        val quiet = styles.getValue(" quiet")
+        assertNotEquals(TextDecoration.State.TRUE, quiet.decoration(TextDecoration.BOLD))
+        assertNull(quiet.color())
+    }
+
+    @Test
+    fun `theme styles keep their own copy of the caller's lists`() {
+        val decorations = mutableListOf("bold")
+        val colours = mutableListOf("#000000", "#ffffff")
+        val solid = ThemeStyle.Solid("#ffffff", decorations)
+        val gradient = ThemeStyle.Gradient(colours)
+        decorations += "italic"
+        colours.clear()
+        assertEquals(listOf("bold"), solid.decorations)
+        assertEquals("<#ffffff><bold>", solid.open)
+        assertEquals(listOf("#000000", "#ffffff"), gradient.colours)
+        assertEquals(ThemeStyle.Solid("#ffffff", listOf("bold")), solid)
+    }
+
+    /** The style each text run is drawn with, parents' styles applied. */
+    private fun Component.effectiveStyles(inherited: Style = Style.empty()): Map<String, Style> {
+        val style = style().merge(inherited, Style.Merge.Strategy.IF_ABSENT_ON_TARGET)
+        val own = (this as? TextComponent)?.content()?.takeIf { it.isNotEmpty() }?.let { mapOf(it to style) }.orEmpty()
+        return own + children().flatMap { it.effectiveStyles(style).toList() }
     }
 
     @Test

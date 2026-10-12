@@ -18,10 +18,13 @@ import studio.sculk.annotation.SculkStable
 @SculkStable
 public class Text(
     public val theme: Theme = Theme.DEFAULT,
-    private val miniMessage: MiniMessage = MiniMessage.miniMessage(),
+    internal val miniMessage: MiniMessage = MiniMessage.miniMessage(),
     private val cacheSize: Int = DEFAULT_CACHE_SIZE,
 ) {
     private val expanded = BoundedCache<String, String>(cacheSize)
+
+    /** [template] with the theme's styles expanded into MiniMessage tags. */
+    internal fun expand(template: String): String = expanded.getOrPut(template) { theme.expand(template) }
 
     /**
      * Renders [template] with [values] as placeholders: `render("<primary>Hi <name>", "name" to player.name)`.
@@ -33,8 +36,7 @@ public class Text(
     public fun render(template: String, values: Map<String, Any?>): Component = render(template, resolverOf(values.toList()))
 
     /** Renders [template] with a resolver built elsewhere, such as a placeholder context. */
-    public fun render(template: String, resolver: TagResolver): Component =
-        miniMessage.deserialize(expanded.getOrPut(template) { theme.expand(template) }, resolver)
+    public fun render(template: String, resolver: TagResolver): Component = miniMessage.deserialize(expand(template), resolver)
 
     /** This renderer with a different theme and an empty cache. */
     public fun withTheme(theme: Theme): Text = Text(theme, miniMessage, cacheSize)
