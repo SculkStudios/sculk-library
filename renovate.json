@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended",
     ":semanticCommits",
+    "helpers:pinGitHubActionDigests",
     "group:kotlinx-coroutinesMonorepo",
     "group:junit-frameworkMonorepo"
   ],
@@ -34,10 +35,11 @@
       "minimumReleaseAge": "7 days"
     },
     {
-      "description": "Anchor builds are pinned deliberately; COMPATIBILITY.md moves with them.",
+      "description": "Anchor builds move with gradle/servers.json through updateServerMatrix, never on their own.",
       "matchPackageNames": [
         "io.papermc.paper:paper-api",
-        "io.canvasmc.canvas:canvas-api"
+        "io.canvasmc.canvas:canvas-api",
+        "com.velocitypowered:velocity-api"
       ],
       "enabled": false,
       "minimumReleaseAge": "7 days"
