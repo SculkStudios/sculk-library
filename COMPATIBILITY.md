@@ -94,10 +94,12 @@ turning from enum to interface and will catch `ItemStack` becoming an interface)
 Since M3 the generator also compares, member by member, the public methods and fields of a probe
 list (`ArgumentTypes`, `RegistryKey`, `RegistryEvents`, `DataComponentTypes`, `MenuType`,
 `LifecycleEvents`), with method-level `ApiStatus` and deprecation, under `members` in its output.
-Planned extensions, in the milestone that first needs them: the Adventure,
-Brigadier and JSpecify versions from each POM (M3); runtime probe lists, the
-documentation badges and the compatibility report (M6). The generator does not prove behaviour;
-real servers do.
+Each anchor also lists the Adventure, Brigadier and JSpecify versions its `paper-api` depends on,
+read from the published metadata; the scan fails if the floor's Adventure is not the catalog's
+`adventure-floor`. Today that is Adventure 4.20.0 (1.21.4), 4.26.1 (1.21.11, 26.1.2) and 5.2.0
+(26.2, 26.3); Brigadier 1.3.10 everywhere except 1.3.11 on 26.3; JSpecify 1.0.0 everywhere.
+Planned extensions: runtime probe lists, the documentation badges and the compatibility report
+(M6). The generator does not prove behaviour; real servers do.
 
 ## Adventure
 

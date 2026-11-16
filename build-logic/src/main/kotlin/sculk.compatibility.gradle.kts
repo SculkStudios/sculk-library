@@ -16,11 +16,30 @@ val anchorConfigurations = anchors.map { (minecraft, artifactVersion) ->
     }
 }
 
+// The same anchors resolved with their dependencies, read for metadata only: which Adventure,
+// Brigadier and JSpecify each Paper line ships.
+val anchorLibraries = anchors.mapValues { (minecraft, artifactVersion) ->
+    configurations.create("paperApiLibraries${minecraft.replace(".", "_")}") {
+        isCanBeConsumed = false
+        dependencies.add(project.dependencies.create("io.papermc.paper:paper-api:$artifactVersion"))
+    }
+}
+
 tasks.register<CompatibilityScan>("scanPaperApi") {
     group = "sculk compatibility"
-    description = "Writes the classes whose presence, kind or experimental status differs across the Paper anchors."
+    description = "Writes the classes whose presence, kind or experimental status differs across the Paper anchors, and the libraries each ships."
     anchorNames = anchors.keys.toList()
     anchorConfigurations.forEach { anchorJars.from(it) }
+    libraries = provider {
+        anchorLibraries.mapValues { (_, configuration) ->
+            configuration.incoming.resolutionResult.allComponents
+                .mapNotNull { it.moduleVersion }
+                .filter { "${it.group}:${it.name}" in CompatibilityScan.LIBRARIES }
+                .associate { "${it.group}:${it.name}" to it.version }
+        }
+    }
+    // The floor's Adventure is the oldest any supported server ships, so shared modules compile against it.
+    expectedFloorAdventure = versionCatalogs.named("libs").findVersion("adventure-floor").get().requiredVersion
     // Classes whose members appear, disappear or change status within a supported range; each feeds a
     // capability or a per-member opt-in (COMPATIBILITY.md).
     memberProbes.addAll(

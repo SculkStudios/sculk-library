@@ -6,6 +6,8 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -26,7 +28,7 @@ import java.util.zip.ZipFile
  * Scans one `paper-api` jar per anchor and writes every public class whose presence, kind or
  * experimental status is not the same on all anchors, and for the classes in [memberProbes], every
  * public method and field that differs. Anything identical everywhere is omitted: it needs no
- * capability.
+ * capability. Each anchor also lists the version of each of [LIBRARIES] it ships.
  *
  * `ApiStatus` annotations have class retention, so bytecode is the only place they can be read.
  */
@@ -43,6 +45,14 @@ abstract class CompatibilityScan : DefaultTask() {
     @get:Input
     abstract val memberProbes: ListProperty<String>
 
+    /** Per anchor, the version of each of [LIBRARIES] its `paper-api` depends on. */
+    @get:Input
+    abstract val libraries: MapProperty<String, Map<String, String>>
+
+    /** The Adventure version shared modules compile against; it must be what the oldest anchor ships. */
+    @get:Input
+    abstract val expectedFloorAdventure: Property<String>
+
     @get:OutputFile
     abstract val output: RegularFileProperty
 
@@ -52,6 +62,13 @@ abstract class CompatibilityScan : DefaultTask() {
         val jars = anchorJars.files.toList()
         if (names.size != jars.size) throw GradleException("Expected ${names.size} anchor jars, resolved ${jars.size}: $jars")
         val probes = memberProbes.get().toSet()
+        val shipped = libraries.get()
+        val floorAdventure = shipped[names.first()]?.get(ADVENTURE)
+        if (floorAdventure != expectedFloorAdventure.get()) {
+            throw GradleException(
+                "Paper ${names.first()} ships Adventure $floorAdventure, but the catalog's adventure-floor is ${expectedFloorAdventure.get()}.",
+            )
+        }
 
         val scans = names.zip(jars).associate { (name, jar) -> name to scanJar(jar, probes) }
         val allClasses = scans.values.flatMap { it.keys }.toSortedSet()
@@ -70,8 +87,10 @@ abstract class CompatibilityScan : DefaultTask() {
         if (missingProbes.isNotEmpty()) throw GradleException("Probe classes exist on no anchor: $missingProbes")
 
         val document = mapOf(
-            "schema" to 2,
-            "anchors" to names.map { name -> mapOf("minecraft" to name, "classes" to scans.getValue(name).size) },
+            "schema" to 3,
+            "anchors" to names.map { name ->
+                mapOf("minecraft" to name, "classes" to scans.getValue(name).size, "libraries" to shipped[name].orEmpty().toSortedMap())
+            },
             "classes" to varying,
             "members" to members.filterValues { it.isNotEmpty() },
         )
@@ -80,6 +99,16 @@ abstract class CompatibilityScan : DefaultTask() {
             "Compatibility scan: ${allClasses.size} classes across ${names.size} anchors, ${varying.size} vary; " +
                 "${members.values.sumOf { it.size }} members of ${probes.size} probed classes vary",
         )
+        names.forEach { name ->
+            logger.lifecycle("  $name ships " + LIBRARIES.joinToString(", ") { "${it.substringAfter(':')} ${shipped[name]?.get(it) ?: "none"}" })
+        }
+    }
+
+    companion object {
+        const val ADVENTURE: String = "net.kyori:adventure-api"
+
+        /** The libraries whose version per anchor Sculk's compatibility depends on. */
+        val LIBRARIES: List<String> = listOf(ADVENTURE, "com.mojang:brigadier", "org.jspecify:jspecify")
     }
 
     private fun varyingMembers(names: List<String>, membersOf: (String) -> Map<String, MemberFacts>): Map<String, Any> {
