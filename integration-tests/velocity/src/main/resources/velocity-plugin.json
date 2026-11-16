@@ -3,5 +3,5 @@
   "name": "SculkThreading",
   "version": "${version}",
   "main": "studio.sculk.itest.velocity.VelocityThreadingPlugin",
-  "dependencies": []
+  "dependencies": [{ "id": "sculk-network", "optional": true }]
 }

@@ -51,7 +51,9 @@ class VelocityThreadingPlugin @Inject constructor(
     private val results = ConcurrentHashMap<String, String>()
     internal val recorded = ConcurrentLinkedQueue<String>()
     internal val proxyServer: ProxyServer get() = proxy
+    internal val dataDirectoryPath: Path get() = dataDirectory
     private val permissionScenarios = ProxyPermissionScenarios(this)
+    private val networkExample = NetworkExampleScenarios(this)
 
     private val specs: List<CommandSpec> = listOf(
         command("vtest-pay") {
@@ -182,6 +184,7 @@ class VelocityThreadingPlugin @Inject constructor(
                 check(sculk.lifecycle.phase == LifecyclePhase.READY) { "phase ${sculk.lifecycle.phase} after ${waited * 50} ms" }
             }
             permissionScenarios.run()
+            networkExample.run()
             write()
             proxy.shutdown()
         }

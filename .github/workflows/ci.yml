@@ -78,7 +78,7 @@ jobs:
       - name: Example plugins on every server
         run: ./gradlew :integration-tests:examples:verifyExamples
 
-      - name: Velocity 4.3.1
+      - name: Velocity 4.3.1 and the network example
         run: ./gradlew :integration-tests:velocity:verifyVelocity
 
       - name: Upload server logs

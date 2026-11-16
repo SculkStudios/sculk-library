@@ -1,0 +1,8 @@
+{
+  "id": "sculk-network",
+  "name": "SculkNetwork",
+  "version": "${version}",
+  "description": "A hub, find and maintenance plugin for Velocity, built on Sculk Studio.",
+  "main": "studio.sculk.example.network.NetworkPlugin",
+  "dependencies": []
+}

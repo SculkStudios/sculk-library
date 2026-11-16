@@ -52,6 +52,7 @@ include(
 include(
     ":benchmarks",
     ":examples:economy",
+    ":examples:network",
     ":integration-tests:boot",
     ":integration-tests:commands",
     ":integration-tests:examples",

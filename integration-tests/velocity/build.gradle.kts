@@ -22,23 +22,28 @@ tasks.processResources {
 
 val proxyDir = layout.buildDirectory.dir("proxy")
 val resultsFile = proxyDir.map { it.file("plugins/sculk-threading/results.properties") }
+val networkExample = project(":examples:network").tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
 
 val runProxy = tasks.register<RunVelocity>("threadingVelocity") {
     group = "sculk integration"
-    description = "Runs the proxy scenarios on Velocity ${libs.versions.velocity.get()} with Java 25."
+    description = "Runs the proxy scenarios and the network example on Velocity ${libs.versions.velocity.get()} with Java 25."
     velocityVersion(libs.versions.velocity.get())
-    pluginJars(tasks.shadowJar.flatMap { it.archiveFile })
+    pluginJars(tasks.shadowJar.flatMap { it.archiveFile }, networkExample)
     runDirectory = proxyDir
     javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
     jvmArgs("-Xmx512m", "-Dsculk.development=true")
     standardInput = InputStream.nullInputStream()
     timeout = Duration.ofMinutes(5)
-    doFirst { resultsFile.get().asFile.delete() }
+    // The example saves maintenance state; each run starts from its defaults.
+    doFirst {
+        resultsFile.get().asFile.delete()
+        proxyDir.get().dir("plugins/sculk-network").asFile.deleteRecursively()
+    }
 }
 
 tasks.register("verifyVelocity") {
     group = "sculk integration"
-    description = "Runs the proxy scenarios on a real Velocity and checks every result."
+    description = "Runs the proxy scenarios and the network example on a real Velocity and checks every result."
     dependsOn(runProxy)
     doLast {
         val file = resultsFile.get().asFile
