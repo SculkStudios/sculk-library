@@ -1,6 +1,6 @@
 ---
 title: Velocity
-description: Use Sculk in a Velocity 4.2 proxy plugin with SculkVelocityPlugin or SculkVelocity.attach.
+description: Use Sculk in a Velocity 4.3 proxy plugin with SculkVelocityPlugin or SculkVelocity.attach.
 sidebar:
   order: 4
 ---
@@ -171,7 +171,19 @@ override suspend fun start() {
 }
 ```
 
+## A complete example
+
+`examples/network` in the repository is a whole proxy plugin: `/hub` sends a player to the
+configured hub and waits for Velocity's answer, `/find` names a player's server, and
+`/maintenance` (with confirmation) saves its state to a typed config, turns away logins without
+`network.maintenance.bypass` and changes the server list. Its commands are built without Velocity
+types, so its unit tests run them through `CommandDispatcher` with the test kit's fakes, and CI
+runs it on a real Velocity on every push.
+
+Commands on the proxy compile into Velocity's own `BrigadierCommand` through
+`sculk-commands-velocity`; see the [commands guide](/guides/commands/).
+
 <Aside>
-  Velocity-specific modules are planned: `sculk-commands-velocity` (commands compiled into a
-  `BrigadierCommand`) and `sculk-velocity-runtime`. Neither exists yet.
+  `sculk-velocity-runtime`, a provider plugin that carries Kotlin, kotlinx and Sculk once per
+  proxy, is planned and does not exist yet.
 </Aside>
