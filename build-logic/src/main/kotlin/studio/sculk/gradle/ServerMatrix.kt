@@ -1,9 +1,8 @@
 package studio.sculk.gradle
 
+import groovy.json.JsonSlurper
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import java.io.File
-import java.util.Properties
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
@@ -13,48 +12,122 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import xyz.jpenilla.runpaper.task.RunServer
 import xyz.jpenilla.runtask.service.DownloadsAPIService
+import java.io.File
 import java.io.InputStream
 import java.net.URI
 import java.security.MessageDigest
 import java.time.Duration
+import java.util.Properties
 
 /**
- * Every real server Sculk's integration suites run on, pinned to exact builds. This is the one
- * place a server version or build changes; COMPATIBILITY.md lists the same anchors, and the canary
- * workflow reports when a newer build is available.
+ * Every real server Sculk's suites run on, read from `gradle/servers.json`: the one place a server
+ * version or build changes. `updateServerMatrix` moves the pins to the newest stable builds and
+ * `checkServerMatrix` keeps the version catalog and COMPATIBILITY.md in step with them.
  */
-object ServerMatrix {
-    enum class Platform { PAPER, FOLIA, CANVAS }
+class ServerMatrix(
+    /** Every Paper anchor, oldest first. */
+    val paper: List<Server>,
+    val folia: Server,
+    val canvas: Server,
+    val velocity: Server,
+) {
+    enum class Platform(val label: String) { PAPER("Paper"), FOLIA("Folia"), CANVAS("Canvas"), VELOCITY("Velocity") }
 
     class Server(
-        val id: String,
         val platform: Platform,
-        val minecraft: String,
+        val version: String,
+        val build: Int,
         val java: Int,
-        /** A Fill build for Folia; Paper runs its newest build of [minecraft]. */
-        val build: Int? = null,
-        /** A server jar from outside Fill, with its SHA-256: a CI server jar is code that runs. */
-        val jar: Pair<String, String>? = null,
+        /** A 1.21.x Paper API snapshot; 26.x APIs are published per build as `<version>.build.<n>-stable`. */
+        private val api: String? = null,
+        /** Canvas is not on Fill, so its jar is pinned by hash here; null only for an unpinned canary build. */
+        val sha256: String? = null,
     ) {
-        val isRegionized: Boolean get() = platform != Platform.PAPER
+        val id: String get() = platform.label + version.filter(Char::isDigit)
+        val isRegionized: Boolean get() = platform == Platform.FOLIA || platform == Platform.CANVAS
+
+        /** The API artifact version built from the same commit as this server. */
+        val apiVersion: String get() = api ?: "$version.build.$build-stable"
+
+        val jarUrl: String?
+            get() = if (platform == Platform.CANVAS) "https://jenkins.canvasmc.io/job/Canvas/$build/artifact/canvas-server/build/libs/canvas-build.$build.jar" else null
+
+        val label: String get() = "${platform.name} $version on Java $java"
+
+        fun withBuild(build: Int, sha256: String? = this.sha256): Server = Server(platform, version, build, java, api, sha256)
+
+        fun withVersion(version: String, build: Int): Server = Server(platform, version, build, java, null, null)
+
+        internal fun toJson(): String = buildString {
+            append("{ \"version\": \"$version\", \"build\": $build, \"java\": $java")
+            api?.let { append(", \"api\": \"$it\"") }
+            sha256?.let { append(", \"sha256\": \"$it\"") }
+            append(" }")
+        }
     }
 
-    val PAPER_FLOOR = Server("Paper1214", Platform.PAPER, "1.21.4", java = 21)
-    val PAPER_CURRENT = Server("Paper263", Platform.PAPER, "26.3", java = 25)
-    val FOLIA = Server("Folia263", Platform.FOLIA, "26.3", java = 25, build = 8)
-    val CANVAS = Server(
-        "Canvas263",
-        Platform.CANVAS,
-        "26.3",
-        java = 25,
-        jar = "https://jenkins.canvasmc.io/job/Canvas/1016/artifact/canvas-server/build/libs/canvas-build.1016.jar" to
-            "637dd9f0414f3c2f4ce0aec8b500333577463add8f614be82e2b7f0387284e70",
-    )
+    val paperFloor: Server get() = paper.first()
+    val paperCurrent: Server get() = paper.last()
 
-    val ALL: List<Server> = listOf(PAPER_FLOOR, PAPER_CURRENT, FOLIA, CANVAS)
-    val PAPER_AND_FOLIA: List<Server> = listOf(PAPER_FLOOR, PAPER_CURRENT, FOLIA)
-    val PAPER: List<Server> = listOf(PAPER_FLOOR, PAPER_CURRENT)
+    /** One server per threading model: the Paper floor and current anchors, Folia and Canvas. */
+    val all: List<Server> get() = listOf(paperFloor, paperCurrent, folia, canvas)
+    val paperAndFolia: List<Server> get() = listOf(paperFloor, paperCurrent, folia)
+
+    fun toJson(): String = buildString {
+        appendLine("{")
+        appendLine("  \"paper\": [")
+        appendLine(paper.joinToString(",\n") { "    ${it.toJson()}" })
+        appendLine("  ],")
+        appendLine("  \"folia\": ${folia.toJson()},")
+        appendLine("  \"canvas\": ${canvas.toJson()},")
+        appendLine("  \"velocity\": ${velocity.toJson()}")
+        appendLine("}")
+    }
+
+    companion object {
+        const val FILE: String = "gradle/servers.json"
+
+        /** `-Psculk.servers=latest` runs the newest stable builds of the pinned versions instead: the canary. */
+        const val MODE_PROPERTY: String = "sculk.servers"
+
+        private const val CACHE_KEY = "studio.sculk.serverMatrix"
+
+        /** The matrix for this build, read once per build and kept on the root project. */
+        fun of(project: Project): ServerMatrix {
+            val extra = project.rootProject.extensions.extraProperties
+            if (extra.has(CACHE_KEY)) return extra.get(CACHE_KEY) as ServerMatrix
+            val pinned = read(project.rootProject.file(FILE))
+            val matrix = when (val mode = project.providers.gradleProperty(MODE_PROPERTY).orNull) {
+                null, "pinned" -> pinned
+                "latest" -> UpstreamBuilds().latest(pinned).matrix.also { project.logger.lifecycle("Running the newest server builds:\n${it.toJson()}") }
+                else -> throw GradleException("-P$MODE_PROPERTY=$mode: expected 'pinned' or 'latest'.")
+            }
+            extra.set(CACHE_KEY, matrix)
+            return matrix
+        }
+
+        fun read(file: File): ServerMatrix {
+            if (!file.isFile) throw GradleException("$file is missing; it pins every server the suites run on.")
+            val root = JsonSlurper().parse(file) as Map<*, *>
+
+            fun server(platform: Platform, node: Any?): Server {
+                val map = node as? Map<*, *> ?: throw GradleException("$file: '${platform.label.lowercase()}' must be an object.")
+                fun int(key: String) = (map[key] as? Number)?.toInt() ?: throw GradleException("$file: ${platform.label} '$key' is missing.")
+                val version = map["version"] as? String ?: throw GradleException("$file: ${platform.label} 'version' is missing.")
+                return Server(platform, version, int("build"), int("java"), map["api"] as? String, map["sha256"] as? String)
+            }
+
+            val paper = (root["paper"] as? List<*>)?.map { server(Platform.PAPER, it) }.orEmpty()
+            if (paper.isEmpty()) throw GradleException("$file: 'paper' must list at least one anchor, oldest first.")
+            val canvas = server(Platform.CANVAS, root["canvas"])
+            if (canvas.sha256 == null) throw GradleException("$file: Canvas needs a 'sha256'; its jar does not come from Fill.")
+            return ServerMatrix(paper, server(Platform.FOLIA, root["folia"]), canvas, server(Platform.VELOCITY, root["velocity"]))
+        }
+    }
 }
+
+/** The matrix for this build; see [ServerMatrix.of]. */
+fun Project.serverMatrix(): ServerMatrix = ServerMatrix.of(this)
 
 /**
  * Registers a task that runs [server] with [pluginJar] in [runDirectory] and stops when the plugin
@@ -72,18 +145,20 @@ fun Project.registerServerRun(
     otherPlugins: List<Provider<RegularFile>> = emptyList(),
 ): TaskProvider<RunServer> {
     val runDirectory = layout.buildDirectory.dir("servers/${taskName.removePrefix("run")}")
-    val download = server.jar?.let { (url, sha256) -> registerVerifiedDownload(server.id, url, sha256) }
+    val download = server.jarUrl?.let { url -> registerVerifiedDownload("${server.id}b${server.build}", url, server.sha256) }
     val toolchains = extensions.getByType<JavaToolchainService>()
     return tasks.register<RunServer>(taskName) {
         group = "sculk integration"
-        description = "Runs ${server.platform} ${server.minecraft} on Java ${server.java}${gridExponent?.let { " at grid-exponent $it" }.orEmpty()}."
-        minecraftVersion(server.minecraft)
+        description = "Runs ${server.platform.label} ${server.version} build ${server.build} on Java ${server.java}" +
+            gridExponent?.let { " at grid-exponent $it" }.orEmpty() + "."
+        minecraftVersion(server.version)
         if (download != null) {
             dependsOn(download)
-            serverJar(layout.buildDirectory.file("server-jars/${server.id}.jar"))
+            serverJar(layout.buildDirectory.file("server-jars/${server.id}b${server.build}.jar"))
         } else {
+            // Fill builds are pinned by number; run-task checks each download against Fill's SHA-256.
             if (server.platform == ServerMatrix.Platform.FOLIA) downloadsApiService.set(DownloadsAPIService.folia(project))
-            server.build?.let { build.set(DownloadsAPIService.Build.Specific(it)) }
+            build.set(DownloadsAPIService.Build.Specific(server.build))
         }
         pluginJars(pluginJar)
         otherPlugins.forEach { pluginJars(it) }
@@ -109,19 +184,24 @@ fun Project.registerServerRun(
     }
 }
 
-private fun Project.registerVerifiedDownload(id: String, url: String, sha256: String) =
+/** Downloads [url] once and refuses it unless it hashes to [sha256]; a server jar is code that runs. */
+private fun Project.registerVerifiedDownload(id: String, url: String, sha256: String?) =
     tasks.findByName("download$id")?.let { tasks.named("download$id") } ?: tasks.register("download$id") {
         val jar = layout.buildDirectory.file("server-jars/$id.jar")
         inputs.property("url", url)
-        inputs.property("sha256", sha256)
+        inputs.property("sha256", sha256.orEmpty())
         outputs.file(jar)
         doLast {
             val file = jar.get().asFile.apply { parentFile.mkdirs() }
             URI(url).toURL().openStream().use { input -> file.outputStream().use(input::copyTo) }
             val actual = MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString("") { "%02x".format(it) }
-            if (actual != sha256) {
-                file.delete()
-                throw GradleException("$id server jar has SHA-256 $actual, expected $sha256.")
+            when {
+                // Only the canary runs an unpinned jar: the newest build, to learn whether it breaks Sculk.
+                sha256 == null -> logger.warn("$id server jar is not pinned; it hashed to $actual.")
+                actual != sha256 -> {
+                    file.delete()
+                    throw GradleException("$id server jar has SHA-256 $actual, expected $sha256.")
+                }
             }
         }
     }

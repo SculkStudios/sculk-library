@@ -1,18 +1,12 @@
 import studio.sculk.gradle.CompatibilityScan
+import studio.sculk.gradle.serverMatrix
 
 plugins {
     base
 }
 
-// Pinned builds from COMPATIBILITY.md. 1.21.x anchors are Maven snapshots, so they are pinned to a
-// timestamped build rather than the moving -SNAPSHOT alias.
-val anchors = linkedMapOf(
-    "1.21.4" to "1.21.4-R0.1-20250925.065901-231",
-    "1.21.11" to "1.21.11-R0.1-20260511.115010-91",
-    "26.1.2" to "26.1.2.build.74-stable",
-    "26.2" to "26.2.build.135-stable",
-    "26.3" to "26.3.build.253-stable",
-)
+// The Paper anchors pinned in gradle/servers.json, each with the API built from the same commit.
+val anchors = serverMatrix().paper.associate { it.version to it.apiVersion }
 
 val anchorConfigurations = anchors.map { (minecraft, artifactVersion) ->
     configurations.create("paperApi${minecraft.replace(".", "_")}") {

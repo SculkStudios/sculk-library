@@ -1,3 +1,7 @@
+plugins {
+    id("sculk.servers")
+}
+
 group = "studio.sculk"
 version = "6.0.0-SNAPSHOT"
 

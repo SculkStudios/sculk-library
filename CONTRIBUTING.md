@@ -29,8 +29,16 @@ corrections, and work on the current milestone.
    ./gradlew --write-verification-metadata pgp,sha256 --export-keys build publishToMavenLocal :benchmarks:mainBenchmarkJar :tooling:compatibility:scanPaperApi
    ```
 
+   Write mode never fails on an artifact it cannot record, such as a moving snapshot, so run a
+   plain `./gradlew build` afterwards; an artifact only a trust rule can cover gets one in
+   `gradle/verification-metadata.xml`, with its reason.
+
    A new runtime dependency of a published module must also carry a licence on
    `gradle/allowed-licenses.json`; `check` enforces it.
+8. Servers are pinned in `gradle/servers.json`. `./gradlew updateServerMatrix` moves every pin to
+   the newest stable build and the version catalog with it (`--report-only` changes nothing).
+   Then refresh dependency verification as in step 7, update `COMPATIBILITY.md` until
+   `checkServerMatrix` passes, and run every real-server suite.
 
 ## A public feature is done when it has
 

@@ -1,4 +1,4 @@
-import studio.sculk.gradle.ServerMatrix
+import studio.sculk.gradle.serverMatrix
 import studio.sculk.gradle.registerResultsVerification
 import studio.sculk.gradle.registerServerRun
 
@@ -13,8 +13,8 @@ dependencies {
 val economy = project(":examples:economy").tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
 
 // The example runs on every server the matrix pins, Canvas included.
-val runs = ServerMatrix.ALL.mapIndexed { index, server ->
-    "${server.platform} ${server.minecraft} on Java ${server.java}" to registerServerRun(
+val runs = serverMatrix().all.mapIndexed { index, server ->
+    server.label to registerServerRun(
         "examples${server.id}",
         server,
         tasks.shadowJar.flatMap { it.archiveFile },

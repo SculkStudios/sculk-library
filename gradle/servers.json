@@ -1,0 +1,12 @@
+{
+  "paper": [
+    { "version": "1.21.4", "build": 232, "java": 21, "api": "1.21.4-R0.1-20250925.065901-231" },
+    { "version": "1.21.11", "build": 132, "java": 21, "api": "1.21.11-R0.1-20260511.115010-91" },
+    { "version": "26.1.2", "build": 74, "java": 25 },
+    { "version": "26.2", "build": 135, "java": 25 },
+    { "version": "26.3", "build": 253, "java": 25 }
+  ],
+  "folia": { "version": "26.3", "build": 8, "java": 25 },
+  "canvas": { "version": "26.3", "build": 1016, "java": 25, "sha256": "637dd9f0414f3c2f4ce0aec8b500333577463add8f614be82e2b7f0387284e70" },
+  "velocity": { "version": "4.3.1", "build": 45, "java": 25 }
+}

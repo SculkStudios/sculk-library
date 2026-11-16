@@ -73,10 +73,11 @@ both lines.
 
 ## What CI proves today
 
-Every pull request boots Paper 1.21.4 on Java 21 and Paper 26.3 on Java 25, runs the threading
-scenarios from `THREADING.md` on Paper 1.21.4, Paper 26.3, Folia 26.3 and Canvas 26.3, and runs
-the proxy scenarios on Velocity 4.3.1. The servers are listed by hand in the CI workflow today.
+Every push boots every Paper anchor (1.21.4, 1.21.11, 26.1.2, 26.2 and 26.3), each on the Java its
+line requires, runs the threading scenarios from `THREADING.md` on Paper 1.21.4, Paper 26.3, Folia
+26.3 and Canvas 26.3, runs both example plugins, and runs the proxy scenarios on Velocity 4.3.1.
 
-The target matrix (every Paper anchor, Folia 26.3, nightly runs of intermediate
-versions, and canary runs against the newest builds) is planned for milestone M3 and is generated
-from the pinned anchors rather than written by hand. There is no nightly job yet.
+Every one of those servers is pinned to an exact build in `gradle/servers.json`, and the build fails
+if the API versions or this page disagree with it. A canary run boots the newest stable build of
+each pinned version and lists newer Minecraft versions, so a breaking upstream build is known before
+the pins move. Intermediate versions such as 1.21.8 are not tested yet.

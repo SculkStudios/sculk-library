@@ -13,10 +13,10 @@ six anchors, Fill build lists), `docs/research/d-velocity.md`, `docs/research/f-
 | Compatible | Paper 26.1.2 | `26.1.2.build.74-stable` | 25 | 4.26.1 |
 | Compatible | Paper 1.21.11 | `1.21.11-R0.1-20260511.115010-91` | 21 | 4.26.1 |
 | Floor | Paper 1.21.4 | `1.21.4-R0.1-20250925.065901-231` | 21 | 4.20.0 |
-| Platform | Folia | obtainable builds only: 26.3 (first stable build 8, 2026-11-15; the pull-request anchor), 26.2 (beta builds only), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4. The nightly canary job lists the Folia versions on Fill; moving a new build into the pull-request matrix is a manual change today. | as Paper | as Paper |
+| Platform | Folia | obtainable builds only: 26.3 (first stable build 8, 2026-11-15; the pull-request anchor), 26.2 (beta builds only), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4. The canary reports a newer stable Folia version; making it the anchor is a deliberate change to `gradle/servers.json`. | as Paper | as Paper |
 | Platform | Canvas | 26.3 stable (first stable builds 976–978, 2026-10-11; build 1016 pinned), 26.2, 26.1.2, 1.21.11, 1.21.8; pinned download from the Canvas builds API (not on Fill); `io.canvasmc.canvas:canvas-api` from `maven.canvasmc.io` | 25 | as Paper |
 | Proxy | Velocity 4.3.1 | `com.velocitypowered:velocity-api:4.3.1` | 25 | 5.2.0 |
-| Canary | newest Paper, Folia, Canvas and Velocity builds | today the nightly job scans the pinned anchors and lists Folia and Canvas builds; resolving and booting the newest builds is planned for M3 | — | — |
+| Canary | newest stable Paper, Folia, Canvas and Velocity builds of the pinned versions | booted by the canary workflow with `-Psculk.servers=latest`; see Integration test matrix | — | — |
 | Packets | PacketEvents 2.14.0 (26.3 support, released 2026-09-23); ProtocolLib 5.4.0 best effort | `compileOnly` | as server | — |
 
 Builds are pinned, not versions. Backports land mid-line: 26.2 build 100 removed `@Experimental`
@@ -95,8 +95,7 @@ Since M3 the generator also compares, member by member, the public methods and f
 list (`ArgumentTypes`, `RegistryKey`, `RegistryEvents`, `DataComponentTypes`, `MenuType`,
 `LifecycleEvents`), with method-level `ApiStatus` and deprecation, under `members` in its output.
 Planned extensions, in the milestone that first needs them: the Adventure,
-Brigadier and JSpecify versions from each POM (M3); generating the CI server matrix from the
-anchors and the Fill API instead of the shared hand-pinned `ServerMatrix` (M3); runtime probe lists, the
+Brigadier and JSpecify versions from each POM (M3); runtime probe lists, the
 documentation badges and the compatibility report (M6). The generator does not prove behaviour;
 real servers do.
 
@@ -152,19 +151,20 @@ Differences the capability engine must paper over, with the version they appear 
 
 ## Integration test matrix
 
-Today every push boots Paper 1.21.4 (Java 21) and 26.3 (Java 25), runs the threading scenarios on
-Paper 1.21.4, Paper 26.3, Folia 26.3 at grid-exponent 4 and 5 and Canvas 26.3, runs the command
-conformance suite on both Paper anchors and Folia, and runs the proxy suite on Velocity 4.3.1. Every
-suite reads its servers from one definition, `ServerMatrix` in `build-logic`, so a pin moves in one
-place; the Canvas jar is verified by SHA-256. Deriving the pins from the Fill API, rather than
-moving them by hand when the canary reports a newer build, is still planned, and so is the wider
-target matrix below; there is no nightly job yet.
+Every server a suite runs on is pinned in `gradle/servers.json`, by Fill build number for Paper,
+Folia and Velocity (run-task checks each download against Fill's SHA-256) and by build and SHA-256
+for Canvas, which is not on Fill. `./gradlew updateServerMatrix` moves every pin to the newest
+stable build of its version and the version catalog with it; `checkServerMatrix`, part of `check`,
+fails when the catalog or this document disagrees with the pins.
 
 | When | Servers |
 | --- | --- |
-| Every pull request | Paper 1.21.4, 1.21.11, 26.1.2, 26.2, 26.3 · Folia 26.3 · Canvas 26.3 · Velocity 4.3.1 · each on the Java the line requires |
-| Nightly | Intermediate 1.21.x stable lines (1.21.8), Folia 26.2 beta, 1.21.11 and 1.21.4, newest Canvas build |
-| Canary (scheduled) | Newest Paper, Folia, Canvas, Velocity and PacketEvents snapshot; failures open issues and never block a release |
+| Every push and pull request | Boot on every Paper anchor (1.21.4, 1.21.11, 26.1.2, 26.2, 26.3), each on the Java its line requires · threading on Paper 1.21.4 and 26.3, Folia 26.3 at grid-exponent 4 and 5, and Canvas 26.3 · commands on Paper 1.21.4, 26.3 and Folia 26.3 · both examples · Velocity 4.3.1 with the network example |
+| Canary | `updateServerMatrix --report-only` lists newer builds and newer stable Minecraft versions; boot, threading and Velocity run again on the newest stable build of every pinned version. Failures open an issue and never block a release |
+| Planned | Intermediate 1.21.x lines (1.21.8) and Folia beta builds; PacketEvents snapshots once packets exist (M5) |
+
+GitHub schedules workflows only from the default branch, which carries 5.x until 6.0 ships, so
+until then the canary runs whenever `dev` changes a pin and when started by hand.
 
 Unit-level MockBukkit lags Paper by weeks (`mockbukkit-v26.2` exists, no 26.3 artifact yet), so the
 unit matrix may trail the integration matrix by one Minecraft version.

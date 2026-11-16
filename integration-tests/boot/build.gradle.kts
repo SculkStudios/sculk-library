@@ -1,4 +1,4 @@
-import studio.sculk.gradle.ServerMatrix
+import studio.sculk.gradle.serverMatrix
 import studio.sculk.gradle.registerResultsVerification
 import studio.sculk.gradle.registerServerRun
 
@@ -11,19 +11,20 @@ dependencies {
     implementation(project(":sculk-core"))
 }
 
-val runs = ServerMatrix.PAPER.mapIndexed { index, server ->
-    "Paper ${server.minecraft} on Java ${server.java}" to registerServerRun(
+// Every Paper anchor boots; the floor and current anchors also run every other suite.
+val runs = serverMatrix().paper.mapIndexed { index, server ->
+    "Paper ${server.version} on Java ${server.java}" to registerServerRun(
         "boot${server.id}",
         server,
         tasks.shadowJar.flatMap { it.archiveFile },
         port = 25601 + index,
-        systemProperties = mapOf("sculk.itest.minecraft" to server.minecraft, "sculk.itest.java" to server.java.toString()),
+        systemProperties = mapOf("sculk.itest.minecraft" to server.version, "sculk.itest.java" to server.java.toString()),
     )
 }
 
 registerResultsVerification(
     "verifyBoot",
-    "Boots the oldest and newest Paper anchors and checks that sculk-core ran on the expected Minecraft and Java versions.",
+    "Boots every Paper anchor and checks that sculk-core ran on the expected Minecraft and Java versions.",
     runs,
     resultsPath = "plugins/SculkBoot/results.properties",
     required = listOf("minecraft-version", "parsed-version", "java-version"),
