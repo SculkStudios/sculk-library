@@ -25,14 +25,14 @@ version threshold would be wrong on one side of a backport.
 
 | Tier | Target | Pinned artifact | Java | Adventure |
 | --- | --- | --- | --- | --- |
-| Current | Paper 26.3 | `26.3.build.175-stable` | 25 | 5.2.0 |
+| Current | Paper 26.3 | `26.3.build.253-stable` | 25 | 5.2.0 |
 | Compatible | Paper 26.2 | `26.2.build.133-stable` | 25 | 5.2.0 |
 | Compatible | Paper 26.1.2 | `26.1.2.build.74-stable` | 25 | 4.26.1 |
 | Compatible | Paper 1.21.11 | `1.21.11-R0.1-20260511.115010-91` | 21 | 4.26.1 |
 | Floor | Paper 1.21.4 | `1.21.4-R0.1-20250925.065901-231` | 21 | 4.20.0 |
-| Platform | Folia | Obtainable builds only: 26.2 (beta builds only), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4. Folia 26.3 had no build on 2026-10-12. | as Paper | as Paper |
-| Platform | Canvas | 26.3 stable (builds 976 to 978), 26.2, 26.1.2, 1.21.11, 1.21.8 | 25 | as Paper |
-| Proxy | Velocity | `com.velocitypowered:velocity-api:4.2.0` | 25 | 5.2.0 |
+| Platform | Folia | Obtainable builds only: 26.3 (stable since build 8, 2026-11-15), 26.2 (beta builds only), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4. | as Paper | as Paper |
+| Platform | Canvas | 26.3 stable (build 1016 pinned), 26.2, 26.1.2, 1.21.11, 1.21.8 | 25 | as Paper |
+| Proxy | Velocity | `com.velocitypowered:velocity-api:4.3.1` | 25 | 5.2.0 |
 
 ## Not supported
 
@@ -74,9 +74,9 @@ both lines.
 ## What CI proves today
 
 Every pull request boots Paper 1.21.4 on Java 21 and Paper 26.3 on Java 25, runs the threading
-scenarios from `THREADING.md` on Paper 1.21.4, Paper 26.3, Folia 26.1.2 and Canvas 26.3, and runs
-the proxy scenarios on Velocity 4.2.0. The servers are listed by hand in the CI workflow today.
+scenarios from `THREADING.md` on Paper 1.21.4, Paper 26.3, Folia 26.3 and Canvas 26.3, and runs
+the proxy scenarios on Velocity 4.3.1. The servers are listed by hand in the CI workflow today.
 
-The target matrix (every Paper anchor, Folia 26.3 once published, nightly runs of intermediate
+The target matrix (every Paper anchor, Folia 26.3, nightly runs of intermediate
 versions, and canary runs against the newest builds) is planned for milestone M3 and is generated
 from the pinned anchors rather than written by hand. There is no nightly job yet.

@@ -7,7 +7,7 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 
-Sculk runs on Velocity 4.2.0 with the same core, scopes, tasks and results as on Paper. A proxy
+Sculk runs on Velocity 4.3.1 with the same core, scopes, tasks and results as on Paper. A proxy
 has no main thread, no regions and no entities, so only two execution contexts exist there:
 `Proxy`, the plugin's executor, and `Async`.
 
@@ -26,7 +26,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.velocitypowered:velocity-api:4.2.0")
+    compileOnly("com.velocitypowered:velocity-api:4.3.1")
     implementation("studio.sculk:sculk-velocity:6.0.0-SNAPSHOT")
 }
 

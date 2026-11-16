@@ -8,14 +8,14 @@ six anchors, Fill build lists), `docs/research/d-velocity.md`, `docs/research/f-
 
 | Tier | Target | Pinned artifact | Java | Adventure |
 | --- | --- | --- | --- | --- |
-| Current | Paper 26.3 | `26.3.build.175-stable` (first stable, 2026-10-11; ≥ b159 for post-effect `update`) | 25 | 5.2.0 |
-| Compatible | Paper 26.2 | `26.2.build.133-stable` (≥ b109: removal reasons, de-experimentalised API) | 25 | 5.2.0 |
+| Current | Paper 26.3 | `26.3.build.253-stable` (first stable was b175, 2026-10-11; ≥ b159 for post-effect `update`) | 25 | 5.2.0 |
+| Compatible | Paper 26.2 | `26.2.build.135-stable` (≥ b109: removal reasons, de-experimentalised API) | 25 | 5.2.0 |
 | Compatible | Paper 26.1.2 | `26.1.2.build.74-stable` | 25 | 4.26.1 |
 | Compatible | Paper 1.21.11 | `1.21.11-R0.1-20260511.115010-91` | 21 | 4.26.1 |
 | Floor | Paper 1.21.4 | `1.21.4-R0.1-20250925.065901-231` | 21 | 4.20.0 |
-| Platform | Folia | obtainable builds only: 26.2 (beta builds only), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4. 26.3 is expected shortly after Paper and Canvas went stable but had no Fill build on 2026-10-12. The nightly canary job lists the Folia versions on Fill; moving a new build into the pull-request matrix is a manual change today. | as Paper | as Paper |
-| Platform | Canvas | 26.3 stable (builds 976–978, 2026-10-11), 26.2, 26.1.2, 1.21.11, 1.21.8; pinned download from the Canvas builds API (not on Fill); `io.canvasmc.canvas:canvas-api` from `maven.canvasmc.io` | 25 | as Paper |
-| Proxy | Velocity 4.2.0 | `com.velocitypowered:velocity-api:4.2.0` | 25 | 5.2.0 |
+| Platform | Folia | obtainable builds only: 26.3 (first stable build 8, 2026-11-15; the pull-request anchor), 26.2 (beta builds only), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4. The nightly canary job lists the Folia versions on Fill; moving a new build into the pull-request matrix is a manual change today. | as Paper | as Paper |
+| Platform | Canvas | 26.3 stable (first stable builds 976–978, 2026-10-11; build 1016 pinned), 26.2, 26.1.2, 1.21.11, 1.21.8; pinned download from the Canvas builds API (not on Fill); `io.canvasmc.canvas:canvas-api` from `maven.canvasmc.io` | 25 | as Paper |
+| Proxy | Velocity 4.3.1 | `com.velocitypowered:velocity-api:4.3.1` | 25 | 5.2.0 |
 | Canary | newest Paper, Folia, Canvas and Velocity builds | today the nightly job scans the pinned anchors and lists Folia and Canvas builds; resolving and booting the newest builds is planned for M3 | — | — |
 | Packets | PacketEvents 2.14.0 (26.3 support, released 2026-09-23); ProtocolLib 5.4.0 best effort | `compileOnly` | as server | — |
 
@@ -129,7 +129,7 @@ commands, dialogs and registries experimental until 26.2 b100. Opt-ins are decla
 source set, never globally, so a new experimental symbol is a visible build change.
 
 Some experimental markers sit on single methods of an otherwise stable class. In 26.3
-(`26.3.build.175-stable`, read from the jar's bytecode) `ArgumentTypes.angle()`, `axes()`,
+(`26.3.build.175-stable` and again `26.3.build.253-stable`, read from the jar bytecode) `ArgumentTypes.angle()`, `axes()`,
 `columnBlockPosition()`, `columnFinePosition()` (both overloads) and `blockInWorldPredicate()`
 carry method-level `@ApiStatus.Experimental`, and none of them exists in the 1.21.4 jar.
 `sculk-commands-paper` therefore opts in per method, never per class, and probes each factory at
@@ -153,8 +153,8 @@ Differences the capability engine must paper over, with the version they appear 
 ## Integration test matrix
 
 Today every push boots Paper 1.21.4 (Java 21) and 26.3 (Java 25), runs the threading scenarios on
-Paper 1.21.4, Paper 26.3, Folia 26.1.2 at grid-exponent 4 and 5 and Canvas 26.3, runs the command
-conformance suite on both Paper anchors and Folia, and runs the proxy suite on Velocity 4.2.0. Every
+Paper 1.21.4, Paper 26.3, Folia 26.3 at grid-exponent 4 and 5 and Canvas 26.3, runs the command
+conformance suite on both Paper anchors and Folia, and runs the proxy suite on Velocity 4.3.1. Every
 suite reads its servers from one definition, `ServerMatrix` in `build-logic`, so a pin moves in one
 place; the Canvas jar is verified by SHA-256. Deriving the pins from the Fill API, rather than
 moving them by hand when the canary reports a newer build, is still planned, and so is the wider
@@ -162,7 +162,7 @@ target matrix below; there is no nightly job yet.
 
 | When | Servers |
 | --- | --- |
-| Every pull request | Paper 1.21.4, 1.21.11, 26.1.2, 26.2, 26.3 · Folia 26.3 once published (26.1.2 until then) · Canvas 26.3 · Velocity 4.2.0 · each on the Java the line requires |
+| Every pull request | Paper 1.21.4, 1.21.11, 26.1.2, 26.2, 26.3 · Folia 26.3 · Canvas 26.3 · Velocity 4.3.1 · each on the Java the line requires |
 | Nightly | Intermediate 1.21.x stable lines (1.21.8), Folia 26.2 beta, 1.21.11 and 1.21.4, newest Canvas build |
 | Canary (scheduled) | Newest Paper, Folia, Canvas, Velocity and PacketEvents snapshot; failures open issues and never block a release |
 

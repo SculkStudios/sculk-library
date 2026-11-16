@@ -28,9 +28,9 @@ public class CanvasRegionData internal constructor(
     /**
      * Registers a kind of region-local state.
      *
-     * [create] makes the value for a new region. [merge] folds [from] into [into]; deadlines in
-     * [from] are `tickOffset` ticks behind [into]'s clock. [split] distributes [from] over the new
-     * regions, looking each one up by chunk through [RegionTarget].
+     * [create] makes the value for a new region. [merge] folds `from` into `into`; deadlines in
+     * `from` are `tickOffset` ticks behind the clock of `into`. [split] distributes `from` over the
+     * new regions, looking each one up by chunk through [RegionTarget].
      */
     public fun <T : Any> create(
         create: (world: World) -> T,

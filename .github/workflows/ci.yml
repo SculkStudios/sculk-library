@@ -69,16 +69,16 @@ jobs:
       - name: Boot on Paper 1.21.4 (Java 21) and Paper 26.3 (Java 25)
         run: ./gradlew :integration-tests:boot:verifyBoot
 
-      - name: Threading on Paper 1.21.4, Paper 26.3, Folia 26.1.2 (two region sizes) and Canvas 26.3
+      - name: Threading on Paper 1.21.4, Paper 26.3, Folia 26.3 (two region sizes) and Canvas 26.3
         run: ./gradlew :integration-tests:threading:verifyThreading
 
-      - name: Commands on Paper 1.21.4, Paper 26.3 and Folia 26.1.2
+      - name: Commands on Paper 1.21.4, Paper 26.3 and Folia 26.3
         run: ./gradlew :integration-tests:commands:verifyCommands
 
       - name: Example plugins on every server
         run: ./gradlew :integration-tests:examples:verifyExamples
 
-      - name: Velocity 4.2.0
+      - name: Velocity 4.3.1
         run: ./gradlew :integration-tests:velocity:verifyVelocity
 
       - name: Upload server logs

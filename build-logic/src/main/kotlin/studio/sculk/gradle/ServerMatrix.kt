@@ -41,14 +41,14 @@ object ServerMatrix {
 
     val PAPER_FLOOR = Server("Paper1214", Platform.PAPER, "1.21.4", java = 21)
     val PAPER_CURRENT = Server("Paper263", Platform.PAPER, "26.3", java = 25)
-    val FOLIA = Server("Folia2612", Platform.FOLIA, "26.1.2", java = 25, build = 8)
+    val FOLIA = Server("Folia263", Platform.FOLIA, "26.3", java = 25, build = 8)
     val CANVAS = Server(
         "Canvas263",
         Platform.CANVAS,
         "26.3",
         java = 25,
-        jar = "https://jenkins.canvasmc.io/job/Canvas/978/artifact/canvas-server/build/libs/canvas-build.978.jar" to
-            "011d9096792b218456cbca2b962883f852da9ff8b9674d884ead9b9671801356",
+        jar = "https://jenkins.canvasmc.io/job/Canvas/1016/artifact/canvas-server/build/libs/canvas-build.1016.jar" to
+            "637dd9f0414f3c2f4ce0aec8b500333577463add8f614be82e2b7f0387284e70",
     )
 
     val ALL: List<Server> = listOf(PAPER_FLOOR, PAPER_CURRENT, FOLIA, CANVAS)

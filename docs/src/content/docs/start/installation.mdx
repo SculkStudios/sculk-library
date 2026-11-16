@@ -19,7 +19,7 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 
 | What | Version |
 | --- | --- |
-| Server | Paper 1.21.4, 1.21.11, 26.1.2, 26.2 or 26.3; Folia and Canvas builds in that range; or Velocity 4.2.0. See [compatibility](/reference/compatibility/). |
+| Server | Paper 1.21.4, 1.21.11, 26.1.2, 26.2 or 26.3; Folia and Canvas builds in that range; or Velocity 4.3.1. See [compatibility](/reference/compatibility/). |
 | Java at runtime | 21 for Paper 1.21.x, 25 for Paper 26.x, Canvas and Velocity 4 |
 | Java to build Sculk | JDK 25 and JDK 21; the Gradle toolchain resolver downloads them when missing |
 | Kotlin | The version Sculk is built with: 2.4.21 today (`gradle/libs.versions.toml`) |
@@ -85,7 +85,7 @@ kotlin {
 `kotlinx-coroutines-core` with it. Add `sculk-canvas`, `sculk-text` or `sculk-config` only when you
 use them.
 
-If your plugin supports only Paper 26.x, compile against `io.papermc.paper:paper-api:26.3.build.175-stable`
+If your plugin supports only Paper 26.x, compile against `io.papermc.paper:paper-api:26.3.build.253-stable`
 with `jvmToolchain(25)` instead.
 
 ## Package Kotlin and Sculk into the jar

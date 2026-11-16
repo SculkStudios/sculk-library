@@ -30,7 +30,7 @@ still depend on one small module.
 | Current | Paper 26.3 | Every applicable capability. |
 | Compatible | Paper 1.21.4 (floor), 1.21.11, 26.1.2, 26.2 | Same high-level API where semantics hold; capabilities report otherwise. |
 | Platform-specialised | Folia, Canvas | Region-aware implementations and platform-exclusive features, tested on obtainable builds only. |
-| Proxy | Velocity 4.2 | First-class runtime, not a utility. |
+| Proxy | Velocity 4.3 | First-class runtime, not a utility. |
 | Canary | Upcoming Paper / Folia / Canvas / Velocity builds | CI signal. Never advertised as stable. |
 
 Pinned builds and the reasoning behind the floor are in `COMPATIBILITY.md`.
