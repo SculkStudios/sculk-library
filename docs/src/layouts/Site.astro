@@ -54,12 +54,20 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 		<Search />
 		<script>
 			// A table wider than the column scrolls, so keyboard users must be able to focus it to scroll it.
-			for (const table of document.querySelectorAll<HTMLElement>('.prose table')) {
-				if (table.scrollWidth > table.clientWidth) {
-					table.tabIndex = 0;
-					table.setAttribute('aria-label', 'Scrollable table');
+			// Measured once the web fonts are in, and again on resize, since both change the width.
+			const focusScrollers = () => {
+				for (const table of document.querySelectorAll<HTMLElement>('.prose table')) {
+					if (table.scrollWidth > table.clientWidth) {
+						table.tabIndex = 0;
+						table.setAttribute('aria-label', 'Scrollable table');
+					} else {
+						table.removeAttribute('tabindex');
+						table.removeAttribute('aria-label');
+					}
 				}
-			}
+			};
+			document.fonts.ready.then(focusScrollers);
+			addEventListener('resize', focusScrollers, { passive: true });
 			// One control re-marks the whole site: every support mark follows the chosen platform.
 			const root = document.documentElement;
 			const select = document.querySelector<HTMLSelectElement>('[data-platform-select]');
