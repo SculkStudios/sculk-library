@@ -1,7 +1,6 @@
 ---
 // The navigation by category; a page marks itself only when the chosen platform supports it in part or not at all.
-import Mark from './Mark.astro';
-import { PLATFORMS, type NavSection } from '../lib/nav';
+import { PLATFORMS, PLATFORM_LABELS, type NavSection } from '../lib/nav';
 
 const icons: Record<string, string> = {
 	book: '<path d="M2 3.5h4A2 2 0 0 1 8 5.5V13a1.5 1.5 0 0 0-1.5-1.5H2zM14 3.5h-4A2 2 0 0 0 8 5.5V13a1.5 1.5 0 0 1 1.5-1.5H14z"/>',
@@ -30,7 +29,12 @@ const { sections, current } = Astro.props;
 					<li>
 						<a href={item.href} aria-current={item.id === current ? 'page' : undefined}>
 							{item.label}
-							{item.support && <span class="nav-mark">{PLATFORMS.map((platform) => <Mark level={item.support?.[platform] ?? 'full'} platform={platform} />)}</span>}
+							{item.support && PLATFORMS.map((platform) => {
+								const level = item.support?.[platform];
+								return level === 'partial' || level === 'none' ? (
+									<span class="nav-tag" data-platform={platform} title={`${level === 'partial' ? 'Partly supported' : 'Not supported'} on ${PLATFORM_LABELS[platform]}`}>{level === 'partial' ? 'Partial' : 'Unsupported'}</span>
+								) : null;
+							})}
 						</a>
 					</li>
 				))}

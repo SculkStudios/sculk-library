@@ -68,7 +68,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 			};
 			document.fonts.ready.then(focusScrollers);
 			addEventListener('resize', focusScrollers, { passive: true });
-			// One control re-marks the whole site: every support mark follows the chosen platform.
+			// One control sets the platform for the whole site: navigation tags and support rows follow it.
 			const root = document.documentElement;
 			const select = document.querySelector<HTMLSelectElement>('[data-platform-select]');
 			if (select) {
@@ -76,10 +76,6 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 				select.addEventListener('change', () => {
 					root.dataset.platform = select.value;
 					try { localStorage.setItem('sculk-platform', select.value); } catch {}
-					if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-						root.classList.add('remarking');
-						setTimeout(() => root.classList.remove('remarking'), 220);
-					}
 				});
 			}
 			// Keep the page you are on in view in the rail, without moving the page itself.

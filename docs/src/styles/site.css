@@ -20,22 +20,15 @@
 		--ground: #000000;
 		--sheet: #000000;
 		--raised: #141414;
-		--raised-2: #1c1c1c;
 		--rule: #1f1f1f;
 		--rule-strong: #2e2e2e;
 		--text: #ededed;
 		--text-2: #a1a1a1;
 		--text-3: #8f8f8f;
-		/* Monochrome by default: white marks where you are; colour appears only where it means
-		   something (the thread map, and green, yellow and red support marks). */
-		--here: #cba6f7;
-		--here-soft: #1a1a1a;
-		--link: #ececec;
-		--region: #94e2d5;
-		--region-ink: #94e2d5;
-		--region-fill: rgba(148, 226, 213, 0.16);
-		--global: #89b4fa;
-		--global-ink: #89b4fa;
+		/* Monochrome by default; colour appears only on support marks: green full, yellow partial,
+		   red none. */
+		--current: #1a1a1a;
+		--link: #ededed;
 		--good: #a6e3a1;
 		--partial: #f9e2af;
 		--bad: #f38ba8;
@@ -124,7 +117,7 @@
 	.legend .group:first-child { margin-top: 0; }
 	.legend a { display: flex; align-items: center; gap: 10px; padding: 5px 10px; border-radius: 6px; font-size: 14.5px; font-weight: 400; line-height: 1.45; color: var(--text-2); transition: color 140ms var(--ease), background-color 140ms var(--ease); }
 	.legend a:hover { color: var(--text); }
-	.legend a[aria-current='page'] { color: var(--text); background: var(--here-soft); font-weight: 500; }
+	.legend a[aria-current='page'] { color: var(--text); background: var(--current); font-weight: 500; }
 	
 
 	/* The reading sheet. */
@@ -184,17 +177,12 @@
 	.mark[data-level='none'] { color: var(--bad); background: transparent; border-color: currentColor; }
 	.mark[data-level='n/a'] { color: var(--text-3); width: 8px; height: 1.5px; border: 0; border-radius: 1px; background: currentColor; }
 	
-	.nav-mark { margin-left: auto; }
-	.nav-mark .mark[data-level='full'], .nav-mark .mark[data-level='n/a'] { visibility: hidden; }
-	
-	/* One control re-marks the page: the rail reads the chosen platform's level for each page. */
-	.nav-mark { display: inline-flex; }
-	.nav-mark .mark { display: none; }
-	html[data-platform='paper'] .nav-mark .mark[data-platform='paper'],
-	html[data-platform='folia'] .nav-mark .mark[data-platform='folia'],
-	html[data-platform='canvas'] .nav-mark .mark[data-platform='canvas'],
-	html[data-platform='velocity'] .nav-mark .mark[data-platform='velocity'] { display: inline-block; }
-	html.remarking .nav-mark .mark { transform: scale(1.35); }
+	/* One control re-marks the site: the rail tags a page only where the chosen platform falls short. */
+	.nav-tag { display: none; margin-left: auto; padding: 0 6px; border: 1px solid var(--rule-strong); border-radius: 5px; font-size: 11px; font-weight: 500; line-height: 18px; color: var(--text-2); }
+	html[data-platform='paper'] .nav-tag[data-platform='paper'],
+	html[data-platform='folia'] .nav-tag[data-platform='folia'],
+	html[data-platform='canvas'] .nav-tag[data-platform='canvas'],
+	html[data-platform='velocity'] .nav-tag[data-platform='velocity'] { display: inline-block; }
 
 	.mapcard { border: 1px solid var(--rule); border-radius: 10px; background: var(--code-bg); padding: 14px; }
 	.mapcard svg { width: 100%; height: auto; }
@@ -212,7 +200,7 @@
 	html[data-platform='paper'] .support tr[data-platform='paper'],
 	html[data-platform='folia'] .support tr[data-platform='folia'],
 	html[data-platform='canvas'] .support tr[data-platform='canvas'],
-	html[data-platform='velocity'] .support tr[data-platform='velocity'] { background: var(--here-soft); }
+	html[data-platform='velocity'] .support tr[data-platform='velocity'] { background: var(--current); }
 	html[data-platform='paper'] .support tr[data-platform='paper'] td:first-child,
 	html[data-platform='folia'] .support tr[data-platform='folia'] td:first-child,
 	html[data-platform='canvas'] .support tr[data-platform='canvas'] td:first-child,
@@ -284,6 +272,14 @@
 	.prose h2 { font-family: var(--display); font-weight: 600; font-size: 24px; color: #fff; line-height: 1.3; letter-spacing: -0.02em; margin-top: 52px; text-wrap: balance; }
 	.prose h3 { font-family: var(--display); font-weight: 600; font-size: 18px; color: #fff; line-height: 1.3; letter-spacing: -0.01em; margin-top: 34px; }
 	.prose h2 + *, .prose h3 + * { margin-top: 10px; }
+	.prose :is(h2, h3) .anchor { margin-left: 10px; color: var(--text-3); text-decoration: none; font-weight: 400; opacity: 0; transition: opacity 140ms var(--ease); }
+	.prose :is(h2, h3):hover .anchor, .prose .anchor:focus-visible { opacity: 1; }
+	.prose .anchor:hover { color: var(--text); }
+	@media (hover: none) { .prose :is(h2, h3) .anchor { opacity: 0.6; } }
+	.prose :is(h2, h3) .anchor { margin-left: 10px; color: var(--text-3); text-decoration: none; font-weight: 400; opacity: 0; transition: opacity 140ms var(--ease); }
+	.prose :is(h2, h3):hover .anchor, .prose .anchor:focus-visible { opacity: 1; }
+	.prose .anchor:hover { color: var(--text); }
+	@media (hover: none) { .prose :is(h2, h3) .anchor { opacity: 0.6; } }
 	.prose a { color: var(--link); text-decoration: underline; text-decoration-color: var(--text-3); text-decoration-thickness: 1px; text-underline-offset: 4px; transition: text-decoration-color 140ms var(--ease); }
 	.prose a:hover { color: #fff; text-decoration-color: #fff; }
 	.prose :not(pre) > code { font-family: var(--mono); font-size: 0.86em; color: var(--inline-code); background: var(--raised); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 1px 5px; }
@@ -305,7 +301,7 @@
 /* Outside the layers on purpose: Expressive Code's styles are unlayered and would win over any
    layered rule. Where the copy button shows without hover, untitled blocks make room above the code. */
 @media (hover: none) {
-	.prose .expressive-code .frame:not(.has-title) pre { padding-top: 2.8rem; }
+	.prose .expressive-code .frame:not(.has-title) pre { padding-top: 2.6rem; }
 }
 
 /* Wrapped code breaks only between words, keeping its indent; a single long identifier scrolls

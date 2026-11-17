@@ -49,6 +49,15 @@ const { title, description, module, since, runs, support } = entry.data;
 	</Fragment>
 </Site>
 <script>
+	// Every section heading gets a link to itself; the Markdown processor runs no rehype plugins.
+	for (const heading of document.querySelectorAll<HTMLElement>('.prose :is(h2, h3)[id]')) {
+		const anchor = document.createElement('a');
+		anchor.className = 'anchor';
+		anchor.href = `#${heading.id}`;
+		anchor.setAttribute('aria-label', `Link to ${heading.textContent ?? 'section'}`);
+		anchor.textContent = '#';
+		heading.append(anchor);
+	}
 	// Copies the page as Markdown, for pasting into an issue or an assistant.
 	for (const button of document.querySelectorAll<HTMLButtonElement>('.copy-page')) {
 		button.addEventListener('click', async () => {

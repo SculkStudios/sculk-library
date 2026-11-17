@@ -10,8 +10,6 @@ export default defineConfig({
 	site: 'https://docs.sculk.studio',
 	trailingSlash: 'always',
 	build: { format: 'directory' },
-	// Prose-heavy pages: keep the spaces between inline elements that 'jsx' compression removes.
-	compressHTML: true,
 	// Expressive Code hooks into Sätteri only when the processor is set explicitly.
 	markdown: { processor: satteri() },
 	integrations: [

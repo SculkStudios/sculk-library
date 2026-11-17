@@ -41,7 +41,7 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
     }
 }`;
 ---
-<Site title="Sculk Studio — the Kotlin platform for Minecraft server plugins" description="The Kotlin platform for Paper, Folia, Canvas and Velocity plugins. Work declares what it must own; the platform decides the thread." sections={sections}>
+<Site title="Sculk Studio: the Kotlin platform for Minecraft server plugins" description="The Kotlin platform for Paper, Folia, Canvas and Velocity plugins. Work declares what it must own; the platform decides the thread." sections={sections}>
 	<article data-pagefind-body>
 		<h1 class="page-title home-title">The Kotlin platform for Paper, Folia, Canvas and Velocity plugins.</h1>
 		<p class="lede">Work declares what it must own: the global region, a region, an entity, or no game thread at all. The platform decides the thread, so the same code is correct on Paper and on Folia. One API from Paper 1.21.4 to 26.3, verified on real servers with a real Minecraft client.</p>
@@ -54,6 +54,18 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 		<div class="prose">
 			<Code code={sample} lang="kotlin" title="MyPlugin.kt" />
 			<p><code>withAsync</code> runs off every game thread; <code>withEntity</code> runs on whichever thread owns the player at that moment, and its result says whether the player was still there. On Paper both are the main thread. On Folia and Canvas they are not, and the code does not change.</p>
+
+			<h2 id="build">What you can build</h2>
+			<div class="features">
+				<a class="feature" href="/guides/commands/"><b>Commands</b><span>One typed command DSL, compiled into each platform's own Brigadier tree.</span></a>
+				<a class="feature" href="/guides/menus/"><b>GUIs and menus</b><span>Inventory menus drawn from their state, redrawn slot by slot and locked against item theft.</span></a>
+				<a class="feature" href="/guides/dialogs/"><b>Dialogs</b><span>Forms with checked, typed answers on Paper 1.21.7 and later, and a fallback before that.</span></a>
+				<a class="feature" href="/guides/hud/"><b>Scoreboards and HUD</b><span>Sidebars, boss bars, action bars and tab lists that redraw only what changed.</span></a>
+				<a class="feature" href="/guides/config/"><b>Configs</b><span>Typed YAML files that keep operators' comments and reload transactionally.</span></a>
+				<a class="feature" href="/guides/text/"><b>Text and MiniMessage</b><span>MiniMessage rendering where templates are trusted and player values never parse as tags.</span></a>
+				<a class="feature" href="/guides/placeholders/"><b>Placeholders</b><span>Typed global, per-player and relational placeholders, as MiniMessage tags.</span></a>
+				<a class="feature" href="/guides/items/"><b>Items</b><span>Item specs compiled to data components on every supported Paper version.</span></a>
+			</div>
 
 			<h2 id="modules">Every module</h2>
 			<p>Where every module stands today, read from <a href="https://github.com/SculkStudios/sculk-library/blob/dev/MODULES.md">MODULES.md</a> when this site was built: <span class="num">{done}</span> of <span class="num">{all.length}</span> entries are done. A filled square is done, half is in progress, hollow is planned.</p>
@@ -121,6 +133,12 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 	.actions .primary { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 8px; background: #ededed; color: #000; font-weight: 600; text-decoration: none; transition: background-color 160ms var(--ease); }
 	.actions .primary:hover { background: #fff; color: #000; }
 	/* Every group shares one column grid, so the list reads as one chart across its sections. */
+	.features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+	.prose .feature { display: block; padding: 16px 18px; border: 1px solid var(--rule-strong); border-radius: 10px; text-decoration: none; transition: border-color 160ms var(--ease), background-color 160ms var(--ease); }
+	.prose .feature:hover { border-color: #4a4a4a; background: var(--raised); }
+	.feature b { display: block; font-family: var(--display); font-weight: 600; font-size: 15.5px; color: #fff; }
+	.feature span { display: block; margin-top: 4px; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+	@media (max-width: 600px) { .features { grid-template-columns: minmax(0, 1fr); } }
 	.modules { display: table; table-layout: fixed; width: 100%; margin-top: 10px; }
 	.modules td { padding: 8px 14px 8px 0; }
 	.modules .status { width: 26px; padding-top: 13px; color: var(--text-2); }
