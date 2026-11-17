@@ -76,9 +76,12 @@ It returns a `SculkResult`: an invalid field, or an expression that can never ma
 `0 0 31 feb *`, is an `InvalidInput` failure explaining which field is wrong.
 
 `cron(expression, zone, context, clock, action)` recomputes each wait from the clock, so daylight
-saving changes and slow actions never accumulate drift. A time skipped by a daylight-saving jump
-runs that many minutes after the jump; a time repeated when the clocks go back runs once. Cron
-waits are wall-clock, not ticks.
+saving changes and slow actions never accumulate drift. It waits in ticks and reads the clock again
+at least once a second's worth, so a run starts within about a second of its time even when the
+server lags, and in a test a `FakeClock` advanced with the `FakeExecutor` drives it without real
+waiting. A time skipped by a daylight-saving jump
+runs that many minutes after the jump; a time repeated when the clocks go back runs once. Its times
+are wall-clock times; ticks only pace the checks.
 
 ## Batches over ticks
 

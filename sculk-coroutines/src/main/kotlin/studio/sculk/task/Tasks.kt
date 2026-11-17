@@ -4,12 +4,12 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import studio.sculk.annotation.SculkStable
 import studio.sculk.execution.ExecutionContext
+import studio.sculk.execution.SculkExecutor
 import studio.sculk.execution.SculkScope
 import studio.sculk.execution.delayTicks
 import studio.sculk.time.SculkClock
@@ -52,6 +52,10 @@ public fun SculkScope.delayed(delayTicks: Long, context: ExecutionContext = Exec
  * Runs [action] on the [cron] schedule in [zone], in [context]. Each wait is recomputed from the
  * [clock], so daylight-saving changes and a slow action never accumulate drift. A run that throws
  * is reported and the schedule continues.
+ *
+ * Waits pass through the executor in ticks, at most a second's worth at a time, and the [clock] is
+ * read again after each: a run starts within about a second of its time even on a lagging server,
+ * and a fake executor with a fake clock drives the schedule in tests without real waiting.
  */
 @SculkStable
 public fun SculkScope.cron(
@@ -62,9 +66,13 @@ public fun SculkScope.cron(
     action: suspend () -> Unit,
 ): Job = startIn(context) {
     while (currentCoroutineContext().isActive) {
-        val now = clock.now().atZone(zone)
-        val next = checkNotNull(cron.nextAfter(now)) { "'$cron' has no future run." }
-        delay(Duration.between(now, next).toMillis().coerceAtLeast(1))
+        val next = checkNotNull(cron.nextAfter(clock.now().atZone(zone))) { "'$cron' has no future run." }.toInstant()
+        while (true) {
+            val left = Duration.between(clock.now(), next)
+            if (left.isNegative || left.isZero) break
+            // Capped so a lagging server, whose ticks run long, rechecks the wall clock every second's worth.
+            delayTicks(Math.ceilDiv(left.toMillis(), SculkExecutor.MILLIS_PER_TICK).coerceIn(1, CRON_RECHECK_TICKS))
+        }
         runReporting(action)
     }
 }
@@ -209,3 +217,5 @@ private suspend fun runReporting(action: suspend () -> Unit) {
         context[CoroutineExceptionHandler]?.handleException(context, failure) ?: throw failure
     }
 }
+
+private const val CRON_RECHECK_TICKS = 20L
