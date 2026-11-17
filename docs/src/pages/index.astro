@@ -114,12 +114,12 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 </Atlas>
 
 <style>
-	.home-title { font-size: clamp(34px, 3.6vw, 50px); max-width: 21ch; margin-top: 8px; }
+	.home-title { font-size: clamp(32px, 3.4vw, 46px); max-width: 22ch; margin-top: 8px; }
 	.actions { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin: 26px 0 34px; font-size: 15px; }
 	.actions a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 5px; }
 	.actions a:hover { color: var(--text); text-decoration-color: var(--here); }
-	.actions .primary { display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 6px; background: var(--text); color: #000; font-weight: 700; text-decoration: none; transition: background-color 160ms var(--ease); }
-	.actions .primary:hover { background: #fff; color: #000; }
+	.actions .primary { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 8px; background: var(--here); color: #11111b; font-weight: 600; text-decoration: none; transition: background-color 160ms var(--ease); }
+	.actions .primary:hover { background: #d9bdfa; color: #11111b; }
 	/* Every group shares one column grid, so the atlas reads as one chart across its sections. */
 	.atlas { display: table; table-layout: fixed; width: 100%; margin-top: 10px; }
 	.atlas td { padding: 8px 14px 8px 0; }
@@ -134,9 +134,9 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 		.atlas .name { margin-bottom: 4px; }
 	}
 	.chunks { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin-bottom: 10px; }
-	.chunk { aspect-ratio: 1; border: 1.5px solid var(--text-3); }
-	.chunk[data-level='full'] { background: var(--text); border-color: var(--text); }
-	.chunk[data-level='partial'] { background: linear-gradient(135deg, var(--text) 50%, transparent 50%); border-color: var(--text); }
+	.chunk { aspect-ratio: 1; border: 1.5px solid var(--rule-strong); border-radius: 2px; }
+	.chunk[data-level='full'] { background: var(--good); border-color: var(--good); }
+	.chunk[data-level='partial'] { background: linear-gradient(135deg, var(--partial) 50%, transparent 50%); border-color: var(--partial); }
 	.note a { color: var(--text); text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px; }
 	.note { font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
 	.note code { font-family: var(--mono); font-size: 12px; }

@@ -4,7 +4,6 @@ import { satteri } from '@astrojs/markdown-satteri';
 import sitemap from '@astrojs/sitemap';
 import expressiveCode from 'astro-expressive-code';
 import { defineConfig } from 'astro/config';
-import { atlasTheme } from './src/lib/atlas-theme.mjs';
 import { pagefind } from './src/lib/pagefind-integration.mjs';
 
 export default defineConfig({
@@ -17,7 +16,8 @@ export default defineConfig({
 	markdown: { processor: satteri() },
 	integrations: [
 		expressiveCode({
-			themes: [atlasTheme],
+			// Catppuccin Mocha, the owner's editor theme (MIT), on its own crust and mantle shades.
+			themes: ['catppuccin-mocha'],
 			// Long lines wrap, keeping their indentation, instead of running off the column.
 			defaultProps: { wrap: true, preserveIndent: true },
 			styleOverrides: {
