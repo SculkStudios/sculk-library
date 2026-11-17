@@ -3,6 +3,7 @@ package studio.sculk.data
 import io.lettuce.core.RedisClient
 import io.lettuce.core.ScanArgs
 import io.lettuce.core.ScanCursor
+import io.lettuce.core.SetArgs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
@@ -178,7 +179,7 @@ public class LettuceRedisBackend(uri: String) : RedisBackend {
     override suspend fun get(key: String): String? = withContext(Dispatchers.IO) { commands.get(key) }
 
     override suspend fun set(key: String, value: String, ttlSeconds: Long) {
-        withContext(Dispatchers.IO) { commands.setex(key, ttlSeconds, value) }
+        withContext(Dispatchers.IO) { commands.set(key, value, SetArgs().ex(ttlSeconds)) }
     }
 
     override suspend fun delete(key: String) {
