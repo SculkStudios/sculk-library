@@ -12,7 +12,7 @@ Every public type and member carries exactly one marker.
 
 An unmarked public symbol fails the build.
 
-## Additional metadata
+## Planned metadata (M6)
 
 Where a symbol depends on the platform, it also declares that dependency so the documentation
 and the compatibility report can be generated rather than written.
@@ -23,8 +23,8 @@ and the compatibility report can be generated rather than written.
 | `@Platforms(PAPER, FOLIA, CANVAS)` | Where the symbol is available. Absence means every platform. |
 | `@Requires(ExecutionKind.ENTITY)` | The ownership a caller must hold. Absence means any thread. |
 
-These are processed by the docs manifest generator and checked by the development thread
-checker. They are informational for the compiler.
+Planned for M6, with the docs manifest generator; none of these annotations exists yet. They will
+be informational for the compiler.
 
 ## Binary compatibility
 

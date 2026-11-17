@@ -139,7 +139,6 @@ described in [`THREADING.md`](https://github.com/SculkStudios/sculk-library/blob
 is not built yet.
 
 <Aside>
-  Commands and a Sculk event API are planned (`sculk-commands`, `sculk-events`) but do not exist
-  yet. Until they do, register Bukkit listeners and commands as usual and enter the context you
-  need with [`withEntity`, `withRegion` or `withGlobal`](/concepts/execution/).
+  Register commands with [`sculk-commands`](/guides/commands/) and listeners with
+  [`sculk.events`](/guides/events/); both start your code in the right execution context.
 </Aside>

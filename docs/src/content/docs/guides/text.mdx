@@ -89,7 +89,7 @@ val messages = TranslationFiles.load(
     overrides = dataPath.resolve("lang"),
     defaultLocale = Locale.ENGLISH,
 ).getOrThrow()
-messages.register(sculk.scope, Key.key("myplugin", "messages"))
+messages.register(sculk.scope.resources, Key.key("myplugin", "messages"))
 
 player.sendMessage(Component.translatable("shop.welcome"))
 ```

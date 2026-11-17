@@ -26,12 +26,11 @@ where the implementation stands on the `dev` branch today:
 
 The order in which the planned modules are built, and the gate each milestone must pass, is in
 [`REBUILD.md`](https://github.com/SculkStudios/sculk-library/blob/dev/REBUILD.md#milestones-and-gates).
-In short: M0 (research and architecture), M1 (build engineering) and M2 (core and platforms) are
-done, except the supply-chain checks planned in M1, which moved to M3 and M7. M3 (author
-experience: text, config, then commands, events and permissions) is in progress. M4 (items,
-inventory, dialogs, presentation), M5 (scenes, assets, world, data, network, packets,
-integrations), M6 (Gradle plugin, BOM, docs portal, project generator) and M7 (hardening and the
-release candidate) follow.
+In short: M0 to M4 are done, from research and build engineering through the author-experience
+modules (text, config, commands, events, permissions) to items, inventory, dialogs and presentation.
+M1's supply-chain checks moved to M3, where they are in force, and M7. M5 (scenes, assets, world,
+data, network, packets, integrations), M6 (Gradle plugin, BOM, project generator) and M7 (hardening
+and the release candidate) follow.
 
 Sculk 6.0 does not ship while any planned module is missing, a supported platform fails in CI, or
 a documentation example fails to compile.

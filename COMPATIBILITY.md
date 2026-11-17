@@ -161,7 +161,7 @@ fails when the catalog or this document disagrees with the pins.
 
 | When | Servers |
 | --- | --- |
-| Every push and pull request | Boot on every Paper anchor (1.21.4, 1.21.11, 26.1.2, 26.2, 26.3), each on the Java its line requires · threading on Paper 1.21.4 and 26.3, Folia 26.3 at grid-exponent 4 and 5, and Canvas 26.3 · commands on Paper 1.21.4, 26.3 and Folia 26.3 · both examples · Velocity 4.3.1 with the network example |
+| Every push and pull request | Boot on every Paper anchor (1.21.4, 1.21.11, 26.1.2, 26.2, 26.3), each on the Java its line requires · threading on Paper 1.21.4 and 26.3, Folia 26.3 at grid-exponent 4 and 5, and Canvas 26.3 · commands on Paper 1.21.4, 26.3 and Folia 26.3 · the economy, HUD, shop and staff examples on every server in the matrix · Velocity 4.3.1 with the network example |
 | Canary | `updateServerMatrix --report-only` lists newer builds and newer stable Minecraft versions; boot, threading and Velocity run again on the newest stable build of every pinned version. Failures open an issue and never block a release |
 | Planned | Intermediate 1.21.x lines (1.21.8) and Folia beta builds; PacketEvents snapshots once packets exist (M5) |
 

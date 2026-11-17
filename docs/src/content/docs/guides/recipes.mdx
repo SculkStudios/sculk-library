@@ -34,7 +34,7 @@ val bladeRecipe = shaped(NamespacedKey(this, "sculk_blade"), blade) {
     key('S', Ingredient.of(Material.STICK))
 }
 
-Recipes(server).register(sculk.scope, bladeRecipe)
+Recipes(server).register(sculk.scope.resources, bladeRecipe)
 ```
 
 Register in the global context, as a plugin's start does: on Paper the main thread, on Folia and
@@ -62,7 +62,7 @@ version.
 
 - `Ingredient.of(Material.STICK, Material.BLAZE_ROD)`: any of these items.
 - `Ingredient.tag(Key.key("minecraft:planks"))`: any item in a tag.
-- `Ingredient.exact(token)`: exactly a stack of an item spec, components included, for recipes
+- `Ingredient.exact(blade)`: a stack made from that item spec, components included, for recipes
   that take a custom item and not any item of its type.
 
 ## Checked where declared
@@ -70,4 +70,4 @@ version.
 A pattern that is not a grid, a symbol without a key, a key the pattern never uses, a shapeless
 recipe outside 1 to 9 ingredients, negative experience and an exact ingredient in a transmute
 recipe all throw when the spec is built, without a server. Sculk's own `integration-tests/recipes`
-suite crafts with every type on every anchor, Folia and Canvas.
+suite crafts with every type on every supported Paper version, Folia and Canvas.

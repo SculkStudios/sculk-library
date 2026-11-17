@@ -88,9 +88,9 @@ server runs.
 | `REMOVAL_REASONS` | Entity removal reasons | 26.2 build 109 |
 | `POST_EFFECTS` | Player post-processing effects | 26.3 |
 
-Each resolves to `Native(Unit)` or `Unavailable("added in ...")` today. The feature modules that
-use them (items, menus, dialogs and so on) are planned; they will attach real services, and some
-will offer `Emulated` or `Degraded` fallbacks. The full capability table, with the fallback planned
+Each resolves to `Native(Unit)` or `Unavailable("added in ...")`. The feature modules read them to
+choose a path: dialogs fall back to their `fallback` below 1.21.7, and the config editor uses a menu
+there. The full capability table, with the fallback planned
 for each feature, is in [`COMPATIBILITY.md`](https://github.com/SculkStudios/sculk-library/blob/dev/COMPATIBILITY.md#capabilities).
 
 [Canvas](/start/canvas/) adds `CanvasSupport.REGION_DATA`, `OWNERSHIP`, `WORLDS` and the

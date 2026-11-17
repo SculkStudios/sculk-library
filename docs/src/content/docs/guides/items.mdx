@@ -104,7 +104,7 @@ import net.kyori.adventure.key.Key
 import studio.sculk.item.CustomItems
 
 val items = CustomItems()
-items.define(sculk.scope, blade.with { id = Key.key("shop:sculk_blade") })
+items.define(sculk.scope.resources, blade.with { id = Key.key("shop:sculk_blade") })
 
 val stack = items.create(Key.key("shop:sculk_blade")).getOrThrow()
 items.identify(stack) // shop:sculk_blade
@@ -123,5 +123,5 @@ need a real server.
 <Aside>
   Item stacks themselves need a server: since 1.21 Paper's API-only `ItemStack` delegates to the
   server implementation. Test specs as data, and stacks on a real server as Sculk's own
-  `integration-tests/items` suite does on every anchor.
+  `integration-tests/items` suite does on every supported Paper version.
 </Aside>

@@ -14,7 +14,6 @@ Canvas source, Paper scheduler implementations), `docs/research/d-velocity.md` �
 | `Entity` | live entity | `entity.getScheduler()` (real retire semantics) | entity's region, follows teleports | same | — | `isOwnedByCurrentRegion(entity)`, never derived from its location |
 | `Async` | — | at most 16 threads per plugin, borrowed from the coroutine IO pool | same | same | plugin executor or Velocity scheduler | not on a tick thread |
 | `Proxy` | — | — | — | — | plugin executor | — |
-| `Current` | — | the caller's context, asserted rather than assumed | | | | |
 
 A region context names a **chunk**; the work runs on whichever region owns that chunk when it
 runs. Only the platform knows how wide its sections are, so a context never carries a section.
@@ -151,7 +150,7 @@ of its region API classes; it is never treated as Folia. Its capability provider
 | Regionized data | `CanvasRegionData.create(create = { world -> }, merge = { from, into, tickOffset -> }, split = { from, target -> })` over `Server#createRegionizedData` | `merge` and `split` run under the region lock: they must not block, suspend or throw. The façade takes non-suspending lambdas, wraps them in a guard that logs and keeps the server alive, and in development mode fails tests whose callbacks exceed a time budget. Nothing is called when a region dies. |
 | Ownership by bounding box and by position plus velocity | `isOwnedByCurrentRegion(world, aabb)`, `(location, velocity, buffer)` | Exposed as additional ownership checks on the region context. |
 | Async lifecycle events | teleport, post-teleport, portal, post-portal, respawn, post-respawn, world unload | Pre-events fire on the source region and must not mutate entity state; post-events fire on the destination. Mapped onto Sculk's `listen` and `observe`. |
-| World lifecycle | `createWorld` on the global tick, `unloadWorldAsync` with a typed result | Exposed through `sculk-world` as a capability. |
+| World lifecycle | `createWorld` on the global tick, `unloadWorldAsync` with a typed result | `CanvasWorlds.unload` in `sculk-canvas` today; `sculk-world` (M5) exposes it on every platform. |
 | Tick manager | `RegionThreadingTickManager`, per-region handles | Optional capability; never required. |
 | Scheduler algorithm (EDF, affinity, work stealing) | not observable | Sculk never depends on it. |
 

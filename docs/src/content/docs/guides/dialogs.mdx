@@ -94,8 +94,8 @@ pause screen or the plugin showed it. On a server without dialogs `registerDialo
 
 ## Older servers
 
-Dialogs exist from Minecraft 1.21.6, so Paper 1.21.7 and later. On an older server (`dialogs.isAvailable`
-is false) a dialog shows its `fallback` instead, on the player's thread. A dialog without one makes
+Dialogs need Paper 1.21.7 or later, so of the supported versions only 1.21.4 lacks them. There
+(`dialogs.isAvailable` is false) a dialog shows its `fallback` instead, on the player's thread. A dialog without one makes
 `show` return an `UnsupportedCapability` failure: what a form should become without dialogs, a chat
 prompt, a [menu](/guides/menus/) or nothing, is a decision only your plugin can make.
 

@@ -10,28 +10,28 @@ yet. Sculk 5 lives on [`main`](https://github.com/SculkStudios/sculk-library/tre
 
 ## What it is
 
-The infrastructure most serious plugins end up building for themselves, done once and done
-correctly:
+The infrastructure most serious plugins end up building for themselves, built once and tested on
+real servers:
 
-- **Ownership, not "sync".** Work declares whether it needs the global region, a region, an entity,
-  or no game thread at all. The same code is correct on Paper, Folia and Canvas.
-- **Capabilities, not version checks.** Paper 1.21.4 through 26.3 behind one API; every feature
-  reports whether it is native, emulated, degraded or unavailable on the running server.
-- **Specs as data.** Commands, items, menus, dialogs and scenes are immutable values compiled once
-  for the platform, so they test without a server.
-- **Native where it matters.** Commands compile to Paper's and Velocity's own Brigadier, so clients validate
-  arguments themselves.
-- **Safe text.** Values never become markup.
-- **Modular.** Depend on one module or on everything.
+- **Threading by ownership.** Work names what it must own (the global region, a region, an entity or
+  nothing), and the same code runs correctly on Paper, Folia and Canvas.
+- **One API across versions.** Paper 1.21.4 through 26.3; each feature reports whether the running
+  server supports it natively, emulated, degraded or not at all, so code never compares versions.
+- **Specs as data.** Commands, items, menus and dialogs are immutable values compiled for the
+  platform, so they can be tested without a server.
+- **Native commands.** Commands compile to Paper's and Velocity's own Brigadier trees, so clients
+  validate and complete arguments themselves.
+- **Safe text.** Player values enter MiniMessage as placeholders and are never parsed as tags.
+- **Modular.** Depend on one module or on all of them.
 
 ## Platforms
 
 | Platform | Versions | Java |
 | --- | --- | --- |
 | Paper | 1.21.4, 1.21.11, 26.1.2, 26.2, 26.3 | 21 for 1.21.x, 25 for 26.x |
-| Folia | every build PaperMC publishes in that range | as Paper |
-| Canvas | 26.x | 25 |
-| Velocity | 4.2 | 25 |
+| Folia | 26.3, 26.2 (beta), 26.1.2, 1.21.11, 1.21.8, 1.21.6, 1.21.5, 1.21.4 | as Paper |
+| Canvas | 26.3, 26.2, 26.1.2, 1.21.11, 1.21.8 | 25 |
+| Velocity | 4.3.1 | 25 |
 
 Published artifacts are JVM 21 bytecode and run on both Java generations. Detail in
 [`COMPATIBILITY.md`](COMPATIBILITY.md).
@@ -41,9 +41,11 @@ Published artifacts are JVM 21 bytecode and run on both Java generations. Detail
 | Milestone | State |
 | --- | --- |
 | M0 research and architecture | done |
-| M1 build engineering | done, except the supply-chain items (dependency verification, lockfiles, licence allow-list, SBOM, provenance), which are scheduled in `REBUILD.md` and block 6.0 |
+| M1 build engineering | done; its supply-chain checks moved to M3, where they are in force, and M7 |
 | M2 core, platforms, concurrency | done: `sculk-core`, `sculk-coroutines`, `sculk-platform-api`, `sculk-testkit`, `sculk-paper`, `sculk-canvas`, `sculk-velocity`, threading proven on real Paper, Folia, Canvas and Velocity |
-| M3 author experience | in progress: `sculk-text` and `sculk-config` done; commands next |
+| M3 author experience | done: text, config, commands, events, placeholders and permissions |
+| M4 content and UI | done: items, registry, recipes, menus, dialogs, presentation and the in-game config editor |
+| M5 to M7 | planned: scenes, world, data, network and integrations; tooling; hardening and the release candidate |
 
 Which modules exist today and which are planned is in [`MODULES.md`](MODULES.md). The full plan is
 in [`REBUILD.md`](REBUILD.md); decisions are in [`docs/adr`](docs/adr).

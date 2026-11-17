@@ -9,13 +9,12 @@ unverified.
 ## Published artifacts
 
 Every `studio.sculk:*` artifact is MIT, contains only Sculk source, and has a runtime dependency
-graph limited to MIT, Apache-2.0, BSD and EPL libraries (Kotlin, kotlinx, snakeyaml-engine,
+graph limited to MIT, Apache-2.0, BSD and public-domain libraries (Kotlin, kotlinx, snakeyaml-engine,
 HikariCP, Caffeine, SQLite JDBC, PostgreSQL JDBC). Adventure is provided by the server and never
 bundled.
 
-Today this rule is upheld by review. The build check that enforces it (a licence report in
-`check` with an allow-list that fails the build when anything else reaches a runtime classpath) is
-planned for M3 and is a 6.0 release blocker (`REBUILD.md`).
+The build enforces this: `check` runs a licence report against `gradle/allowed-licenses.json` and
+fails when anything else reaches a published module's runtime classpath.
 
 ## Data Sculk ships
 

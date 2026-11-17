@@ -42,9 +42,7 @@ Every Sculk artifact is JVM 21 bytecode, so one plugin jar runs on both Java gen
    ./gradlew publishToMavenLocal
    ```
 
-   This installs `studio.sculk:sculk-core`, `sculk-coroutines`, `sculk-platform-api`,
-   `sculk-paper`, `sculk-canvas`, `sculk-velocity`, `sculk-testkit`, `sculk-text` and
-   `sculk-config`, each at `6.0.0-SNAPSHOT`.
+   This installs every `studio.sculk:sculk-*` module at `6.0.0-SNAPSHOT`.
 
 </Steps>
 
@@ -80,8 +78,8 @@ kotlin {
 ```
 
 `sculk-paper` brings `sculk-platform-api`, `sculk-coroutines`, `sculk-core` and
-`kotlinx-coroutines-core` with it. Add `sculk-canvas`, `sculk-text` or `sculk-config` only when you
-use them.
+`kotlinx-coroutines-core` with it. Add feature modules such as `sculk-commands-paper`, `sculk-text`,
+`sculk-config` or `sculk-inventory` only when you use them.
 
 If your plugin supports only Paper 26.x, compile against `io.papermc.paper:paper-api:26.3.build.253-stable`
 with `jvmToolchain(25)` instead.
@@ -114,18 +112,6 @@ Velocity API, and never shade a GPL or proprietary plugin API; the reasons are i
 
 ## Declare Folia support
 
-Sculk's scheduling is correct on Folia and Canvas, but the server only loads a plugin there when
-its descriptor says so. Declare it once every part of your plugin uses execution contexts rather
-than the Bukkit scheduler:
-
-```yaml
-# plugin.yml
-name: MyPlugin
-version: 1.0.0
-main: com.example.myplugin.MyPlugin
-api-version: "1.21"
-folia-supported: true
-```
-
-On Folia, see [Folia](/start/folia/) for what changes besides this flag.
+To run on Folia or Canvas, add `folia-supported: true` to `plugin.yml`; [Folia](/start/folia/) covers
+when to declare it and what else changes.
 

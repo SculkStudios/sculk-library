@@ -45,7 +45,7 @@ val counter = menu<Counter>(MenuLayout.chest(3)) {
 }
 
 // once, in start():
-val menus = Menus(this, sculk.scope)
+val menus = Menus(this, sculk.scope.resources)
 menus.open(player, counter, Counter())
 ```
 

@@ -24,7 +24,7 @@ release line, so a version threshold would be wrong on one side of a backport.
 | Tier | Target | Pinned artifact | Java | Adventure |
 | --- | --- | --- | --- | --- |
 | Current | Paper 26.3 | `26.3.build.253-stable` | 25 | 5.2.0 |
-| Compatible | Paper 26.2 | `26.2.build.133-stable` | 25 | 5.2.0 |
+| Compatible | Paper 26.2 | `26.2.build.135-stable` | 25 | 5.2.0 |
 | Compatible | Paper 26.1.2 | `26.1.2.build.74-stable` | 25 | 4.26.1 |
 | Compatible | Paper 1.21.11 | `1.21.11-R0.1-20260511.115010-91` | 21 | 4.26.1 |
 | Floor | Paper 1.21.4 | `1.21.4-R0.1-20250925.065901-231` | 21 | 4.20.0 |
@@ -71,11 +71,11 @@ both lines.
 
 ## What CI proves today
 
-Every push boots every Paper anchor (1.21.4, 1.21.11, 26.1.2, 26.2 and 26.3), each on the Java its
+Every push boots every pinned Paper version (1.21.4, 1.21.11, 26.1.2, 26.2 and 26.3), each on the Java its
 line requires, runs the threading scenarios from `THREADING.md` on Paper 1.21.4, Paper 26.3, Folia
-26.3 and Canvas 26.3, runs both example plugins, and runs the proxy scenarios on Velocity 4.3.1.
+26.3 and Canvas 26.3, runs the economy, HUD, shop and staff examples on every server in the matrix, and runs the proxy scenarios on Velocity 4.3.1.
 
 Every one of those servers is pinned to an exact build in `gradle/servers.json`, and the build fails
-if the API versions or this page disagree with it. A canary run boots the newest stable build of
+if the version catalog or `COMPATIBILITY.md` disagrees with it. A canary run boots the newest stable build of
 each pinned version and lists newer Minecraft versions, so a breaking upstream build is known before
 the pins move. Intermediate versions such as 1.21.8 are not tested yet.
