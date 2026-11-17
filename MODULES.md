@@ -2,7 +2,14 @@
 
 One module, one capability. A module depends only on what it uses. Platform-neutral modules
 never reach Bukkit, Paper or Velocity; the architecture check enforces every rule in the last
-column. Packages are `studio.sculk.<area>`.
+column.
+
+Names follow one rule. A module is named for what it holds, in the plural where it holds many
+(`sculk-items`, `sculk-dialogs`); its package is the singular area, `studio.sculk.item`,
+`studio.sculk.dialog`. A platform or companion module extends its parent's package
+(`sculk-commands-paper` is `studio.sculk.command.paper`, `sculk-config-admin` is
+`studio.sculk.config.admin`), and a module with two areas has one package each (`sculk-items` also
+holds `studio.sculk.pdc`).
 
 Every module below ships in 6.0; nothing is deferred to a later minor. The Status column says
 where the implementation stands on `dev` today: **done** (exists, tested, ABI dumped), **in
