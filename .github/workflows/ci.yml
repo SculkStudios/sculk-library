@@ -117,10 +117,11 @@ jobs:
             21
             25
 
-      # Gradle only writes its cache from the default branch unless told otherwise, and 6 lives on dev.
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
+          # Only the build job saves the Gradle cache: sixteen jobs saving their own entries filled the
+          # repository's cache, evicted the build job's, and sent every job to Maven Central (HTTP 429).
+          cache-read-only: true
 
       - name: ${{ matrix.about }}
         run: ./gradlew ${{ matrix.task }}
