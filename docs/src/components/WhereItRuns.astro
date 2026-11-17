@@ -24,17 +24,17 @@ const lit = (kind: 'region' | 'global') =>
 <figure class="mapcard">
 	<svg viewBox="0 0 262 150" role="img" aria-label={`Ownership map: ${caption.lead} ${caption.rest}`}>
 		<defs>
-			<pattern id="chunks" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M16 0H0V16" fill="none" stroke="#1f2326" stroke-width="1"></path></pattern>
+			<pattern id="chunks" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M16 0H0V16" fill="none" stroke="#262c30" stroke-width="1"></path></pattern>
 		</defs>
-		<rect x="0.5" y="0.5" width="261" height="149" fill="url(#chunks)" stroke="#2c3236"></rect>
+		<rect x="0.5" y="0.5" width="261" height="149" fill="url(#chunks)" stroke="#343b40"></rect>
 		{runs === 'proxy' ? (
 			<>
-				<rect x="72.5" y="40.5" width="117" height="69" fill="none" stroke="#2c3236" stroke-dasharray="4 3"></rect>
-				<text x="131" y="79" text-anchor="middle" fill="#8d9088" font-family="JetBrains Mono Variable, monospace" font-size="10">no world on a proxy</text>
+				<rect x="72.5" y="40.5" width="117" height="69" fill="none" stroke="#343b40" stroke-dasharray="4 3"></rect>
+				<text x="131" y="79" text-anchor="middle" fill="#9fa29a" font-family="JetBrains Mono Variable, monospace" font-size="10">no world on a proxy</text>
 			</>
 		) : (
 			<>
-				<path d="M64.5 32.5h80v16h32v64h-64v-16h-48z" fill={lit('region') ? 'rgba(62,143,138,.22)' : 'none'} stroke={lit('region') ? '#3e8f8a' : '#2c3236'} stroke-width="1.5"></path>
+				<path d="M64.5 32.5h80v16h32v64h-64v-16h-48z" fill={lit('region') ? 'rgba(62,143,138,.22)' : 'none'} stroke={lit('region') ? '#3e8f8a' : '#343b40'} stroke-width="1.5"></path>
 				<rect x="192.5" y="16.5" width="48" height="32" fill={lit('global') ? 'rgba(155,143,214,.22)' : 'none'} stroke={lit('global') ? '#9b8fd6' : 'rgba(155,143,214,.55)'} stroke-width="1.5" stroke-dasharray={lit('global') ? undefined : '4 3'}></rect>
 				{(runs === 'entity' || runs === 'sender') && <path d="M120 74.5S115 68 115 64.5a5 5 0 0110 0C125 68 120 74.5 120 74.5z" fill="#f0954f"></path>}
 				<text x="72" y="128" fill={lit('region') ? '#5fe0d2' : '#9fa29a'} font-family="JetBrains Mono Variable, monospace" font-size="10">a player's region</text>

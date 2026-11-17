@@ -1,12 +1,12 @@
 // The code theme, drawn from the site's palette: bone text on near-black, teal keywords, sand
-// strings, violet types, terracotta numbers. Every token colour clears 4.5:1 on the code ground.
+// strings, violet types, pale-blue numbers. Every token colour clears 4.5:1 on the code ground.
 export const atlasTheme = {
 	name: 'sculk-atlas',
 	type: 'dark',
 	colors: {
 		'editor.background': '#0b0e10',
 		'editor.foreground': '#f3f0e7',
-		'editor.selectionBackground': '#c9824a40',
+		'editor.selectionBackground': '#f0954f40',
 		'editorLineNumber.foreground': '#5d625e',
 		'terminal.ansiGreen': '#7fb8b2',
 		'terminal.ansiRed': '#e08a7c',
@@ -18,7 +18,7 @@ export const atlasTheme = {
 		{ scope: ['keyword', 'storage', 'storage.type', 'storage.modifier', 'keyword.control'], settings: { foreground: '#5fe0d2' } },
 		{ scope: ['string', 'string.quoted', 'string.template'], settings: { foreground: '#f2d58a' } },
 		{ scope: ['constant.character.escape', 'constant.other.placeholder'], settings: { foreground: '#e3b98a' } },
-		{ scope: ['constant.numeric', 'constant.language', 'constant.language.boolean'], settings: { foreground: '#ffa96b' } },
+		{ scope: ['constant.numeric', 'constant.language', 'constant.language.boolean'], settings: { foreground: '#9fd0ff' } },
 		{ scope: ['entity.name.type', 'entity.name.class', 'support.class', 'support.type', 'entity.other.inherited-class'], settings: { foreground: '#c7bbff' } },
 		{ scope: ['entity.name.function', 'support.function', 'meta.function-call'], settings: { foreground: '#ffffff' } },
 		{ scope: ['meta.annotation', 'storage.type.annotation', 'punctuation.definition.annotation'], settings: { foreground: '#ffc66d' } },

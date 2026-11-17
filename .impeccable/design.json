@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-17T12:00:00Z",
+  "title": "Design System: Sculk Studio Docs",
+  "extensions": {
+    "colorMeta": {
+      "here": { "role": "primary", "displayName": "Beacon Terracotta", "canonical": "#f0954f", "tonalRamp": ["#2e1608", "#4f260f", "#753a18", "#9f5124", "#c96c35", "#f0954f", "#f6b886", "#fbe0c8"] },
+      "here-soft": { "role": "primary", "displayName": "Here Wash", "canonical": "rgba(240, 149, 79, 0.14)" },
+      "region": { "role": "secondary", "displayName": "Region Teal", "canonical": "#3e8f8a", "tonalRamp": ["#0b2120", "#123634", "#1c4f4c", "#2a6c68", "#3e8f8a", "#5fb5ae", "#93d8d1", "#d2f3ef"] },
+      "region-ink": { "role": "secondary", "displayName": "Region Ink", "canonical": "#5fe0d2", "tonalRamp": ["#0c2a27", "#13443f", "#1d635c", "#2a877e", "#3fb0a5", "#5fe0d2", "#9ceee5", "#d8faf6"] },
+      "region-fill": { "role": "secondary", "displayName": "Region Fill", "canonical": "rgba(62, 143, 138, 0.2)" },
+      "global": { "role": "tertiary", "displayName": "Global Violet", "canonical": "#9b8fd6", "tonalRamp": ["#1c1830", "#2c2650", "#403875", "#5a5098", "#776cb8", "#9b8fd6", "#c3baec", "#e9e5fa"] },
+      "global-ink": { "role": "tertiary", "displayName": "Global Ink", "canonical": "#c7bbff", "tonalRamp": ["#221c3d", "#352c63", "#4c418c", "#6a5db5", "#9286dd", "#c7bbff", "#ddd5ff", "#f2efff"] },
+      "danger": { "role": "neutral", "displayName": "Ember Warning", "canonical": "#e08a7c", "tonalRamp": ["#2d1310", "#4c201b", "#723129", "#9a463b", "#c06456", "#e08a7c", "#edb3a9", "#f8e0db"] },
+      "ground": { "role": "neutral", "displayName": "True Black Ground", "canonical": "#000000" },
+      "grid": { "role": "neutral", "displayName": "Chunk Line", "canonical": "#0c0e0f" },
+      "grid-strong": { "role": "neutral", "displayName": "Region Line", "canonical": "#15181a" },
+      "sheet": { "role": "neutral", "displayName": "Reading Sheet", "canonical": "#0a0c0d" },
+      "raised": { "role": "neutral", "displayName": "Raised Stone", "canonical": "#13171a" },
+      "raised-2": { "role": "neutral", "displayName": "Raised Stone 2", "canonical": "#1a1f22" },
+      "rule": { "role": "neutral", "displayName": "Hairline", "canonical": "#262c30" },
+      "rule-strong": { "role": "neutral", "displayName": "Strong Hairline", "canonical": "#343b40" },
+      "text": { "role": "neutral", "displayName": "Bone", "canonical": "#f3f0e7", "tonalRamp": ["#000000", "#0a0c0d", "#13171a", "#262c30", "#5d625e", "#9fa29a", "#c6c8c0", "#f3f0e7"] },
+      "text-2": { "role": "neutral", "displayName": "Ash", "canonical": "#c6c8c0" },
+      "text-3": { "role": "neutral", "displayName": "Dust", "canonical": "#9fa29a" },
+      "code-bg": { "role": "neutral", "displayName": "Code Ground", "canonical": "#0b0e10" },
+      "code-bar": { "role": "neutral", "displayName": "Code Bar", "canonical": "#111518" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The page title: wide, tight Archivo, text-wrap balance." },
+      "display-home": { "displayName": "Display Home", "purpose": "The home page title, smaller and capped at 21ch." },
+      "headline": { "displayName": "Headline", "purpose": "Prose H2, opened by a hairline rule 24px above." },
+      "title": { "displayName": "Title", "purpose": "Prose H3; card and aside titles use the same face at 650." },
+      "lede": { "displayName": "Lede", "purpose": "The paragraph under the page title, max 64ch." },
+      "body": { "displayName": "Body", "purpose": "All reading prose at a 70ch measure." },
+      "caption": { "displayName": "Caption", "purpose": "Map captions, support rows, margin notes, search excerpts." },
+      "label": { "displayName": "Label", "purpose": "Uppercase legend headings for rail groups and margin sections; never an eyebrow above a heading." },
+      "code": { "displayName": "Code", "purpose": "Code blocks, keycaps, versions, counts and module names, tabular figures." }
+    },
+    "shadows": [
+      { "name": "dialog-lift", "value": "0 24px 60px rgba(0, 0, 0, 0.7)", "purpose": "The search dialog only, over a rgba(0, 0, 0, 0.72) backdrop." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "The single easing for every transition." },
+      { "name": "hover-fast", "value": "140ms", "purpose": "Rail rows, on-this-page links, prose link underlines." },
+      { "name": "hover", "value": "160ms", "purpose": "Search trigger, foot links, primary button." },
+      { "name": "dialog-rise", "value": "180ms, translateY(8px) and opacity", "purpose": "Search dialog entrance." },
+      { "name": "remark", "value": "220ms, scale(1.35)", "purpose": "Support marks pulse once when the platform changes; support rows wash in. Off under prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "phone-code", "value": "600px" },
+      { "name": "phone", "value": "860px" },
+      { "name": "no-margin", "value": "1240px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one filled button: Bone on black, used at most once per page.",
+      "html": "<a class=\"ds-btn-primary\" href=\"#\">Install Sculk</a>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 6px; background: #f3f0e7; color: #000; font-family: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif; font-size: 15px; font-weight: 700; text-decoration: none; transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-primary:hover { background: #fff; } .ds-btn-primary:focus-visible { outline: 2px solid #f0954f; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Action",
+      "kind": "button",
+      "description": "Secondary actions as underlined Ash text; the underline turns terracotta on hover.",
+      "html": "<a class=\"ds-action\" href=\"#\">See the examples</a>",
+      "css": ".ds-action { color: #c6c8c0; font-family: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif; font-size: 15px; text-decoration: underline; text-decoration-color: #343b40; text-underline-offset: 5px; } .ds-action:hover { color: #f3f0e7; text-decoration-color: #f0954f; } .ds-action:focus-visible { outline: 2px solid #f0954f; outline-offset: 2px; border-radius: 3px; }"
+    },
+    {
+      "name": "Search Trigger",
+      "kind": "input",
+      "refersTo": "search-trigger",
+      "description": "The masthead field that opens the search dialog, with a Ctrl K keycap.",
+      "html": "<button class=\"ds-search\" type=\"button\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><circle cx=\"7\" cy=\"7\" r=\"5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"></circle><path d=\"M11 11l3.5 3.5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"></path></svg><span>Search guides, APIs and config keys</span><kbd class=\"ds-kbd\">Ctrl K</kbd></button>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 10px; width: 420px; height: 38px; padding: 0 12px; background: #0a0c0d; border: 1px solid #262c30; border-radius: 6px; color: #9fa29a; font-family: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif; font-size: 14px; cursor: pointer; transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), color 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-search:hover { border-color: #343b40; color: #c6c8c0; } .ds-search:focus-visible { outline: 2px solid #f0954f; outline-offset: 2px; } .ds-kbd { margin-left: auto; font-family: 'JetBrains Mono Variable', ui-monospace, monospace; font-size: 11px; color: #c6c8c0; border: 1px solid #343b40; border-radius: 4px; padding: 1px 6px; }"
+    },
+    {
+      "name": "Platform Select",
+      "kind": "input",
+      "refersTo": "select",
+      "description": "The one control that re-marks the page for a platform.",
+      "html": "<label class=\"ds-select\"><span>Platform</span><select><option>Paper</option><option>Folia</option><option>Canvas</option><option>Velocity</option></select><svg width=\"10\" height=\"10\" viewBox=\"0 0 10 10\" aria-hidden=\"true\"><path d=\"M2 3.5l3 3 3-3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\"></path></svg></label>",
+      "css": ".ds-select { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 30px 0 12px; border: 1px solid #262c30; border-radius: 6px; background: #0a0c0d; font-family: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif; font-size: 13px; color: #c6c8c0; } .ds-select select { appearance: none; background: transparent; border: 0; color: #f3f0e7; font: inherit; font-weight: 600; cursor: pointer; } .ds-select select:focus-visible { outline: none; } .ds-select:focus-within { outline: 2px solid #f0954f; outline-offset: 2px; } .ds-select svg { position: absolute; right: 11px; pointer-events: none; } .ds-select option { background: #0a0c0d; }"
+    },
+    {
+      "name": "Legend Rail",
+      "kind": "nav",
+      "refersTo": "legend-link",
+      "description": "Navigation set as a map legend: support mark per page, the current page pinned in terracotta.",
+      "html": "<nav class=\"ds-legend\"><p class=\"ds-label\">Concepts</p><a href=\"#\" aria-current=\"page\"><svg width=\"10\" height=\"13\" viewBox=\"0 0 10 13\" aria-hidden=\"true\"><path d=\"M5 12.5S.75 7.6.75 4.75a4.25 4.25 0 018.5 0C9.25 7.6 5 12.5 5 12.5z\" fill=\"#f0954f\"></path><circle cx=\"5\" cy=\"4.75\" r=\"1.6\" fill=\"#000\"></circle></svg>Execution contexts</a><a href=\"#\"><span class=\"ds-mark\" data-level=\"full\"></span>Tasks</a><a href=\"#\"><span class=\"ds-mark\" data-level=\"partial\"></span>Capabilities</a><a href=\"#\"><span class=\"ds-mark\" data-level=\"none\"></span>Canvas</a></nav>",
+      "css": ".ds-legend { width: 240px; padding: 24px; background: #000; border-left: 1px solid #262c30; border-right: 1px solid #262c30; font-family: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif; } .ds-label { font-family: 'Archivo Variable', system-ui, sans-serif; font-stretch: 125%; font-weight: 650; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #9fa29a; margin: 0 0 8px; } .ds-legend a { display: flex; align-items: center; gap: 10px; padding: 6px 10px; margin-left: -10px; border-radius: 5px; font-size: 15px; line-height: 1.4; color: #c6c8c0; text-decoration: none; transition: color 140ms cubic-bezier(0.16, 1, 0.3, 1), background-color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-legend a:hover, .ds-legend a[aria-current='page'] { color: #f3f0e7; background: #13171a; } .ds-legend a:focus-visible { outline: 2px solid #f0954f; outline-offset: 2px; } .ds-legend .ds-mark { color: #9fa29a; } .ds-legend a:hover .ds-mark { color: #c6c8c0; } .ds-mark { display: inline-block; flex: none; width: 9px; height: 9px; border: 1.5px solid currentColor; } .ds-mark[data-level='full'] { background: currentColor; } .ds-mark[data-level='partial'] { background: linear-gradient(135deg, currentColor 50%, transparent 50%); }"
+    },
+    {
+      "name": "Support Table",
+      "kind": "custom",
+      "refersTo": "support-mark",
+      "description": "Per-platform support as marks; the chosen platform's row is washed in Here Wash with a terracotta mark.",
+      "html": "<table class=\"ds-support\"><tbody><tr class=\"ds-here\"><td><span class=\"ds-mark\" data-level=\"full\"></span></td><td><b>Paper</b> supported</td></tr><tr><td><span class=\"ds-mark\" data-level=\"partial\"></span></td><td><b>Folia</b> in part</td></tr><tr><td><span class=\"ds-mark\" data-level=\"none\"></span></td><td><b>Canvas</b> not supported</td></tr><tr><td><span class=\"ds-mark\" data-level=\"n/a\"></span></td><td><b>Velocity</b> not applicable</td></tr></tbody></table>",
+      "css": ".ds-support { width: 280px; border-collapse: collapse; font-family: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif; font-size: 13.5px; line-height: 1.5; background: #000; } .ds-support td { padding: 8px 0; border-top: 1px solid #262c30; color: #c6c8c0; vertical-align: top; } .ds-support td:first-child { width: 22px; padding-top: 12px; } .ds-support b { color: #f3f0e7; font-weight: 600; } .ds-support tr { transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-support tr.ds-here { background: rgba(240, 149, 79, 0.14); } .ds-support tr.ds-here td:first-child { color: #f0954f; padding-left: 8px; } .ds-mark { display: inline-block; width: 9px; height: 9px; border: 1.5px solid currentColor; } .ds-mark[data-level='full'] { background: currentColor; } .ds-mark[data-level='partial'] { background: linear-gradient(135deg, currentColor 50%, transparent 50%); } .ds-mark[data-level='n/a'] { height: 1.5px; border: 0; background: currentColor; }"
+    },
+    {
+      "name": "Ownership Map",
+      "kind": "card",
+      "refersTo": "mapcard",
+      "description": "Where it runs: the player's region lit in teal, the global region dashed in violet, the player pinned in terracotta.",
+      "html": "<figure class=\"ds-mapcard\"><svg viewBox=\"0 0 262 150\" role=\"img\" aria-label=\"Ownership map\"><defs><pattern id=\"ds-chunks\" width=\"16\" height=\"16\" patternUnits=\"userSpaceOnUse\"><path d=\"M16 0H0V16\" fill=\"none\" stroke=\"#1f2326\" stroke-width=\"1\"></path></pattern></defs><rect x=\"0.5\" y=\"0.5\" width=\"261\" height=\"149\" fill=\"url(#ds-chunks)\" stroke=\"#2c3236\"></rect><path d=\"M64.5 32.5h80v16h32v64h-64v-16h-48z\" fill=\"rgba(62,143,138,.22)\" stroke=\"#3e8f8a\" stroke-width=\"1.5\"></path><rect x=\"192.5\" y=\"16.5\" width=\"48\" height=\"32\" fill=\"none\" stroke=\"rgba(155,143,214,.55)\" stroke-width=\"1.5\" stroke-dasharray=\"4 3\"></rect><path d=\"M120 74.5S115 68 115 64.5a5 5 0 0110 0C125 68 120 74.5 120 74.5z\" fill=\"#f0954f\"></path><text x=\"72\" y=\"128\" fill=\"#5fe0d2\" font-family=\"JetBrains Mono Variable, monospace\" font-size=\"10\">a player's region</text><text x=\"192\" y=\"62\" fill=\"rgba(199,187,255,.7)\" font-family=\"JetBrains Mono Variable, monospace\" font-size=\"10\">global</text></svg><figcaption><strong>The player's thread.</strong> The main thread on Paper; the region that owns the player on Folia and Canvas.</figcaption></figure>",
+      "css": ".ds-mapcard { width: 290px; margin: 0; border: 1px solid #262c30; border-radius: 8px; background: #0a0c0d; padding: 14px; } .ds-mapcard svg { display: block; width: 100%; height: auto; } .ds-mapcard figcaption { margin-top: 12px; font-family: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif; font-size: 13.5px; line-height: 1.55; color: #c6c8c0; } .ds-mapcard strong { color: #f3f0e7; font-weight: 600; }"
+    },
+    {
+      "name": "Aside",
+      "kind": "card",
+      "refersTo": "aside",
+      "description": "A calm note: neutral Raised Stone fill and a drawn glyph; only danger takes a coloured edge.",
+      "html": "<aside class=\"ds-aside\"><p class=\"ds-aside-title\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" aria-hidden=\"true\"><circle cx=\"7\" cy=\"7\" r=\"6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\"></circle><path d=\"M7 6v4M7 3.8v.4\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"></path></svg>Note</p><p>Blocking work is safe off the game threads; the world is not.</p></aside><aside class=\"ds-aside ds-danger\"><p class=\"ds-aside-title\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" aria-hidden=\"true\"><rect x=\"1.5\" y=\"1.5\" width=\"11\" height=\"11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\"></rect><path d=\"M4.5 4.5l5 5M9.5 4.5l-5 5\" stroke=\"currentColor\" stroke-width=\"1.4\"></path></svg>Danger</p><p>Never touch an entity from another region's thread.</p></aside>",
+      "css": ".ds-aside { max-width: 520px; margin: 0 0 14px; padding: 14px 16px; border-radius: 8px; background: #13171a; border: 1px solid #262c30; font-family: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif; font-size: 15.5px; line-height: 1.75; color: #f3f0e7; } .ds-aside p { margin: 0; } .ds-aside-title { display: flex; align-items: center; gap: 8px; font-family: 'Archivo Variable', system-ui, sans-serif; font-stretch: 112%; font-weight: 650; font-size: 14px; margin-bottom: 4px !important; } .ds-aside-title svg { color: #c6c8c0; } .ds-danger { border-color: rgba(224, 138, 124, 0.55); } .ds-danger .ds-aside-title svg { color: #e08a7c; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Link or summary card on Raised Stone with a hairline edge.",
+      "html": "<div class=\"ds-card\"><h3>Testing without a server</h3><p>Every interface you call ships a fake in sculk-testkit.</p></div>",
+      "css": ".ds-card { max-width: 300px; padding: 16px 18px; border: 1px solid #262c30; border-radius: 8px; background: #13171a; } .ds-card h3 { margin: 0 0 6px; font-family: 'Archivo Variable', system-ui, sans-serif; font-stretch: 110%; font-weight: 650; font-size: 16px; color: #f3f0e7; } .ds-card p { margin: 0; font-family: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif; font-size: 15px; line-height: 1.6; color: #c6c8c0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Chunk Atlas",
+    "overview": "The site is a map of the API, drawn the way a Minecraft filled map is drawn: a true-black ground ruled into 16px chunks, a near-black reading sheet laid over it, and a legend that tells you where you are and what holds on your server. Every page is the same three-part chart, centred as one composition: the legend rail on the left, the reading sheet in the middle, the margin on the right carrying the ownership map, the support legend and the on-this-page list.\n\nMeaning is carried by marks before colour. A filled square is supported or done, a half square is partial or in progress, a hollow square is none or planned, a dash is not applicable. Colour is rationed by role: terracotta says \"you are here\", teal and violet say \"region\" and \"global\", and nothing else is coloured. Density is that of a working reference read beside an IDE: tabular mono numerals, hairline rules, compact legend rows, a 70ch reading measure.\n\nThe system rejects the Starlight and PaperMC docs silhouette (stock header, filled-pill sidebar, coloured callout boxes, centred hero over icon cards) and recoloured template sites; the owner confirmed both.",
+    "keyCharacteristics": [
+      "OLED true-black ground with a low-contrast chunk grid in the frame only, never under reading text.",
+      "One centred three-column chart: rail, sheet, margin.",
+      "Support and status shown as square marks first; colour follows the mark.",
+      "Wide, tight Archivo for display; Atkinson Hyperlegible Next for reading; JetBrains Mono for code and every number.",
+      "Flat surfaces stepped by tone and hairline rules; no glow."
+    ],
+    "rules": [
+      { "name": "The One Meaning Rule", "body": "Terracotta means \"you are here\", teal means a region, violet means the global region. A hue never carries a second meaning, and nothing else on the page is coloured.", "section": "colors" },
+      { "name": "The Mark Before Colour Rule", "body": "Every state is legible in greyscale: the square's fill shape carries the meaning, colour only follows it.", "section": "colors" },
+      { "name": "The Grid Stays In The Frame Rule", "body": "The chunk grid shows on the ground (rail, margin, gutters) and never under the reading sheet, code or cards.", "section": "colors" },
+      { "name": "The Numbers Are Coordinates Rule", "body": "Every version, count and module identifier is set in JetBrains Mono with tabular figures, inline in the sentence.", "section": "typography" },
+      { "name": "The Legend Label Rule", "body": "Uppercase tracked Label type heads a group of legend rows or a margin section. It never sits above a page title or a prose heading.", "section": "typography" },
+      { "name": "The No Glow Rule", "body": "Nothing emits light: no coloured shadows, no blurred halos, no gradients on surfaces. A surface rises by one tone step and a hairline.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the ground true black (#000000) and set reading on the Reading Sheet, one tone above it.",
+      "Do show every support, status or stability state as a filled, half, hollow or dash square before adding any colour.",
+      "Do reserve terracotta for \"you are here\": the current page, the chosen platform, the player's position, keyboard focus.",
+      "Do set every version, count and module name in JetBrains Mono with tabular figures.",
+      "Do separate surfaces with 1px hairlines and one tone step, and open every H2 with a hairline rule.",
+      "Do keep rail, sheet and margin as one centred chart, collapsing the margin under the sheet below 1240px.",
+      "Do draw icons as inline line SVG at a 1.4px stroke in the current text colour."
+    ],
+    "donts": [
+      "Don't reproduce the Starlight or PaperMC docs silhouette: stock header, filled-pill sidebar, coloured callout boxes, a centred hero over icon cards.",
+      "Don't colour an aside by type; only danger takes a coloured edge.",
+      "Don't give teal, violet or terracotta a second meaning, or introduce a fourth signal hue.",
+      "Don't add glow, coloured shadows or surface gradients; the search dialog's dark lift is the only shadow.",
+      "Don't run the chunk grid under reading text, code or cards.",
+      "Don't put uppercase tracked labels above a page title or prose heading as an eyebrow.",
+      "Don't use Mojang's textures, logo or font anywhere in the identity."
+    ]
+  }
+}
