@@ -79,6 +79,13 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 
 	<Fragment slot="margin">
 		<section>
+			<p class="label">The atlas</p>
+			<div class="chunks" role="img" aria-label={`${done} of ${all.length} modules done, ${all.filter((m) => m.status === 'in progress').length} in progress, ${all.filter((m) => m.status === 'planned').length} planned`}>
+				{groups.map((group) => group.modules.map((module) => <span class="chunk" data-level={level[module.status]} title={`${module.name.replace(/`/g, '')}: ${module.status}`}></span>))}
+			</div>
+			<p class="note"><span class="num">{done}</span> of <span class="num">{all.length}</span> modules done, one square each. <a href="#the-atlas">Every module</a></p>
+		</section>
+		<section>
 			<p class="label">Status</p>
 			<p class="note">Sculk 6 is a ground-up rewrite on the <code>dev</code> branch and is <strong>not released</strong>. Build the artifacts yourself with <code>publishToMavenLocal</code>; only modules marked done exist today.</p>
 		</section>
@@ -123,9 +130,14 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 		.atlas, .atlas tbody, .atlas tr, .atlas td { display: block; width: auto; }
 		.atlas tr { position: relative; padding: 10px 0 10px 26px; border-bottom: 1px solid var(--rule); }
 		.atlas td { padding: 0; border: 0; }
-		.atlas .status { position: absolute; left: 0; top: 15px; }
+		.atlas .status { position: absolute; left: 0; top: 17px; padding-top: 0; }
 		.atlas .name { margin-bottom: 4px; }
 	}
+	.chunks { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin-bottom: 10px; }
+	.chunk { aspect-ratio: 1; border: 1.5px solid var(--text-3); }
+	.chunk[data-level='full'] { background: var(--region-ink); border-color: var(--region-ink); }
+	.chunk[data-level='partial'] { background: linear-gradient(135deg, var(--region-ink) 50%, transparent 50%); border-color: var(--region-ink); }
+	.note a { color: var(--text); text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px; }
 	.note { font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
 	.note code { font-family: var(--mono); font-size: 12px; }
 	.note strong { color: var(--text); }

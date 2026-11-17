@@ -302,3 +302,7 @@
 @media (hover: none) {
 	.prose .expressive-code .frame:not(.has-title) pre { padding-top: 2.8rem; }
 }
+
+/* Wrapped code breaks only between words, keeping its indent; a single long identifier scrolls
+   inside its block instead of splitting, so a wrapped line never reads as two lines of Kotlin. */
+.prose .expressive-code .ec-line .code { overflow-wrap: normal; word-break: normal; }
