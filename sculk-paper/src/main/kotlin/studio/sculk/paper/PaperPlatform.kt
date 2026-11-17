@@ -1,6 +1,7 @@
 package studio.sculk.paper
 
 import io.papermc.paper.ServerBuildInfo
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
 import studio.sculk.capability.Capabilities
 import studio.sculk.capability.Capability
@@ -32,9 +33,7 @@ internal object PaperPlatformDetector {
         val buildNumber = build.buildNumber().let { if (it.isPresent) " build ${it.asInt}" else "" }
         val versionId = build.minecraftVersionId()
         val minecraft = MinecraftVersion.parse(versionId).getOrNull()
-        if (minecraft ==
-            null
-        ) {
+        if (minecraft == null) {
             log.warn("Sculk cannot read the Minecraft version '$versionId'; version-dependent features assume the newest.")
         }
         val info = PlatformInfo(kind, "${build.brandName()} ${build.minecraftVersionName()}$buildNumber", minecraft)
@@ -88,32 +87,33 @@ internal object PaperPlatformDetector {
  */
 @SculkStable
 public object PaperCapabilities {
-    @SculkStable
+    @SculkExperimental
     public val DATA_COMPONENTS: CapabilityKey<Unit> = CapabilityKey("paper.data-components", "Item data components")
 
-    @SculkStable
+    @SculkExperimental
     public val MENU_TYPES: CapabilityKey<Unit> = CapabilityKey("paper.menu-types", "Typed menu views")
 
-    @SculkStable
+    @SculkExperimental
     public val DIALOGS: CapabilityKey<Unit> = CapabilityKey("paper.dialogs", "Dialogs")
 
-    @SculkStable
+    @SculkExperimental
     public val CONFIGURATION_PHASE: CapabilityKey<Unit> = CapabilityKey("paper.configuration-phase", "Configuration-phase connections")
 
-    @SculkStable
+    @SculkExperimental
     public val DATAPACK_DISCOVERY: CapabilityKey<Unit> = CapabilityKey("paper.datapack-discovery", "Plugin datapack discovery")
 
-    @SculkStable
+    @SculkExperimental
     public val MANNEQUINS: CapabilityKey<Unit> = CapabilityKey("paper.mannequins", "Mannequin entities")
 
-    @SculkStable
+    @SculkExperimental
     public val REMOVAL_REASONS: CapabilityKey<Unit> = CapabilityKey("paper.removal-reasons", "Entity removal reasons")
 
-    @SculkStable
+    @SculkExperimental
     public val POST_EFFECTS: CapabilityKey<Unit> = CapabilityKey("paper.post-effects", "Player post-processing effects")
 
     private class Probe(val key: CapabilityKey<Unit>, val className: String, val since: String)
 
+    @OptIn(SculkExperimental::class)
     private val PROBES = listOf(
         Probe(DATA_COMPONENTS, "io.papermc.paper.datacomponent.DataComponentTypes", "Minecraft 1.21.3"),
         Probe(MENU_TYPES, "org.bukkit.inventory.MenuType", "Minecraft 1.21.1"),

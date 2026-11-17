@@ -1,3 +1,5 @@
+@file:OptIn(SculkExperimental::class)
+
 package studio.sculk.itest.threading
 
 import kotlinx.coroutines.async
@@ -8,6 +10,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.entity.ArmorStand
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkInternal
 import studio.sculk.canvas.CanvasSupport
 import studio.sculk.capability.Capability

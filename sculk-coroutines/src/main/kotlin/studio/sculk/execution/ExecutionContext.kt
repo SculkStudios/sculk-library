@@ -63,19 +63,26 @@ public value class WorldKey(public val value: String) {
 @SculkStable
 public data class SectionPosition(public val x: Int, public val z: Int) {
     /** The packed form Folia and Canvas use: z in the high 32 bits, x in the low 32 bits. */
-    public val packed: Long get() = (z.toLong() shl 32) or (x.toLong() and 0xFFFFFFFFL)
+    public val packed: Long get() = pack(x, z)
 
     @SculkStable
     public companion object {
         /** Folia's and Canvas's default `grid-exponent`: sections of 16 by 16 chunks. */
         public const val DEFAULT_SHIFT: Int = 4
 
+        /**
+         * The section holding chunk [chunkX], [chunkZ] when sections are `2^shift` chunks wide,
+         * flooring towards negative infinity. Throws [IllegalArgumentException] unless [shift] is in `0..31`.
+         */
         public fun ofChunk(chunkX: Int, chunkZ: Int, shift: Int): SectionPosition {
             require(shift in 0..31) { "A section shift is between 0 and 31, but was $shift." }
             return SectionPosition(chunkX shr shift, chunkZ shr shift)
         }
 
+        /** The section holding block [blockX], [blockZ]; otherwise as [ofChunk]. */
         public fun ofBlock(blockX: Int, blockZ: Int, shift: Int): SectionPosition = ofChunk(blockX shr 4, blockZ shr 4, shift)
+
+        internal fun pack(x: Int, z: Int): Long = (z.toLong() shl 32) or (x.toLong() and 0xFFFFFFFFL)
     }
 }
 

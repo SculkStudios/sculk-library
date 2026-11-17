@@ -13,7 +13,13 @@ import kotlin.coroutines.cancellation.CancellationException
  * A dispatch is never lost. When the entity has left or the executor refuses the work, the job is
  * cancelled first and the continuation then resumes on [ABANDONED], where it observes the
  * cancellation instead of running its body. Its `finally` blocks run there too, owning nothing,
- * so cleanup after an abandoned dispatch must not touch the world (THREADING.md).
+ * so cleanup after an abandoned dispatch must not touch the world (THREADING.md). Only a refusal
+ * ([IllegalStateException], see [SculkExecutor.schedule]) is abandoned this way; any other
+ * exception from the executor is a programmer error and propagates.
+ *
+ * Dispatchers are equal when they share an executor and a context, so `withContext` re-entering the
+ * context the coroutine is already in takes kotlinx's undispatched fast path. Entity dispatchers are
+ * the exception: see [equals].
  */
 internal class ContextDispatcher(private val executor: SculkExecutor, val context: ExecutionContext) : CoroutineDispatcher() {
     override fun isDispatchNeeded(context: CoroutineContext): Boolean = !executor.owns(this.context)
@@ -26,10 +32,23 @@ internal class ContextDispatcher(private val executor: SculkExecutor, val contex
         }
         try {
             executor.schedule(this.context, 0, work)
-        } catch (rejected: RuntimeException) {
-            abandon(context, block, CancellationException("${executor.platform} refused work in ${this.context}.", rejected))
+        } catch (refused: IllegalStateException) {
+            abandon(context, block, CancellationException("${executor.platform} refused work in ${this.context}.", refused))
         }
     }
+
+    /**
+     * Equal for the same executor and context, except that entity dispatchers are equal only to
+     * themselves: re-entering an entity must still ask [SculkExecutor.owns], so an entity removed in
+     * the meantime yields [EntityResult.Gone] instead of running inline (THREADING.md rule 3).
+     */
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ContextDispatcher || context is ExecutionContext.Entity) return false
+        return executor === other.executor && context == other.context
+    }
+
+    override fun hashCode(): Int = if (context is ExecutionContext.Entity) System.identityHashCode(this) else context.hashCode()
 
     private fun abandon(context: CoroutineContext, block: Runnable, cause: CancellationException) {
         context.cancel(cause)

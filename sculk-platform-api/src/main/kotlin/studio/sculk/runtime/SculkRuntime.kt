@@ -19,8 +19,10 @@ public interface SculkRuntime : SculkHandle {
     /** The owning plugin's name. */
     public val name: String
 
+    /** The server or proxy this runtime runs on, detected once when the plugin attached. */
     public val platform: PlatformInfo
 
+    /** The runtime's phase, and the actions registered to run as it advances. */
     public val lifecycle: Lifecycle
 
     /** The plugin scope; coroutines and resources in it end when the plugin disables. */
@@ -29,15 +31,19 @@ public interface SculkRuntime : SculkHandle {
     /** Fixed once [lifecycle] reaches READY. */
     public val capabilities: Capabilities
 
+    /** This plugin's services, one per type; never shared with another plugin. */
     public val services: ServiceRegistry
 
+    /** The clock Sculk's time-based features read; a fake one in tests. */
     public val clock: SculkClock
 
+    /** The plugin's log, adapted to the platform's logger. */
     public val log: SculkLog
 
     /**
-     * True when the operator or the build enabled development checks. Ownership is then verified
-     * on every guarded call and violations fail loudly; in production the checks cost a branch.
+     * True when the operator or the build enabled development checks ([DEVELOPMENT_PROPERTY]).
+     * Only the checks modules have built so far run, such as the Canvas region-data callback budget;
+     * the development thread checker that verifies ownership on guarded calls is planned (THREADING.md).
      */
     public val developmentMode: Boolean
 
@@ -46,6 +52,15 @@ public interface SculkRuntime : SculkHandle {
 
     /** What the runtime knows about itself, for support requests. Never sent anywhere automatically. */
     public fun diagnostics(): DiagnosticReport
+
+    @SculkStable
+    public companion object {
+        /** System property that turns development checks on for every plugin on the JVM: `-Dsculk.development=true`. */
+        public const val DEVELOPMENT_PROPERTY: String = "sculk.development"
+
+        /** True when [DEVELOPMENT_PROPERTY] is `true`; the default every platform uses for [developmentMode]. */
+        public fun developmentModeByDefault(): Boolean = System.getProperty(DEVELOPMENT_PROPERTY).toBoolean()
+    }
 }
 
 /**
@@ -101,9 +116,12 @@ public interface SculkModule {
 /** Where Sculk writes what it has to say. Platforms adapt it to their logger. */
 @SculkStable
 public interface SculkLog {
+    /** Logs routine information. */
     public fun info(message: String)
 
+    /** Logs something unexpected that Sculk worked around, with the [cause] when there is one. */
     public fun warn(message: String, cause: Throwable? = null)
 
+    /** Logs a failure that lost work or disabled a feature, with the [cause] when there is one. */
     public fun error(message: String, cause: Throwable? = null)
 }

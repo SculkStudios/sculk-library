@@ -49,6 +49,7 @@ public class Lifecycle(initial: LifecyclePhase? = null) {
     private var current: LifecyclePhase? = initial
     private val actions = sortedMapOf<LifecyclePhase, MutableList<() -> Unit>>()
 
+    /** The phase last entered, or null before the first [advance]. */
     public val phase: LifecyclePhase? get() = synchronized(lock) { current }
 
     /** Runs [action] when [target] is entered. Registering for a phase already entered is a wiring bug. */
@@ -77,5 +78,6 @@ public class Lifecycle(initial: LifecyclePhase? = null) {
         closeAll(due.map { action -> AutoCloseable { action() } })
     }
 
+    /** True once [target] or a later phase has been entered. */
     public fun hasReached(target: LifecyclePhase): Boolean = phase?.let { it >= target } ?: false
 }

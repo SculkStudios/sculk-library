@@ -14,19 +14,23 @@ import kotlin.reflect.KClass
 public class ServiceRegistry {
     private val services = ConcurrentHashMap<KClass<*>, Any>()
 
+    /** Registers [service] as the one [type] and returns it; a second registration of [type] throws. */
     public fun <T : Any> register(type: KClass<T>, service: T): T {
         val previous = services.putIfAbsent(type, service)
         check(previous == null) { "A ${type.simpleName} is already registered." }
         return service
     }
 
+    /** The service registered as exactly [type], or null; a subtype's registration does not count. */
     public fun <T : Any> find(type: KClass<T>): T? = type.java.cast(services[type])
 
     /** The registered service; a missing one is a wiring bug and throws naming the type. */
     public fun <T : Any> require(type: KClass<T>): T = checkNotNull(find(type)) { "No ${type.simpleName} is registered." }
 
+    /** True when a service is registered as exactly [type]. */
     public fun has(type: KClass<*>): Boolean = services.containsKey(type)
 
+    /** A snapshot of the registered types. */
     public val types: Set<KClass<*>> get() = services.keys.toSet()
 }
 

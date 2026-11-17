@@ -107,4 +107,40 @@ class TasksTest {
         job.cancel()
         assertEquals(listOf(1, 2, 3, 4, 5, 6, 1, 2), seen.take(8))
     }
+
+    @Test
+    fun `a batch tick reads only the items it runs, never the whole collection`() {
+        val chunks = CountingCollection((0 until 1_000).toList())
+        val seen = mutableListOf<Int>()
+        val job = scope.batches(perTick = 2, source = { chunks }) { seen += it }
+        executor.tick()
+        job.cancel()
+        assertEquals(listOf(0, 1), seen)
+        assertEquals(2, chunks.read)
+    }
+
+    @Test
+    fun `a batch action may remove its own item from the collection being walked`() {
+        val players = mutableListOf(1, 2, 3, 4, 5)
+        val job = scope.batches(perTick = 2, source = { players }) { players.remove(it) }
+        executor.tick(3)
+        job.cancel()
+        assertEquals(emptyList<Int>(), players)
+        assertEquals(emptyList<Throwable>(), failures)
+    }
+
+    private class CountingCollection(private val items: List<Int>) : AbstractCollection<Int>() {
+        var read = 0
+
+        override val size: Int get() = items.size
+
+        override fun iterator(): Iterator<Int> {
+            val inner = items.iterator()
+            return object : Iterator<Int> {
+                override fun hasNext(): Boolean = inner.hasNext()
+
+                override fun next(): Int = inner.next().also { read++ }
+            }
+        }
+    }
 }

@@ -5,9 +5,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import studio.sculk.SculkHandle
 import studio.sculk.testkit.FakeEntity
 import studio.sculk.testkit.FakeExecutor
 import studio.sculk.testkit.FakeExecutor.ThreadModel
@@ -241,5 +244,54 @@ class ExecutionTest {
     @Test
     fun `world keys must be namespaced`() {
         assertThrows<IllegalArgumentException> { WorldKey("world") }
+    }
+
+    @Test
+    fun `an executor refusing work cancels the coroutine instead of failing it`() {
+        assertInstanceOf(CancellationException::class.java, regionFailure(IllegalStateException("plugin disabled")))
+    }
+
+    @Test
+    fun `a programmer error from the executor fails the coroutine instead of passing for a cancellation`() {
+        assertInstanceOf(IllegalArgumentException::class.java, regionFailure(IllegalArgumentException("not a Paper entity")))
+    }
+
+    @Test
+    fun `dispatchers for one region are equal, while each entity dispatcher is distinct so re-entry rechecks the entity`() {
+        val execution = SculkExecution(FakeExecutor())
+        val region = ExecutionContext.Region(world, 3, 4)
+        assertEquals(execution.dispatcher(region), execution.dispatcher(region))
+        assertEquals(execution.dispatcher(region).hashCode(), execution.dispatcher(region).hashCode())
+        assertNotEquals(execution.dispatcher(region), SculkExecution(FakeExecutor()).dispatcher(region))
+        val entity = ExecutionContext.Entity(zombie)
+        assertNotEquals(execution.dispatcher(entity), execution.dispatcher(entity))
+    }
+
+    @Test
+    fun `re-entering an entity removed from inside its own context yields Gone and never runs the inner block`() {
+        val executor = FakeExecutor()
+        var ranInside = false
+        val result = executor.run {
+            withEntity(zombie) {
+                executor.remove(zombie)
+                withEntity(zombie) { ranInside = true }
+            }
+        }
+        assertEquals(EntityResult.Gone(zombie), result)
+        assertFalse(ranInside)
+    }
+
+    private fun regionFailure(thrown: RuntimeException): Throwable? {
+        val executor = FakeExecutor()
+        val scope = SculkScope.root("test", ThrowingForRegions(executor, thrown)) {}
+        val outcome = scope.async { withRegion(world, 0, 0) {} }
+        executor.tickUntil { outcome.isCompleted }
+        scope.close()
+        return outcome.getCompletionExceptionOrNull()
+    }
+
+    private class ThrowingForRegions(private val inner: FakeExecutor, private val thrown: RuntimeException) : SculkExecutor by inner {
+        override fun schedule(context: ExecutionContext, delayTicks: Long, work: SculkExecutor.Work): SculkHandle =
+            if (context is ExecutionContext.Region) throw thrown else inner.schedule(context, delayTicks, work)
     }
 }

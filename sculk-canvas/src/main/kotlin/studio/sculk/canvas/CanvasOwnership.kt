@@ -7,6 +7,7 @@ import org.bukkit.Server
 import org.bukkit.World
 import org.bukkit.util.BoundingBox
 import org.bukkit.util.Vector
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
 import studio.sculk.execution.withGlobal
 import kotlin.coroutines.resume
@@ -31,7 +32,15 @@ public class CanvasWorlds internal constructor(private val server: Server) {
     /**
      * Unloads [world] the way Canvas allows: regions finish their teleports, return their players,
      * save and stop, then the global region completes the unload. Returns Canvas's verdict.
+     *
+     * Callable from any context; the request is made on [Global][studio.sculk.execution.ExecutionContext.Global]
+     * and the caller resumes in its own context. Canvas cannot withdraw a request: cancelling the caller
+     * before it is made skips the unload, cancelling it afterwards only discards the verdict.
+     *
+     * Experimental because it returns Canvas's own result type, which follows Canvas's API rather
+     * than Sculk's stability promise.
      */
+    @SculkExperimental
     public suspend fun unload(world: World, save: Boolean = true): WorldUnloadResult = withGlobal {
         suspendCancellableCoroutine { continuation ->
             server.unloadWorldAsync(world, save) { result -> continuation.resume(result) }

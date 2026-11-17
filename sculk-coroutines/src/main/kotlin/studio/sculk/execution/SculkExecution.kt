@@ -58,6 +58,7 @@ public sealed interface EntityResult<out T> {
     public data class Gone(public val entity: EntityRef) : EntityResult<Nothing>
 }
 
+/** The value the work returned, or null when the entity was [gone][EntityResult.Gone]. */
 @SculkStable
 public fun <T> EntityResult<T>.getOrNull(): T? = (this as? EntityResult.Ran)?.value
 
@@ -129,8 +130,8 @@ public suspend fun delayTicks(ticks: Long) {
         }
         val handle = try {
             execution.executor.schedule(context, ticks.coerceAtLeast(1), wake)
-        } catch (rejected: RuntimeException) {
-            continuation.cancel(CancellationException("${execution.executor.platform} refused a wait in $context.", rejected))
+        } catch (refused: IllegalStateException) {
+            continuation.cancel(CancellationException("${execution.executor.platform} refused a wait in $context.", refused))
             return@suspendCancellableCoroutine
         }
         continuation.invokeOnCancellation { handle.close() }

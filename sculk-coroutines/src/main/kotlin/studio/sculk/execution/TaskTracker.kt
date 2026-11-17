@@ -76,8 +76,15 @@ public class TaskTracker(private val description: String) {
             return SculkHandle.NONE
         }
         task.cancel = cancel
-        // A shutdown that ran while start() was submitting saw no cancel action yet.
-        if (closed) task.cancelAndRetire()
+        // A shutdown racing start() may already have claimed and retired the task before this cancel
+        // action existed, so the platform task is cancelled regardless of the claim; cancelling is idempotent.
+        if (closed) {
+            try {
+                cancel()
+            } finally {
+                task.retire()
+            }
+        }
         return SculkHandle { if (task.claim()) cancel() }
     }
 

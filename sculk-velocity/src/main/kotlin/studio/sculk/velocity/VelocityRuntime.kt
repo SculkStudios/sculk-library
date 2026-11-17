@@ -12,6 +12,7 @@ import studio.sculk.lifecycle.LifecyclePhase
 import studio.sculk.runtime.AbstractSculkRuntime
 import studio.sculk.runtime.PlatformInfo
 import studio.sculk.runtime.SculkLog
+import studio.sculk.runtime.SculkRuntime
 
 /**
  * The runtime for one Velocity plugin. Create it with [SculkVelocity.attach] in
@@ -76,7 +77,7 @@ public class VelocityRuntime internal constructor(
 @SculkStable
 public object SculkVelocity {
     /** System property that turns development checks on: `-Dsculk.development=true`. */
-    public const val DEVELOPMENT_PROPERTY: String = "sculk.development"
+    public const val DEVELOPMENT_PROPERTY: String = SculkRuntime.DEVELOPMENT_PROPERTY
 
     /**
      * Creates the runtime. Call from `ProxyInitializeEvent`, so READY follows when the proxy starts
@@ -86,7 +87,7 @@ public object SculkVelocity {
         proxy: ProxyServer,
         container: PluginContainer,
         logger: Logger,
-        developmentMode: Boolean = System.getProperty(DEVELOPMENT_PROPERTY).toBoolean(),
+        developmentMode: Boolean = SculkRuntime.developmentModeByDefault(),
     ): VelocityRuntime {
         val runtime = VelocityRuntime(proxy, container, VelocityExecutor(proxy, container), Slf4jLog(logger), developmentMode)
         runtime.begin()

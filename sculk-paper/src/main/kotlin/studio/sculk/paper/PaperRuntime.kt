@@ -12,6 +12,7 @@ import studio.sculk.lifecycle.LifecyclePhase
 import studio.sculk.runtime.AbstractSculkRuntime
 import studio.sculk.runtime.PlatformInfo
 import studio.sculk.runtime.SculkLog
+import studio.sculk.runtime.SculkRuntime
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -75,7 +76,7 @@ public class PaperRuntime internal constructor(
 @SculkStable
 public object Sculk {
     /** System property that turns development checks on for every plugin: `-Dsculk.development=true`. */
-    public const val DEVELOPMENT_PROPERTY: String = "sculk.development"
+    public const val DEVELOPMENT_PROPERTY: String = SculkRuntime.DEVELOPMENT_PROPERTY
 
     /**
      * Creates the runtime for [plugin]. Call from `onEnable`, and close the returned runtime in
@@ -95,7 +96,8 @@ public object Sculk {
         return PaperRuntime(plugin, detected.info, executor, log, developmentMode, extensions, context).also(PaperRuntime::begin)
     }
 
-    public fun developmentModeByDefault(): Boolean = System.getProperty(DEVELOPMENT_PROPERTY).toBoolean()
+    /** True when [DEVELOPMENT_PROPERTY] is `true`; the default for [attach] and [SculkPaperPlugin]. */
+    public fun developmentModeByDefault(): Boolean = SculkRuntime.developmentModeByDefault()
 }
 
 private class PaperLog(private val logger: Logger) : SculkLog {

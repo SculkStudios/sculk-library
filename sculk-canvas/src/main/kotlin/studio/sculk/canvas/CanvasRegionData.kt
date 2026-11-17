@@ -55,7 +55,12 @@ public class CanvasRegionData internal constructor(
                 split(from, target)
             }
         }
-        val handle = server.createRegionizedData({ _, world -> create(world) }, callback)
+        fun created(world: World): T = try {
+            create(world)
+        } catch (failure: IllegalStateException) {
+            throw CreateFailed(failure)
+        }
+        val handle = server.createRegionizedData({ _, world -> created(world) }, callback)
         return RegionData(server, handle)
     }
 
@@ -86,14 +91,20 @@ public class CanvasRegionData internal constructor(
 public class RegionData<T : Any> internal constructor(private val server: Server, private val handle: RegionTickData.IRegionizedData<T>) {
     /**
      * The value for the region the calling thread is ticking. Off a region thread this is a bug and
-     * throws [WrongContextException]; run it inside `withRegion` or `withEntity`.
+     * throws [WrongContextException]; run it inside `withRegion` or `withEntity`. The first read on a
+     * region creates its value, and an exception from `create` propagates unchanged.
      */
     public fun local(): T = try {
         server.getLocalRegionizedData(handle)
+    } catch (failed: CreateFailed) {
+        throw failed.failure
     } catch (failure: IllegalStateException) {
         throw WrongContextException("Reading regionized data", "a region thread", failure)
     }
 }
+
+// Canvas reports a thread with no region as IllegalStateException; the creator's own are wrapped so local() cannot mistake them.
+private class CreateFailed(val failure: IllegalStateException) : RuntimeException(failure)
 
 /** The regions a split produces. */
 @SculkStable

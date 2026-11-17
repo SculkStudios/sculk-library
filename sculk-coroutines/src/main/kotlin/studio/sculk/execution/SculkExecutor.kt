@@ -35,7 +35,9 @@ public interface SculkExecutor {
      * For [ExecutionContext.Entity], exactly one of [Work.run] and [Work.retired] is called; retired
      * means the entity was removed first. Work of any context still pending when the executor shuts
      * down is retired, never silently dropped. Throws [UnsupportedContextException] for a context the
-     * platform does not [support][supports], and [IllegalStateException] once the executor has shut down.
+     * platform does not [support][supports]. A refusal, because the executor has shut down, the plugin
+     * is disabled or the region's world is not loaded, is always an [IllegalStateException]; dispatchers
+     * cancel the coroutine for it, and let any other exception propagate as a programmer error.
      */
     public fun schedule(context: ExecutionContext, delayTicks: Long, work: Work): SculkHandle
 
@@ -45,6 +47,7 @@ public interface SculkExecutor {
     /** Work an executor runs. [retired] runs instead of [run] when an entity left before its turn. */
     @SculkStable
     public interface Work {
+        /** Runs the work, on a thread that owns the context it was scheduled in. */
         public fun run()
 
         /**

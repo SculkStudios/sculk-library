@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.World
+import org.bukkit.plugin.IllegalPluginAccessException
 import org.bukkit.plugin.Plugin
 import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkInternal
@@ -13,6 +14,8 @@ import studio.sculk.execution.ExecutionContext
 import studio.sculk.execution.SculkExecutor
 import studio.sculk.execution.TaskTracker
 import studio.sculk.execution.UnsupportedContextException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
@@ -30,6 +33,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 @SculkInternal
 public class PaperExecutor(private val plugin: Plugin, override val platform: String, override val regionShift: Int) : SculkExecutor {
     private val tasks = TaskTracker("$platform executor for ${plugin.name}")
+    private val worldKeys = ConcurrentHashMap<String, NamespacedKey>()
     private val async: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(ASYNC_PARALLELISM, "sculk-${plugin.name}-async")
     private val timer = ScheduledThreadPoolExecutor(1) { runnable ->
         Thread(runnable, "sculk-${plugin.name}-timer").apply { isDaemon = true }
@@ -57,7 +61,7 @@ public class PaperExecutor(private val plugin: Plugin, override val platform: St
         accept(context)
         // Paper's schedulers refuse delays under one tick; async work has no tick and may start now.
         val delay = delayTicks.coerceAtLeast(1)
-        return tasks.submit(work, repeating = false) { task ->
+        return submit(work, repeating = false) { task ->
             val consumer = Consumer<ScheduledTask> { task.run() }
             when (context) {
                 ExecutionContext.Global -> Bukkit.getGlobalRegionScheduler().runDelayed(plugin, consumer, delay).canceller()
@@ -96,7 +100,7 @@ public class PaperExecutor(private val plugin: Plugin, override val platform: St
         accept(context)
         val delay = delayTicks.coerceAtLeast(1)
         val period = periodTicks.coerceAtLeast(1)
-        return tasks.submit(work, repeating = true) { task ->
+        return submit(work, repeating = true) { task ->
             val consumer = Consumer<ScheduledTask> { task.run() }
             when (context) {
                 ExecutionContext.Global -> Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, consumer, delay, period).canceller()
@@ -137,11 +141,27 @@ public class PaperExecutor(private val plugin: Plugin, override val platform: St
         if (!supports(context)) throw UnsupportedContextException(context, platform)
     }
 
+    // Paper refuses a disabled plugin's tasks with IllegalPluginAccessException and the timer rejects work once
+    // shut down; SculkExecutor reports every refusal as IllegalStateException, so dispatchers can tell it from a bug.
+    private fun submit(work: SculkExecutor.Work, repeating: Boolean, start: (TaskTracker.Task) -> (() -> Unit)?): SculkHandle = try {
+        tasks.submit(work, repeating, start)
+    } catch (refused: IllegalPluginAccessException) {
+        throw IllegalStateException("$platform refused the work: ${plugin.name} is disabled.", refused)
+    } catch (refused: RejectedExecutionException) {
+        throw IllegalStateException("$platform refused the work: the executor for ${plugin.name} has shut down.", refused)
+    }
+
     private fun ScheduledTask.canceller(): () -> Unit = { cancel() }
 
     private fun millis(ticks: Long): Long = ticks * SculkExecutor.MILLIS_PER_TICK
 
-    private fun world(context: ExecutionContext.Region): World? = NamespacedKey.fromString(context.world.value)?.let(Bukkit::getWorld)
+    // Only the parsed key is cached, never the World: a cached World would outlive an unload, and on Folia
+    // a task sent to an unloaded world's region never runs. The lookup itself stays authoritative.
+    private fun world(context: ExecutionContext.Region): World? {
+        val name = context.world.value
+        val key = worldKeys[name] ?: NamespacedKey.fromString(name)?.also { worldKeys[name] = it } ?: return null
+        return Bukkit.getWorld(key)
+    }
 
     private fun loadedWorld(context: ExecutionContext.Region): World = world(context)
         ?: throw IllegalStateException(

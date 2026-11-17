@@ -140,7 +140,8 @@ fun canSteer(ownership: CanvasOwnership, projectile: Projectile): Boolean =
 
 `CanvasWorlds.unload(world, save = true)` suspends while Canvas unloads the world the region-safe
 way: regions finish their teleports, return their players, save and stop, then the global region
-completes the unload. It returns Canvas's `WorldUnloadResult`.
+completes the unload. It returns Canvas's `WorldUnloadResult`, a Canvas type, so the function is
+experimental: opt in with `@OptIn(SculkExperimental::class)`.
 
 Canvas's scheduler algorithm (deadlines, affinity, work stealing) is not observable, and Sculk
 never depends on it.

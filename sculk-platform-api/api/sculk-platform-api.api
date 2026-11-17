@@ -41,6 +41,8 @@ public abstract interface class studio/sculk/runtime/SculkModule {
 }
 
 public abstract interface class studio/sculk/runtime/SculkRuntime : studio/sculk/SculkHandle {
+	public static final field Companion Lstudio/sculk/runtime/SculkRuntime$Companion;
+	public static final field DEVELOPMENT_PROPERTY Ljava/lang/String;
 	public abstract fun diagnostics ()Lstudio/sculk/diagnostics/DiagnosticReport;
 	public abstract fun getCapabilities ()Lstudio/sculk/capability/Capabilities;
 	public abstract fun getClock ()Lstudio/sculk/time/SculkClock;
@@ -52,5 +54,10 @@ public abstract interface class studio/sculk/runtime/SculkRuntime : studio/sculk
 	public abstract fun getScope ()Lstudio/sculk/execution/SculkScope;
 	public abstract fun getServices ()Lstudio/sculk/service/ServiceRegistry;
 	public abstract fun install (Lstudio/sculk/runtime/SculkModule;)V
+}
+
+public final class studio/sculk/runtime/SculkRuntime$Companion {
+	public static final field DEVELOPMENT_PROPERTY Ljava/lang/String;
+	public final fun developmentModeByDefault ()Z
 }
 

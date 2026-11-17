@@ -78,6 +78,28 @@ class TaskTrackerTest {
     }
 
     @Test
+    fun `a shutdown racing a submission still cancels the platform task and retires it once`() {
+        var platformCancelled = 0
+        val work = object : SculkExecutor.Work {
+            override fun run() {
+                events += "pulse ran"
+            }
+
+            override fun retired() {
+                events += "pulse retired"
+            }
+        }
+        val cancel: () -> Unit = { platformCancelled++ }
+        tracker.submit(work, repeating = true) {
+            tracker.shutdown()
+            cancel
+        }
+        assertEquals(1, platformCancelled)
+        assertEquals(listOf("pulse retired"), events)
+        assertEquals(0, tracker.size)
+    }
+
+    @Test
     fun `a repeating task keeps running until it is claimed`() {
         val pulse = submit("pulse", repeating = true)
         pulse.task.run()

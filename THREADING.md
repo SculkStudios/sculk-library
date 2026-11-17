@@ -87,20 +87,20 @@ helpers (`repeating`, `delayed`, `cron`, `batches`) each take the context to run
 ## Coroutines
 
 Dispatchers implement `isDispatchNeeded` as "not already owned" and `dispatch` through the matching
-platform scheduler. They never throw from `dispatch`: if the platform rejects a task (plugin
-disabled, scheduler retired), the job is cancelled and the continuation resumes on one dedicated
-`sculk-abandoned` thread, where it observes the cancellation rather than being lost. Its `finally`
-blocks run there and own nothing, so cleanup after an abandoned dispatch must not touch the world.
-`Job.cancel()` cancels the underlying `ScheduledTask`; cancelling a task already running is
-cooperative only. `dispatch` never runs a block inline; the inline fast path is
-`isDispatchNeeded = false` when already owned. Dispatchers do not implement kotlinx's internal
-`Delay`: `delay(ms)` stays wall-clock and then re-dispatches, and tick-aligned waiting is
-`delayTicks(n)`, built on the platform scheduler and cancelled with the coroutine. A launch after
-the plugin scope is closed throws with a message naming the plugin, rather than being dropped.
-`Dispatchers.Unconfined` and `Dispatchers.Default` are never used to resume a game-thread
-continuation. Closing a scope cancels its coroutines first and only then closes its resources,
-newest first, so no coroutine runs against a resource that is already closed. A repeating, cron or
-batch task whose run throws reports the failure and keeps its schedule.
+platform scheduler. They never throw from `dispatch` for a refusal: if the platform rejects a task
+(plugin disabled, scheduler retired), the job is cancelled and the continuation resumes on one
+dedicated `sculk-abandoned` thread, where it observes the cancellation rather than being lost. Its
+`finally` blocks run there and own nothing, so cleanup after an abandoned dispatch must not touch
+the world. `Job.cancel()` cancels the underlying `ScheduledTask`; cancelling a task already running
+is cooperative only. `dispatch` never runs a block inline; the inline fast path is `isDispatchNeeded
+= false` when already owned. Dispatchers do not implement kotlinx's internal `Delay`: `delay(ms)`
+stays wall-clock and then re-dispatches, and tick-aligned waiting is `delayTicks(n)`, built on the
+platform scheduler and cancelled with the coroutine. A launch after the plugin scope is closed
+throws with a message naming the plugin, rather than being dropped. `Dispatchers.Unconfined` and
+`Dispatchers.Default` are never used to resume a game-thread continuation. Closing a scope cancels
+its coroutines first and only then closes its resources, newest first, so no coroutine runs against
+a resource that is already closed. A repeating, cron or batch task whose run throws reports the
+failure and keeps its schedule.
 
 Scope hierarchy, each a `ResourceScope` with a coroutine scope attached. The plugin scope and
 explicit child scopes exist today; the per-player, per-entity, per-world and per-session scopes

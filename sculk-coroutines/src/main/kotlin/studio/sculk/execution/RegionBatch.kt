@@ -19,16 +19,27 @@ public suspend fun <T, R> regionBatch(items: List<T>, locate: (T) -> ExecutionCo
     if (items.isEmpty()) return emptyList()
     val execution = currentExecution()
     val shift = execution.executor.regionShift
-    val groups = LinkedHashMap<Pair<WorldKey, SectionPosition>, Group>()
+    require(shift in 0..31) { "A section shift is between 0 and 31, but was $shift." }
+    val groups = ArrayList<Group>()
+    val byWorld = HashMap<WorldKey, HashMap<Long, Group>>()
+    var last: Group? = null
     items.forEachIndexed { index, item ->
         val region = locate(item)
-        groups.getOrPut(region.world to region.section(shift)) { Group(region) }.indices += index
+        val section = SectionPosition.pack(region.chunkX shr shift, region.chunkZ shr shift)
+        // Consecutive items usually share a section; reusing the last group skips the lookup and its boxing.
+        val group = last?.takeIf { it.section == section && it.region.world == region.world }
+            ?: byWorld.getOrPut(region.world) { HashMap() }.getOrPut(section) { Group(region, section).also(groups::add) }
+        group.add(index)
+        last = group
     }
     val results = arrayOfNulls<Any?>(items.size)
     coroutineScope {
-        groups.values.map { group ->
+        groups.map { group ->
             async(execution.dispatcher(group.region)) {
-                for (index in group.indices) results[index] = action(items[index])
+                for (position in 0 until group.size) {
+                    val index = group.indices[position]
+                    results[index] = action(items[index])
+                }
             }
         }.awaitAll()
     }
@@ -36,6 +47,18 @@ public suspend fun <T, R> regionBatch(items: List<T>, locate: (T) -> ExecutionCo
     return results.toList() as List<R>
 }
 
-private class Group(val region: ExecutionContext.Region) {
-    val indices = mutableListOf<Int>()
+private class Group(val region: ExecutionContext.Region, val section: Long) {
+    var indices = IntArray(INITIAL_CAPACITY)
+        private set
+    var size = 0
+        private set
+
+    fun add(index: Int) {
+        if (size == indices.size) indices = indices.copyOf(size * 2)
+        indices[size++] = index
+    }
+
+    private companion object {
+        const val INITIAL_CAPACITY = 8
+    }
 }

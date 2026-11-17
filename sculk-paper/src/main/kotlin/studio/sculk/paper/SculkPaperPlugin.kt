@@ -19,6 +19,10 @@ import kotlin.coroutines.cancellation.CancellationException
 public abstract class SculkPaperPlugin : JavaPlugin() {
     private var runtime: PaperRuntime? = null
 
+    // Set only while onEnable runs; start() may fail on another thread (Folia's global region) meanwhile.
+    @Volatile
+    private var enablingThread: Thread? = null
+
     /** The runtime; available from [start] until the plugin disables. */
     public val sculk: PaperRuntime get() = checkNotNull(runtime) { "$name has no Sculk runtime: it is not enabled." }
 
@@ -37,19 +41,22 @@ public abstract class SculkPaperPlugin : JavaPlugin() {
     final override fun onEnable() {
         val created = Sculk.attach(this, developmentMode, platformExtensions)
         runtime = created
-        var enabling = true
-        created.scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            try {
-                start()
-            } catch (cancelled: CancellationException) {
-                // A closed scope means the plugin is already disabling; anything else is a failed start.
-                if (created.scope.isClosed) throw cancelled
-                fail(created, cancelled, now = enabling)
-            } catch (failure: Exception) {
-                fail(created, failure, now = enabling)
+        enablingThread = Thread.currentThread()
+        try {
+            created.scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                try {
+                    start()
+                } catch (cancelled: CancellationException) {
+                    // A closed scope means the plugin is already disabling; anything else is a failed start.
+                    if (created.scope.isClosed) throw cancelled
+                    fail(created, cancelled, now = enablingThread === Thread.currentThread())
+                } catch (failure: Exception) {
+                    fail(created, failure, now = enablingThread === Thread.currentThread())
+                }
             }
+        } finally {
+            enablingThread = null
         }
-        enabling = false
     }
 
     private fun fail(created: PaperRuntime, failure: Throwable, now: Boolean) {

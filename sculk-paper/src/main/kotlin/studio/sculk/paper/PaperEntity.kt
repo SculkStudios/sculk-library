@@ -11,7 +11,8 @@ import java.util.UUID
 public class PaperEntityRef(public val entity: Entity) : EntityRef {
     override val id: UUID = entity.uniqueId
 
-    override val description: String = when (entity) {
+    // Computed on demand: refs are made on every Entity.ref call, and the text is needed only for diagnostics.
+    override val description: String get() = when (entity) {
         is Player -> "Player ${entity.name}"
         else -> "${entity.type.key.value()} ${entity.uniqueId}"
     }
@@ -23,6 +24,6 @@ public class PaperEntityRef(public val entity: Entity) : EntityRef {
     override fun toString(): String = description
 }
 
-/** This entity as an [EntityRef], for the execution layer. */
+/** This entity as an [EntityRef], for the execution layer. A new ref per call, equal to every other ref of this entity. */
 @SculkStable
 public val Entity.ref: EntityRef get() = PaperEntityRef(this)

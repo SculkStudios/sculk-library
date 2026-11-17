@@ -74,6 +74,11 @@ public fun SculkScope.cron(
  * over once it reaches the end. For work too large for one tick: refreshing every player's
  * display, auditing every loaded chunk. The first items are read on the next tick, in [context].
  * An item whose action throws is reported and skipped.
+ *
+ * Each tick iterates only as far as the items it runs, without copying the collection, and takes
+ * them before running any action, so an action may change the collection. [source] is called once
+ * per tick and iterated on the context's thread, so a collection another thread mutates must have
+ * iterators that tolerate it, such as a concurrent collection's.
  */
 @SculkStable
 public fun <T> SculkScope.batches(
@@ -85,15 +90,38 @@ public fun <T> SculkScope.batches(
     require(perTick > 0) { "A batch must process at least one item per tick, but was $perTick." }
     return startIn(context) {
         var cursor = 0
+        val batch = ArrayList<T>(minOf(perTick, BATCH_INITIAL_CAPACITY))
         while (currentCoroutineContext().isActive) {
             delayTicks(1)
-            val snapshot = source().toList()
-            if (cursor >= snapshot.size) cursor = 0
-            snapshot.subList(cursor, minOf(cursor + perTick, snapshot.size)).forEach { runReporting { action(it) } }
+            cursor = takeBatch(source(), cursor, perTick, batch)
+            try {
+                batch.forEach { runReporting { action(it) } }
+            } finally {
+                batch.clear()
+            }
             cursor += perTick
         }
     }
 }
+
+/** Fills [into] with up to [perTick] items from [cursor] on, starting over when [cursor] is past the end; returns the start used. */
+private fun <T> takeBatch(items: Collection<T>, cursor: Int, perTick: Int, into: MutableList<T>): Int {
+    var iterator = items.iterator()
+    var skipped = 0
+    while (skipped < cursor && iterator.hasNext()) {
+        iterator.next()
+        skipped++
+    }
+    var start = cursor
+    if (!iterator.hasNext()) {
+        iterator = items.iterator()
+        start = 0
+    }
+    while (into.size < perTick && iterator.hasNext()) into += iterator.next()
+    return start
+}
+
+private const val BATCH_INITIAL_CAPACITY = 64
 
 /**
  * Collapses bursts: [action] runs once, [waitTicks] after the last [trigger] of a burst. For

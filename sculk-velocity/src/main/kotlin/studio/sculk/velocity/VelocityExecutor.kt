@@ -9,6 +9,7 @@ import studio.sculk.execution.SculkExecutor
 import studio.sculk.execution.SectionPosition
 import studio.sculk.execution.TaskTracker
 import studio.sculk.execution.UnsupportedContextException
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -36,7 +37,7 @@ public class VelocityExecutor(private val proxy: ProxyServer, private val contai
 
     override fun schedule(context: ExecutionContext, delayTicks: Long, work: SculkExecutor.Work): SculkHandle {
         accept(context)
-        return tasks.submit(work, repeating = false) { task ->
+        return submit(work, repeating = false) { task ->
             if (delayTicks <= 0) {
                 container.executorService.execute { mark(task) }
                 return@submit {}
@@ -53,7 +54,7 @@ public class VelocityExecutor(private val proxy: ProxyServer, private val contai
 
     override fun scheduleRepeating(context: ExecutionContext, delayTicks: Long, periodTicks: Long, work: SculkExecutor.Work): SculkHandle {
         accept(context)
-        return tasks.submit(work, repeating = true) { task ->
+        return submit(work, repeating = true) { task ->
             val scheduled = proxy.scheduler.buildTask(container, Runnable { mark(task) })
                 .delay(millis(delayTicks), TimeUnit.MILLISECONDS)
                 .repeat(millis(periodTicks.coerceAtLeast(1)), TimeUnit.MILLISECONDS)
@@ -64,6 +65,13 @@ public class VelocityExecutor(private val proxy: ProxyServer, private val contai
 
     private fun accept(context: ExecutionContext) {
         if (!supports(context)) throw UnsupportedContextException(context, platform)
+    }
+
+    // Velocity's executors reject work once the proxy stops them; SculkExecutor reports every refusal as IllegalStateException.
+    private fun submit(work: SculkExecutor.Work, repeating: Boolean, start: (TaskTracker.Task) -> (() -> Unit)?): SculkHandle = try {
+        tasks.submit(work, repeating, start)
+    } catch (refused: RejectedExecutionException) {
+        throw IllegalStateException("$platform refused the work: its executors have shut down.", refused)
     }
 
     private fun mark(task: TaskTracker.Task) {
