@@ -79,4 +79,16 @@ class ItemSpecTest {
         assertEquals(1, spec.data.size)
         assertEquals("Steve", spec.data.single().value)
     }
+
+    @Test
+    fun `values are part of a spec, survive a copy and must be tag names`() {
+        val head = item(Material.PLAYER_HEAD) {
+            name = "<primary><player>"
+            value("player", "Daisy")
+        }
+        assertEquals(mapOf("player" to "Daisy"), head.values)
+        assertNotEquals(head, head.with { value("player", "Alex") })
+        assertEquals(head, head.with { lore("<muted>Online") }.with { lore(emptyList()) })
+        assertThrows<IllegalArgumentException> { item(Material.STONE) { value("Not A Tag", 1) } }
+    }
 }

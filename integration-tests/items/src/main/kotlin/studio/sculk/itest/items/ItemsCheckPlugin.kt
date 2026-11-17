@@ -67,6 +67,17 @@ class ItemsCheckPlugin : JavaPlugin() {
                 lore[1].italicAt("Whispers")
             ok to "name '$name', lore ${lore.map { plain.serialize(it) }}, italic ${lore[0].italicAt("Hums")} ${lore[1].italicAt("Whispers")}"
         }
+        verdict("values-are-plain-text") {
+            val head = item(Material.PLAYER_HEAD) {
+                name = "<primary><player>"
+                lore("<muted>Owes <amount> coins")
+                value("player", "<red>Evil")
+                value("amount", 12.5)
+            }.create()
+            val shown = head.getData(DataComponentTypes.ITEM_NAME)?.let(plain::serialize)
+            val owes = head.lore().orEmpty().map(plain::serialize)
+            (shown == "<red>Evil" && owes == listOf("Owes 12.5 coins")) to "name '$shown', lore $owes"
+        }
         verdict("enchantments-and-glint") {
             val level = stack.getEnchantmentLevel(Enchantment.SHARPNESS)
             val glint = stack.getData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE)

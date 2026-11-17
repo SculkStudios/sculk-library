@@ -1,6 +1,7 @@
 package studio.sculk.item
 
 import net.kyori.adventure.key.Key
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import org.bukkit.Color
 import org.bukkit.Material
@@ -51,8 +52,8 @@ public class CustomModel(
  * tests without a server.
  *
  * [name] and [lore] are trusted MiniMessage templates, rendered with the theme of the [Text] passed
- * to [create]; values reach them only through the resolver passed there. Lore lines are not
- * italic unless the template says so.
+ * to [create]; values reach them only as placeholders, from the spec's own [values] or the resolver
+ * passed there. Lore lines are not italic unless the template says so.
  *
  * A spec is checked where it is built for everything that needs no server; [check] covers the rest
  * (the material and the enchantments, which need the server's registries).
@@ -80,6 +81,9 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
     public val id: Key? = builder.id
     public val data: List<PdcValue<*>> = builder.data.toList()
 
+    /** Values the templates read as `<key>`, inserted as plain text and never parsed. */
+    public val values: Map<String, String> = builder.values.toMap()
+
     init {
         require(amount in 1..MAX_STACK) { "amount must be 1 to $MAX_STACK, was $amount" }
         name?.let { require(it.isNotBlank()) { "name must not be blank" } }
@@ -96,6 +100,7 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
         }
         require(maxDamage == null || maxStackSize == null || maxStackSize == 1) { "a damageable item cannot stack; maxStackSize must be 1" }
         require(data.map { it.key.key }.distinct().size == data.size) { "each persistent data key may appear once" }
+        values.keys.forEach { key -> require(TAG_NAME.matches(key)) { "a value's key is a tag name of a-z, 0-9, '_' and '-', not '$key'" } }
     }
 
     /**
@@ -116,7 +121,12 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
      * [check] would reject.
      */
     public fun create(text: Text = Text(), resolver: TagResolver = TagResolver.empty()): ItemStack =
-        ItemCompiler.create(this, text, resolver)
+        ItemCompiler.create(this, text, if (values.isEmpty()) resolver else TagResolver.resolver(valueResolver, resolver))
+
+    // The spec's own values come first: they name what this one item shows.
+    private val valueResolver: TagResolver by lazy {
+        TagResolver.resolver(values.map { (key, value) -> Placeholder.unparsed(key, value) })
+    }
 
     /** A copy with [change] applied on top of this spec. */
     public fun with(change: ItemSpecBuilder.() -> Unit): ItemSpec = ItemSpecBuilder.from(this).apply(change).build()
@@ -129,7 +139,7 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
 
     private fun fields(): List<Any?> = listOf(
         type, amount, name, lore, enchantments, glint, unbreakable, hideTooltip, hidden, model, customModel,
-        maxStackSize, maxDamage, damage, rarity, dyedColor, id, data,
+        maxStackSize, maxDamage, damage, rarity, dyedColor, id, data, values,
     )
 
     @SculkStable
@@ -142,6 +152,8 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
         public const val MAX_ENCHANTMENT_LEVEL: Int = 255
 
         internal fun of(builder: ItemSpecBuilder): ItemSpec = ItemSpec(builder)
+
+        private val TAG_NAME = Regex("[a-z0-9_-]+")
     }
 }
 
@@ -173,6 +185,7 @@ public class ItemSpecBuilder internal constructor(public var type: Material) {
     public var dyedColor: Color? = null
     public var id: Key? = null
     internal val data = mutableListOf<PdcValue<*>>()
+    internal val values = linkedMapOf<String, String>()
 
     /** Appends lore lines, each a MiniMessage template. */
     public fun lore(vararg lines: String) {
@@ -206,6 +219,15 @@ public class ItemSpecBuilder internal constructor(public var type: Material) {
         data += PdcValue(key, value)
     }
 
+    /**
+     * Gives the templates `<key>` as [value]'s text, unparsed, so a player's name or a price can
+     * appear in [name] or [lore] without becoming markup: `name = "<primary><player>"` with
+     * `value("player", target.name)`.
+     */
+    public fun value(key: String, value: Any) {
+        values[key] = value.toString()
+    }
+
     internal fun build(): ItemSpec = ItemSpec.of(this)
 
     internal companion object {
@@ -227,6 +249,7 @@ public class ItemSpecBuilder internal constructor(public var type: Material) {
             dyedColor = spec.dyedColor
             id = spec.id
             data += spec.data
+            values += spec.values
         }
     }
 }

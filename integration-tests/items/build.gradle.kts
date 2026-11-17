@@ -23,5 +23,12 @@ registerResultsVerification(
     "Builds item specs on every Paper anchor, Folia and Canvas and checks the stacks through version-neutral API.",
     runs,
     resultsPath = "plugins/SculkItems/results.properties",
-    required = listOf("name-and-lore", "unbreakable", "hidden-parts", "persistent-data-survives-bytes", "custom-items"),
+    required = listOf(
+        "name-and-lore",
+        "values-are-plain-text",
+        "unbreakable",
+        "hidden-parts",
+        "persistent-data-survives-bytes",
+        "custom-items",
+    ),
 )
