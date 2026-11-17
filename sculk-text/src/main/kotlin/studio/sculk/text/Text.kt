@@ -3,6 +3,7 @@ package studio.sculk.text
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.ComponentLike
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.Tag
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import studio.sculk.annotation.SculkExperimental
@@ -53,7 +54,8 @@ public class Text(
      * Renders [template] with a resolver built elsewhere, such as a placeholder context. A tag
      * [resolver] has takes precedence over a theme style of the same name for this render.
      */
-    public fun render(template: String, resolver: TagResolver): Component = miniMessage.deserialize(expand(template, resolver), resolver)
+    public fun render(template: String, resolver: TagResolver): Component =
+        miniMessage.deserialize(expand(template, resolver), if (OBJECTS) resolver else TagResolver.resolver(resolver, NO_OBJECTS))
 
     /** This renderer with a different theme and an empty cache. */
     public fun withTheme(theme: Theme): Text = Text(theme, miniMessage, cacheSize)
@@ -80,6 +82,24 @@ public class Text(
         /** A renderer with [Theme.DEFAULT], shared by [mm] and [send]. Thread-safe. */
         @SculkExperimental
         public val DEFAULT: Text by lazy { Text() }
+
+        /**
+         * Whether the server's Adventure can draw `<sprite:atlas:sprite>` icons and `<head:player>` faces
+         * inside text: Paper 1.21.11 and every 26.x release can, 1.21.4 cannot. Where it cannot, those
+         * tags render as nothing, so one template works on every version.
+         */
+        @SculkExperimental
+        public val supportsObjects: Boolean get() = OBJECTS
+
+        private val OBJECTS: Boolean = try {
+            Class.forName("net.kyori.adventure.text.ObjectComponent", false, Component::class.java.classLoader)
+            true
+        } catch (_: ClassNotFoundException) {
+            false
+        }
+
+        // Adventure before 4.25 has no object components and would print these tags as text.
+        private val NO_OBJECTS = TagResolver.resolver(setOf("sprite", "head")) { _, _ -> Tag.selfClosingInserting(Component.empty()) }
     }
 }
 

@@ -56,6 +56,20 @@ val line = "<muted>Balance: <balance>".mm("balance" to balance)
 Values go in as placeholders here too. `"Welcome, $name".mm()` would put the name into the template
 and let it inject tags. A plugin with its own theme renders through its own `Text` instead.
 
+## Icons and heads in text
+
+Templates can draw a sprite from the game's atlases with `<sprite:atlas:sprite>` and a player's face
+with `<head:name>`, in chat, titles, HUD lines, item names and menu titles alike:
+
+```kotlin
+player.send("<sprite:items:item/diamond> <primary>Diamond shop</primary>, run by <head:Notch> Notch")
+```
+
+Paper 1.21.11 and every 26.x release draw them. Paper 1.21.4 cannot, and there both tags render as
+nothing, so the same template works on every supported version; `Text.supportsObjects` tells which
+case you are in. A value passed as a placeholder never becomes a sprite or a head: like any other
+markup in a value, `<head:Notch>` inside a player's name is printed as text.
+
 ## Themes
 
 A theme gives semantic names to styles: templates say `<primary>`, `<muted>` or `<danger>` instead

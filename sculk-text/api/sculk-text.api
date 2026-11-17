@@ -59,6 +59,7 @@ public final class studio/sculk/text/Text {
 
 public final class studio/sculk/text/Text$Companion {
 	public final fun getDEFAULT ()Lstudio/sculk/text/Text;
+	public final fun getSupportsObjects ()Z
 }
 
 public final class studio/sculk/text/Theme {
