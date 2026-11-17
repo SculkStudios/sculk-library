@@ -1,11 +1,11 @@
 ---
 title: Dialogs
-description: "Show Minecraft's dialog forms and get typed, validated answers back, with a fallback on servers older than 1.21.7."
+description: "Show Minecraft's dialog forms and get typed, validated answers back, on Paper 1.21.11 and every 26.x release, with a fallback on 1.21.4."
 module: sculk-dialogs
 since: '6.0'
 runs: entity
 support:
-  paper: { level: partial, note: 'dialogs from 1.21.7; your fallback before that' }
+  paper: { level: partial, note: 'every version but 1.21.4, which shows your fallback' }
   folia: { level: full }
   canvas: { level: full }
   velocity: { level: n/a, note: 'not applicable on a proxy' }
@@ -94,8 +94,9 @@ pause screen or the plugin showed it. On a server without dialogs `registerDialo
 
 ## Older servers
 
-Dialogs need Paper 1.21.7 or later, so of the supported versions only 1.21.4 lacks them. There
-(`dialogs.isAvailable` is false) a dialog shows its `fallback` instead, on the player's thread. A dialog without one makes
+Dialogs arrived in Minecraft 1.21.6, so they work on every supported version except the oldest:
+Paper 1.21.11 and every 26.x release have them, 1.21.4 does not. There (`dialogs.isAvailable` is
+false) a dialog shows its `fallback` instead, on the player's thread. A dialog without one makes
 `show` return an `UnsupportedCapability` failure: what a form should become without dialogs, a chat
 prompt, a [menu](/guides/menus/) or nothing, is a decision only your plugin can make.
 

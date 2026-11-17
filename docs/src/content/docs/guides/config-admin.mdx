@@ -5,7 +5,7 @@ module: sculk-config-admin
 since: '6.0'
 runs: entity
 support:
-  paper: { level: full, note: 'a dialog from 1.21.7, a menu on 1.21.4' }
+  paper: { level: full, note: 'a dialog on 1.21.11 and 26.x, a menu on 1.21.4' }
   folia: { level: full }
   canvas: { level: full }
   velocity: { level: n/a, note: 'not applicable on a proxy' }
@@ -39,7 +39,7 @@ decimal numbers and enum choices, nested sections by their dotted path. Numbers 
 `@DecimalRange` become sliders within those bounds. A secret shows an empty field: leave it empty
 to keep the stored value. Lists, maps and sealed choices are left to the file.
 
-- **With dialogs** (Paper 1.21.7 and later): one form with every setting, and Save and Cancel.
+- **With dialogs** (Paper 1.21.11 and every 26.x release): one form with every setting, and Save and Cancel.
 - **Without** (1.21.4): a menu of the settings with their values and comments. Clicking a toggle
   switches it, clicking a choice moves to the next, left and right click step a bounded number
   (shift for ten steps), and a text setting tells the operator to edit the file.
