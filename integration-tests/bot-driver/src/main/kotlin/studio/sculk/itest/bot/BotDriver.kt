@@ -103,6 +103,10 @@ class BotDriver(private val name: String, port: Int) : AutoCloseable {
 
     fun closeWindow() = send("CLOSE")
 
+    /** Presses the dialog button labelled [label] with [values] for its inputs, as `key` to text. */
+    fun answerDialog(label: String, vararg values: Pair<String, Any>) =
+        send("DIALOGCLICK", label, *values.map { (key, value) -> "$key=$value" }.toTypedArray())
+
     fun command(text: String) = send("COMMAND", text)
 
     private fun send(vararg fields: String) {

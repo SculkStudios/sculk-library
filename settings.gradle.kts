@@ -59,6 +59,7 @@ include(
     ":sculk-registry",
     ":sculk-recipes",
     ":sculk-inventory",
+    ":sculk-dialogs",
 )
 
 // Never published. Each proves something about the published modules on a real server.
@@ -71,6 +72,7 @@ include(
     ":integration-tests:boot",
     ":integration-tests:client",
     ":integration-tests:commands",
+    ":integration-tests:dialogs",
     ":integration-tests:examples",
     ":integration-tests:items",
     ":integration-tests:menus",

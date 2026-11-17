@@ -1,0 +1,90 @@
+public final class studio/sculk/dialog/DialogBuilder {
+	public final fun body ([Ljava/lang/String;)V
+	public final fun button (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun button$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun choice (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public static synthetic fun choice$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun fallback (Lkotlin/jvm/functions/Function1;)V
+	public final fun getCanCloseWithEscape ()Z
+	public final fun input (Lstudio/sculk/dialog/DialogInput;)V
+	public final fun number (Ljava/lang/String;Ljava/lang/String;Lkotlin/ranges/ClosedFloatingPointRange;Ljava/lang/Float;Ljava/lang/Float;)V
+	public static synthetic fun number$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Lkotlin/ranges/ClosedFloatingPointRange;Ljava/lang/Float;Ljava/lang/Float;ILjava/lang/Object;)V
+	public final fun setCanCloseWithEscape (Z)V
+	public final fun text (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)V
+	public static synthetic fun text$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/Object;)V
+	public final fun toggle (Ljava/lang/String;Ljava/lang/String;Z)V
+	public static synthetic fun toggle$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)V
+}
+
+public final class studio/sculk/dialog/DialogButton {
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getTooltip ()Ljava/lang/String;
+}
+
+public abstract interface annotation class studio/sculk/dialog/DialogDsl : java/lang/annotation/Annotation {
+}
+
+public abstract class studio/sculk/dialog/DialogInput {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getLabel ()Ljava/lang/String;
+}
+
+public final class studio/sculk/dialog/DialogInput$Choice : studio/sculk/dialog/DialogInput {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getInitial ()Ljava/lang/String;
+	public final fun getOptions ()Ljava/util/List;
+}
+
+public final class studio/sculk/dialog/DialogInput$Number : studio/sculk/dialog/DialogInput {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/ranges/ClosedFloatingPointRange;Ljava/lang/Float;Ljava/lang/Float;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/ranges/ClosedFloatingPointRange;Ljava/lang/Float;Ljava/lang/Float;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getInitial ()Ljava/lang/Float;
+	public final fun getRange ()Lkotlin/ranges/ClosedFloatingPointRange;
+	public final fun getStep ()Ljava/lang/Float;
+}
+
+public final class studio/sculk/dialog/DialogInput$Text : studio/sculk/dialog/DialogInput {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getInitial ()Ljava/lang/String;
+	public final fun getLines ()I
+	public final fun getMaxLength ()I
+}
+
+public final class studio/sculk/dialog/DialogInput$Toggle : studio/sculk/dialog/DialogInput {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getInitial ()Z
+}
+
+public final class studio/sculk/dialog/DialogResponse {
+	public final fun choice (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun number (Ljava/lang/String;)Ljava/lang/Float;
+	public final fun text (Ljava/lang/String;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public final fun toggle (Ljava/lang/String;)Ljava/lang/Boolean;
+}
+
+public final class studio/sculk/dialog/DialogSpec {
+	public final fun getBody ()Ljava/util/List;
+	public final fun getButtons ()Ljava/util/List;
+	public final fun getCanCloseWithEscape ()Z
+	public final fun getInputs ()Ljava/util/List;
+	public final fun getTitle ()Ljava/lang/String;
+}
+
+public final class studio/sculk/dialog/DialogSpecKt {
+	public static final fun dialog (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/dialog/DialogSpec;
+}
+
+public final class studio/sculk/dialog/Dialogs {
+	public fun <init> (Lorg/bukkit/plugin/Plugin;Lstudio/sculk/text/Text;)V
+	public synthetic fun <init> (Lorg/bukkit/plugin/Plugin;Lstudio/sculk/text/Text;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun close (Lorg/bukkit/entity/Player;)V
+	public final fun isAvailable ()Z
+	public final fun show (Lorg/bukkit/entity/Player;Lstudio/sculk/dialog/DialogSpec;)Lstudio/sculk/SculkResult;
+}
+

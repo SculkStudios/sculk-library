@@ -1,0 +1,67 @@
+---
+title: Dialogs
+description: sculk-dialogs, forms with checked, typed answers on Paper 1.21.7 and later, and an explicit fallback where dialogs do not exist.
+sidebar:
+  order: 13
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`sculk-dialogs` (package `studio.sculk.dialog`) shows Minecraft's dialog screens: a title, text,
+form inputs and buttons. Answers come back typed and checked, on the player's own thread.
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-dialogs:6.0.0-SNAPSHOT")
+}
+```
+
+## A form
+
+```kotlin
+import studio.sculk.dialog.Dialogs
+import studio.sculk.dialog.dialog
+
+val setup = dialog("<primary>Shop setup") {
+    body("Fill in your shop.")
+    text("name", "Name", maxLength = 24)
+    toggle("open", "Open now")
+    number("price", "Price", 1f..100f, step = 1f, initial = 10f)
+    choice("colour", "Colour", listOf("red" to "Red", "blue" to "Blue"), initial = "red")
+    button("Save") { answer ->
+        shops.save(answer.player, answer.text("name"), answer.toggle("open") == true, answer.number("price"), answer.choice("colour"))
+    }
+    button("Cancel")
+    fallback { player -> player.sendMessage(Component.text("Use /shop setup <name> <price> instead.")) }
+}
+
+val dialogs = Dialogs(this)
+dialogs.show(player, setup)
+```
+
+- Titles, body paragraphs, labels and option labels are templates rendered with the `Text` you
+  give `Dialogs`, so theme styles work in them.
+- One button makes a notice, two a confirmation (Escape presses the second), more a list of
+  actions. A button without a handler only closes the dialog.
+- Answers run on the player's thread: the main thread on Paper, the player's region thread on
+  Folia and Canvas. `show` may be called from any thread.
+
+## Answers are checked
+
+A client may send anything back, so every getter checks the value against the input's
+declaration: text longer than `maxLength`, a number outside the range, an option id that was not
+offered or a value of the wrong kind reads as `null`. Asking for an input the dialog does not have
+is a programming error and throws.
+
+## Older servers
+
+Dialogs exist from Minecraft 1.21.6, so Paper 1.21.7 and later. On an older server (`dialogs.isAvailable`
+is false) a dialog shows its `fallback` instead, on the player's thread. A dialog without one makes
+`show` return an `UnsupportedCapability` failure: what a form should become without dialogs, a chat
+prompt, a [menu](/guides/menus/) or nothing, is a decision only your plugin can make.
+
+<Aside>
+  Sculk's `integration-tests/dialogs` suite shows a form to a real client on every supported Paper
+  version, Folia and Canvas, answers it with valid and invalid values, and checks the fallback on
+  1.21.4.
+</Aside>

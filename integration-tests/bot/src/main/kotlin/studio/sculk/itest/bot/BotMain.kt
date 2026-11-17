@@ -17,7 +17,12 @@ import org.geysermc.mcprotocollib.protocol.data.game.inventory.ShiftClickItemAct
 import org.geysermc.mcprotocollib.protocol.data.game.item.HashedStack
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes
+import org.cloudburstmc.nbt.NbtMap
+import org.cloudburstmc.nbt.NbtType
+import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundClearDialogPacket
+import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundCustomClickActionPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundShowDialogGamePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundContainerClosePacket
@@ -38,8 +43,10 @@ import kotlin.system.exitProcess
  * it sees as one tab-separated event per line on stdout, and acts on one command per line on stdin:
  *
  * - events: `JOINED`, `WINDOW id type title`, `CONTENT id state slot:name...`, `SLOT id state slot name`,
- *   `CLOSED id`, `CHAT text`, `DISCONNECTED reason`;
- * - commands: `CLICK slot LEFT|RIGHT|SHIFT|DROP|HOTBAR n`, `CLOSE`, `COMMAND text`, `QUIT`.
+ *   `CLOSED id`, `CHAT text`, `DIALOG title buttons inputs` (labels and `key:type`, each `|`-separated),
+ *   `DIALOGCLOSED`, `DISCONNECTED reason`;
+ * - commands: `CLICK slot LEFT|RIGHT|SHIFT|DROP|HOTBAR n`, `CLOSE`, `COMMAND text`,
+ *   `DIALOGCLICK label key=value...` (each value typed as the dialog declares its input), `QUIT`.
  *
  * A slot's name is its item name or custom name in plain text, `#id` for an unnamed item, and the
  * slot is left out when it is empty. Only the open window's state is tracked.
@@ -67,6 +74,8 @@ private class Bot(private val out: PrintStream) {
     @Volatile private var window = 0
 
     @Volatile private var stateId = 0
+
+    @Volatile private var dialog: NbtMap? = null
 
     fun connect(host: String, port: Int, name: String) {
         session = ClientNetworkSessionFactory.factory().setAddress(host, port).setProtocol(MinecraftProtocol(name)).create()
@@ -106,6 +115,16 @@ private class Bot(private val out: PrintStream) {
             }
             is ClientboundContainerClosePacket -> emit("CLOSED", packet.containerId.toString())
             is ClientboundSystemChatPacket -> if (!packet.isOverlay) emit("CHAT", plain.serialize(packet.content))
+            is ClientboundShowDialogGamePacket -> if (packet.dialog.isCustom) {
+                val shown = packet.dialog.custom()
+                dialog = shown
+                val inputs = shown.getList("inputs", NbtType.COMPOUND, emptyList()).joinToString("|") { "${it.getString("key")}:${it.getString("type").substringAfter(':')}" }
+                emit("DIALOG", text(shown["title"]), buttons(shown).joinToString("|") { text(it["label"]) }, inputs)
+            }
+            is ClientboundClearDialogPacket -> {
+                dialog = null
+                emit("DIALOGCLOSED")
+            }
         }
     }
 
@@ -116,6 +135,7 @@ private class Bot(private val out: PrintStream) {
             "CLICK" -> click(parts[1].toInt(), parts[2], parts.getOrNull(3)?.toInt())
             "CLOSE" -> session.send(ServerboundContainerClosePacket(window))
             "COMMAND" -> session.send(ServerboundChatCommandPacket(parts[1].removePrefix("/")))
+            "DIALOGCLICK" -> answer(parts[1], parts.drop(2).associate { it.substringBefore('=') to it.substringAfter('=') })
             "QUIT" -> return false
             else -> emit("ERROR", "unknown command '${parts[0]}'")
         }
@@ -134,6 +154,36 @@ private class Bot(private val out: PrintStream) {
             else -> error("unknown click '$kind'")
         }
         session.send(ServerboundContainerClickPacket(window, stateId, slot, type, action, null as HashedStack?, emptyMap<Int, HashedStack>()))
+    }
+
+    /** The buttons of a notice, confirmation or multi-action dialog, in the order the client shows them. */
+    private fun buttons(dialog: NbtMap): List<NbtMap> =
+        listOfNotNull(dialog.getCompound("action", null), dialog.getCompound("yes", null), dialog.getCompound("no", null)) +
+            dialog.getList("actions", NbtType.COMPOUND, emptyList())
+
+    // As the client does: the button's custom click carries its additions plus every input's value.
+    private fun answer(label: String, values: Map<String, String>) {
+        val shown = dialog ?: return emit("ERROR", "no dialog is open")
+        val button = buttons(shown).firstOrNull { text(it["label"]) == label } ?: return emit("ERROR", "no button '$label'")
+        val action = button.getCompound("action")
+        val payload = action.getCompound("additions", NbtMap.EMPTY).toBuilder()
+        shown.getList("inputs", NbtType.COMPOUND, emptyList()).forEach { input ->
+            val key = input.getString("key")
+            val value = values[key] ?: return@forEach
+            when (input.getString("type").substringAfter(':')) {
+                "boolean" -> payload.putBoolean(key, value.toBoolean())
+                "number_range" -> payload.putFloat(key, value.toFloat())
+                else -> payload.putString(key, value)
+            }
+        }
+        session.send(ServerboundCustomClickActionPacket(net.kyori.adventure.key.Key.key(action.getString("id")), payload.build()))
+    }
+
+    /** Plain text of a text component as NBT: a string, or a compound with `text` and `extra`. */
+    private fun text(component: Any?): String = when (component) {
+        is String -> component
+        is NbtMap -> component.getString("text", "") + component.getList("extra", NbtType.COMPOUND, emptyList()).joinToString("") { text(it) }
+        else -> ""
     }
 
     private fun name(item: ItemStack?): String? {

@@ -91,6 +91,9 @@ jobs:
       - name: Menus clicked by a real client on every Paper anchor, Folia and Canvas
         run: ./gradlew :integration-tests:menus:verifyMenus
 
+      - name: Dialogs answered by a real client on every Paper anchor, Folia and Canvas
+        run: ./gradlew :integration-tests:dialogs:verifyDialogs
+
       - name: Example plugins on every server
         run: ./gradlew :integration-tests:examples:verifyExamples
 
