@@ -1,0 +1,83 @@
+---
+title: Folia
+description: Run a Sculk plugin on Folia, where regions tick in parallel and there is no main thread; what to declare, which context to use, and what behaves differently from Paper.
+support:
+  paper: { level: n/a, note: 'Folia only' }
+  folia: { level: full }
+  canvas: { level: full, note: 'a Folia fork; everything here applies' }
+  velocity: { level: n/a, note: 'a proxy has no world' }
+---
+
+import { Aside } from '~/components/mdx';
+
+Folia splits the world into regions that tick in parallel, each on its own thread, plus a global
+region for state that belongs to no chunk. There is no main thread. Code written with Sculk's
+execution contexts runs on Folia unchanged: each context names what it must own, and the platform
+picks the thread that owns it. On Paper that is always the main thread; on Folia it is not.
+
+Sculk supports the Folia builds that can be obtained: 26.3, 26.2 (beta builds only), 26.1.2,
+1.21.11, 1.21.8, 1.21.6, 1.21.5 and 1.21.4. Every push runs the threading scenarios on a real
+Folia 26.3 server. See [compatibility](/reference/compatibility/).
+
+## Declare support
+
+Folia only loads a plugin whose descriptor says it supports Folia. Declare it once no part of your
+plugin uses the Bukkit scheduler or touches the world from a thread that does not own it:
+
+```yaml
+# plugin.yml
+name: MyPlugin
+version: 1.0.0
+main: com.example.myplugin.MyPlugin
+api-version: "1.21"
+folia-supported: true
+```
+
+## Name the owner, not the thread
+
+The Bukkit scheduler throws on Folia. Instead of choosing between "sync" and "async", choose what
+the work must own:
+
+| Work | Context | Runs on Folia |
+| --- | --- | --- |
+| Read or change a player or entity | `withEntity(player) { }` | the region that owns the entity, following it across teleports |
+| Change blocks | `withRegion(location) { }` | the region that owns the chunk |
+| Time, weather, game rules, console commands, the world border | `withGlobal { }` | the global region thread |
+| Files, databases, HTTP | `withAsync { }` | off every tick thread |
+
+```kotlin
+sculk.scope.launch {
+    val home = withAsync { homes.load(player.uniqueId) }
+    player.teleportTo(home)
+    withEntity(player) { player.sendMessage(Component.text("Welcome home.")) }
+}
+```
+
+`teleportTo` runs on the region that owns the player and returns to the caller's context, so the
+message enters `withEntity` again to reach the player in the region they arrived in.
+
+Each `with*` call suspends until its block has run in that context and returns the block's value.
+`withEntity` returns `EntityResult.Ran(value)` or `EntityResult.Gone` when the entity left before
+the work could run. The full contract is in [threading](/concepts/execution/).
+
+## What behaves differently
+
+- **Listeners run in parallel.** Two players in different regions fire events at the same time, so
+  state that listeners share must be thread-safe or partitioned by region.
+- **A teleport usually changes the owner.** After `teleportTo`, the code continues in the caller's
+  context; enter `withEntity` again to keep working on the entity where it arrived.
+- **Nothing survives a suspension in a region.** Regions merge and split while a coroutine waits,
+  so read a `Chunk` or `Block` again after a suspension instead of keeping it.
+- **Shutdown does not schedule.** `onDisable` runs after the tick threads have stopped. Save
+  synchronously in `stop()` or a `STOPPING` lifecycle action; scheduled work would never run.
+- **There are no scoreboards.** The sidebar, nametags and below-name lines from
+  [scoreboards and HUD](/guides/hud/) are unavailable; action bars, boss bars, tab lists and titles
+  work.
+
+<Aside type="tip" title="Test the Folia model without a server">
+	Run your tests against `FakeRuntime(platform = FakeRuntime.folia())` as well as
+	`FakeRuntime.paper()`. Code that only works because Paper has one main thread fails on the Folia
+	model, every time. See [testing](/guides/testing/).
+</Aside>
+
+Next: [Canvas](/guides/canvas/), a Folia fork with region APIs of its own.

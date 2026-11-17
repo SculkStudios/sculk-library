@@ -26,8 +26,9 @@ export const CATEGORIES: readonly { id: string; label: string; icon: string; pag
 		label: 'Setup',
 		icon: 'server',
 		pages: [
-			{ id: 'start/installation', label: 'Paper and Folia' },
+			{ id: 'start/installation' },
 			{ id: 'start/first-plugin' },
+			{ id: 'start/folia' },
 			{ id: 'guides/canvas' },
 			{ id: 'start/velocity' },
 		],
