@@ -8,7 +8,11 @@ interface Props {
 
 const { support } = Astro.props;
 const defaults: Record<SupportLevel, string> = { full: 'supported', partial: 'in part', none: 'not supported', 'n/a': 'not applicable' };
+const everywhere = PLATFORMS.every((platform) => support[platform].level === 'full' && !support[platform].note);
 ---
+{everywhere ? (
+	<p class="support-all"><Mark level="full" /> Paper, Folia, Canvas and Velocity</p>
+) : (
 <table class="support" aria-label="Platform support">
 	<tbody>
 		{PLATFORMS.map((platform) => (
@@ -19,3 +23,4 @@ const defaults: Record<SupportLevel, string> = { full: 'supported', partial: 'in
 		))}
 	</tbody>
 </table>
+)}

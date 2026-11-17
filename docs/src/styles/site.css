@@ -18,19 +18,19 @@
 	:root {
 		/* Catppuccin Mocha (MIT), set on a true-black OLED ground. */
 		--ground: #000000;
-		--sheet: #0a0a0a;
-		--raised: #141414;
-		--raised-2: #1c1c1c;
+		--sheet: #0c0c0d;
+		--raised: #161618;
+		--raised-2: #1d1d20;
 		--rule: #262626;
 		--rule-strong: #3a3a3a;
-		--text: #ffffff;
-		--text-2: #d4d4d4;
-		--text-3: #a3a3a3;
+		--text: #e8e8e8;
+		--text-2: #d6d6d6;
+		--text-3: #b4b4b4;
 		/* Colour by role: mauve is "you are here", blue is a link, teal a player's region and blue
 		   the global region; green, yellow and red follow the support marks. */
 		--here: #cba6f7;
 		--here-soft: rgba(203, 166, 247, 0.12);
-		--link: #ffffff;
+		--link: #ececec;
 		--region: #94e2d5;
 		--region-ink: #94e2d5;
 		--region-fill: rgba(148, 226, 213, 0.16);
@@ -40,7 +40,7 @@
 		--partial: #f9e2af;
 		--bad: #f38ba8;
 		--danger: #f38ba8;
-		--inline-code: #ffffff;
+		--inline-code: #f2f2f2;
 		--code-bg: #11111b;
 		--code-bar: #181825;
 		--display: 'Poppins', system-ui, sans-serif;
@@ -61,8 +61,8 @@
 		min-height: 100vh;
 		font-family: var(--read);
 		color: var(--text);
-		font-size: 16px;
-		line-height: 1.8;
+		font-size: 16.5px;
+		line-height: 1.75;
 		-webkit-font-smoothing: antialiased;
 		background-color: var(--ground);
 	}
@@ -120,7 +120,7 @@
 		margin: 26px 0 8px;
 	}
 	.legend .group:first-child { margin-top: 0; }
-	.legend a { display: flex; align-items: center; gap: 10px; padding: 6px 10px; margin-left: -10px; border-radius: 5px; font-size: 14.5px; line-height: 1.4; color: var(--text-2); transition: color 140ms var(--ease), background-color 140ms var(--ease); }
+	.legend a { display: flex; align-items: center; gap: 10px; padding: 6px 10px; margin-left: -10px; border-radius: 6px; font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--text-2); transition: color 140ms var(--ease), background-color 140ms var(--ease); }
 	.legend a:hover { color: var(--text); background: var(--raised); }
 	.legend a[aria-current='page'] { color: var(--here); background: var(--here-soft); font-weight: 500; }
 	.legend .pin { flex: none; }
@@ -195,14 +195,15 @@
 
 	.mapcard { border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); padding: 14px; }
 	.mapcard svg { width: 100%; height: auto; }
-	.mapcard figcaption { margin-top: 12px; font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
+	.mapcard figcaption { margin-top: 12px; font-size: 14px; line-height: 1.55; color: var(--text-2); }
 	.mapcard figcaption strong { color: var(--text); font-weight: 600; }
 	.mapcard code { font-family: var(--mono); font-size: 12px; }
 
-	.support { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.5; }
+	.support { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.5; }
 	.support td { padding: 8px 0; border-top: 1px solid var(--rule); color: var(--text-2); vertical-align: top; }
 	.support td:first-child { width: 22px; padding-top: 12px; color: var(--text-2); }
 	.support b { color: var(--text); font-weight: 600; }
+	.support-all { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--text); }
 	.support tr { transition: background-color 220ms var(--ease); }
 	html[data-platform='paper'] .support tr[data-platform='paper'],
 	html[data-platform='folia'] .support tr[data-platform='folia'],
@@ -213,7 +214,7 @@
 	html[data-platform='canvas'] .support tr[data-platform='canvas'] td:first-child,
 	html[data-platform='velocity'] .support tr[data-platform='velocity'] td:first-child { color: var(--here); padding-left: 8px; }
 
-	.toc a { display: block; font-size: 14px; line-height: 1.45; color: var(--text-2); padding: 6px 0 6px 12px; border-left: 1px solid var(--rule); transition: color 140ms var(--ease), border-color 140ms var(--ease); }
+	.toc a { display: block; font-size: 14.5px; font-weight: 500; line-height: 1.45; color: var(--text-2); padding: 6px 0 6px 12px; border-left: 1px solid var(--rule); transition: color 140ms var(--ease), border-color 140ms var(--ease); }
 	.toc a.depth-3 { padding-left: 24px; font-size: 12.5px; }
 	.toc a:hover { color: var(--text); }
 	.toc a.on { color: var(--here); border-left-color: var(--here); }
@@ -265,7 +266,7 @@
 	.crumbs { display: flex; gap: 8px; font-size: 13px; color: var(--text-3); }
 	.crumbs li + li::before { content: '/'; margin-right: 8px; color: var(--rule-strong); }
 	.crumbs [aria-current] { color: var(--text-2); }
-	.page-title { font-family: var(--display); font-weight: 700; font-size: clamp(38px, 4.4vw, 56px); line-height: 1.08; letter-spacing: -0.03em; margin: 16px 0 16px; text-wrap: balance; }
+	.page-title { font-family: var(--display); font-weight: 600; color: var(--text); font-size: clamp(38px, 4.4vw, 56px); line-height: 1.08; letter-spacing: -0.03em; margin: 16px 0 16px; text-wrap: balance; }
 	.lede { font-size: 17px; line-height: 1.7; max-width: 64ch; color: var(--text); }
 	.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin: 20px 0 8px; font-size: 13px; color: var(--text-3); }
 	.meta .num { color: var(--text-2); font-size: 12.5px; }
@@ -274,20 +275,20 @@
 
 	.prose { max-width: 70ch; }
 	.prose > * + * { margin-top: 14px; }
-	.prose h2 { font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1.2; letter-spacing: -0.02em; margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
+	.prose h2 { font-family: var(--display); font-weight: 600; font-size: 28px; color: var(--text); line-height: 1.2; letter-spacing: -0.02em; margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
 	.prose h3 { font-family: var(--display); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; margin-top: 34px; }
 	.prose h2 + *, .prose h3 + * { margin-top: 10px; }
 	.prose a { color: var(--link); text-decoration: underline; text-decoration-color: rgba(203, 166, 247, 0.6); text-decoration-thickness: 1.5px; text-underline-offset: 4px; transition: text-decoration-color 140ms var(--ease); }
 	.prose a:hover { text-decoration-color: var(--here); }
-	.prose :not(pre) > code { font-family: var(--mono); font-size: 0.86em; color: var(--inline-code); background: var(--raised-2); border: 1px solid var(--rule-strong); border-radius: 5px; padding: 2px 6px; }
+	.prose :not(pre) > code { font-family: var(--mono); font-size: 0.88em; color: var(--inline-code); background: var(--raised-2); border-radius: 4px; padding: 1px 5px; }
 	.prose ul { list-style: none; }
 	.prose ul > li { position: relative; padding-left: 20px; }
 	.prose ul > li::before { content: ''; position: absolute; left: 2px; top: 0.75em; width: 6px; height: 6px; border-radius: 2px; background: var(--here); }
 	.prose ol:not(.steps ol) { list-style: decimal; padding-left: 22px; }
 	.prose li + li { margin-top: 6px; }
 	.prose strong { font-weight: 700; color: var(--text); }
-	.prose table { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.55; display: block; overflow-x: auto; }
-	.prose th { text-align: left; font-family: var(--display); font-weight: 600; font-size: 13px; color: var(--text-2); padding: 8px 14px 8px 0; border-bottom: 1px solid var(--rule-strong); }
+	.prose table { width: 100%; border-collapse: collapse; font-size: 15.5px; line-height: 1.55; display: block; overflow-x: auto; }
+	.prose th { text-align: left; font-family: var(--display); font-weight: 600; font-size: 14px; color: var(--text-2); padding: 8px 14px 8px 0; border-bottom: 1px solid var(--rule-strong); }
 	.prose td { padding: 9px 14px 9px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
 	.prose td code { white-space: nowrap; }
 	.prose blockquote { padding-left: 16px; border-left: 1px solid var(--rule-strong); color: var(--text-2); }
@@ -308,3 +309,6 @@
 @media (max-width: 600px) {
 	.prose .expressive-code pre.wrap .ec-line .code { white-space: pre; }
 }
+
+/* Upright code: Catppuccin italicises functions and types, which reads worse at code sizes. */
+.expressive-code .ec-line span { font-style: normal !important; }

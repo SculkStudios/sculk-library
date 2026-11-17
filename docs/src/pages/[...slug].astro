@@ -3,7 +3,7 @@ import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Support from '../components/Support.astro';
 import Toc from '../components/Toc.astro';
 import WhereItRuns from '../components/WhereItRuns.astro';
-import Atlas from '../layouts/Atlas.astro';
+import Site from '../layouts/Site.astro';
 import { navigation, neighbours, sectionOf } from '../lib/nav';
 
 export async function getStaticPaths() {
@@ -23,7 +23,7 @@ const section = sectionOf(entry.id);
 const editUrl = `https://github.com/SculkStudios/sculk-library/edit/dev/docs/src/content/docs/${entry.id}.mdx`;
 const { title, description, module, since, runs, support } = entry.data;
 ---
-<Atlas title={title} description={description} sections={sections} current={entry.id}>
+<Site title={title} description={description} sections={sections} current={entry.id}>
 	<article data-pagefind-body>
 		<nav aria-label="Breadcrumb"><ol class="crumbs">{section && <li>{section}</li>}<li aria-current="page">{title}</li></ol></nav>
 		<h1 class="page-title">{title}</h1>
@@ -46,4 +46,4 @@ const { title, description, module, since, runs, support } = entry.data;
 		{support && <section><p class="label">Support</p><Support support={support} /></section>}
 		<section><Toc headings={headings} /></section>
 	</Fragment>
-</Atlas>
+</Site>
