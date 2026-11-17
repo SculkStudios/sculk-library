@@ -101,7 +101,9 @@ internal class HudEngine(
 
     /** Removes everything this HUD shows. */
     fun close() {
-        states.forEach { hide(it) }
+        // The sidebar goes last: releasing its board shows the main board, which must no longer
+        // carry this player's nametag and below-name line by then.
+        states.sortedBy { it.surface is Surface.Sidebar }.forEach { hide(it) }
     }
 
     private fun draw(state: State, now: Long, force: Boolean) {

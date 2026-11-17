@@ -174,6 +174,19 @@ class HudEngineTest {
     }
 
     @Test
+    fun `closing hides the nametag and below-name line before the sidebar gives its board back`() {
+        val hud = engine {
+            sidebar("Title", "Line")
+            nametag("[x]")
+            belowName("y")
+        }
+        hud.wake(0)
+        sink.sent.clear()
+        hud.close()
+        assertEquals(listOf("tag:hidden", "below:hidden", "side:hidden"), sink.sent)
+    }
+
+    @Test
     fun `a layout shows one of each surface at most`() {
         assertThrows<IllegalArgumentException> {
             hud {
