@@ -72,6 +72,12 @@ class BotDriver(private val name: String, port: Int) : AutoCloseable {
         event.fields.firstOrNull()?.let { latest["${event.kind}\t$it"] = event }
     }
 
+    /** Types [text] into the open anvil's rename field. */
+    fun rename(text: String) = send("RENAME", text)
+
+    /** Selects the open merchant's offer at [index], which moves its ingredients into place. */
+    fun selectTrade(index: Int) = send("TRADE", index.toString())
+
     /** Whether an event matching [kind] and [matches] arrives within [millis]; for proving something did not happen. */
     fun sees(kind: String, millis: Long, matches: (BotEvent) -> Boolean = { true }): Boolean {
         val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis)

@@ -8,17 +8,22 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.MerchantInventory
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.ResourceScope
 import studio.sculk.inventory.MenuLayout
 import studio.sculk.inventory.MenuSession
 import studio.sculk.inventory.Menus
 import studio.sculk.inventory.menu
+import studio.sculk.inventory.textPrompt
+import studio.sculk.inventory.tradeMenu
 import studio.sculk.item.item
 import studio.sculk.itest.bot.BotDriver
 import studio.sculk.itest.bot.slots
 import java.io.File
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
@@ -104,6 +109,74 @@ class MenusCheckPlugin : JavaPlugin(), Listener {
                     bot.closeWindow()
                     val seen = closed.get(15, TimeUnit.SECONDS)
                     (seen == "count 11 owned true" && !session.isOpen && menus.open.isEmpty()) to "on close saw '$seen', open ${session.isOpen}"
+                }
+                verdict("anvil-prompt-answers-checked-text") {
+                    val answered = LinkedBlockingQueue<String>()
+                    val prompt = textPrompt("Name your shop") {
+                        initial = "Shop"
+                        check { text -> if (text.length in 3..8) null else "<red>3 to 8 characters" }
+                        onAnswer { who, text -> answered.put("$text owned=${Bukkit.isOwnedByCurrentRegion(who)}") }
+                        onCancel { answered.put("cancelled") }
+                    }
+                    menus.prompt(player, prompt)
+                    bot.await("WINDOW") { it.fields[1] == "ANVIL" && it.fields[2] == "Name your shop" }
+                    bot.rename("No")
+                    bot.awaitSlot(2, "No")
+                    bot.click(2)
+                    check(answered.poll(2, TimeUnit.SECONDS) == null) { "a text the check refused was answered" }
+                    bot.rename("Daisy's")
+                    bot.awaitSlot(2, "Daisy's")
+                    bot.click(2)
+                    bot.await("CLOSED")
+                    val answer = answered.poll(15, TimeUnit.SECONDS)
+                    menus.prompt(player, prompt)
+                    bot.await("WINDOW") { it.fields[1] == "ANVIL" }
+                    bot.closeWindow()
+                    val cancelled = answered.poll(15, TimeUnit.SECONDS)
+                    val paper = onPlayerThread(player) { player.inventory.contains(Material.PAPER) }
+                    (answer == "Daisy's owned=true" && cancelled == "cancelled" && !paper) to
+                        "answer '$answer', then '$cancelled', the prompt's paper given away: $paper"
+                }
+                verdict("trade-menu-trades-and-refuses") {
+                    val traded = LinkedBlockingQueue<String>()
+                    onPlayerThread(player) {
+                        player.inventory.clear()
+                        player.inventory.addItem(ItemStack(Material.EMERALD, 1))
+                    }
+                    menus.trade(
+                        player,
+                        tradeMenu("Fisherman") {
+                            trade(item(Material.COD) { name = "Fresh cod"; amount = 4 }, item(Material.EMERALD)) { traded.put("cod"); true }
+                            trade(item(Material.FISHING_ROD) { name = "Rod" }, item(Material.EMERALD) { amount = 2 }) { traded.put("rod"); false }
+                        },
+                    )
+                    bot.await("WINDOW") { it.fields[1] == "MERCHANT" && it.fields[2] == "Fisherman" }
+                    val offers = bot.await("TRADES")
+                    check(offers.fields[1] == "Fresh codx4|Rodx1") { "offers $offers" }
+                    bot.selectTrade(0)
+                    bot.awaitSlot(2, "Fresh cod")
+                    bot.click(2, "SHIFT")
+                    val first = traded.poll(15, TimeUnit.SECONDS)
+                    onPlayerThread(player) { player.inventory.addItem(ItemStack(Material.EMERALD, 2)) }
+                    bot.selectTrade(1)
+                    bot.awaitSlot(2, "Rod")
+                    bot.click(2, "SHIFT")
+                    val second = traded.poll(15, TimeUnit.SECONDS)
+                    bot.closeWindow()
+                    // A close the client starts gets no reply; the server has it once the view is gone.
+                    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+                    while (onPlayerThread(player) { player.openInventory.topInventory is MerchantInventory }) {
+                        check(System.nanoTime() < deadline) { "the trade menu never closed" }
+                        Thread.sleep(50)
+                    }
+                    val held = onPlayerThread(player) {
+                        listOf(Material.COD, Material.FISHING_ROD, Material.EMERALD).associateWith { material ->
+                            player.inventory.contents.filterNotNull().filter { it.type == material }.sumOf { it.amount }
+                        }
+                    }
+                    val ok = first == "cod" && second == "rod" &&
+                        held == mapOf(Material.COD to 4, Material.FISHING_ROD to 0, Material.EMERALD to 2)
+                    ok to "handlers saw '$first', '$second'; the player holds $held"
                 }
                 verdict("scope-close-closes-menus") {
                     menus.open(player, counter, Counter())

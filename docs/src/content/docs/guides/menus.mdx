@@ -64,6 +64,39 @@ collecting, number keys and the offhand key, drags that touch the menu and creat
 `allowPlayerInventory = true` lets players rearrange their own inventory while the menu is open;
 nothing from it reaches the menu either way.
 
+## Asking for text
+
+`textPrompt` asks for one line of text in an anvil. The rename field starts with `initial`, the
+player types, and taking the result answers. A `check` that returns a message keeps the result
+from being taken and shows the message under it:
+
+```kotlin
+menus.prompt(player, textPrompt("<primary>Name your shop") {
+    initial = "My shop"
+    check { name -> if (name.length in 3..16) null else "<danger>3 to 16 characters" }
+    onAnswer { player, name -> shops.rename(player, name) }
+    onCancel { player -> player.sendMessage(Component.text("Kept the old name.")) }
+})
+```
+
+What the player types is plain text and never parsed as markup. The anvil's item never leaves it,
+and no levels are spent.
+
+## Trading
+
+`tradeMenu` opens a villager's trading screen with your own offers. Vanilla moves the items; each
+trade's handler runs on the player's thread before they change hands, and returning false refuses
+it:
+
+```kotlin
+menus.trade(player, tradeMenu("<primary>Fisherman") {
+    trade(item(Material.COD) { amount = 4 }, item(Material.EMERALD))
+    trade(item(Material.FISHING_ROD), item(Material.EMERALD) { amount = 3 }, maxUses = 1) { player ->
+        player.hasPermission("shop.rod")
+    }
+})
+```
+
 ## Threads and lifetime
 
 A session belongs to its player. On Folia and Canvas it draws, receives clicks and runs handlers
@@ -74,5 +107,6 @@ player's thread. The menus of a `Menus` close with the scope it was created with
 <Aside>
   Sculk's `integration-tests/menus` suite joins every supported Paper version, Folia and Canvas with
   a real client, clicks, shift-clicks and swaps into a menu, and checks that handlers run on the
-  player's thread and that no item gets in.
+  player's thread and that no item gets in. It also answers and cancels an anvil prompt and makes
+  one trade go through and another be refused.
 </Aside>

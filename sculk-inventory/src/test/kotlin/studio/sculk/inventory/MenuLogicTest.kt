@@ -112,4 +112,14 @@ class MenuLogicTest {
         assertEquals((10..16).toSet() - 13, (0 until 27).filter { it !in render.icons }.toSet())
         assertThrows<IllegalArgumentException> { render.at(3, 0) }
     }
+
+    @Test
+    fun `a trade takes one or two ingredients, a menu needs a trade and a prompt needs an answer`() {
+        assertThrows<IllegalArgumentException> { tradeMenu("Shop") { trade(gem) } }
+        assertThrows<IllegalArgumentException> { tradeMenu("Shop") { trade(gem, pane, pane, pane) } }
+        assertThrows<IllegalArgumentException> { tradeMenu("Shop") { trade(gem, pane, maxUses = 0) } }
+        assertThrows<IllegalArgumentException> { tradeMenu("Shop") {} }
+        assertThrows<IllegalArgumentException> { textPrompt("Name") { initial = "x" } }
+        assertEquals(2, tradeMenu("Shop") { trade(gem, pane, pane) }.trades.single().ingredients.size)
+    }
 }

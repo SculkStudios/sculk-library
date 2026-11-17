@@ -37,17 +37,36 @@ public class Menus(internal val plugin: Plugin, scope: ResourceScope) {
     @Volatile
     private var shutDown = false
 
+    private val views = NativeViews(plugin)
+
     init {
         plugin.server.pluginManager.registerEvents(listener, plugin)
+        plugin.server.pluginManager.registerEvents(views, plugin)
         scope.onClose {
             shutDown = true
             sessions.toList().forEach { it.closeAtShutdown() }
+            views.closeAll()
             HandlerList.unregisterAll(listener)
+            HandlerList.unregisterAll(views)
         }
     }
 
     /** The open sessions, for diagnostics. */
     public val open: Collection<MenuSession<*>> get() = sessions.toList()
+
+    /** Opens [prompt] in an anvil for [player], from any thread, in place of what they have open. */
+    public fun prompt(player: Player, prompt: TextPrompt) {
+        onPlayer(player) { views.prompt(player, prompt) }
+    }
+
+    /** Opens [menu]'s trading screen for [player], from any thread, in place of what they have open. */
+    public fun trade(player: Player, menu: TradeMenu) {
+        onPlayer(player) { views.trade(player, menu) }
+    }
+
+    private fun onPlayer(player: Player, action: () -> Unit) {
+        if (Bukkit.isOwnedByCurrentRegion(player)) action() else player.scheduler.run(plugin, { action() }, null)
+    }
 
     /** Opens [menu] at [state] for [player], from any thread; it shows on the player's next tick at the latest. */
     public fun <S : Any> open(player: Player, menu: MenuSpec<S>, state: S): MenuSession<S> {

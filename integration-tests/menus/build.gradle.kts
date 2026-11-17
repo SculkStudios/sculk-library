@@ -24,5 +24,13 @@ registerResultsVerification(
     "Opens menus for a real client on every Paper anchor, Folia and Canvas and checks clicks, the lock, redraws and ownership.",
     runs,
     resultsPath = "plugins/SculkMenus/results.properties",
-    required = listOf("menu-shows", "button-runs-on-the-players-thread", "player-items-never-enter", "title-change-reopens", "closing-runs-on-close"),
+    required = listOf(
+        "menu-shows",
+        "button-runs-on-the-players-thread",
+        "player-items-never-enter",
+        "title-change-reopens",
+        "closing-runs-on-close",
+        "anvil-prompt-answers-checked-text",
+        "trade-menu-trades-and-refuses",
+    ),
 )

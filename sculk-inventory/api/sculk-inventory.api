@@ -72,6 +72,13 @@ public final class studio/sculk/inventory/Menus {
 	public fun <init> (Lorg/bukkit/plugin/Plugin;Lstudio/sculk/ResourceScope;)V
 	public final fun getOpen ()Ljava/util/Collection;
 	public final fun open (Lorg/bukkit/entity/Player;Lstudio/sculk/inventory/MenuSpec;Ljava/lang/Object;)Lstudio/sculk/inventory/MenuSession;
+	public final fun prompt (Lorg/bukkit/entity/Player;Lstudio/sculk/inventory/TextPrompt;)V
+	public final fun trade (Lorg/bukkit/entity/Player;Lstudio/sculk/inventory/TradeMenu;)V
+}
+
+public final class studio/sculk/inventory/NativeViewsKt {
+	public static final fun textPrompt (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/inventory/TextPrompt;
+	public static final fun tradeMenu (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/inventory/TradeMenu;
 }
 
 public final class studio/sculk/inventory/Page {
@@ -81,5 +88,38 @@ public final class studio/sculk/inventory/Page {
 	public final fun getHasPrevious ()Z
 	public final fun getNumber ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/inventory/TextPrompt {
+	public final fun getInitial ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+}
+
+public final class studio/sculk/inventory/TextPromptBuilder {
+	public final fun check (Lkotlin/jvm/functions/Function1;)V
+	public final fun getInitial ()Ljava/lang/String;
+	public final fun getText ()Lstudio/sculk/text/Text;
+	public final fun onAnswer (Lkotlin/jvm/functions/Function2;)V
+	public final fun onCancel (Lkotlin/jvm/functions/Function1;)V
+	public final fun setInitial (Ljava/lang/String;)V
+	public final fun setText (Lstudio/sculk/text/Text;)V
+}
+
+public final class studio/sculk/inventory/Trade {
+	public final fun getIngredients ()Ljava/util/List;
+	public final fun getMaxUses ()I
+	public final fun getResult ()Lstudio/sculk/item/ItemSpec;
+}
+
+public final class studio/sculk/inventory/TradeMenu {
+	public final fun getTitle ()Ljava/lang/String;
+	public final fun getTrades ()Ljava/util/List;
+}
+
+public final class studio/sculk/inventory/TradeMenuBuilder {
+	public final fun getText ()Lstudio/sculk/text/Text;
+	public final fun setText (Lstudio/sculk/text/Text;)V
+	public final fun trade (Lstudio/sculk/item/ItemSpec;[Lstudio/sculk/item/ItemSpec;ILkotlin/jvm/functions/Function1;)V
+	public static synthetic fun trade$default (Lstudio/sculk/inventory/TradeMenuBuilder;Lstudio/sculk/item/ItemSpec;[Lstudio/sculk/item/ItemSpec;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 }
 

@@ -46,11 +46,14 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.play
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundContainerClosePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetContentPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundContainerSetSlotPacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundMerchantOffersPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundOpenScreenPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundChatCommandPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundPlayerLoadedPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundContainerClickPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundContainerClosePacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundRenameItemPacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundSelectTradePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket
 import java.io.PrintStream
 import java.util.concurrent.CountDownLatch
@@ -61,12 +64,12 @@ import kotlin.system.exitProcess
  * it sees as one tab-separated event per line on stdout, and acts on one command per line on stdin:
  *
  * - events: `JOINED`, `WINDOW id type title`, `CONTENT id state slot:name...`, `SLOT id state slot name`,
- *   `CLOSED id`, `CHAT text`, `DIALOG title buttons inputs` (labels and `key:type`, each `|`-separated),
+ *   `CLOSED id`, `TRADES id result` (each offer's result as `namexamount`, `|`-separated), `CHAT text`, `DIALOG title buttons inputs` (labels and `key:type`, each `|`-separated),
  *   `DIALOGCLOSED`, `DIALOGTAG tag dialogs` (`,`-separated keys), `ACTIONBAR text`, `BOSSBAR uuid ADD|REMOVE|UPDATE_TITLE|UPDATE_HEALTH title progress`,
  *   `TITLE title subtitle`, `TITLECLEARED`, `NAMETAG player prefix suffix`, `BELOWNAME player text`, `TAB header footer`, `SIDEBAR title lines` (lines top to bottom, `|`-separated, empty when none shows),
  *   `DISCONNECTED reason`;
  * - commands: `CLICK slot LEFT|RIGHT|SHIFT|DROP|HOTBAR n`, `CLOSE`, `COMMAND text`,
- *   `DIALOGCLICK label key=value...` (each value typed as the dialog declares its input), `QUIT`.
+ *   `RENAME text` (an anvil's rename field), `TRADE index` (select a merchant offer), `DIALOGCLICK label key=value...` (each value typed as the dialog declares its input), `QUIT`.
  *
  * A slot's name is its item name or custom name in plain text, `#id` for an unnamed item, and the
  * slot is left out when it is empty. Only the open window's state is tracked.
@@ -157,6 +160,11 @@ private class Bot(private val out: PrintStream) {
                 emit("SLOT", packet.containerId.toString(), packet.stateId.toString(), packet.slot.toString(), name(packet.item) ?: "")
             }
             is ClientboundContainerClosePacket -> emit("CLOSED", packet.containerId.toString())
+            is ClientboundMerchantOffersPacket -> emit(
+                "TRADES",
+                packet.containerId.toString(),
+                packet.offers.joinToString("|") { offer -> "${name(offer.result) ?: ""}x${offer.result.amount}" },
+            )
             is ClientboundSystemChatPacket -> if (!packet.isOverlay) emit("CHAT", plain.serialize(packet.content))
             is ClientboundShowDialogGamePacket -> {
                 val shown = if (packet.dialog.isCustom) packet.dialog.custom() else dialogRegistry.getOrNull(packet.dialog.id())?.second
@@ -264,6 +272,8 @@ private class Bot(private val out: PrintStream) {
             "CLICK" -> click(parts[1].toInt(), parts[2], parts.getOrNull(3)?.toInt())
             "CLOSE" -> session.send(ServerboundContainerClosePacket(window))
             "COMMAND" -> session.send(ServerboundChatCommandPacket(parts[1].removePrefix("/")))
+            "RENAME" -> session.send(ServerboundRenameItemPacket(parts.getOrElse(1) { "" }))
+            "TRADE" -> session.send(ServerboundSelectTradePacket(parts[1].toInt()))
             "DIALOGCLICK" -> answer(parts[1], parts.drop(2).associate { it.substringBefore('=') to it.substringAfter('=') })
             "QUIT" -> return false
             else -> emit("ERROR", "unknown command '${parts[0]}'")
@@ -290,7 +300,7 @@ private class Bot(private val out: PrintStream) {
 
     private fun nametagChanged(owner: String) {
         val team = teams.values.firstOrNull { owner in it.members }
-        val shown = "${team?.prefix.orEmpty()}	${team?.suffix.orEmpty()}"
+        val shown = "${team?.prefix.orEmpty()}\t${team?.suffix.orEmpty()}"
         if (nametags.put(owner, shown) != shown) emit("NAMETAG", owner, team?.prefix.orEmpty(), team?.suffix.orEmpty())
     }
 
