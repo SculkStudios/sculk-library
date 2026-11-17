@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemRarity
 import org.bukkit.inventory.ItemStack
 import studio.sculk.SculkFailure
 import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
 import studio.sculk.pdc.PdcKey
 import studio.sculk.pdc.PdcValue
@@ -63,7 +64,9 @@ public class CustomModel(
  * passed there. Lore lines are not italic unless the template says so.
  *
  * A spec is checked where it is built for everything that needs no server; [check] covers the rest
- * (the material and the enchantments, which need the server's registries).
+ * (the material, the enchantments and the damage types, which need the server's registries, and the
+ * components a server older than Paper 1.21.11 lacks: [weapon], [blocksAttacks], [attackRange],
+ * [swingAnimation], [useEffects], [piercingWeapon], [kineticWeapon] and [minimumAttackCharge]).
  */
 @SculkStable
 public class ItemSpec private constructor(builder: ItemSpecBuilder) {
@@ -83,6 +86,32 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
     public val damage: Int? = builder.damage
     public val rarity: ItemRarity? = builder.rarity
     public val dyedColor: Color? = builder.dyedColor
+
+    @SculkExperimental
+    public val weapon: Weapon? = builder.weapon
+
+    @SculkExperimental
+    public val blocksAttacks: BlocksAttacks? = builder.blocksAttacks
+
+    @SculkExperimental
+    public val attackRange: AttackRange? = builder.attackRange
+
+    @SculkExperimental
+    public val swingAnimation: SwingAnimation? = builder.swingAnimation
+
+    @SculkExperimental
+    public val useEffects: UseEffects? = builder.useEffects
+
+    @SculkExperimental
+    public val piercingWeapon: PiercingWeapon? = builder.piercingWeapon
+
+    @SculkExperimental
+    public val kineticWeapon: KineticWeapon? = builder.kineticWeapon
+
+    @SculkExperimental
+    public val minimumAttackCharge: Float? = builder.minimumAttackCharge?.also {
+        require(it in 0f..1f) { "minimumAttackCharge must be 0 to 1, was $it" }
+    }
 
     /** Marks stacks of this spec as a custom item, see [CustomItems.identify]. */
     public val id: Key? = builder.id
@@ -111,21 +140,31 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
     }
 
     /**
-     * Whether the running server can build this spec: the material is an item and every
-     * enchantment is registered. Specs from configuration go through this before [create].
-     * Needs a running server.
+     * Whether the running server can build this spec. An [SculkFailure.UnsupportedCapability] when
+     * the spec sets a component the server does not have (see the class description), naming the
+     * properties to drop; otherwise an [SculkFailure.InvalidInput] when the material is not an item,
+     * or an enchantment, a damage type or a damage type tag of [blocksAttacks] is not registered.
+     * Specs from configuration go through this before [create]. Needs a running server.
      */
     public fun check(): SculkResult<ItemSpec> {
+        ItemCompiler.unsupported(this)?.let { return it }
         if (!type.isItem) return SculkFailure.InvalidInput("item type", "a material that is an item", type.name)
         val unknown = enchantments.keys.filter { ItemCompiler.enchantment(it) == null }
         if (unknown.isNotEmpty()) return SculkFailure.InvalidInput("enchantments", "registered enchantments", unknown.joinToString())
+        val damageTypes = ItemCompiler.unknownDamageTypes(this)
+        if (damageTypes.isNotEmpty()) {
+            return SculkFailure.InvalidInput("blocksAttacks damage types", "registered damage types and tags", damageTypes.joinToString())
+        }
         return SculkResult.success(this)
     }
 
     /**
      * A new stack built from this spec, with [name] and [lore] rendered by [text] and [resolver].
      * Any thread; the stack is new and unshared. Throws [IllegalArgumentException] for a spec
-     * [check] would reject.
+     * [check] would reject, including one that sets a component this server does not have: leaving
+     * that component out would hand players a different item than the spec describes (a shield that
+     * does not block, a sword with the default reach), so a caller that cannot rule this out calls
+     * [check] first.
      */
     public fun create(text: Text = Text(), resolver: TagResolver = TagResolver.empty()): ItemStack =
         ItemCompiler.create(this, text, if (values.isEmpty()) resolver else TagResolver.resolver(valueResolver, resolver))
@@ -143,6 +182,7 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
     private var hash: Int = 0
 
     // Menus compare every slot's spec on each redraw, so this allocates nothing and checks cheap fields first.
+    @OptIn(SculkExperimental::class)
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ItemSpec) return false
@@ -156,11 +196,19 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
             maxDamage == other.maxDamage &&
             damage == other.damage &&
             rarity == other.rarity &&
+            sameFloat(minimumAttackCharge, other.minimumAttackCharge) &&
             name == other.name &&
             id == other.id &&
             model == other.model &&
             dyedColor == other.dyedColor &&
             customModel == other.customModel &&
+            weapon == other.weapon &&
+            blocksAttacks == other.blocksAttacks &&
+            attackRange == other.attackRange &&
+            swingAnimation == other.swingAnimation &&
+            useEffects == other.useEffects &&
+            piercingWeapon == other.piercingWeapon &&
+            kineticWeapon == other.kineticWeapon &&
             lore == other.lore &&
             enchantments == other.enchantments &&
             hidden == other.hidden &&
@@ -168,6 +216,7 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
             values == other.values
     }
 
+    @OptIn(SculkExperimental::class)
     override fun hashCode(): Int {
         var result = hash
         if (result == 0) {
@@ -187,6 +236,14 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
             result = 31 * result + (damage ?: 0)
             result = 31 * result + rarity.hashCode()
             result = 31 * result + dyedColor.hashCode()
+            result = 31 * result + weapon.hashCode()
+            result = 31 * result + blocksAttacks.hashCode()
+            result = 31 * result + attackRange.hashCode()
+            result = 31 * result + swingAnimation.hashCode()
+            result = 31 * result + useEffects.hashCode()
+            result = 31 * result + piercingWeapon.hashCode()
+            result = 31 * result + kineticWeapon.hashCode()
+            result = 31 * result + minimumAttackCharge.hashCode()
             result = 31 * result + id.hashCode()
             result = 31 * result + data.hashCode()
             result = 31 * result + values.hashCode()
@@ -263,6 +320,41 @@ public class ItemSpecBuilder internal constructor(
     /** The dye colour of dyeable items such as leather armour. */
     public var dyedColor: Color? = null
 
+    /** How the item works as a weapon; null keeps the material's. Paper 1.21.11 and later, see [ItemSpec.check]. */
+    @SculkExperimental
+    public var weapon: Weapon? = null
+
+    /** Lets the item block attacks like a shield; null keeps the material's. Paper 1.21.11 and later. */
+    @SculkExperimental
+    public var blocksAttacks: BlocksAttacks? = null
+
+    /** How far attacks with the item reach; null keeps the material's. Paper 1.21.11 and later. */
+    @SculkExperimental
+    public var attackRange: AttackRange? = null
+
+    /** The arm animation of an attack; null keeps the material's. Paper 1.21.11 and later. */
+    @SculkExperimental
+    public var swingAnimation: SwingAnimation? = null
+
+    /** What using the item does to its holder; null keeps the material's. Paper 1.21.11 and later. */
+    @SculkExperimental
+    public var useEffects: UseEffects? = null
+
+    /** Makes attacks hit every entity along their reach; null keeps the material's. Paper 1.21.11 and later. */
+    @SculkExperimental
+    public var piercingWeapon: PiercingWeapon? = null
+
+    /** A charged attack while moving, like a spear's; null keeps the material's. Paper 1.21.11 and later. */
+    @SculkExperimental
+    public var kineticWeapon: KineticWeapon? = null
+
+    /**
+     * The attack charge, 0 to 1 of a full attack cooldown, the holder needs before the item attacks;
+     * null keeps the material's. Paper 1.21.11 and later.
+     */
+    @SculkExperimental
+    public var minimumAttackCharge: Float? = null
+
     /** Marks stacks of this spec as the custom item [id], see [CustomItems]. */
     public var id: Key? = null
     internal val data = mutableListOf<PdcValue<*>>()
@@ -312,6 +404,7 @@ public class ItemSpecBuilder internal constructor(
     internal fun build(): ItemSpec = ItemSpec.of(this)
 
     internal companion object {
+        @OptIn(SculkExperimental::class)
         fun from(spec: ItemSpec): ItemSpecBuilder = ItemSpecBuilder(spec.type).apply {
             amount = spec.amount
             name = spec.name
@@ -328,6 +421,14 @@ public class ItemSpecBuilder internal constructor(
             damage = spec.damage
             rarity = spec.rarity
             dyedColor = spec.dyedColor
+            weapon = spec.weapon
+            blocksAttacks = spec.blocksAttacks
+            attackRange = spec.attackRange
+            swingAnimation = spec.swingAnimation
+            useEffects = spec.useEffects
+            piercingWeapon = spec.piercingWeapon
+            kineticWeapon = spec.kineticWeapon
+            minimumAttackCharge = spec.minimumAttackCharge
             id = spec.id
             data += spec.data
             values += spec.values

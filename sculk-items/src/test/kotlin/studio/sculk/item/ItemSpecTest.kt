@@ -9,10 +9,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.pdc.PdcCodec
 import studio.sculk.pdc.PdcKey
 
 /** Specs are data: built, compared and rejected without a server. */
+@OptIn(SculkExperimental::class)
 class ItemSpecTest {
     private val sharpness = Key.key("minecraft:sharpness")
     private val owner = PdcKey(NamespacedKey("shop", "owner"), PdcCodec.STRING)
@@ -65,6 +67,14 @@ class ItemSpecTest {
             { damage = 0 },
             { rarity = ItemRarity.EPIC },
             { dyedColor = Color.RED },
+            { weapon = Weapon() },
+            { blocksAttacks = BlocksAttacks() },
+            { attackRange = AttackRange() },
+            { swingAnimation = SwingAnimation() },
+            { useEffects = UseEffects() },
+            { piercingWeapon = PiercingWeapon() },
+            { kineticWeapon = KineticWeapon() },
+            { minimumAttackCharge = 0.5f },
             { id = Key.key("shop:other") },
             { data(owner, "Alex") },
             { value("price", 5) },

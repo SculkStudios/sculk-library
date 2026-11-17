@@ -20,7 +20,8 @@ val runs = (matrix.paper + matrix.folia + matrix.canvas).mapIndexed { index, ser
 
 registerResultsVerification(
     "verifyItems",
-    "Builds item specs on every Paper anchor, Folia and Canvas and checks the stacks through version-neutral API.",
+    "Builds item specs on every Paper anchor, Folia and Canvas and checks the stacks through version-neutral API, " +
+        "and the combat components where the server has them.",
     runs,
     resultsPath = "plugins/SculkItems/results.properties",
     required = listOf(
@@ -30,5 +31,16 @@ registerResultsVerification(
         "hidden-parts",
         "persistent-data-survives-bytes",
         "custom-items",
+        // Written and read back from 1.21.11; refused as an UnsupportedCapability on 1.21.4.
+        "weapon",
+        "blocks-attacks",
+        "blocks-attacks-checks-damage-types",
+        "attack-range",
+        "swing-animation",
+        "use-effects",
+        "piercing-weapon",
+        "kinetic-weapon",
+        "minimum-attack-charge",
+        "combat-specs-from-configuration",
     ),
 )

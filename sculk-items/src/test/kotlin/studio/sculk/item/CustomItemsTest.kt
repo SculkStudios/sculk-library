@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import studio.sculk.ResourceScope
 import studio.sculk.SculkFailure
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.failureOrNull
 
 /** What CustomItems refuses before it touches a server: amounts and ids that may come from configuration. */
@@ -53,6 +54,21 @@ class CustomItemsTest {
     @Test
     fun `an id nobody defines or provides is invalid input`() {
         assertInstanceOf(SculkFailure.InvalidInput::class.java, items.create(Key.key("shop:missing")).failureOrNull())
+    }
+
+    // The test classpath carries the 1.21.4 floor API, which has no weapon component.
+    @Test
+    @OptIn(SculkExperimental::class)
+    fun `a defined item that sets a component the server lacks is an unsupported capability, not an exception`() {
+        items.define(
+            scope,
+            item(Material.IRON_SWORD) {
+                id = gem
+                weapon = Weapon(damagePerAttack = 0)
+            },
+        )
+        val failure = assertInstanceOf(SculkFailure.UnsupportedCapability::class.java, items.create(gem).failureOrNull())
+        assertEquals("Item data minecraft:weapon", failure.capability)
     }
 
     @Test

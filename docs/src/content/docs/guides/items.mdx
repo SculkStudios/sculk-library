@@ -13,7 +13,8 @@ import { Aside } from '~/components/mdx';
 
 `sculk-items` (packages `studio.sculk.item` and `studio.sculk.pdc`) describes items as data and
 builds them from Paper's data components. The same spec produces the same item on Paper 1.21.4
-through 26.3, Folia and Canvas, although the components themselves changed shape in between.
+through 26.3, Folia and Canvas, although the components themselves changed shape in between; the
+[combat components](#weapons-and-combat) need 1.21.11 or later.
 
 ```kotlin title="build.gradle.kts"
 dependencies {
@@ -56,7 +57,9 @@ copy.
 A spec is checked where it is built: an amount outside 1 to 99, a blank name, more than 256 lore
 lines, an enchantment level above 255 or a damageable item that stacks throws at once. Whether the
 material is an item and every enchantment exists needs the server's registries, so a spec read
-from configuration goes through `spec.check()`, which returns a result instead of throwing.
+from configuration goes through `spec.check()`, which returns a result instead of throwing; it
+also reports a combat component the server does not have, as described under
+[Versions](#versions).
 
 ### Hiding tooltip parts
 
@@ -64,6 +67,85 @@ from configuration goes through `spec.check()`, which returns a result instead o
 `hideTooltip = true` hides the whole tooltip. On 1.21.4 Sculk sets each component's own
 `showInTooltip` flag; from 1.21.5 it writes one `tooltip_display` component. Hidden attribute
 modifiers keep working: only their lines disappear.
+
+## Weapons and combat
+
+From Paper 1.21.11, the first supported version that has them, a spec can set the components that
+change how an item fights: how much durability a hit costs,
+whether it blocks like a shield, how far it reaches, how the arm swings, what using it does to the
+holder, and the spear's jab and charge. A spec sets each with a small immutable value, so it stays
+plain data you can compare in a test.
+
+```kotlin
+import net.kyori.adventure.key.Key
+import org.bukkit.Material
+import studio.sculk.annotation.SculkExperimental
+import studio.sculk.item.AttackRange
+import studio.sculk.item.BlocksAttacks
+import studio.sculk.item.SwingAnimation
+import studio.sculk.item.UseEffects
+import studio.sculk.item.Weapon
+import studio.sculk.item.item
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+
+@OptIn(SculkExperimental::class)
+val halberd = item(Material.IRON_AXE) {
+    name = "<primary>Warden's Halberd"
+    weapon = Weapon(damagePerAttack = 2, disablesBlockingFor = 5.seconds)
+    attackRange = AttackRange(maxReach = 4.5f, maxCreativeReach = 6.5f)
+    swingAnimation = SwingAnimation(SwingAnimation.Style.STAB, durationTicks = 10)
+    minimumAttackCharge = 0.8f
+}
+
+@OptIn(SculkExperimental::class)
+val buckler = item(Material.SHIELD) {
+    name = "<primary>Buckler"
+    blocksAttacks = BlocksAttacks(
+        blockDelay = 100.milliseconds,
+        damageReductions = listOf(BlocksAttacks.DamageReduction(horizontalBlockingAngle = 60f, factor = 0.5f)),
+        bypassedBy = Key.key("minecraft:bypasses_shield"),
+        blockSound = Key.key("minecraft:item.shield.block"),
+    )
+    useEffects = UseEffects(canSprint = true, speedMultiplier = 0.6f)
+}
+```
+
+| Property | Component | What it sets |
+| --- | --- | --- |
+| `weapon` | `weapon` | Durability per hit, and how long a hit disables the target's shield |
+| `blocksAttacks` | `blocks_attacks` | Blocking: delay, how much of which damage types, durability cost, bypass tag, sounds |
+| `attackRange` | `attack_range` | Minimum and maximum reach, survival and creative, hitbox margin, mob factor |
+| `swingAnimation` | `swing_animation` (`attack_animation` on 26.3) | `NONE`, `WHACK` or `STAB`, and its length in ticks |
+| `useEffects` | `use_effects` | Sprinting, vibrations and movement speed while the item is in use |
+| `piercingWeapon` | `piercing_weapon` | Attacks hit every entity along their reach, with knockback, dismount and sounds |
+| `kineticWeapon` | `kinetic_weapon` | A charged attack while moving, with its dismount, knockback and damage conditions |
+| `minimumAttackCharge` | `minimum_attack_charge` | How charged the attack cooldown must be, 0 to 1, before the item attacks |
+
+Each value rejects what Minecraft would (a reach above 64 blocks, a minimum above the maximum, a
+negative duration) where you build it. A property left null keeps the material's own behaviour, so
+an `IRON_SWORD` with no `weapon` still fights like a sword. Damage types and the `bypassedBy` tag
+are keys; `spec.check()` confirms the server has registered them.
+
+These properties are `@SculkExperimental`: their shape may change in a minor release while the
+components are new, so opt in with `@OptIn(SculkExperimental::class)`.
+
+### Versions
+
+| Server | What happens |
+| --- | --- |
+| Paper 1.21.11, 26.1.2, 26.2, 26.3, Folia and Canvas | Every component is written. On 26.3 the swing goes to `attack_animation`, which replaced `swing_animation` there. |
+| Paper 1.21.4 | None of these components exist. `spec.check()` and `CustomItems.create` return an `UnsupportedCapability` failure naming the properties to drop; `spec.create()` throws `IllegalArgumentException`. |
+
+Sculk never leaves a component out silently: a buckler that does not block or a halberd with the
+default reach is a different item from the one you described. Check specs that may meet a 1.21.4
+server first:
+
+```kotlin
+buckler.check()
+    .onSuccess { player.inventory.addItem(it.create()) }
+    .onFailure { logger.warning(it.describe()) }
+```
 
 ## Persistent data
 

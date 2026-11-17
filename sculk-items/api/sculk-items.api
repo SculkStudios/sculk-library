@@ -1,3 +1,64 @@
+public final class studio/sculk/item/AttackRange {
+	public static final field Companion Lstudio/sculk/item/AttackRange$Companion;
+	public static final field MAX_REACH F
+	public fun <init> ()V
+	public fun <init> (FFFFFF)V
+	public synthetic fun <init> (FFFFFFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHitboxMargin ()F
+	public final fun getMaxCreativeReach ()F
+	public final fun getMaxReach ()F
+	public final fun getMinCreativeReach ()F
+	public final fun getMinReach ()F
+	public final fun getMobFactor ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/item/AttackRange$Companion {
+}
+
+public final class studio/sculk/item/BlocksAttacks {
+	public fun <init> ()V
+	public synthetic fun <init> (JFLjava/util/List;Lstudio/sculk/item/BlocksAttacks$ItemDamage;Lnet/kyori/adventure/key/Key;Lnet/kyori/adventure/key/Key;Lnet/kyori/adventure/key/Key;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JFLjava/util/List;Lstudio/sculk/item/BlocksAttacks$ItemDamage;Lnet/kyori/adventure/key/Key;Lnet/kyori/adventure/key/Key;Lnet/kyori/adventure/key/Key;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBlockDelay-UwyO8pc ()J
+	public final fun getBlockSound ()Lnet/kyori/adventure/key/Key;
+	public final fun getBypassedBy ()Lnet/kyori/adventure/key/Key;
+	public final fun getDamageReductions ()Ljava/util/List;
+	public final fun getDisableCooldownScale ()F
+	public final fun getDisableSound ()Lnet/kyori/adventure/key/Key;
+	public final fun getItemDamage ()Lstudio/sculk/item/BlocksAttacks$ItemDamage;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/item/BlocksAttacks$DamageReduction {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Set;FFF)V
+	public synthetic fun <init> (Ljava/util/Set;FFFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBase ()F
+	public final fun getFactor ()F
+	public final fun getHorizontalBlockingAngle ()F
+	public final fun getTypes ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/item/BlocksAttacks$ItemDamage {
+	public fun <init> ()V
+	public fun <init> (FFF)V
+	public synthetic fun <init> (FFFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBase ()F
+	public final fun getFactor ()F
+	public final fun getThreshold ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class studio/sculk/item/CustomItemProvider {
 	public abstract fun create (Lnet/kyori/adventure/key/Key;I)Lorg/bukkit/inventory/ItemStack;
 	public abstract fun getNamespace ()Ljava/lang/String;
@@ -40,6 +101,8 @@ public final class studio/sculk/item/ItemSpec {
 	public static synthetic fun create$default (Lstudio/sculk/item/ItemSpec;Lstudio/sculk/text/Text;Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;ILjava/lang/Object;)Lorg/bukkit/inventory/ItemStack;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAmount ()I
+	public final fun getAttackRange ()Lstudio/sculk/item/AttackRange;
+	public final fun getBlocksAttacks ()Lstudio/sculk/item/BlocksAttacks;
 	public final fun getCustomModel ()Lstudio/sculk/item/CustomModel;
 	public final fun getDamage ()Ljava/lang/Integer;
 	public final fun getData ()Ljava/util/List;
@@ -49,15 +112,21 @@ public final class studio/sculk/item/ItemSpec {
 	public final fun getHidden ()Ljava/util/Set;
 	public final fun getHideTooltip ()Z
 	public final fun getId ()Lnet/kyori/adventure/key/Key;
+	public final fun getKineticWeapon ()Lstudio/sculk/item/KineticWeapon;
 	public final fun getLore ()Ljava/util/List;
 	public final fun getMaxDamage ()Ljava/lang/Integer;
 	public final fun getMaxStackSize ()Ljava/lang/Integer;
+	public final fun getMinimumAttackCharge ()Ljava/lang/Float;
 	public final fun getModel ()Lnet/kyori/adventure/key/Key;
 	public final fun getName ()Ljava/lang/String;
+	public final fun getPiercingWeapon ()Lstudio/sculk/item/PiercingWeapon;
 	public final fun getRarity ()Lorg/bukkit/inventory/ItemRarity;
+	public final fun getSwingAnimation ()Lstudio/sculk/item/SwingAnimation;
 	public final fun getType ()Lorg/bukkit/Material;
 	public final fun getUnbreakable ()Z
+	public final fun getUseEffects ()Lstudio/sculk/item/UseEffects;
 	public final fun getValues ()Ljava/util/Map;
+	public final fun getWeapon ()Lstudio/sculk/item/Weapon;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 	public final fun with (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/item/ItemSpec;
@@ -73,42 +142,120 @@ public final class studio/sculk/item/ItemSpecBuilder {
 	public static synthetic fun enchant$default (Lstudio/sculk/item/ItemSpecBuilder;Lnet/kyori/adventure/key/Key;IILjava/lang/Object;)V
 	public static synthetic fun enchant$default (Lstudio/sculk/item/ItemSpecBuilder;Lorg/bukkit/enchantments/Enchantment;IILjava/lang/Object;)V
 	public final fun getAmount ()I
+	public final fun getAttackRange ()Lstudio/sculk/item/AttackRange;
+	public final fun getBlocksAttacks ()Lstudio/sculk/item/BlocksAttacks;
 	public final fun getCustomModel ()Lstudio/sculk/item/CustomModel;
 	public final fun getDamage ()Ljava/lang/Integer;
 	public final fun getDyedColor ()Lorg/bukkit/Color;
 	public final fun getGlint ()Ljava/lang/Boolean;
 	public final fun getHideTooltip ()Z
 	public final fun getId ()Lnet/kyori/adventure/key/Key;
+	public final fun getKineticWeapon ()Lstudio/sculk/item/KineticWeapon;
 	public final fun getMaxDamage ()Ljava/lang/Integer;
 	public final fun getMaxStackSize ()Ljava/lang/Integer;
+	public final fun getMinimumAttackCharge ()Ljava/lang/Float;
 	public final fun getModel ()Lnet/kyori/adventure/key/Key;
 	public final fun getName ()Ljava/lang/String;
+	public final fun getPiercingWeapon ()Lstudio/sculk/item/PiercingWeapon;
 	public final fun getRarity ()Lorg/bukkit/inventory/ItemRarity;
+	public final fun getSwingAnimation ()Lstudio/sculk/item/SwingAnimation;
 	public final fun getType ()Lorg/bukkit/Material;
 	public final fun getUnbreakable ()Z
+	public final fun getUseEffects ()Lstudio/sculk/item/UseEffects;
+	public final fun getWeapon ()Lstudio/sculk/item/Weapon;
 	public final fun hide ([Lstudio/sculk/item/TooltipPart;)V
 	public final fun lore (Ljava/util/List;)V
 	public final fun lore ([Ljava/lang/String;)V
 	public final fun setAmount (I)V
+	public final fun setAttackRange (Lstudio/sculk/item/AttackRange;)V
+	public final fun setBlocksAttacks (Lstudio/sculk/item/BlocksAttacks;)V
 	public final fun setCustomModel (Lstudio/sculk/item/CustomModel;)V
 	public final fun setDamage (Ljava/lang/Integer;)V
 	public final fun setDyedColor (Lorg/bukkit/Color;)V
 	public final fun setGlint (Ljava/lang/Boolean;)V
 	public final fun setHideTooltip (Z)V
 	public final fun setId (Lnet/kyori/adventure/key/Key;)V
+	public final fun setKineticWeapon (Lstudio/sculk/item/KineticWeapon;)V
 	public final fun setMaxDamage (Ljava/lang/Integer;)V
 	public final fun setMaxStackSize (Ljava/lang/Integer;)V
+	public final fun setMinimumAttackCharge (Ljava/lang/Float;)V
 	public final fun setModel (Lnet/kyori/adventure/key/Key;)V
 	public final fun setName (Ljava/lang/String;)V
+	public final fun setPiercingWeapon (Lstudio/sculk/item/PiercingWeapon;)V
 	public final fun setRarity (Lorg/bukkit/inventory/ItemRarity;)V
+	public final fun setSwingAnimation (Lstudio/sculk/item/SwingAnimation;)V
 	public final fun setType (Lorg/bukkit/Material;)V
 	public final fun setUnbreakable (Z)V
+	public final fun setUseEffects (Lstudio/sculk/item/UseEffects;)V
+	public final fun setWeapon (Lstudio/sculk/item/Weapon;)V
 	public final fun value (Ljava/lang/String;Ljava/lang/Object;)V
 }
 
 public final class studio/sculk/item/ItemSpecKt {
 	public static final fun item (Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/item/ItemSpec;
 	public static synthetic fun item$default (Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/item/ItemSpec;
+}
+
+public final class studio/sculk/item/KineticWeapon {
+	public fun <init> ()V
+	public fun <init> (IILstudio/sculk/item/KineticWeapon$Condition;Lstudio/sculk/item/KineticWeapon$Condition;Lstudio/sculk/item/KineticWeapon$Condition;FFLnet/kyori/adventure/key/Key;Lnet/kyori/adventure/key/Key;)V
+	public synthetic fun <init> (IILstudio/sculk/item/KineticWeapon$Condition;Lstudio/sculk/item/KineticWeapon$Condition;Lstudio/sculk/item/KineticWeapon$Condition;FFLnet/kyori/adventure/key/Key;Lnet/kyori/adventure/key/Key;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContactCooldownTicks ()I
+	public final fun getDamageConditions ()Lstudio/sculk/item/KineticWeapon$Condition;
+	public final fun getDamageMultiplier ()F
+	public final fun getDelayTicks ()I
+	public final fun getDismountConditions ()Lstudio/sculk/item/KineticWeapon$Condition;
+	public final fun getForwardMovement ()F
+	public final fun getHitSound ()Lnet/kyori/adventure/key/Key;
+	public final fun getKnockbackConditions ()Lstudio/sculk/item/KineticWeapon$Condition;
+	public final fun getSound ()Lnet/kyori/adventure/key/Key;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/item/KineticWeapon$Condition {
+	public fun <init> (IFF)V
+	public synthetic fun <init> (IFFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxDurationTicks ()I
+	public final fun getMinRelativeSpeed ()F
+	public final fun getMinSpeed ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/item/PiercingWeapon {
+	public fun <init> ()V
+	public fun <init> (ZZLnet/kyori/adventure/key/Key;Lnet/kyori/adventure/key/Key;)V
+	public synthetic fun <init> (ZZLnet/kyori/adventure/key/Key;Lnet/kyori/adventure/key/Key;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDealsKnockback ()Z
+	public final fun getDismounts ()Z
+	public final fun getHitSound ()Lnet/kyori/adventure/key/Key;
+	public final fun getSound ()Lnet/kyori/adventure/key/Key;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/item/SwingAnimation {
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/item/SwingAnimation$Style;I)V
+	public synthetic fun <init> (Lstudio/sculk/item/SwingAnimation$Style;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationTicks ()I
+	public final fun getStyle ()Lstudio/sculk/item/SwingAnimation$Style;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/item/SwingAnimation$Style : java/lang/Enum {
+	public static final field NONE Lstudio/sculk/item/SwingAnimation$Style;
+	public static final field STAB Lstudio/sculk/item/SwingAnimation$Style;
+	public static final field WHACK Lstudio/sculk/item/SwingAnimation$Style;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/item/SwingAnimation$Style;
+	public static fun values ()[Lstudio/sculk/item/SwingAnimation$Style;
 }
 
 public final class studio/sculk/item/TooltipPart : java/lang/Enum {
@@ -119,6 +266,29 @@ public final class studio/sculk/item/TooltipPart : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/item/TooltipPart;
 	public static fun values ()[Lstudio/sculk/item/TooltipPart;
+}
+
+public final class studio/sculk/item/UseEffects {
+	public fun <init> ()V
+	public fun <init> (ZZF)V
+	public synthetic fun <init> (ZZFILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCanSprint ()Z
+	public final fun getInteractVibrations ()Z
+	public final fun getSpeedMultiplier ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/item/Weapon {
+	public fun <init> ()V
+	public synthetic fun <init> (IJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDamagePerAttack ()I
+	public final fun getDisablesBlockingFor-UwyO8pc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class studio/sculk/pdc/PdcCodec {

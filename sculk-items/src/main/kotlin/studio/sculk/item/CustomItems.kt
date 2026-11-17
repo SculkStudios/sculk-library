@@ -66,7 +66,8 @@ public class CustomItems {
      * A new stack of [amount] of [id], from a defined spec, its name and lore rendered by [text], or
      * from the provider of its namespace, which renders its own. An [SculkFailure.InvalidInput] when
      * none knows the id, the amount is outside 1 to the item's stack size, or the server cannot build
-     * the spec (see [ItemSpec.check]), as all of these may come from configuration. Any thread.
+     * the spec, and an [SculkFailure.UnsupportedCapability] when the spec sets a component this server
+     * does not have (see [ItemSpec.check]), as all of these may come from configuration. Any thread.
      */
     public fun create(id: Key, amount: Int = 1, text: Text = Text()): SculkResult<ItemStack> {
         if (amount !in 1..ItemSpec.MAX_STACK) return invalidAmount(id, amount, ItemSpec.MAX_STACK)
