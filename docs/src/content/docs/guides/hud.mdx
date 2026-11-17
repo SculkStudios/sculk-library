@@ -1,0 +1,77 @@
+---
+title: HUD
+description: sculk-presentation, per-player action bars, boss bars, tab lists and sidebars that redraw only what changed, and never take another plugin's scoreboard.
+sidebar:
+  order: 14
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`sculk-presentation` (package `studio.sculk.presentation`) shows each player a HUD built from
+templates and [placeholders](/guides/placeholders/), and redraws a part only when something it
+shows changed.
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-presentation:6.0.0-SNAPSHOT")
+}
+```
+
+## A HUD
+
+```kotlin
+import studio.sculk.placeholder.PlaceholderRegistry
+import studio.sculk.presentation.Huds
+import studio.sculk.presentation.Update
+import studio.sculk.presentation.hud
+
+// in start():
+val placeholders = PlaceholderRegistry(sculk.scope)
+val huds = Huds(this, sculk.scope.resources, placeholders)
+
+val layout = hud {
+    actionBar("<muted>Balance: <value><economy_balance>")
+    bar("event", "<warning>Event ends in <event_left>", progress = { event.progress() }, update = Update.Every(20))
+    tabList(header = "<primary>Sculk Network", footer = "<muted>play.sculk.studio")
+    sidebar("<primary>Sculk", "Online: <server_online>", "Rank: <player_rank>")
+}
+
+sculk.events.listen<PlayerJoinEvent> { event -> huds.show(event.player, layout) }
+```
+
+A layout has at most one action bar, tab list and sidebar, any number of boss bars with different
+ids, and up to fifteen sidebar lines.
+
+## What redraws, and when
+
+- **`Update.OnChange`** (the default): a surface redraws when a placeholder it used signals a
+  change, for everyone or for this player. Sculk records which placeholders each surface used as it
+  renders, so nothing has to be declared, and a change to one placeholder redraws only what showed
+  it.
+- **`Update.Every(ticks)`**: also on an interval, for values that drift without a signal, such as a
+  countdown or a boss bar's progress.
+- **`Update.Manual`**: only when you call `hud.refresh()`.
+- Whatever triggers a redraw, nothing is sent when the result equals what the player already sees.
+  An idle HUD schedules no work at all; the action bar alone is resent every two seconds while
+  shown, because the client fades it.
+- `showWhen = { player -> ... }` on any surface hides it while false; it is checked at least once a
+  second.
+
+A HUD runs on its player's thread, ends when they leave, and every HUD of a `Huds` ends with its
+scope. `huds.show` replaces a player's previous HUD from the same `Huds`.
+
+## The sidebar and other plugins' boards
+
+A player sees one scoreboard. The sidebar takes the player's board only from the server's main
+board; if another plugin has given the player its own board, Sculk's sidebar waits and shows once
+that board is gone, and when the HUD closes the player gets back the board they had.
+
+The sidebar needs Bukkit scoreboards, which Paper and Canvas have and Folia does not:
+`huds.sidebarAvailable` says which, and showing a layout with a sidebar on Folia returns an
+`UnsupportedCapability` failure. The action bar, boss bars and tab list work everywhere.
+
+<Aside>
+  Sculk's `integration-tests/hud` suite shows a HUD to a real client on every supported Paper
+  version, Folia and Canvas, changes a placeholder, hands the player another plugin's board and
+  closes it, checking what the client receives each time.
+</Aside>

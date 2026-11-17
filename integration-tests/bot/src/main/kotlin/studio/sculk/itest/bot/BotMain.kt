@@ -21,7 +21,17 @@ import org.cloudburstmc.nbt.NbtMap
 import org.cloudburstmc.nbt.NbtType
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundClearDialogPacket
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundCustomClickActionPacket
+import org.geysermc.mcprotocollib.protocol.data.game.BossBarAction
+import org.geysermc.mcprotocollib.protocol.data.game.scoreboard.ObjectiveAction
+import org.geysermc.mcprotocollib.protocol.data.game.scoreboard.ScoreboardPosition
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundBossEventPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundTabListPacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundResetScorePacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetDisplayObjectivePacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetObjectivePacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetScorePacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundSetActionBarTextPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundShowDialogGamePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket
@@ -44,7 +54,9 @@ import kotlin.system.exitProcess
  *
  * - events: `JOINED`, `WINDOW id type title`, `CONTENT id state slot:name...`, `SLOT id state slot name`,
  *   `CLOSED id`, `CHAT text`, `DIALOG title buttons inputs` (labels and `key:type`, each `|`-separated),
- *   `DIALOGCLOSED`, `DISCONNECTED reason`;
+ *   `DIALOGCLOSED`, `ACTIONBAR text`, `BOSSBAR uuid ADD|REMOVE|UPDATE_TITLE|UPDATE_HEALTH title progress`,
+ *   `TAB header footer`, `SIDEBAR title lines` (lines top to bottom, `|`-separated, empty when none shows),
+ *   `DISCONNECTED reason`;
  * - commands: `CLICK slot LEFT|RIGHT|SHIFT|DROP|HOTBAR n`, `CLOSE`, `COMMAND text`,
  *   `DIALOGCLICK label key=value...` (each value typed as the dialog declares its input), `QUIT`.
  *
@@ -76,6 +88,12 @@ private class Bot(private val out: PrintStream) {
     @Volatile private var stateId = 0
 
     @Volatile private var dialog: NbtMap? = null
+
+    // The scoreboard as the client keeps it: objective titles, scores per objective, and which shows.
+    private val objectives = HashMap<String, String>()
+    private val scores = HashMap<String, HashMap<String, Pair<Int, String>>>()
+    private var sidebar: String? = null
+    private var lastSidebar: String? = null
 
     fun connect(host: String, port: Int, name: String) {
         session = ClientNetworkSessionFactory.factory().setAddress(host, port).setProtocol(MinecraftProtocol(name)).create()
@@ -121,6 +139,37 @@ private class Bot(private val out: PrintStream) {
                 val inputs = shown.getList("inputs", NbtType.COMPOUND, emptyList()).joinToString("|") { "${it.getString("key")}:${it.getString("type").substringAfter(':')}" }
                 emit("DIALOG", text(shown["title"]), buttons(shown).joinToString("|") { text(it["label"]) }, inputs)
             }
+            is ClientboundSetActionBarTextPacket -> emit("ACTIONBAR", plain.serialize(packet.text))
+            is ClientboundBossEventPacket -> emit(
+                "BOSSBAR",
+                packet.uuid.toString(),
+                packet.action.name,
+                packet.title?.let { plain.serialize(it) } ?: "",
+                if (packet.action == BossBarAction.ADD || packet.action == BossBarAction.UPDATE_HEALTH) packet.health.toString() else "",
+            )
+            is ClientboundTabListPacket -> emit("TAB", plain.serialize(packet.header), plain.serialize(packet.footer))
+            is ClientboundSetObjectivePacket -> {
+                when (packet.action) {
+                    ObjectiveAction.REMOVE -> {
+                        objectives.remove(packet.name)
+                        scores.remove(packet.name)
+                    }
+                    else -> objectives[packet.name] = packet.displayName?.let { plain.serialize(it) }.orEmpty()
+                }
+                sidebarChanged()
+            }
+            is ClientboundSetDisplayObjectivePacket -> if (packet.position == ScoreboardPosition.SIDEBAR) {
+                sidebar = packet.name.ifEmpty { null }
+                sidebarChanged()
+            }
+            is ClientboundSetScorePacket -> {
+                scores.getOrPut(packet.objective) { HashMap() }[packet.owner] = packet.value to (packet.display?.let { plain.serialize(it) } ?: packet.owner)
+                sidebarChanged()
+            }
+            is ClientboundResetScorePacket -> {
+                if (packet.objective == null) scores.values.forEach { it.remove(packet.owner) } else scores[packet.objective]?.remove(packet.owner)
+                sidebarChanged()
+            }
             is ClientboundClearDialogPacket -> {
                 dialog = null
                 emit("DIALOGCLOSED")
@@ -154,6 +203,18 @@ private class Bot(private val out: PrintStream) {
             else -> error("unknown click '$kind'")
         }
         session.send(ServerboundContainerClickPacket(window, stateId, slot, type, action, null as HashedStack?, emptyMap<Int, HashedStack>()))
+    }
+
+    // Reports the sidebar the client would draw, highest score first, only when it differs.
+    private fun sidebarChanged() {
+        val shown = sidebar?.let { name ->
+            val lines = scores[name].orEmpty().values.sortedByDescending { it.first }.joinToString("|") { it.second }
+            "${objectives[name].orEmpty()}\t$lines"
+        } ?: "\t"
+        if (shown == lastSidebar) return
+        lastSidebar = shown
+        val (title, lines) = shown.split('\t', limit = 2)
+        emit("SIDEBAR", title, lines)
     }
 
     /** The buttons of a notice, confirmation or multi-action dialog, in the order the client shows them. */
