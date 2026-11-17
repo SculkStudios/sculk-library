@@ -180,12 +180,13 @@ public class PlayerHud internal constructor(
         onPlayer { if (isOpen && engine.mark(tag)) wakeAt(now()) }
     }
 
-    // The player has gone: nothing can be sent, and the server drops their board and bars, but the
-    // teams and scores for their name live on shared boards.
+    // The player has gone: nothing can be sent and the server drops their bars, but their board stays
+    // registered for nametag copies and their name's teams and scores live on shared boards.
     internal fun left() {
         isOpen = false
         huds.ended(this)
         huds.names.forget(player.name)
+        sink.release()
     }
 
     private fun render(template: String): Rendered {
@@ -307,16 +308,20 @@ private class PaperSink(private val plugin: Plugin, private val player: Player, 
         creating = true
         previous = main
         writes {
-            val created = Bukkit.getScoreboardManager().newScoreboard
-            val made = created.registerNewObjective(OBJECTIVE, Criteria.DUMMY, latest?.title ?: Component.empty())
-            made.numberFormat(NumberFormat.blank())
-            made.setDisplaySlot(DisplaySlot.SIDEBAR)
-            latest?.let { fill(made, it) }
-            names.adopt(created)
-            objective = made
-            board = created
-            creating = false
-            onPlayer { if (board === created && player.scoreboard === main) player.scoreboard = created }
+            // Cleared even when a write throws, or this HUD would never try to make a sidebar again.
+            try {
+                val created = Bukkit.getScoreboardManager().newScoreboard
+                val made = created.registerNewObjective(OBJECTIVE, Criteria.DUMMY, latest?.title ?: Component.empty())
+                made.numberFormat(NumberFormat.blank())
+                made.setDisplaySlot(DisplaySlot.SIDEBAR)
+                latest?.let { fill(made, it) }
+                names.adopt(created)
+                objective = made
+                board = created
+                onPlayer { if (board === created && player.scoreboard === main) player.scoreboard = created }
+            } finally {
+                creating = false
+            }
         }
     }
 
