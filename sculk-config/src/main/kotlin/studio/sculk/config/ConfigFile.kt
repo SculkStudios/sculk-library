@@ -9,6 +9,7 @@ import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
 import studio.sculk.flatMap
 import studio.sculk.map
+import studio.sculk.onSuccess
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.util.concurrent.CopyOnWriteArrayList
@@ -20,11 +21,12 @@ import kotlin.io.path.readText
  * One typed configuration file. [value] is always a valid, fully decoded configuration: a reload
  * or save that fails to parse, migrate or validate leaves it and the file untouched and returns why.
  *
- * Thread-safe. Saving and reloading are serialised; reads of [value] never block. Listeners run
- * after the file is released, so a listener may itself save or reload.
+ * Thread-safe. Saving, updating and reloading are serialised; reads of [value] never block. Listeners
+ * run after the file is released, so a listener may itself save or reload.
  */
 @SculkStable
 public class ConfigFile<T : Any> internal constructor(
+    /** The file this reads and writes. */
     public val path: Path,
     private val serializer: KSerializer<T>,
     private val options: ConfigOptions<T>,
@@ -43,12 +45,15 @@ public class ConfigFile<T : Any> internal constructor(
     private val watchers = mutableListOf<SculkHandle>()
     private var closed = false
 
+    /** The last configuration loaded, reloaded, saved or updated; always valid. Never blocks. */
     public val value: T get() = current
 
     /**
      * Reads the file again. On success the new value replaces [value] and the listeners run on the
      * calling thread; on failure nothing changes. A listener's exception is rethrown after every
      * listener has run.
+     *
+     * Blocks on file I/O: never call it on a tick thread.
      */
     public fun reload(): SculkResult<T> = refresh().also { result -> if (result is SculkResult.Success) notifyAll(result.value) }
 
@@ -57,9 +62,13 @@ public class ConfigFile<T : Any> internal constructor(
      * makes it the current value and runs the listeners on the calling thread. The merged file must
      * pass every check a load runs, or nothing is written. The write is atomic where the file system
      * allows: a crash leaves the old file or the new one.
+     *
+     * Fails with [ConfigConflict], writing nothing, when the file changed on disk since it was last
+     * read or written, so an operator's edit is never overwritten. Blocks on file I/O: never call it
+     * on a tick thread.
      */
     public fun save(value: T): SculkResult<Unit> {
-        val saved = synchronized(lock) { ConfigLoader.save(path, serializer, options, value).map(::install) }
+        val saved = synchronized(lock) { write(value) }
         return saved.map(::notifyAll)
     }
 
@@ -68,15 +77,23 @@ public class ConfigFile<T : Any> internal constructor(
 
     /**
      * Sets each setting in [changes], a path from [fields] to the text the file would hold, and saves
-     * the result as [save] does. The new value must pass every check a load runs, or nothing changes
-     * and the failure names the first setting that did not.
+     * the result as [save] does, failing the same way. The new value must pass every check a load
+     * runs, or nothing changes and the failure names the first setting that did not. The edit is made
+     * to the value as it is when the file is held, so concurrent updates never undo one another.
+     *
+     * Blocks on file I/O: never call it on a tick thread.
      */
     public fun update(changes: Map<String, String>): SculkResult<T> {
-        val known = fields().mapTo(HashSet()) { it.path }
-        changes.keys.firstOrNull { it !in known }?.let { unknown ->
-            return InvalidConfig(path.name, unknown, null, "a setting of this configuration", unknown)
+        val saved = synchronized(lock) {
+            val known = fields().mapTo(HashSet()) { it.path }
+            val unknown = changes.keys.firstOrNull { it !in known }
+            if (unknown != null) {
+                InvalidConfig(path.name, unknown, null, "a setting of this configuration", unknown)
+            } else {
+                ConfigLoader.edit(path, serializer, options, current, changes).flatMap(::write)
+            }
         }
-        return ConfigLoader.edit(path, serializer, options, current, changes).flatMap { edited -> save(edited).map { edited } }
+        return saved.onSuccess(::notifyAll)
     }
 
     /** Runs [listener] with the new value after every successful reload or save. */
@@ -124,6 +141,9 @@ public class ConfigFile<T : Any> internal constructor(
     }
 
     private fun refresh(): SculkResult<T> = synchronized(lock) { ConfigLoader.read(path, serializer, options).map(::install) }
+
+    // Caller holds lock, so no reload or other save moves lastWritten between the check and the write.
+    private fun write(value: T): SculkResult<T> = ConfigLoader.save(path, serializer, options, value, lastWritten).map(::install)
 
     private fun install(loaded: ConfigLoader.Loaded<T>): T {
         lastWritten = loaded.text

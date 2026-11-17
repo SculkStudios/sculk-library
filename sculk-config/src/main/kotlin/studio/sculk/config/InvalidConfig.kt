@@ -26,5 +26,15 @@ public class InvalidConfig(
         }
 }
 
+/**
+ * A save or update refused because [file] changed on disk since it was last read or written, so
+ * writing would overwrite an operator's edit. Nothing was written and the value did not change.
+ */
+@SculkStable
+public class ConfigConflict(public val file: String) : SculkFailure() {
+    override val message: String get() = "$file changed on disk since it was last loaded, so it was not saved."
+    override val hint: String get() = "Reload it to take the change, or fix it if the reload fails, then save again."
+}
+
 /** Thrown inside the decoder and converted to [InvalidConfig] at the boundary; never escapes the module. */
 internal class ConfigDecodingException(val failure: InvalidConfig) : RuntimeException(failure.message, null, false, false)

@@ -7,6 +7,13 @@ public final synthetic class studio/sculk/config/Comment$Impl : studio/sculk/con
 	public final synthetic fun lines ()[Ljava/lang/String;
 }
 
+public final class studio/sculk/config/ConfigConflict : studio/sculk/SculkFailure {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getFile ()Ljava/lang/String;
+	public fun getHint ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+}
+
 public final class studio/sculk/config/ConfigField {
 	public final fun getChoices ()Ljava/util/List;
 	public final fun getComment ()Ljava/util/List;

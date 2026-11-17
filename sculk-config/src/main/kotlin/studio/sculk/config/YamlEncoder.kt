@@ -65,7 +65,7 @@ internal open class NodeEncoder(private val put: (Node) -> Unit) : AbstractEncod
 
     override fun encodeDouble(value: Double) = place(YamlEncoding.scalar(value.toString(), Tag.FLOAT))
 
-    override fun encodeFloat(value: Float) = encodeDouble(value.toDouble())
+    override fun encodeFloat(value: Float) = place(YamlEncoding.scalar(value.toString(), Tag.FLOAT))
 
     override fun encodeChar(value: Char) = encodeString(value.toString())
 

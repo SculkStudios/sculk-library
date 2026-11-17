@@ -25,6 +25,9 @@ data class Arena(val bounds: Bounds = Bounds())
 @Serializable
 data class Notes(val motd: String = "hi", val footer: String? = "bye")
 
+@Serializable
+data class Rates(val rate: Double = 0.5, val chance: Float = 0.1f)
+
 class ConfigDecodeTest {
     @TempDir
     lateinit var directory: Path
@@ -41,13 +44,32 @@ class ConfigDecodeTest {
     }
 
     @Test
-    fun `a validation rule that throws is reported, not thrown`() {
+    fun `a validation rule that throws is reported with its message as the problem, not thrown`() {
         file.writeText("max-players: 20\n")
         val failure = SculkConfig.load<Settings>(file) {
-            validate { settings -> require(settings.maxPlayers > 500) { "more than 500 players" } }
+            validate { settings -> require(settings.maxPlayers > 500) { "max-players must be over 500." } }
         }
         assertTrue(failure is InvalidConfig, failure.toString())
-        assertEquals("config.yml: expected more than 500 players, found something else.", (failure as InvalidConfig).message)
+        assertEquals(
+            "config.yml: expected a configuration the plugin accepts, found a problem: max-players must be over 500.",
+            (failure as InvalidConfig).message,
+        )
+    }
+
+    @Test
+    fun `a decimal is a finite plain number, never NaN, infinity, hex or a typed literal`() {
+        listOf("NaN", ".nan", "Infinity", "-.inf", "0x1p3", "1.5d", "2f", "1e999").forEach { text ->
+            file.writeText("rate: $text\n")
+            val failure = SculkConfig.load<Rates>(file)
+            assertTrue(failure is InvalidConfig && failure.path == "rate", "$text: $failure")
+        }
+        file.writeText("chance: 1e39\n")
+        val tooLarge = SculkConfig.load<Rates>(file)
+        assertTrue(tooLarge is InvalidConfig && tooLarge.path == "chance", "a float that overflows: $tooLarge")
+        file.writeText("rate: 1_000.25\nchance: -.5e-1\n")
+        val rates = SculkConfig.load<Rates>(file).getOrThrow().value
+        assertEquals(1000.25, rates.rate)
+        assertEquals(-0.05f, rates.chance)
     }
 
     @Test

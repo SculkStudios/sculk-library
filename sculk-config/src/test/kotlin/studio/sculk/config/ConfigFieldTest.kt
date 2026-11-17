@@ -5,9 +5,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import studio.sculk.SculkResult
 import studio.sculk.Secret
 import studio.sculk.getOrThrow
 import java.nio.file.Path
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import kotlin.concurrent.thread
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -90,5 +94,40 @@ class ConfigFieldTest {
         assertTrue(unknown is InvalidConfig && unknown.path == "tags", unknown.toString())
         assertEquals(before, file.readText())
         assertEquals(27, config.value.slots)
+    }
+
+    @Test
+    fun `an update refuses to overwrite an edit made on disk since the file was read`() {
+        val config = load()
+        val edited = file.readText().replace("slots: 27", "slots: 9")
+        file.writeText(edited)
+        val failure = config.update(mapOf("open" to "false"))
+        assertTrue(failure is ConfigConflict, failure.toString())
+        assertEquals(edited, file.readText())
+        assertEquals(true, config.value.open)
+    }
+
+    @Test
+    fun `concurrent updates of different settings all survive`() {
+        val config = load()
+        val changes = listOf("slots" to "45", "open" to "false", "mode" to "hard-core", "storage.host" to "db.local")
+        val start = CountDownLatch(1)
+        val results = CopyOnWriteArrayList<SculkResult<ShopSettings>>()
+        val threads = changes.map { change ->
+            thread {
+                start.await()
+                results += config.update(mapOf(change))
+            }
+        }
+        start.countDown()
+        threads.forEach { it.join(TIMEOUT_MILLIS) }
+        assertTrue(results.size == changes.size && results.all { it is SculkResult.Success }, results.toString())
+        val expected = ShopSettings(slots = 45, open = false, mode = Mode.HARD_CORE, storage = ShopStorage(host = "db.local"))
+        assertEquals(expected, config.value)
+        assertEquals(expected, SculkConfig.load<ShopSettings>(file).getOrThrow().value)
+    }
+
+    private companion object {
+        const val TIMEOUT_MILLIS = 5_000L
     }
 }

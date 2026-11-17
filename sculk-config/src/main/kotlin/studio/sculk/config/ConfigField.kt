@@ -31,6 +31,11 @@ public class ConfigField internal constructor(
     /** For [Kind.CHOICE], the values the file accepts. */
     public val choices: List<String> = choices.toList()
 
+    /**
+     * What a setting holds, and so how an editor offers it: [TEXT] for text and secrets, [TOGGLE] for
+     * true or false, [WHOLE] for an integer, [DECIMAL] for a floating-point number, and [CHOICE] for
+     * one of [choices].
+     */
     @SculkStable
     public enum class Kind { TEXT, TOGGLE, WHOLE, DECIMAL, CHOICE }
 

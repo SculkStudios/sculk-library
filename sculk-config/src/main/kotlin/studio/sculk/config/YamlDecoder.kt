@@ -92,16 +92,20 @@ internal abstract class NodeDecoder(protected val context: DecodeContext) : Abst
         return value
     }
 
-    override fun decodeDouble(): Double {
+    override fun decodeDouble(): Double = decodeDecimal { it.isFinite() }
+
+    override fun decodeFloat(): Float = decodeDecimal { it.toFloat().isFinite() }.toFloat()
+
+    /** A decimal, optionally with an exponent, that [fits] the type it is read into. */
+    private fun decodeDecimal(fits: (Double) -> Boolean): Double {
         val range = annotations.filterIsInstance<DecimalRange>().firstOrNull()
         val expected = range?.let { "a number between ${it.min} and ${it.max}" } ?: "a number"
         val text = scalar(expected)
-        val value = text.replace("_", "").toDoubleOrNull() ?: fail(expected, received(text))
+        val plain = text.replace("_", "")
+        val value = plain.takeIf { DECIMAL.matches(it) }?.toDoubleOrNull()?.takeIf(fits) ?: fail(expected, received(text))
         if (range != null && value !in range.min..range.max) fail(expected, received(text).trim('\''))
         return value
     }
-
-    override fun decodeFloat(): Float = decodeDouble().toFloat()
 
     override fun decodeChar(): Char {
         val text = scalar("a single character")
@@ -168,6 +172,9 @@ internal abstract class NodeDecoder(protected val context: DecodeContext) : Abst
         const val TYPE_KEY = "type"
         const val SECRET = "studio.sculk.Secret"
         private val NULLS = setOf("", "~", "null", "Null", "NULL")
+
+        // YAML 1.2's decimal form; Java's parser alone would also take NaN, Infinity, hex and a d or f suffix.
+        private val DECIMAL = Regex("[-+]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)([eE][-+]?[0-9]+)?")
 
         fun isNull(node: Node): Boolean = node is ScalarNode && (node.tag == Tag.NULL || (node.isPlain && node.value in NULLS))
 

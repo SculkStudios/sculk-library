@@ -51,7 +51,8 @@ public class ConfigOptions<T : Any> internal constructor() {
 
     /**
      * Adds checks that run after decoding, on every load, reload and save; every violation reported
-     * through [Violations.ensure] fails it, and so does an [IllegalArgumentException] from `require`.
+     * through [Violations.ensure] fails it, and so does an [IllegalArgumentException] from `require`,
+     * whose message is reported as the problem.
      */
     public fun validate(rule: Violations.(T) -> Unit) {
         validations += rule
@@ -68,6 +69,7 @@ public class MigrationBuilder internal constructor() {
         steps += { root -> YamlTree.move(root, from, to) }
     }
 
+    /** Removes the key at [path] with its value and comments. Does nothing if it is absent. */
     public fun remove(path: String) {
         steps += { root -> YamlTree.remove(root, path) }
     }

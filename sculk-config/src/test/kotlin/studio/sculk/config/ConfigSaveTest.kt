@@ -5,9 +5,14 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
+import studio.sculk.SculkFailure
 import studio.sculk.SculkResult
 import studio.sculk.getOrThrow
+import java.nio.file.AccessDeniedException
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.FileSystemException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
@@ -54,11 +59,35 @@ class ConfigSaveTest {
     }
 
     @Test
-    fun `a save stamps the schema version the plugin writes`() {
+    fun `a save into a deleted file writes it again with the schema version the plugin writes`() {
         val config = load { version = 3 }
-        file.writeText(file.readText().replace("config-version: 3", ""))
-        config.save(config.value).getOrThrow()
+        Files.delete(file)
+        config.save(config.value.copy(maxPlayers = 30)).getOrThrow()
         assertTrue("config-version: 3" in file.readText(), file.readText())
+        assertTrue("max-players: 30" in file.readText(), file.readText())
+    }
+
+    @Test
+    fun `a save refuses to overwrite an edit made on disk since the file was read`() {
+        val config = load()
+        val edited = file.readText().replace("max-players: 100", "max-players: 7")
+        file.writeText(edited)
+        val failure = config.save(config.value.copy(maxPlayers = 30))
+        assertTrue(failure is ConfigConflict, failure.toString())
+        assertEquals(edited, file.readText())
+        assertEquals(100, config.value.maxPlayers)
+        assertEquals(7, config.reload().getOrThrow().maxPlayers)
+        config.save(config.value.copy(maxPlayers = 30)).getOrThrow()
+        assertTrue("max-players: 30" in file.readText(), file.readText())
+    }
+
+    @Test
+    fun `a save refuses while an outside edit that does not load is still on disk`() {
+        val config = load()
+        file.writeText("max-players: [oops\n")
+        assertTrue(config.reload() is InvalidConfig)
+        assertTrue(config.save(config.value.copy(maxPlayers = 30)) is ConfigConflict)
+        assertEquals("max-players: [oops\n", file.readText())
     }
 
     @Test
@@ -78,8 +107,11 @@ class ConfigSaveTest {
         val config = load()
         file.writeText("storage:\n  type: mysql\n  password: hunter2\n  host: [unclosed\n")
         val failure = config.save(config.value)
-        assertTrue(failure is InvalidConfig, failure.toString())
-        assertFalse("hunter2" in (failure as InvalidConfig).describe(), failure.describe())
+        assertTrue(failure is SculkFailure, failure.toString())
+        assertFalse("hunter2" in (failure as SculkFailure).describe(), failure.describe())
+        val reloaded = config.reload()
+        assertTrue(reloaded is InvalidConfig, reloaded.toString())
+        assertFalse("hunter2" in (reloaded as InvalidConfig).describe(), reloaded.describe())
     }
 
     @Test
@@ -127,6 +159,37 @@ class ConfigSaveTest {
         val failed = runCatching { ConfigLoader.write(target, "a: 1\n") }
         assertTrue(failed.isFailure)
         assertFalse(directory.resolve(".taken.yml.tmp").exists())
+    }
+
+    @Test
+    fun `a write the file system refuses leaves the file as it was`() {
+        file.writeText("a: 1\n")
+        assertThrows<AccessDeniedException> {
+            ConfigLoader.write(file, "a: 2\n") { _, to -> throw AccessDeniedException(to.toString()) }
+        }
+        assertEquals("a: 1\n", file.readText())
+        assertFalse(directory.resolve(".config.yml.tmp").exists())
+    }
+
+    @Test
+    fun `a file no rename can replace, such as a bind mount, is rewritten in place`() {
+        file.writeText("a: 1\n")
+        ConfigLoader.write(file, "a: 2\n") { from, to ->
+            throw AtomicMoveNotSupportedException(from.toString(), to.toString(), "cross-device")
+        }
+        assertEquals("a: 2\n", file.readText())
+        ConfigLoader.write(file, "a: 3\n") { _, to -> throw FileSystemException(to.toString(), null, "Device or resource busy") }
+        assertEquals("a: 3\n", file.readText())
+        assertFalse(directory.resolve(".config.yml.tmp").exists())
+    }
+
+    @Test
+    fun `a float is written as the float, not as the double it widens to`() {
+        val rates = SculkConfig.load<Rates>(file).getOrThrow()
+        assertTrue(Regex("(?m)^chance: 0\\.1$").containsMatchIn(file.readText()), file.readText())
+        rates.save(rates.value.copy(chance = 0.3f)).getOrThrow()
+        assertTrue(Regex("(?m)^chance: 0\\.3$").containsMatchIn(file.readText()), file.readText())
+        assertEquals(0.3f, SculkConfig.load<Rates>(file).getOrThrow().value.chance)
     }
 
     @Test

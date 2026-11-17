@@ -9,11 +9,13 @@ import org.snakeyaml.engine.v2.nodes.ScalarNode
 import org.snakeyaml.engine.v2.nodes.Tag
 import studio.sculk.SculkFailure
 import studio.sculk.SculkResult
+import studio.sculk.flatMap
 import java.io.IOException
 import java.nio.channels.FileChannel
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.FileSystemException
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
@@ -32,20 +34,40 @@ internal object ConfigLoader {
         loaded
     }
 
-    /** Merges [value] into the file and writes it only if the merged file loads back as valid. */
-    fun <T : Any> save(path: Path, serializer: KSerializer<T>, options: ConfigOptions<T>, value: T): SculkResult<Loaded<T>> =
-        guarded(path, "save") {
-            val exists = path.exists()
-            val tree = if (exists) YamlTree.parse(path.readText()) else YamlTree.emptyMapping()
-            YamlTree.merge(tree, YamlEncoding.encode(serializer, value)) { text ->
-                Placeholders.resolveLeniently(text, options.environment)
+    /**
+     * Merges [value] into the file and writes it only if the merged file loads back as valid, and only
+     * if the file still holds [lastWritten]: anything else is an operator's edit, refused as a [ConfigConflict].
+     * A missing file is written anew.
+     */
+    fun <T : Any> save(
+        path: Path,
+        serializer: KSerializer<T>,
+        options: ConfigOptions<T>,
+        value: T,
+        lastWritten: String,
+    ): SculkResult<Loaded<T>> {
+        val onDisk = guarded(path, "save") {
+            try {
+                path.readText()
+            } catch (_: NoSuchFileException) {
+                null
             }
-            setVersion(tree, options.version, first = !exists)
-            val saved = decode(tree, serializer, options, DecodeContext(path.name, options.environment))
-            val text = YamlTree.print(tree)
-            write(path, text)
-            Loaded(saved, text)
         }
+        return onDisk.flatMap { original ->
+            if (original != null && original != lastWritten) return@flatMap ConfigConflict(path.name)
+            guarded(path, "save") {
+                val tree = original?.let(YamlTree::parse) ?: YamlTree.emptyMapping()
+                YamlTree.merge(tree, YamlEncoding.encode(serializer, value)) { text ->
+                    Placeholders.resolveLeniently(text, options.environment)
+                }
+                setVersion(tree, options.version, first = original == null)
+                val saved = decode(tree, serializer, options, DecodeContext(path.name, options.environment))
+                val text = YamlTree.print(tree)
+                write(path, text)
+                Loaded(saved, text)
+            }
+        }
+    }
 
     /** [current] with each path in [changes] set to its text, decoded and checked as a load would; nothing is written. */
     fun <T : Any> edit(
@@ -141,9 +163,8 @@ internal object ConfigLoader {
         try {
             options.validations.forEach { rule -> violations.rule(value) }
         } catch (rejected: IllegalArgumentException) {
-            throw ConfigDecodingException(
-                InvalidConfig(context.file, "", null, rejected.message ?: "a configuration the plugin accepts", "something else"),
-            )
+            val problem = rejected.message?.trimEnd('.')?.let { "a problem: $it" } ?: "one a validation rule rejects"
+            throw ConfigDecodingException(InvalidConfig(context.file, "", null, "a configuration the plugin accepts", problem))
         }
         val first = violations.problems.firstOrNull() ?: return value
         val more = (violations.problems.size - 1).takeIf { it > 0 }?.let { "$it more problem(s) after this one." }
@@ -168,24 +189,34 @@ internal object ConfigLoader {
 
     /**
      * Replaces [path] with [text] durably: the new contents reach the disk before the old file is
-     * replaced, so a crash leaves one or the other.
+     * replaced through [replace], so a crash leaves one or the other. Only a file no rename can
+     * replace is rewritten in place, without that guarantee; any other failure leaves it untouched.
      */
-    fun write(path: Path, text: String) {
+    fun write(path: Path, text: String, replace: (from: Path, to: Path) -> Unit = ::replaceAtomically) {
         path.toAbsolutePath().parent?.let(Files::createDirectories)
         val temporary = path.resolveSibling(".${path.name}.tmp")
         try {
             writeDurably(temporary, text)
             try {
-                Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            } catch (_: AtomicMoveNotSupportedException) {
-                Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING)
+                replace(temporary, path)
+            } catch (refused: FileSystemException) {
+                if (!cannotRename(refused)) throw refused
+                writeDurably(path, text)
             }
-        } catch (_: FileSystemException) {
-            // A single-file bind mount (Docker) cannot be replaced by a rename, only rewritten in place.
-            writeDurably(path, text)
         } finally {
             Files.deleteIfExists(temporary)
         }
+    }
+
+    private fun replaceAtomically(from: Path, to: Path) {
+        Files.move(from, to, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+    }
+
+    // A single-file bind mount (Docker) is a mount point: renaming onto it fails with EXDEV or EBUSY,
+    // which the JDK reports as these two; EBUSY has no subtype, so only its reason tells it apart.
+    private fun cannotRename(error: FileSystemException): Boolean {
+        if (error is AtomicMoveNotSupportedException) return true
+        return error.javaClass == FileSystemException::class.java && error.reason?.contains("busy", ignoreCase = true) == true
     }
 
     private fun writeDurably(path: Path, text: String) {
