@@ -14,6 +14,8 @@ shadow = "9.6.1"
 license-report = "3.1.5"
 kotlinx-benchmark = "0.5.0"
 run-paper = "3.1.0"
+mcprotocollib = "26.3-4"
+viaversion = "5.12.2"
 # These three match gradle/servers.json; checkServerMatrix enforces it and updateServerMatrix moves
 # them. Paper publishes 1.21.x APIs only as snapshots; this is the last 1.21.4 build.
 paper-floor = "1.21.4-R0.1-20250925.065901-231"
@@ -35,6 +37,7 @@ asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
 archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
 kotlin-metadata = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 paper-api-floor = { module = "io.papermc.paper:paper-api", version.ref = "paper-floor" }
+mcprotocollib = { module = "org.geysermc.mcprotocollib:protocol", version.ref = "mcprotocollib" }
 canvas-api = { module = "io.canvasmc.canvas:canvas-api", version.ref = "canvas" }
 velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity" }
 adventure-api = { module = "net.kyori:adventure-api", version.ref = "adventure-floor" }

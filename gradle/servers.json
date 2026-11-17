@@ -8,5 +8,6 @@
   ],
   "folia": { "version": "26.3", "build": 8, "java": 25 },
   "canvas": { "version": "26.3", "build": 1016, "java": 25, "sha256": "637dd9f0414f3c2f4ce0aec8b500333577463add8f614be82e2b7f0387284e70" },
-  "velocity": { "version": "4.3.1", "build": 45, "java": 25 }
+  "velocity": { "version": "4.3.1", "build": 45, "java": 25 },
+  "client": { "version": "26.3", "java": 25, "viaversion": "5.12.2", "viaversionSha256": "24e4876fefe73e08a4c87cd6c457ee0916e62dd69656631caf41e26f909d504b" }
 }

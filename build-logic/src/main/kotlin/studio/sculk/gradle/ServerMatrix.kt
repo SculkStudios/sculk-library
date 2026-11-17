@@ -9,6 +9,7 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import xyz.jpenilla.runpaper.task.RunServer
 import xyz.jpenilla.runtask.service.DownloadsAPIService
@@ -30,7 +31,16 @@ class ServerMatrix(
     val folia: Server,
     val canvas: Server,
     val velocity: Server,
+    /** The test client (ADR-0029): the protocol it speaks, and the ViaVersion that lets it join older servers. */
+    val client: Client,
 ) {
+    class Client(val version: String, val java: Int, val viaVersion: String, val viaVersionSha256: String) {
+        val viaVersionUrl: String get() = "https://github.com/ViaVersion/ViaVersion/releases/download/$viaVersion/ViaVersion-$viaVersion.jar"
+
+        internal fun toJson(): String =
+            "{ \"version\": \"$version\", \"java\": $java, \"viaversion\": \"$viaVersion\", \"viaversionSha256\": \"$viaVersionSha256\" }"
+    }
+
     enum class Platform(val label: String) { PAPER("Paper"), FOLIA("Folia"), CANVAS("Canvas"), VELOCITY("Velocity") }
 
     class Server(
@@ -80,7 +90,8 @@ class ServerMatrix(
         appendLine("  ],")
         appendLine("  \"folia\": ${folia.toJson()},")
         appendLine("  \"canvas\": ${canvas.toJson()},")
-        appendLine("  \"velocity\": ${velocity.toJson()}")
+        appendLine("  \"velocity\": ${velocity.toJson()},")
+        appendLine("  \"client\": ${client.toJson()}")
         appendLine("}")
     }
 
@@ -121,7 +132,15 @@ class ServerMatrix(
             if (paper.isEmpty()) throw GradleException("$file: 'paper' must list at least one anchor, oldest first.")
             val canvas = server(Platform.CANVAS, root["canvas"])
             if (canvas.sha256 == null) throw GradleException("$file: Canvas needs a 'sha256'; its jar does not come from Fill.")
-            return ServerMatrix(paper, server(Platform.FOLIA, root["folia"]), canvas, server(Platform.VELOCITY, root["velocity"]))
+            val client = root["client"] as? Map<*, *> ?: throw GradleException("$file: 'client' must be an object.")
+            fun clientField(key: String) = client[key]?.toString() ?: throw GradleException("$file: client '$key' is missing.")
+            return ServerMatrix(
+                paper,
+                server(Platform.FOLIA, root["folia"]),
+                canvas,
+                server(Platform.VELOCITY, root["velocity"]),
+                Client(clientField("version"), (client["java"] as Number).toInt(), clientField("viaversion"), clientField("viaversionSha256")),
+            )
         }
     }
 }
@@ -143,9 +162,18 @@ fun Project.registerServerRun(
     systemProperties: Map<String, String> = emptyMap(),
     /** Other plugins to load beside [pluginJar], such as an example the plugin checks. */
     otherPlugins: List<Provider<RegularFile>> = emptyList(),
+    /** Lets the plugin start the test client (ADR-0029); servers older than the client also get ViaVersion. */
+    client: Boolean = false,
 ): TaskProvider<RunServer> {
     val runDirectory = layout.buildDirectory.dir("servers/${taskName.removePrefix("run")}")
     val download = server.jarUrl?.let { url -> registerVerifiedDownload("${server.id}b${server.build}", url, server.sha256) }
+    // Registered before the run task: Gradle forbids registering tasks while another is configured.
+    val matrix = serverMatrix()
+    val via = if (client && server.version != matrix.client.version) {
+        registerVerifiedDownload("ViaVersion${matrix.client.viaVersion.filter(Char::isDigit)}", matrix.client.viaVersionUrl, matrix.client.viaVersionSha256)
+    } else {
+        null
+    }
     val toolchains = extensions.getByType<JavaToolchainService>()
     return tasks.register<RunServer>(taskName) {
         group = "sculk integration"
@@ -162,6 +190,11 @@ fun Project.registerServerRun(
         }
         pluginJars(pluginJar)
         otherPlugins.forEach { pluginJars(it) }
+        if (client) withTestClient(matrix)
+        via?.let { download ->
+            dependsOn(download)
+            pluginJars(layout.buildDirectory.file("server-jars/ViaVersion${matrix.client.viaVersion.filter(Char::isDigit)}.jar"))
+        }
         this.runDirectory.set(runDirectory)
         javaLauncher.set(toolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(server.java)) })
         jvmArgs("-Xmx2g", "-Dcom.mojang.eula.agree=true", "-Dsculk.development=true", "-Dsculk.itest.platform=${server.platform}")
@@ -173,7 +206,9 @@ fun Project.registerServerRun(
             val dir = runDirectory.get().asFile.apply { mkdirs() }
             dir.resolve("eula.txt").writeText("eula=true\n")
             dir.resolve("server.properties").writeText(
-                "online-mode=false\nserver-port=$port\nlevel-type=minecraft\\:flat\ngenerate-structures=false\nspawn-protection=0\n",
+                "online-mode=false\nserver-port=$port\nlevel-type=minecraft\\:flat\ngenerate-structures=false\nspawn-protection=0\n" +
+                    // 26.3 turns the whitelist on by default, which would keep the test client out.
+                    "white-list=false\nenforce-whitelist=false\n",
             )
             // A minimal file: the server fills in every other key and keeps this one.
             gridExponent?.let { exponent ->
@@ -182,6 +217,16 @@ fun Project.registerServerRun(
             }
         }
     }
+}
+
+/** Passes the test client's jar and the Java that runs it to the server. */
+private fun RunServer.withTestClient(matrix: ServerMatrix) {
+    val botJar = project.project(":integration-tests:bot").tasks.named<org.gradle.jvm.tasks.Jar>("shadowJar").flatMap { it.archiveFile }
+    val java = project.extensions.getByType<JavaToolchainService>()
+        .launcherFor { languageVersion.set(JavaLanguageVersion.of(matrix.client.java)) }
+        .map { it.executablePath.asFile.absolutePath }
+    inputs.file(botJar)
+    jvmArgumentProviders.add { listOf("-Dsculk.itest.bot.jar=${botJar.get().asFile.absolutePath}", "-Dsculk.itest.bot.java=${java.get()}") }
 }
 
 /** Downloads [url] once and refuses it unless it hashes to [sha256]; a server jar is code that runs. */

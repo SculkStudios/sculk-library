@@ -25,6 +25,14 @@ dependencyResolutionManagement {
         maven("https://maven.canvasmc.io/releases") {
             content { includeGroupAndSubgroups("io.canvasmc") }
         }
+        // MCProtocolLib and its libraries, for the test client only (ADR-0029); never a published dependency.
+        maven("https://repo.opencollab.dev/main/") {
+            content {
+                includeGroupAndSubgroups("org.geysermc")
+                includeGroupAndSubgroups("org.cloudburstmc")
+                includeGroup("com.nukkitx.fastutil")
+            }
+        }
     }
 }
 
@@ -57,7 +65,10 @@ include(
     ":benchmarks",
     ":examples:economy",
     ":examples:network",
+    ":integration-tests:bot",
+    ":integration-tests:bot-driver",
     ":integration-tests:boot",
+    ":integration-tests:client",
     ":integration-tests:commands",
     ":integration-tests:examples",
     ":integration-tests:items",

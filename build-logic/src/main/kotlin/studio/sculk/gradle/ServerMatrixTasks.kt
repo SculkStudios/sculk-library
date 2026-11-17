@@ -48,6 +48,10 @@ abstract class CheckServerMatrix : DefaultTask() {
             catalogPin("paper-floor", matrix.paperFloor.apiVersion)
             catalogPin("canvas", matrix.canvas.apiVersion)
             catalogPin("velocity", matrix.velocity.version)
+            val protocolLib = catalogVersions["mcprotocollib"]
+            if (protocolLib?.substringBefore('-') != matrix.client.version) {
+                add("libs.versions.toml 'mcprotocollib' is $protocolLib; the test client in servers.json speaks ${matrix.client.version}.")
+            }
             (matrix.paper.map { it.apiVersion } + "velocity-api:${matrix.velocity.version}")
                 .filterNot(document::contains)
                 .forEach { add("COMPATIBILITY.md does not mention $it.") }
@@ -106,7 +110,7 @@ abstract class UpdateServerMatrix : DefaultTask() {
         if (reportOnly.get() || latest.notes.isEmpty()) return
 
         val canvas = latest.matrix.canvas.let { if (it.sha256 != null) it else it.withBuild(it.build, upstream.hashCanvas(it, scratch.get().asFile.toPath())) }
-        val updated = ServerMatrix(latest.matrix.paper, latest.matrix.folia, canvas, latest.matrix.velocity)
+        val updated = ServerMatrix(latest.matrix.paper, latest.matrix.folia, canvas, latest.matrix.velocity, latest.matrix.client)
         file.writeText(updated.toJson())
         val catalogFile = catalog.get().asFile
         catalogFile.writeText(

@@ -47,3 +47,4 @@ consequences matter more than exhaustive option surveys.
 | 0026 | [Placeholders as typed tag resolvers with refresh policies](0026-placeholders.md) | Accepted |
 | 0027 | [Permissions as descriptors over each platform's native system](0027-permissions.md) | Accepted |
 | 0028 | [Adapters compiled against the newest anchor](0028-adapters-compiled-against-the-newest-anchor.md) | Accepted |
+| 0029 | [A real client in the server suites](0029-a-real-client-in-the-server-suites.md) | Accepted |

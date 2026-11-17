@@ -46,7 +46,7 @@ class UpstreamBuilds {
         }
         newerMinecraft(pinned.paperCurrent.version, "paper").forEach { notes += "Paper $it is on Fill with a stable build; it is not an anchor yet." }
         newerMinecraft(pinned.folia.version, "folia").forEach { notes += "Folia $it is on Fill with a stable build; the Folia anchor is ${pinned.folia.version}." }
-        return Latest(ServerMatrix(paper, folia, canvas, velocity), notes)
+        return Latest(ServerMatrix(paper, folia, canvas, velocity, pinned.client), notes)
     }
 
     /** Downloads the Canvas jar for [server] and returns its SHA-256, the pin for that build. */

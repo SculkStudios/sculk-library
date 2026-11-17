@@ -23,6 +23,16 @@ planned for M3 and is a 6.0 release blocker (`REBUILD.md`).
 | --- | --- | --- | --- |
 | Unicode CLDR 49 plural rules (`cldr-json`, `supplemental/plurals.json`) | Unicode-3.0 (permissive) | `sculk-text` | Vendored in `sculk-text/src/cldr` and turned into Kotlin at build time. The licence asks for its notice to travel with the data and anything derived from it, so the jar carries it as `META-INF/LICENSE-unicode-cldr.txt`. |
 
+## Test-only tools
+
+Used by the server suites in CI and never published, shaded into a Sculk artifact or loaded by a
+consumer (ADR-0029).
+
+| Upstream | Licence | Used by | Notes |
+| --- | --- | --- | --- |
+| MCProtocolLib | MIT | `integration-tests/bot` | The headless client the suites drive; runs in its own JVM. |
+| ViaVersion | GPL-3.0 | test servers older than the client | Downloaded by SHA-256 into a test server's plugins folder only. |
+
 ## Libraries and plugins Sculk compiles against
 
 Every upstream below is `compileOnly`. No Sculk artifact contains its bytes; each adapter loads only
