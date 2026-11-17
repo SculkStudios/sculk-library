@@ -15,13 +15,6 @@ dependencies {
     implementation(project(":sculk-commands-velocity"))
 }
 
-tasks.processResources {
-    val pluginVersion = project.version.toString()
-    inputs.property("version", pluginVersion)
-    filesMatching("velocity-plugin.json") { expand("version" to pluginVersion) }
-}
-
-
 val proxyDir = layout.buildDirectory.dir("proxy")
 val resultsFile = proxyDir.map { it.file("plugins/sculk-threading/results.properties") }
 val proxy = serverMatrix().velocity

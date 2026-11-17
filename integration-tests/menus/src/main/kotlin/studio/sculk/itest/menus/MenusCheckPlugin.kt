@@ -6,7 +6,9 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.MerchantInventory
@@ -41,6 +43,7 @@ class MenusCheckPlugin : JavaPlugin(), Listener {
     private val joined = CompletableFuture<Player>()
     private val clickedOnOwnThread = CompletableFuture<Boolean>()
     private val closed = CompletableFuture<String>()
+    private val clicks = LinkedBlockingQueue<String>()
 
     private val counter = menu<Counter>(MenuLayout.chest(3)) {
         title { state -> "Page ${state.page}" }
@@ -68,6 +71,11 @@ class MenusCheckPlugin : JavaPlugin(), Listener {
         joined.complete(event.player)
     }
 
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onClick(event: InventoryClickEvent) {
+        clicks.put("${event.rawSlot} ${event.click}")
+    }
+
     private fun check() {
         try {
             BotDriver("SculkBot", server.port).use { bot ->
@@ -87,9 +95,12 @@ class MenusCheckPlugin : JavaPlugin(), Listener {
                     (owned && session.state.count == 1) to "owned $owned, state ${session.state}, shown $shown"
                 }
                 verdict("player-items-never-enter") {
+                    clicks.clear()
                     bot.click(54, "SHIFT") // raw slot of the hotbar's first slot: after 27 menu and 27 storage slots
                     bot.click(4, "HOTBAR", 0)
-                    Thread.sleep(1_500)
+                    // Both clicks are handled on the player's thread before the reads below can run there.
+                    val seen = listOf(clicks.poll(15, TimeUnit.SECONDS), clicks.poll(15, TimeUnit.SECONDS))
+                    check(seen == listOf("54 SHIFT_LEFT", "4 NUMBER_KEY")) { "the server saw clicks $seen" }
                     val menuSlot = onPlayerThread(player) { player.openInventory.topInventory.getItem(4)?.getData(DataComponentTypes.ITEM_NAME)?.let(plain::serialize) }
                     val loot = onPlayerThread(player) { player.inventory.getItem(0)?.getData(DataComponentTypes.ITEM_NAME)?.let(plain::serialize) }
                     (menuSlot == "Pane" && loot == "Loot") to "menu slot 4 '$menuSlot', hotbar 0 '$loot'"

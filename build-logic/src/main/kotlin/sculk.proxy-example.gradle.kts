@@ -16,9 +16,3 @@ ktlint {
 dependencies {
     "implementation"(libs.findLibrary("serialization-core").get())
 }
-
-tasks.processResources {
-    val pluginVersion = project.version.toString()
-    inputs.property("version", pluginVersion)
-    filesMatching("velocity-plugin.json") { expand("version" to pluginVersion) }
-}

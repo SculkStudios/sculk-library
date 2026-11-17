@@ -8,6 +8,12 @@ plugins {
     id("xyz.jpenilla.run-velocity")
 }
 
+tasks.processResources {
+    val pluginVersion = project.version.toString()
+    inputs.property("version", pluginVersion)
+    filesMatching("velocity-plugin.json") { expand("version" to pluginVersion) }
+}
+
 tasks.jar {
     archiveClassifier = "plain"
 }

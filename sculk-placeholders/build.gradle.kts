@@ -1,6 +1,8 @@
 plugins {
     id("sculk.library")
     id("sculk.publish")
+    // A tag resolver is an Adventure interface Sculk implements, so the same bytecode is proven on Adventure 5 too.
+    id("sculk.adventure-latest")
 }
 
 description =
@@ -18,30 +20,3 @@ dependencies {
     testImplementation(libs.adventure.minimessage)
     testImplementation(libs.adventure.plain)
 }
-
-val adventureLatest: Configuration = configurations.create("adventureLatest") {
-    isCanBeConsumed = false
-}
-
-dependencies {
-    adventureLatest(libs.adventure.latest.api)
-    adventureLatest(libs.adventure.latest.minimessage)
-    adventureLatest(libs.adventure.latest.plain)
-}
-
-// A tag resolver is an Adventure interface Sculk implements, so the same bytecode is proven on Adventure 5 too.
-val testAdventureLatest = tasks.register<Test>("testAdventureLatest") {
-    description = "Runs the tests against Adventure ${libs.versions.adventure.latest.get()}, as Paper 26.2+ and Velocity 4 ship it."
-    group = LifecycleBasePlugin.VERIFICATION_GROUP
-    val test = sourceSets["test"]
-    testClassesDirs = test.output.classesDirs
-    classpath = test.runtimeClasspath.filter { !it.name.startsWith("adventure-") && !it.name.startsWith("examination-") } + adventureLatest
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
-    val expected = "adventure-api-${libs.versions.adventure.latest.get()}.jar"
-    doFirst {
-        val apis = classpath.filter { it.name.startsWith("adventure-api-") }.map { it.name }
-        check(apis == listOf(expected)) { "Expected only $expected on the test classpath, found $apis." }
-    }
-}
-
-tasks.named("check") { dependsOn(testAdventureLatest) }

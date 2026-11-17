@@ -47,10 +47,55 @@ jobs:
           name: build-reports
           path: "**/build/reports/"
 
+  # One job per suite, so a failing suite never hides the others; every server is pinned in
+  # gradle/servers.json.
   servers:
-    name: Real servers
+    name: Real servers (${{ matrix.suite }})
     runs-on: ubuntu-latest
     needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: boot
+            about: Boot on every Paper anchor
+            task: ":integration-tests:boot:verifyBoot"
+          - suite: threading
+            about: Threading on the oldest and newest Paper anchors, Folia at two region sizes, and Canvas
+            task: ":integration-tests:threading:verifyThreading"
+          - suite: commands
+            about: Commands on the oldest and newest Paper anchors and Folia
+            task: ":integration-tests:commands:verifyCommands"
+          - suite: items
+            about: Items on every Paper anchor, Folia and Canvas
+            task: ":integration-tests:items:verifyItems"
+          - suite: registry
+            about: Registries on every Paper anchor, Folia and Canvas
+            task: ":integration-tests:registry:verifyRegistry"
+          - suite: recipes
+            about: Recipes on every Paper anchor, Folia and Canvas
+            task: ":integration-tests:recipes:verifyRecipes"
+          - suite: client
+            about: A real client joins every Paper anchor, Folia and Canvas
+            task: ":integration-tests:client:verifyClient"
+          - suite: menus
+            about: Menus clicked by a real client on every Paper anchor, Folia and Canvas
+            task: ":integration-tests:menus:verifyMenus"
+          - suite: dialogs
+            about: Dialogs answered by a real client on every Paper anchor, Folia and Canvas
+            task: ":integration-tests:dialogs:verifyDialogs"
+          - suite: hud
+            about: HUD seen by a real client on every Paper anchor, Folia and Canvas
+            task: ":integration-tests:hud:verifyHud"
+          - suite: config-admin
+            about: Config editor used by a real client on every Paper anchor, Folia and Canvas
+            task: ":integration-tests:config-admin:verifyConfigAdmin"
+          - suite: examples
+            about: Example plugins on every server
+            task: ":integration-tests:examples:verifyExamples"
+          - suite: velocity
+            about: Velocity and the network example
+            task: ":integration-tests:velocity:verifyVelocity"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -66,51 +111,14 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
 
-      # Every server below is pinned in gradle/servers.json.
-      - name: Boot on every Paper anchor
-        run: ./gradlew :integration-tests:boot:verifyBoot
-
-      - name: Threading on the oldest and newest Paper anchors, Folia at two region sizes, and Canvas
-        run: ./gradlew :integration-tests:threading:verifyThreading
-
-      - name: Commands on the oldest and newest Paper anchors and Folia
-        run: ./gradlew :integration-tests:commands:verifyCommands
-
-      - name: Items on every Paper anchor, Folia and Canvas
-        run: ./gradlew :integration-tests:items:verifyItems
-
-      - name: Registries on every Paper anchor, Folia and Canvas
-        run: ./gradlew :integration-tests:registry:verifyRegistry
-
-      - name: Recipes on every Paper anchor, Folia and Canvas
-        run: ./gradlew :integration-tests:recipes:verifyRecipes
-
-      - name: A real client joins every Paper anchor, Folia and Canvas
-        run: ./gradlew :integration-tests:client:verifyClient
-
-      - name: Menus clicked by a real client on every Paper anchor, Folia and Canvas
-        run: ./gradlew :integration-tests:menus:verifyMenus
-
-      - name: Dialogs answered by a real client on every Paper anchor, Folia and Canvas
-        run: ./gradlew :integration-tests:dialogs:verifyDialogs
-
-      - name: HUD seen by a real client on every Paper anchor, Folia and Canvas
-        run: ./gradlew :integration-tests:hud:verifyHud
-
-      - name: Config editor used by a real client on every Paper anchor, Folia and Canvas
-        run: ./gradlew :integration-tests:config-admin:verifyConfigAdmin
-
-      - name: Example plugins on every server
-        run: ./gradlew :integration-tests:examples:verifyExamples
-
-      - name: Velocity and the network example
-        run: ./gradlew :integration-tests:velocity:verifyVelocity
+      - name: ${{ matrix.about }}
+        run: ./gradlew ${{ matrix.task }}
 
       - name: Upload server logs
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: server-logs
+          name: server-logs-${{ matrix.suite }}
           path: |
             integration-tests/*/build/servers/*/logs/
             integration-tests/velocity/build/proxy/logs/

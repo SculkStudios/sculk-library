@@ -37,9 +37,8 @@ val checkRegistryAliases = tasks.register<RegistryAliasCheck>("checkRegistryAlia
     group = "verification"
     description = "Fails when a registry key disappears between supported Paper versions without an alias."
     mustRunAfter(runs.map { it.second })
-    anchors = paperAnchors.map { server ->
-        "${server.version}=" + layout.buildDirectory.file("servers/boot${server.id}/plugins/SculkBoot/registry-keys.txt").get().asFile.path
-    }
+    labels = paperAnchors.map { it.version }
+    dumps.from(paperAnchors.map { server -> layout.buildDirectory.file("servers/boot${server.id}/plugins/SculkBoot/registry-keys.txt") })
     aliases = rootProject.layout.projectDirectory.file("sculk-registry/src/main/resources/studio/sculk/registry/aliases.txt")
     report = layout.buildDirectory.file("registry-changes.txt")
 }

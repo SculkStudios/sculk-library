@@ -11,12 +11,6 @@ dependencies {
     implementation(project(":sculk-registry"))
 }
 
-tasks.processResources {
-    val pluginVersion = project.version.toString()
-    inputs.property("version", pluginVersion)
-    filesMatching("paper-plugin.yml") { expand("version" to pluginVersion) }
-}
-
 // The registry event changed from freeze to compose at 1.21.11, so every Paper anchor runs, with
 // Folia and Canvas.
 val matrix = serverMatrix()

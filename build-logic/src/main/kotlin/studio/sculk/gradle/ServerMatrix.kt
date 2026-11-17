@@ -204,6 +204,12 @@ fun Project.registerServerRun(
         timeout.set(Duration.ofMinutes(10))
         doFirst {
             val dir = runDirectory.get().asFile.apply { mkdirs() }
+            // The run directory is reused: a server that dies before its plugin writes must not be
+            // verified against the previous run's files.
+            dir.resolve("plugins").listFiles().orEmpty().filter(File::isDirectory).forEach { plugin ->
+                plugin.resolve("results.properties").delete()
+                plugin.resolve("registry-keys.txt").delete()
+            }
             dir.resolve("eula.txt").writeText("eula=true\n")
             dir.resolve("server.properties").writeText(
                 "online-mode=false\nserver-port=$port\nlevel-type=minecraft\\:flat\ngenerate-structures=false\nspawn-protection=0\n" +

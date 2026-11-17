@@ -55,11 +55,12 @@ mavenPublishing {
     // Signing keys exist only in the release environment, so snapshots publish unsigned. A release
     // without a key fails here rather than uploading files Central would reject.
     val hasSigningKey = providers.gradleProperty("signingInMemoryKey").isPresent
+    val releaseVersion = project.version.toString()
     if (hasSigningKey) {
         signAllPublications()
-    } else if (!project.version.toString().endsWith("-SNAPSHOT")) {
-        tasks.matching { "MavenCentral" in it.name }.configureEach {
-            doFirst { throw GradleException("Release ${project.version} must be signed; set signingInMemoryKey.") }
+    } else if (!releaseVersion.endsWith("-SNAPSHOT")) {
+        tasks.named { "MavenCentral" in it }.configureEach {
+            doFirst { throw GradleException("Release $releaseVersion must be signed; set signingInMemoryKey.") }
         }
     }
     pom {

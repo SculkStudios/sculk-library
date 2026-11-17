@@ -2,15 +2,16 @@ package studio.sculk.gradle
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 
 /**
  * Compares the registry keys each Paper anchor reported, oldest first, and fails when a key that
@@ -19,9 +20,14 @@ import java.io.File
  * keys added alongside each removal as candidates for its new name.
  */
 abstract class RegistryAliasCheck : DefaultTask() {
-    /** `label=path` per anchor, oldest first; each file holds `registry key` lines. */
+    /** One label per anchor, oldest first, in the order of [dumps]. */
     @get:Input
-    abstract val anchors: ListProperty<String>
+    abstract val labels: ListProperty<String>
+
+    /** Each anchor's `registry key` lines, in the order of [labels]. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val dumps: ConfigurableFileCollection
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
@@ -37,10 +43,11 @@ abstract class RegistryAliasCheck : DefaultTask() {
             .filter { it.isNotEmpty() }
             .map { line -> line.split(Regex("\\s+")).let { normalise(it[0]) to normalise(it[1]) } }
             .toSet()
-        val dumps = anchors.get().map { entry ->
-            val (label, path) = entry.split('=', limit = 2)
-            val file = File(path)
-            if (!file.isFile) throw GradleException("$label wrote no registry keys at $path; run the boot suite first.")
+        val names = labels.get()
+        val files = dumps.files.toList()
+        if (names.size != files.size) throw GradleException("${names.size} anchor labels for ${files.size} registry key dumps.")
+        val dumps = names.zip(files).map { (label, file) ->
+            if (!file.isFile) throw GradleException("$label wrote no registry keys at $file; run the boot suite first.")
             label to file.readLines().filter { it.isNotBlank() }.map { line -> line.split(' ', limit = 2).let { it[0] to it[1] } }.toSet()
         }
         val report = StringBuilder()

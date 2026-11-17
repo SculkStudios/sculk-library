@@ -11,7 +11,7 @@ plugins {
 tasks.processResources {
     val pluginVersion = project.version.toString()
     inputs.property("version", pluginVersion)
-    filesMatching("plugin.yml") { expand("version" to pluginVersion) }
+    filesMatching(listOf("plugin.yml", "paper-plugin.yml")) { expand("version" to pluginVersion) }
 }
 
 tasks.jar {

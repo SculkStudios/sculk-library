@@ -18,7 +18,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   paper-api:
@@ -65,7 +64,7 @@ jobs:
 
       - name: Boot, threading and the proxy on the newest stable builds of every pinned version
         run: >-
-          ./gradlew -Psculk.servers=latest
+          ./gradlew --continue -Psculk.servers=latest
           :integration-tests:boot:verifyBoot
           :integration-tests:threading:verifyThreading
           :integration-tests:velocity:verifyVelocity
@@ -84,6 +83,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [paper-api, newest-servers]
     if: failure()
+    permissions:
+      issues: write
     steps:
       - name: Open an issue
         env:
