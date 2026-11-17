@@ -53,7 +53,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 		</div>
 		<Search />
 		<script>
-			// One control re-marks the whole site: every support square follows the chosen platform.
+			// A table wider than the column scrolls, so keyboard users must be able to focus it to scroll it.
+			for (const table of document.querySelectorAll<HTMLElement>('.prose table')) {
+				if (table.scrollWidth > table.clientWidth) {
+					table.tabIndex = 0;
+					table.setAttribute('aria-label', 'Scrollable table');
+				}
+			}
+			// One control re-marks the whole site: every support mark follows the chosen platform.
 			const root = document.documentElement;
 			const select = document.querySelector<HTMLSelectElement>('[data-platform-select]');
 			if (select) {

@@ -1,6 +1,5 @@
 ---
-// The navigation, set as a map legend: each page carries its support mark for the chosen platform,
-// and the page you are on is pinned.
+// The navigation: a page marks itself only when the chosen platform supports it in part or not at all.
 import Mark from './Mark.astro';
 import { PLATFORMS, type NavSection } from '../lib/nav';
 
@@ -19,14 +18,8 @@ const { sections, current } = Astro.props;
 				{section.items.map((item) => (
 					<li>
 						<a href={item.href} aria-current={item.id === current ? 'page' : undefined}>
-							{item.id === current ? (
-								<svg class="pin" width="10" height="13" viewBox="0 0 10 13" aria-hidden="true"><path d="M5 12.5S.75 7.6.75 4.75a4.25 4.25 0 018.5 0C9.25 7.6 5 12.5 5 12.5z" fill="#cba6f7"></path><circle cx="5" cy="4.75" r="1.6" fill="#0a0a0a"></circle></svg>
-							) : item.support ? (
-								<span class="nav-mark">{PLATFORMS.map((platform) => <Mark level={item.support?.[platform] ?? 'full'} platform={platform} />)}</span>
-							) : (
-								<span class="mark-unknown" aria-hidden="true"></span>
-							)}
 							{item.label}
+							{item.support && <span class="nav-mark">{PLATFORMS.map((platform) => <Mark level={item.support?.[platform] ?? 'full'} platform={platform} />)}</span>}
 						</a>
 					</li>
 				))}

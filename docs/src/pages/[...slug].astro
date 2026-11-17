@@ -31,6 +31,7 @@ const { title, description, module, since, runs, support } = entry.data;
 			{since && <span>Since <span class="num">{since}</span></span>}
 			{module && <span>Module <span class="num">{module}</span></span>}
 			<a href={editUrl}>Edit on GitHub</a>
+			<button class="copy-page" type="button" data-source={`# ${title}\n\n${entry.body ?? ''}`}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect><path d="M10.5 5.5V3.75A1.25 1.25 0 009.25 2.5h-5.5A1.25 1.25 0 002.5 3.75v5.5a1.25 1.25 0 001.25 1.25H5.5"></path></svg><span>Copy page</span></button>
 		</div>
 		<div class="prose">
 			<Content />
@@ -47,3 +48,18 @@ const { title, description, module, since, runs, support } = entry.data;
 		<section><Toc headings={headings} /></section>
 	</Fragment>
 </Site>
+<script>
+	// Copies the page as Markdown, for pasting into an issue or an assistant.
+	for (const button of document.querySelectorAll<HTMLButtonElement>('.copy-page')) {
+		button.addEventListener('click', async () => {
+			const label = button.querySelector('span');
+			try {
+				await navigator.clipboard.writeText(button.dataset.source ?? '');
+				if (label) label.textContent = 'Copied';
+			} catch {
+				if (label) label.textContent = 'Copy failed';
+			}
+			setTimeout(() => { if (label) label.textContent = 'Copy page'; }, 1600);
+		});
+	}
+</script>
