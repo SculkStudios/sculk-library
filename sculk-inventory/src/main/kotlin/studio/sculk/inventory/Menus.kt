@@ -54,18 +54,23 @@ public class Menus(internal val plugin: Plugin, scope: ResourceScope) {
     /** The open sessions, for diagnostics. */
     public val open: Collection<MenuSession<*>> get() = sessions.toList()
 
-    /** Opens [prompt] in an anvil for [player], from any thread, in place of what they have open. */
+    /**
+     * Opens [prompt] in an anvil for [player] on their next tick, in place of what they have open. Safe to
+     * call from a menu click handler: the open never happens inside the click event.
+     */
     public fun prompt(player: Player, prompt: TextPrompt) {
-        onPlayer(player) { views.prompt(player, prompt) }
+        nextTick(player) { views.prompt(player, prompt) }
     }
 
-    /** Opens [menu]'s trading screen for [player], from any thread, in place of what they have open. */
+    /** Opens [menu]'s trading screen for [player] on their next tick, in place of what they have open. */
     public fun trade(player: Player, menu: TradeMenu) {
-        onPlayer(player) { views.trade(player, menu) }
+        nextTick(player) { views.trade(player, menu) }
     }
 
-    private fun onPlayer(player: Player, action: () -> Unit) {
-        if (Bukkit.isOwnedByCurrentRegion(player)) action() else player.scheduler.run(plugin, { action() }, null)
+    // Paper forbids changing a player's open inventory inside an inventory event, so these always wait a
+    // tick; once the scope has closed nothing opens, as the listeners that lock the view are gone.
+    private fun nextTick(player: Player, action: () -> Unit) {
+        player.scheduler.run(plugin, { if (!shutDown) action() }, null)
     }
 
     /** Opens [menu] at [state] for [player], from any thread; it shows on the player's next tick at the latest. */
@@ -138,6 +143,10 @@ public class MenuSession<S : Any> internal constructor(
     private var title: String? = null
     private var reopening = false
 
+    // Set the moment a close or a next menu is asked for: the view stays up until the next tick, and a
+    // second click in that tick must not run a handler again (a purchase twice, a reward twice).
+    @Volatile private var leaving = false
+
     public val state: S get() = current
 
     internal val size: Int get() = menu.layout.size
@@ -163,10 +172,12 @@ public class MenuSession<S : Any> internal constructor(
 
     /** Closes the menu on the player's next tick. */
     public fun close() {
+        leaving = true
         onPlayer(later = true) { if (isOpen) player.closeInventory() }
     }
 
     internal fun <T : Any> openNext(next: MenuSpec<T>, state: T) {
+        leaving = true
         onPlayer(later = true) { menus.open(player, next, state) }
     }
 
@@ -228,7 +239,7 @@ public class MenuSession<S : Any> internal constructor(
     internal fun click(event: InventoryClickEvent) {
         val verdict = InteractionPolicy.click(event.rawSlot, size, event.action, event.click, menu.allowPlayerInventory)
         if (verdict != Verdict.ALLOW) event.isCancelled = true
-        if (verdict != Verdict.BUTTON) return
+        if (verdict != Verdict.BUTTON || leaving) return
         val handler = handlers[event.rawSlot] ?: return
         try {
             MenuClick(player, current, event.rawSlot, event.click, this).handler()

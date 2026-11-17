@@ -160,7 +160,7 @@ internal class NativeViews(private val plugin: Plugin) : Listener {
         val view = MenuType.ANVIL.builder().title(prompt.text.render(prompt.title)).build(player)
         // The rename field starts with the left item's name; the item never leaves the anvil.
         view.topInventory.setItem(LEFT, named(prompt.initial))
-        open[player.uniqueId] = Open.Prompt(player, view, prompt)
+        replace(player, Open.Prompt(player, view, prompt))
         view.open()
     }
 
@@ -172,19 +172,24 @@ internal class NativeViews(private val plugin: Plugin) : Listener {
             }
         }
         val view = MenuType.MERCHANT.builder().merchant(merchant).title(menu.text.render(menu.title)).build(player)
-        open[player.uniqueId] = Open.Trading(player, view, menu)
+        replace(player, Open.Trading(player, view, menu))
         view.open()
+    }
+
+    /**
+     * Registers [next] in place of whatever this player had open. Opening [next] closes the old view,
+     * but its close event no longer matches an entry, so the old prompt is emptied and cancelled here:
+     * otherwise the anvil would hand its item to the player.
+     */
+    private fun replace(player: Player, next: Open) {
+        val previous = open.put(player.uniqueId, next) as? Open.Prompt ?: return
+        previous.view.topInventory.clear()
+        if (!previous.answered) previous.prompt.cancel?.let { cancel -> guarded(player, "prompt cancel") { cancel(player) } }
     }
 
     fun closeAll() {
         open.values.toList().forEach { shown ->
-            onPlayer(shown.player) {
-                if (shown.player.openInventory ===
-                    shown.view
-                ) {
-                    shown.player.closeInventory()
-                }
-            }
+            onPlayer(shown.player) { if (shown.player.openInventory === shown.view) shown.player.closeInventory() }
         }
     }
 
