@@ -1,4 +1,4 @@
-# Sculk Studio 6 — Rebuild Charter
+# Sculk Studio 6: rebuild charter
 
 Sculk 6 is a ground-up rewrite. The 5.x tree on `main` is evidence of behaviour users
 rely on, lessons already paid for, and mistakes not to repeat. It is not the specification.
@@ -6,7 +6,7 @@ rely on, lessons already paid for, and mistakes not to repeat. It is not the spe
 ## Goal
 
 Be the platform a Kotlin developer starts with when targeting Paper, Folia, Canvas or Velocity,
-so that the usual pile of ten unrelated helper libraries is unnecessary — while a tiny plugin can
+so that the usual pile of ten unrelated helper libraries is unnecessary, while a tiny plugin can
 still depend on one small module.
 
 ## Principles
