@@ -7,6 +7,7 @@ import studio.sculk.SculkFailureException
 import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
+import studio.sculk.flatMap
 import studio.sculk.map
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
@@ -60,6 +61,22 @@ public class ConfigFile<T : Any> internal constructor(
     public fun save(value: T): SculkResult<Unit> {
         val saved = synchronized(lock) { ConfigLoader.save(path, serializer, options, value).map(::install) }
         return saved.map(::notifyAll)
+    }
+
+    /** The settings an editor can change, depth first, with their current values; see [ConfigField]. */
+    public fun fields(): List<ConfigField> = ConfigFields.of(serializer, YamlEncoding.encode(serializer, current))
+
+    /**
+     * Sets each setting in [changes], a path from [fields] to the text the file would hold, and saves
+     * the result as [save] does. The new value must pass every check a load runs, or nothing changes
+     * and the failure names the first setting that did not.
+     */
+    public fun update(changes: Map<String, String>): SculkResult<T> {
+        val known = fields().mapTo(HashSet()) { it.path }
+        changes.keys.firstOrNull { it !in known }?.let { unknown ->
+            return InvalidConfig(path.name, unknown, null, "a setting of this configuration", unknown)
+        }
+        return ConfigLoader.edit(path, serializer, options, current, changes).flatMap { edited -> save(edited).map { edited } }
     }
 
     /** Runs [listener] with the new value after every successful reload or save. */

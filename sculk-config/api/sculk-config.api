@@ -7,15 +7,40 @@ public final synthetic class studio/sculk/config/Comment$Impl : studio/sculk/con
 	public final synthetic fun lines ()[Ljava/lang/String;
 }
 
+public final class studio/sculk/config/ConfigField {
+	public final fun getChoices ()Ljava/util/List;
+	public final fun getComment ()Ljava/util/List;
+	public final fun getCurrent ()Ljava/lang/String;
+	public final fun getKind ()Lstudio/sculk/config/ConfigField$Kind;
+	public final fun getNotBlank ()Z
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getRange ()Lkotlin/ranges/ClosedFloatingPointRange;
+	public final fun getSecret ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/config/ConfigField$Kind : java/lang/Enum {
+	public static final field CHOICE Lstudio/sculk/config/ConfigField$Kind;
+	public static final field DECIMAL Lstudio/sculk/config/ConfigField$Kind;
+	public static final field TEXT Lstudio/sculk/config/ConfigField$Kind;
+	public static final field TOGGLE Lstudio/sculk/config/ConfigField$Kind;
+	public static final field WHOLE Lstudio/sculk/config/ConfigField$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/config/ConfigField$Kind;
+	public static fun values ()[Lstudio/sculk/config/ConfigField$Kind;
+}
+
 public final class studio/sculk/config/ConfigFile : studio/sculk/SculkHandle {
 	public static final field Companion Lstudio/sculk/config/ConfigFile$Companion;
 	public static final field DEFAULT_DEBOUNCE_MILLIS J
 	public fun close ()V
+	public final fun fields ()Ljava/util/List;
 	public final fun getPath ()Ljava/nio/file/Path;
 	public final fun getValue ()Ljava/lang/Object;
 	public final fun onChange (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
 	public final fun reload ()Lstudio/sculk/SculkResult;
 	public final fun save (Ljava/lang/Object;)Lstudio/sculk/SculkResult;
+	public final fun update (Ljava/util/Map;)Lstudio/sculk/SculkResult;
 	public final fun watch (JLjava/util/concurrent/Executor;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkResult;
 	public static synthetic fun watch$default (Lstudio/sculk/config/ConfigFile;JLjava/util/concurrent/Executor;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
 }

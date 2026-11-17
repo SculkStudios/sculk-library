@@ -47,6 +47,19 @@ internal object ConfigLoader {
             Loaded(saved, text)
         }
 
+    /** [current] with each path in [changes] set to its text, decoded and checked as a load would; nothing is written. */
+    fun <T : Any> edit(
+        path: Path,
+        serializer: KSerializer<T>,
+        options: ConfigOptions<T>,
+        current: T,
+        changes: Map<String, String>,
+    ): SculkResult<T> = guarded(path, "edit") {
+        val tree = YamlEncoding.encode(serializer, current) as MappingNode
+        changes.forEach { (key, text) -> YamlTree.set(tree, key, YamlEncoding.scalar(text)) }
+        decode(tree, serializer, options, DecodeContext(path.name, options.environment))
+    }
+
     private inline fun <T> guarded(path: Path, operation: String, block: () -> T): SculkResult<T> {
         val file = path.name
         return try {
