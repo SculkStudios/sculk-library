@@ -1,0 +1,33 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+	headings: MarkdownHeading[];
+}
+
+const headings = Astro.props.headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+---
+{headings.length > 0 && (
+	<nav class="toc" aria-labelledby="toc-label" data-pagefind-ignore>
+		<p class="label" id="toc-label">On this page</p>
+		{headings.map((heading) => <a class={`depth-${heading.depth}`} href={`#${heading.slug}`}>{heading.text}</a>)}
+	</nav>
+)}
+<script>
+	// Marks the section being read; a pure enhancement over plain anchor links.
+	const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a')];
+	const targets = links.map((link) => document.getElementById(decodeURIComponent(link.hash.slice(1)))).filter((el): el is HTMLElement => el !== null);
+	if (targets.length > 0) {
+		const visible = new Set<Element>();
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) entry.isIntersecting ? visible.add(entry.target) : visible.delete(entry.target);
+				const first = targets.find((target) => visible.has(target)) ?? null;
+				if (!first) return;
+				for (const link of links) link.classList.toggle('on', link.hash === `#${first.id}`);
+			},
+			{ rootMargin: '-70px 0px -60% 0px' },
+		);
+		targets.forEach((target) => observer.observe(target));
+	}
+</script>

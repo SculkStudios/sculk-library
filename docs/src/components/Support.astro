@@ -1,0 +1,21 @@
+---
+import Mark from './Mark.astro';
+import { PLATFORMS, PLATFORM_LABELS, type Platform, type SupportLevel } from '../lib/nav';
+
+interface Props {
+	support: Record<Platform, { level: SupportLevel; note?: string }>;
+}
+
+const { support } = Astro.props;
+const defaults: Record<SupportLevel, string> = { full: 'supported', partial: 'in part', none: 'not supported', 'n/a': 'not applicable' };
+---
+<table class="support" aria-label="Platform support">
+	<tbody>
+		{PLATFORMS.map((platform) => (
+			<tr data-platform={platform}>
+				<td><Mark level={support[platform].level} /></td>
+				<td><b>{PLATFORM_LABELS[platform]}</b> {support[platform].note ?? defaults[support[platform].level]}</td>
+			</tr>
+		))}
+	</tbody>
+</table>

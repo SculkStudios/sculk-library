@@ -1,0 +1,14 @@
+---
+// A support mark: filled for full support, half for partial, hollow for none, a dash where the
+// platform does not apply. The shape carries the meaning, so it reads without colour.
+import type { Platform, SupportLevel } from '../lib/nav';
+
+interface Props {
+	level: SupportLevel;
+	platform?: Platform;
+}
+
+const { level, platform } = Astro.props;
+const words: Record<SupportLevel, string> = { full: 'supported', partial: 'partly supported', none: 'not supported', 'n/a': 'not applicable' };
+---
+<span class="mark" data-level={level} data-platform={platform} role="img" aria-label={words[level]}></span>

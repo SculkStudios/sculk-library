@@ -34,7 +34,7 @@ consequences matter more than exhaustive option surveys.
 | 0013 | [Resource-pack architecture](0013-resource-packs.md) | Accepted |
 | 0014 | [Persistence architecture](0014-persistence.md) | Accepted |
 | 0015 | [Distribution and publishing](0015-distribution-and-publishing.md) | Accepted |
-| 0016 | [Documentation platform](0016-docs-platform.md) | Accepted |
+| 0016 | [Documentation platform](0016-docs-platform.md) | Superseded by ADR-0031 |
 | 0017 | [No Sculk 5 compatibility facade](0017-no-v5-compatibility-facade.md) | Accepted |
 | 0018 | [Repository and branches](0018-repository-and-branches.md) | Superseded by ADR-0020 |
 | 0019 | [Event handler semantics](0019-event-handler-semantics.md) | Accepted |
@@ -49,3 +49,4 @@ consequences matter more than exhaustive option surveys.
 | 0028 | [Adapters compiled against the newest anchor](0028-adapters-compiled-against-the-newest-anchor.md) | Accepted |
 | 0029 | [A real client in the server suites](0029-a-real-client-in-the-server-suites.md) | Accepted |
 | 0030 | [Presentation as a per-player render graph with scoreboard leases](0030-presentation-render-graph-and-scoreboard-leases.md) | Accepted |
+| 0031 | [A custom documentation site on Astro, without Starlight](0031-a-custom-docs-site-on-astro.md) | Accepted |

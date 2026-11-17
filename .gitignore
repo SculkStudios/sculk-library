@@ -134,3 +134,10 @@ examples/*/run/
 
 # Claude Code session data and agent worktrees
 /.claude/
+
+# Design working files: the direction contract in .impeccable/surfaces is kept; mock-ups, decision
+# state and review captures are not.
+.impeccable/mocks/
+.impeccable/questions/
+.impeccable/review/
+.impeccable/build/

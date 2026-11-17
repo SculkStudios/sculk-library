@@ -1,0 +1,52 @@
+---
+// The ownership map: which part of the world owns the code a page documents (THREADING.md). Regions
+// are drawn in chunks; teal is the region that owns an entity, violet the global region.
+type Runs = 'entity' | 'global' | 'sender' | 'async' | 'any' | 'proxy';
+
+interface Props {
+	runs: Runs;
+}
+
+const { runs } = Astro.props;
+
+const captions: Record<Runs, { lead: string; rest: string }> = {
+	entity: { lead: "The player's thread.", rest: 'The main thread on Paper; the region that owns the player on Folia and Canvas.' },
+	global: { lead: 'The global region.', rest: 'The main thread on Paper; the global region thread on Folia and Canvas.' },
+	sender: { lead: "The sender's context.", rest: "A player's own region for players; the global region for the console and command blocks." },
+	async: { lead: 'Off every game thread.', rest: 'Blocking work is safe here; the world is not. Hop back with withEntity or withGlobal.' },
+	any: { lead: 'Any thread.', rest: 'Safe to call from anywhere; nothing here touches the world.' },
+	proxy: { lead: "The proxy's executor.", rest: 'Velocity has no regions and no main thread: only the proxy executor and async work.' },
+};
+const caption = captions[runs];
+const lit = (kind: 'region' | 'global') =>
+	(kind === 'region' && (runs === 'entity' || runs === 'sender')) || (kind === 'global' && (runs === 'global' || runs === 'sender'));
+---
+<figure class="mapcard">
+	<svg viewBox="0 0 262 150" role="img" aria-label={`Ownership map: ${caption.lead} ${caption.rest}`}>
+		<defs>
+			<pattern id="chunks" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M16 0H0V16" fill="none" stroke="#1f2326" stroke-width="1"></path></pattern>
+		</defs>
+		<rect x="0.5" y="0.5" width="261" height="149" fill="url(#chunks)" stroke="#2c3236"></rect>
+		{runs === 'proxy' ? (
+			<>
+				<rect x="72.5" y="40.5" width="117" height="69" fill="none" stroke="#2c3236" stroke-dasharray="4 3"></rect>
+				<text x="131" y="79" text-anchor="middle" fill="#8d9088" font-family="JetBrains Mono Variable, monospace" font-size="10">no world on a proxy</text>
+			</>
+		) : (
+			<>
+				<path d="M64.5 32.5h80v16h32v64h-64v-16h-48z" fill={lit('region') ? 'rgba(62,143,138,.22)' : 'none'} stroke={lit('region') ? '#3e8f8a' : '#2c3236'} stroke-width="1.5"></path>
+				<rect x="192.5" y="16.5" width="48" height="32" fill={lit('global') ? 'rgba(155,143,214,.22)' : 'none'} stroke={lit('global') ? '#9b8fd6' : '#2c3236'} stroke-width="1.5" stroke-dasharray={lit('global') ? undefined : '4 3'}></rect>
+				{(runs === 'entity' || runs === 'sender') && <path d="M120 74.5S115 68 115 64.5a5 5 0 0110 0C125 68 120 74.5 120 74.5z" fill="#c9824a"></path>}
+				<text x="72" y="128" fill={lit('region') ? '#7fb8b2' : '#8d9088'} font-family="JetBrains Mono Variable, monospace" font-size="10">a player's region</text>
+				<text x="192" y="62" fill={lit('global') ? '#b8acea' : '#8d9088'} font-family="JetBrains Mono Variable, monospace" font-size="10">global</text>
+				{(runs === 'async' || runs === 'any') && (
+					<>
+						<rect x="16.5" y="104.5" width="40" height="32" fill="none" stroke="#c9824a" stroke-width="1.5" stroke-dasharray="4 3"></rect>
+						<text x="16" y="99" fill="#c9824a" font-family="JetBrains Mono Variable, monospace" font-size="10">{runs === 'async' ? 'async' : 'anywhere'}</text>
+					</>
+				)}
+			</>
+		)}
+	</svg>
+	<figcaption><strong>{caption.lead}</strong> {caption.rest}</figcaption>
+</figure>

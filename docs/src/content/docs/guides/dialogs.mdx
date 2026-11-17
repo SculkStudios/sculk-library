@@ -3,9 +3,17 @@ title: Dialogs
 description: sculk-dialogs, forms with checked, typed answers on Paper 1.21.7 and later, and an explicit fallback where dialogs do not exist.
 sidebar:
   order: 13
+module: sculk-dialogs
+since: '6.0'
+runs: entity
+support:
+  paper: { level: partial, note: 'dialogs from 1.21.7; your fallback before that' }
+  folia: { level: full }
+  canvas: { level: full }
+  velocity: { level: n/a, note: 'not applicable on a proxy' }
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside } from '~/components/mdx';
 
 `sculk-dialogs` (package `studio.sculk.dialog`) shows Minecraft's dialog screens: a title, text,
 form inputs and buttons. Answers come back typed and checked, on the player's own thread.

@@ -1,0 +1,113 @@
+<dialog class="search-dialog" data-search aria-label="Search the documentation">
+	<div class="search-field">
+		<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
+		<input type="search" placeholder="Search guides, APIs and config keys" aria-label="Search" aria-controls="search-results" autocomplete="off" spellcheck="false" />
+		<span class="kbd">Esc</span>
+	</div>
+	<div class="search-results" id="search-results" role="listbox" aria-label="Results"></div>
+	<div class="search-foot"><span><span class="kbd">↑</span> <span class="kbd">↓</span> to move</span><span><span class="kbd">Enter</span> to open</span></div>
+</dialog>
+<script>
+	interface PagefindResult {
+		data: () => Promise<{ url: string; excerpt: string; meta: { title?: string } }>;
+	}
+	interface Pagefind {
+		search: (query: string) => Promise<{ results: PagefindResult[] }>;
+	}
+
+	const dialog = document.querySelector<HTMLDialogElement>('[data-search]');
+	const input = dialog?.querySelector<HTMLInputElement>('input');
+	const list = dialog?.querySelector<HTMLDivElement>('.search-results');
+	let pagefind: Pagefind | null = null;
+	let selected = -1;
+	let runId = 0;
+
+	function show(message: string) {
+		if (list) list.innerHTML = `<p class="search-empty">${message}</p>`;
+	}
+
+	async function load(): Promise<Pagefind | null> {
+		if (pagefind) return pagefind;
+		try {
+			// Written by the build after the pages; absent in dev, where search explains itself.
+			pagefind = (await import(/* @vite-ignore */ `${location.origin}/pagefind/pagefind.js`)) as Pagefind;
+		} catch {
+			pagefind = null;
+		}
+		return pagefind;
+	}
+
+	function where(url: string): string {
+		const parts = url.split('/').filter(Boolean);
+		return parts.length > 1 ? parts.slice(0, -1).join(' / ') : 'docs';
+	}
+
+	function select(index: number) {
+		const items = [...(list?.querySelectorAll<HTMLAnchorElement>('a') ?? [])];
+		if (items.length === 0) return;
+		selected = (index + items.length) % items.length;
+		items.forEach((item, i) => item.setAttribute('aria-selected', String(i === selected)));
+		items[selected].scrollIntoView({ block: 'nearest' });
+	}
+
+	async function run(query: string) {
+		const id = ++runId;
+		if (!list) return;
+		if (query.trim().length < 2) return show('Type at least two letters.');
+		const engine = await load();
+		if (!engine) return show('Search is built with the site; run a build to search here.');
+		const { results } = await engine.search(query);
+		const data = await Promise.all(results.slice(0, 8).map((result) => result.data()));
+		if (id !== runId) return;
+		if (data.length === 0) return show(`Nothing matches “${query.replace(/[<>&]/g, '')}”.`);
+		list.innerHTML = '';
+		for (const page of data) {
+			const link = document.createElement('a');
+			link.href = page.url;
+			link.setAttribute('role', 'option');
+			const crumb = document.createElement('span');
+			crumb.className = 'where';
+			crumb.textContent = where(page.url);
+			const title = document.createElement('span');
+			title.className = 'title';
+			title.textContent = page.meta.title ?? page.url;
+			const excerpt = document.createElement('span');
+			excerpt.className = 'excerpt';
+			// Pagefind escapes page text and adds only <mark> around matches.
+			excerpt.innerHTML = page.excerpt;
+			link.append(crumb, title, excerpt);
+			list.append(link);
+		}
+		select(0);
+	}
+
+	function open() {
+		if (!dialog || dialog.open) return;
+		dialog.showModal();
+		input?.focus();
+		input?.select();
+		if (!input?.value) show('Search every guide, concept and reference page.');
+	}
+
+	document.querySelectorAll('[data-search-open]').forEach((button) => button.addEventListener('click', open));
+	document.addEventListener('keydown', (event) => {
+		if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+			event.preventDefault();
+			open();
+		}
+		if (event.key === '/' && !dialog?.open && !(event.target instanceof HTMLInputElement)) {
+			event.preventDefault();
+			open();
+		}
+	});
+	input?.addEventListener('input', () => run(input.value));
+	input?.addEventListener('keydown', (event) => {
+		if (event.key === 'ArrowDown') { event.preventDefault(); select(selected + 1); }
+		if (event.key === 'ArrowUp') { event.preventDefault(); select(selected - 1); }
+		if (event.key === 'Enter') {
+			const target = list?.querySelectorAll<HTMLAnchorElement>('a')[selected];
+			if (target) location.href = target.href;
+		}
+	});
+	dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+</script>

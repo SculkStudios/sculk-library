@@ -3,9 +3,17 @@ title: Menus
 description: sculk-inventory, inventory menus drawn from their state, redrawn slot by slot, locked against item theft and owned by the player's thread.
 sidebar:
   order: 12
+module: sculk-inventory
+since: '6.0'
+runs: entity
+support:
+  paper: { level: full, note: '1.21.4 to 26.3' }
+  folia: { level: full, note: "on the player's region" }
+  canvas: { level: full }
+  velocity: { level: n/a, note: 'not applicable on a proxy' }
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside } from '~/components/mdx';
 
 `sculk-inventory` (package `studio.sculk.inventory`) builds inventory menus as a function of their
 state. A click changes the state; the menu redraws only the slots whose item changed. Icons are

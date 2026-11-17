@@ -1,7 +1,7 @@
 ---
 // Renders the module tables of MODULES.md at build time, so the roadmap cannot drift from the
 // document that defines each module's status. An unknown status fails the build.
-import { Badge } from '@astrojs/starlight/components';
+import { Badge } from '~/components/mdx';
 import { inlineHtml, moduleStatus, readRepoDoc, tablesOf, type ModuleStatus } from '../lib/repo-tables';
 
 const variants: Record<ModuleStatus, 'success' | 'caution' | 'note'> = {
@@ -75,8 +75,9 @@ const count = (status: ModuleStatus) => all.filter((module) => module.status ===
 
 <style>
 	.roadmap-note {
-		font-size: var(--sl-text-xs);
-		color: var(--sl-color-gray-2);
+		font-size: 12.5px;
+		line-height: 1.5;
+		color: var(--text-3);
 		margin-top: 0.25rem;
 	}
 </style>

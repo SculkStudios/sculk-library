@@ -1,0 +1,49 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import Support from '../components/Support.astro';
+import Toc from '../components/Toc.astro';
+import WhereItRuns from '../components/WhereItRuns.astro';
+import Atlas from '../layouts/Atlas.astro';
+import { navigation, neighbours, sectionOf } from '../lib/nav';
+
+export async function getStaticPaths() {
+	const entries = await getCollection('docs', (entry) => !entry.data.draft);
+	return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+interface Props {
+	entry: CollectionEntry<'docs'>;
+}
+
+const { entry } = Astro.props;
+const sections = navigation(await getCollection('docs'));
+const { Content, headings } = await render(entry);
+const { previous, next } = neighbours(sections, entry.id);
+const section = sectionOf(entry.id);
+const editUrl = `https://github.com/SculkStudios/sculk-library/edit/dev/docs/src/content/docs/${entry.id}.mdx`;
+const { title, description, module, since, runs, support } = entry.data;
+---
+<Atlas title={title} description={description} sections={sections} current={entry.id}>
+	<article data-pagefind-body>
+		<nav aria-label="Breadcrumb"><ol class="crumbs">{section && <li>{section}</li>}<li aria-current="page">{title}</li></ol></nav>
+		<h1 class="page-title">{title}</h1>
+		<div class="meta" data-pagefind-ignore>
+			{since && <span>Since <span class="num">{since}</span></span>}
+			{module && <span>Module <span class="num">{module}</span></span>}
+			<a href={editUrl}>Edit on GitHub</a>
+		</div>
+		<div class="prose">
+			<Content />
+		</div>
+	</article>
+	<nav class="foot" aria-label="Previous and next" data-pagefind-ignore>
+		{previous && <a href={previous.href} rel="prev"><small>Previous</small><span>{previous.label}</span></a>}
+		{next && <a class="next" href={next.href} rel="next"><small>Next</small><span>{next.label}</span></a>}
+	</nav>
+	<p class="colophon">Sculk Studio is not an official Minecraft product and is not approved by or associated with Mojang or Microsoft.</p>
+	<Fragment slot="margin">
+		{runs && <section><p class="label">Where it runs</p><WhereItRuns runs={runs} /></section>}
+		{support && <section><p class="label">Support</p><Support support={support} /></section>}
+		<section><Toc headings={headings} /></section>
+	</Fragment>
+</Atlas>

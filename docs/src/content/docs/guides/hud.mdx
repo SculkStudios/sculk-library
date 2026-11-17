@@ -3,9 +3,17 @@ title: HUD
 description: sculk-presentation, per-player action bars, boss bars, tab lists and sidebars that redraw only what changed, and never take another plugin's scoreboard.
 sidebar:
   order: 14
+module: sculk-presentation
+since: '6.0'
+runs: entity
+support:
+  paper: { level: full, note: '1.21.4 to 26.3, every surface' }
+  folia: { level: partial, note: 'no sidebar, nametag or below-name line: Folia has no scoreboards' }
+  canvas: { level: full, note: 'every surface' }
+  velocity: { level: n/a, note: 'not applicable on a proxy' }
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside } from '~/components/mdx';
 
 `sculk-presentation` (package `studio.sculk.presentation`) shows each player a HUD built from
 templates and [placeholders](/guides/placeholders/), and redraws a part only when something it

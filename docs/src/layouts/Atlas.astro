@@ -1,0 +1,79 @@
+---
+import '../styles/atlas.css';
+import Legend from '../components/Legend.astro';
+import Masthead from '../components/Masthead.astro';
+import Search from '../components/Search.astro';
+import type { NavSection } from '../lib/nav';
+
+interface Props {
+	title: string;
+	description: string;
+	sections: NavSection[];
+	current?: string;
+}
+
+const { title, description, sections, current } = Astro.props;
+const pageTitle = current ? `${title} · Sculk Studio` : title;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en" data-platform="paper">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{pageTitle}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
+		<meta name="theme-color" content="#000000" />
+		<meta property="og:title" content={pageTitle} />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content={canonical} />
+		<script is:inline>
+			// Before first paint, so the support marks never flash the wrong platform.
+			try {
+				const saved = localStorage.getItem('sculk-platform');
+				if (saved && ['paper', 'folia', 'canvas', 'velocity'].includes(saved)) document.documentElement.dataset.platform = saved;
+			} catch {}
+		</script>
+	</head>
+	<body>
+		<a class="skip" href="#content">Skip to the content</a>
+		<Masthead />
+		<div class="page">
+			<Legend sections={sections} current={current} />
+			<main class="sheet" id="content">
+				<slot />
+			</main>
+			<aside class="margin" aria-label="About this page" data-pagefind-ignore>
+				<slot name="margin" />
+			</aside>
+		</div>
+		<Search />
+		<script>
+			// One control re-marks the whole site: every support square follows the chosen platform.
+			const root = document.documentElement;
+			const select = document.querySelector<HTMLSelectElement>('[data-platform-select]');
+			if (select) {
+				select.value = root.dataset.platform ?? 'paper';
+				select.addEventListener('change', () => {
+					root.dataset.platform = select.value;
+					try { localStorage.setItem('sculk-platform', select.value); } catch {}
+					if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+						root.classList.add('remarking');
+						setTimeout(() => root.classList.remove('remarking'), 220);
+					}
+				});
+			}
+			const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+			const page = document.querySelector<HTMLElement>('.page');
+			toggle?.addEventListener('click', () => {
+				const open = page?.dataset.menu !== 'open';
+				if (page) page.dataset.menu = open ? 'open' : '';
+				toggle.setAttribute('aria-expanded', String(open));
+			});
+		</script>
+	</body>
+</html>

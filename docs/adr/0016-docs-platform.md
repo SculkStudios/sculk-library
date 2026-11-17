@@ -1,6 +1,6 @@
 # ADR-0016: Documentation platform
 
-**Status**: Accepted · **Date**: 2026-10-12 · **Supersedes**: —
+**Status**: Superseded by ADR-0031 · **Date**: 2026-10-12 · **Supersedes**: —
 
 ## Context
 

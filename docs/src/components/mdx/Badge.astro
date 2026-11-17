@@ -1,0 +1,13 @@
+---
+// A status shown as a mark and words: filled for done or success, half for in progress, hollow otherwise.
+import Mark from '../Mark.astro';
+
+interface Props {
+	text: string;
+	variant?: 'success' | 'caution' | 'note' | 'danger' | 'default' | 'tip';
+}
+
+const { text, variant = 'default' } = Astro.props;
+const level = variant === 'success' ? 'full' : variant === 'caution' ? 'partial' : 'none';
+---
+<span class="badge" data-variant={variant}><Mark level={level} />{text}</span>

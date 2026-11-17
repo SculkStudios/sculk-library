@@ -1,35 +1,46 @@
 // @ts-check
+import mdx from '@astrojs/mdx';
+import { satteri } from '@astrojs/markdown-satteri';
+import sitemap from '@astrojs/sitemap';
+import expressiveCode from 'astro-expressive-code';
 import { defineConfig } from 'astro/config';
-import starlight from '@astrojs/starlight';
+import { atlasTheme } from './src/lib/atlas-theme.mjs';
+import { pagefind } from './src/lib/pagefind-integration.mjs';
 
-// The sidebar is generated from the content directories; a page sets its position with
-// `sidebar.order` in its frontmatter. The manifest-driven sidebar described in DOCS_ARCHITECTURE.md
-// replaces this once the manifest generator exists.
 export default defineConfig({
 	site: 'https://docs.sculk.studio',
+	trailingSlash: 'always',
+	build: { format: 'directory' },
+	// Prose-heavy pages: keep the spaces between inline elements that 'jsx' compression removes.
+	compressHTML: true,
+	// Expressive Code hooks into Sätteri only when the processor is set explicitly.
+	markdown: { processor: satteri() },
 	integrations: [
-		starlight({
-			title: 'Sculk Studio',
-			description: 'The Kotlin platform for Paper, Folia, Canvas and Velocity plugins.',
-			logo: {
-				light: './src/assets/logo-light.svg',
-				dark: './src/assets/logo-dark.svg',
-				alt: 'Sculk Studio',
-				replacesTitle: true,
+		expressiveCode({
+			themes: [atlasTheme],
+			styleOverrides: {
+				borderRadius: '8px',
+				borderColor: 'var(--rule)',
+				codeFontFamily: 'var(--mono)',
+				codeFontSize: '13.5px',
+				codeLineHeight: '1.7',
+				uiFontFamily: 'var(--read)',
+				frames: {
+					editorBackground: 'var(--code-bg)',
+					terminalBackground: 'var(--code-bg)',
+					editorTabBarBackground: 'var(--code-bar)',
+					terminalTitlebarBackground: 'var(--code-bar)',
+					editorActiveTabBackground: 'var(--code-bar)',
+					editorActiveTabIndicatorTopColor: 'transparent',
+					editorActiveTabIndicatorBottomColor: 'var(--here)',
+					editorTabBarBorderBottomColor: 'var(--rule)',
+					terminalTitlebarBorderBottomColor: 'var(--rule)',
+					frameBoxShadowCssValue: 'none',
+				},
 			},
-			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/SculkStudios/sculk-library' },
-			],
-			editLink: {
-				baseUrl: 'https://github.com/SculkStudios/sculk-library/edit/dev/docs/',
-			},
-			customCss: ['./src/styles/sculk.css'],
-			sidebar: [
-				{ label: 'Start', items: [{ autogenerate: { directory: 'start' } }] },
-				{ label: 'Concepts', items: [{ autogenerate: { directory: 'concepts' } }] },
-				{ label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },
-				{ label: 'Reference', items: [{ autogenerate: { directory: 'reference' } }] },
-			],
 		}),
+		mdx(),
+		sitemap({ filter: (page) => !page.includes('/404') }),
+		pagefind(),
 	],
 });
