@@ -1,0 +1,32 @@
+---
+title: Examples
+description: Complete plugins built on Sculk, in the repository's examples folder, each run on every supported server with a real client.
+sidebar:
+  order: 5
+---
+
+The repository's `examples/` folder holds complete plugins, not fragments. Each compiles with the
+build, has unit tests, and runs together with the others on Paper 1.21.4 and 26.3, Folia and Canvas,
+where a real Minecraft client uses them the way a player would. Read them as the reference for how
+the modules fit together.
+
+| Example | What it shows | Modules |
+| --- | --- | --- |
+| `examples/economy` | Balances with a typed config, permission descriptors, commands with help, flags and confirmation, a balance placeholder and autosave | config, commands, permissions, placeholders |
+| `examples/hud` | A network HUD: sidebar, rank nametags, health under every name, tab list, an event boss bar and a welcome title, all from placeholders; `/hud` turns it off and on | presentation, placeholders, config |
+| `examples/shop` | A paged shop paid in emeralds, a quantity form that falls back to a confirmation menu on 1.21.4, and a trader on the villager trading screen | inventory, dialogs, items, config |
+| `examples/staff` | `/staff`: online players in a menu, freeze, teleport, notes typed in an anvil, removal through a form or a menu of reasons, and `/staff config` to edit the settings in game | inventory, dialogs, config admin, items |
+| `examples/network` | A Velocity proxy: `/hub`, `/find`, maintenance mode with a login gate and a ping MOTD | Velocity, commands, config |
+
+## What to look for
+
+- **Threads.** Each example touches a player only on that player's thread. The staff example's
+  teleport reads the target's location on the target's region and moves the staff member on
+  theirs, which is what makes it correct on Folia.
+- **Values in templates.** Player names, prices and notes reach MiniMessage only as placeholders:
+  `value("player", target.name)` on an item, `"player" to name` in a message.
+- **Platform differences.** The HUD leaves out the sidebar, nametags and below-name line on Folia,
+  which has no scoreboards; the shop and staff forms fall back to menus where dialogs do not exist.
+- **Tests.** Each example tests its own logic without a server, the way plugin authors should.
+
+Build one with `./gradlew :examples:staff:shadowJar`; the jar is in `examples/staff/build/libs`.

@@ -68,6 +68,9 @@ include(
 include(
     ":benchmarks",
     ":examples:economy",
+    ":examples:hud",
+    ":examples:staff",
+    ":examples:shop",
     ":examples:network",
     ":integration-tests:bot",
     ":integration-tests:bot-driver",
