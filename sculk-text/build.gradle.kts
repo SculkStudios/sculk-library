@@ -16,6 +16,33 @@ dependencies {
     testImplementation(libs.adventure.plain)
 }
 
+// CLDR's plural rules, vendored from cldr-json and turned into Kotlin at build time (ADR-0024).
+val cldrPlurals = layout.projectDirectory.file("src/cldr/plurals.json")
+val generatePluralRules = tasks.register<studio.sculk.gradle.GeneratePluralRules>("generatePluralRules") {
+    plurals = cldrPlurals
+    packageName = "studio.sculk.text"
+    output = layout.buildDirectory.dir("generated/cldr/kotlin")
+}
+
+kotlin.sourceSets.named("main") { kotlin.srcDir(generatePluralRules) }
+
+ktlint {
+    filter { exclude { it.file.path.contains("generated") } }
+}
+
+// Unicode-3.0 asks for its notice to travel with the data, and the rules are derived from it.
+tasks.processResources {
+    from("src/cldr/LICENSE") {
+        into("META-INF")
+        rename { "LICENSE-unicode-cldr.txt" }
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    inputs.file(cldrPlurals).withPathSensitivity(PathSensitivity.NONE)
+    systemProperty("sculk.cldr.plurals", cldrPlurals.asFile.absolutePath)
+}
+
 val adventureLatest: Configuration = configurations.create("adventureLatest") {
     isCanBeConsumed = false
 }

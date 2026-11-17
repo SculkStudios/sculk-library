@@ -17,6 +17,12 @@ Today this rule is upheld by review. The build check that enforces it (a licence
 `check` with an allow-list that fails the build when anything else reaches a runtime classpath) is
 planned for M3 and is a 6.0 release blocker (`REBUILD.md`).
 
+## Data Sculk ships
+
+| Upstream | Licence | Sculk artifact | Notes |
+| --- | --- | --- | --- |
+| Unicode CLDR 49 plural rules (`cldr-json`, `supplemental/plurals.json`) | Unicode-3.0 (permissive) | `sculk-text` | Vendored in `sculk-text/src/cldr` and turned into Kotlin at build time. The licence asks for its notice to travel with the data and anything derived from it, so the jar carries it as `META-INF/LICENSE-unicode-cldr.txt`. |
+
 ## Libraries and plugins Sculk compiles against
 
 Every upstream below is `compileOnly`. No Sculk artifact contains its bytes; each adapter loads only
