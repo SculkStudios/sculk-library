@@ -285,6 +285,9 @@ internal class PaperScene(private val scenes: PaperScenes, spec: SceneSpec, anch
         val loaded = withRegion(at) {
             if (!world.isChunkLoaded(chunk.x, chunk.z)) return@withRegion false
             missing.forEach { spawn(it, world, at) }
+            // Set with the spawn on the region's thread: clients see the entities before this coroutine
+            // resumes elsewhere, and isSpawned must never lag what they can see.
+            isSpawned = slots.values.all { it.entity != null }
             true
         }
         if (!loaded) return
