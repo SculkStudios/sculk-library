@@ -71,6 +71,15 @@ class RegistryCheckPlugin : JavaPlugin() {
             val tag = Registries.tag(RegistryKey.BLOCK, Key.key("sculk-itest:nope"))
             (entry is SculkFailure && tag is SculkFailure) to "entry $entry, tag $tag"
         }
+        verdict("renamed-keys-resolve-on-every-version") {
+            // chain became iron_chain inside the supported range; either name finds the item on every server.
+            val old = Registries.get(RegistryKey.ITEM, Key.key("minecraft:chain")).getOrNull()?.key()?.asString()
+            val new = Registries.get(RegistryKey.ITEM, Key.key("minecraft:iron_chain")).getOrNull()?.key()?.asString()
+            val potion = Registries.get(RegistryKey.ENTITY_TYPE, Key.key("minecraft:potion"))
+            val modern = Registries.get(RegistryKey.ENTITY_TYPE, Key.key("minecraft:splash_potion")).getOrNull()?.key()?.value() == "splash_potion"
+            val split = if (modern) potion is SculkFailure.InvalidInput && potion.hint?.contains("split") == true else potion.getOrNull() != null
+            (old != null && old == new && split) to "chain finds $old, iron_chain finds $new, potion gives $potion"
+        }
         verdict("entry-set") {
             val set = RegistryEntrySet.parse(RegistryKey.BLOCK, listOf("#sculk-itest:tested", "minecraft:dirt", "!minecraft:granite")).getOrThrow()
             val resolved = set.resolve().getOrThrow().map { it.key().asString() }.toSet()

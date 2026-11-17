@@ -1,7 +1,15 @@
 public final class studio/sculk/registry/Registries {
 	public static final field INSTANCE Lstudio/sculk/registry/Registries;
 	public final fun get (Lio/papermc/paper/registry/RegistryKey;Lnet/kyori/adventure/key/Key;)Lstudio/sculk/SculkResult;
+	public final fun getAliases ()Ljava/util/List;
 	public final fun tag (Lio/papermc/paper/registry/RegistryKey;Lnet/kyori/adventure/key/Key;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/registry/RegistryAlias {
+	public final fun getFrom ()Lnet/kyori/adventure/key/Key;
+	public final fun getRegistry ()Lnet/kyori/adventure/key/Key;
+	public final fun getTo ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class studio/sculk/registry/RegistryBootstrapKt {

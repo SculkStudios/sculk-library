@@ -1,0 +1,21 @@
+# Registry entries renamed or removed within the supported Minecraft range, one per line:
+#   <registry> <old key> -> <new key> [<new key>...]   renamed; several when it was split
+#   <registry> <old key> -> -                          removed without a replacement
+# Keys without a namespace are minecraft:. Lookups through Registries follow each line both ways.
+# The boot suite fails when a key disappears between supported versions without a line here.
+
+# Gone between 1.21.4 and 1.21.11 (the copper update named the iron chain apart from copper ones).
+item chain -> iron_chain
+block chain -> iron_chain
+
+# Gone between 1.21.4 and 1.21.11: thrown potions became two entity types.
+entity_type potion -> splash_potion lingering_potion
+
+# Gone between 1.21.4 and 1.21.11: lead sounds moved from the knot to the lead itself.
+sound_event entity.leash_knot.break -> item.lead.break
+sound_event entity.leash_knot.place -> item.lead.tied
+
+# Gone between 1.21.4 and 1.21.11 without a replacement: wolves howl through their sound variants,
+# and the puffer fish has no ambient sound.
+sound_event entity.wolf.howl -> -
+sound_event entity.puffer_fish.ambient -> -

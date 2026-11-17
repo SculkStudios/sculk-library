@@ -1,5 +1,9 @@
 package studio.sculk.itest.boot
 
+import io.papermc.paper.registry.RegistryAccess
+import io.papermc.paper.registry.RegistryKey
+import net.kyori.adventure.key.Key
+import org.bukkit.Keyed
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.getOrNull
 import studio.sculk.version.MinecraftVersion
@@ -28,8 +32,34 @@ class SculkBootPlugin : JavaPlugin() {
             "java-version" to verdict(java == expectedJava) { "running on Java $java, expected $expectedJava" },
         )
         dataFolder.mkdirs()
+        File(dataFolder, "registry-keys.txt").writeText(registryKeys())
         File(dataFolder, "results.properties").writeText(results.entries.joinToString("\n", postfix = "\n") { (key, value) -> "$key=$value" })
         server.shutdown()
+    }
+
+    /**
+     * Every entry key of the registries a configuration names entries of, one `registry key` line
+     * each, sorted. The build compares these across anchors to keep the alias table complete.
+     */
+    private fun registryKeys(): String = REGISTRIES.flatMap { registry -> keys(registry).map { "${registry.key().asString()} ${it.asString()}" } }
+        .sorted()
+        .joinToString("\n", postfix = "\n")
+
+    // Every registry here holds Keyed values; the list is typed by projection only.
+    @Suppress("UNCHECKED_CAST")
+    private fun keys(registry: RegistryKey<out Keyed>): List<Key> =
+        RegistryAccess.registryAccess().getRegistry(registry as RegistryKey<Keyed>).map { it.key() }
+
+    private companion object {
+        val REGISTRIES: List<RegistryKey<out Keyed>> = listOf(
+            RegistryKey.ITEM, RegistryKey.BLOCK, RegistryKey.ENTITY_TYPE, RegistryKey.SOUND_EVENT, RegistryKey.ENCHANTMENT,
+            RegistryKey.MOB_EFFECT, RegistryKey.POTION, RegistryKey.BIOME, RegistryKey.PARTICLE_TYPE, RegistryKey.ATTRIBUTE,
+            RegistryKey.GAME_EVENT, RegistryKey.VILLAGER_PROFESSION, RegistryKey.VILLAGER_TYPE, RegistryKey.DAMAGE_TYPE,
+            RegistryKey.STRUCTURE, RegistryKey.STRUCTURE_TYPE, RegistryKey.TRIM_MATERIAL, RegistryKey.TRIM_PATTERN,
+            RegistryKey.BANNER_PATTERN, RegistryKey.PAINTING_VARIANT, RegistryKey.INSTRUMENT, RegistryKey.JUKEBOX_SONG,
+            RegistryKey.MENU, RegistryKey.FLUID, RegistryKey.CAT_VARIANT, RegistryKey.FROG_VARIANT, RegistryKey.WOLF_VARIANT,
+            RegistryKey.MAP_DECORATION_TYPE,
+        )
     }
 
     private fun verdict(ok: Boolean, detail: () -> String): String = if (ok) "PASS" else "FAIL: ${detail()}"

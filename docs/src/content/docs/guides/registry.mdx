@@ -30,6 +30,18 @@ val logs = Registries.tag(RegistryKey.BLOCK, Key.key("minecraft:logs")) // Sculk
 
 A missing entry or tag is an `InvalidInput` failure naming the registry and the key.
 
+## Renamed and removed keys
+
+Minecraft renames registry entries now and then, and a server owner's configuration should not
+break because they updated. Lookups follow every rename within the supported range, both ways:
+`minecraft:chain` finds the iron chain on 26.3, where it is called `minecraft:iron_chain`, and
+`minecraft:iron_chain` finds it on 1.21.4. An entry that was split, like the thrown `potion` entity
+type, fails with a hint naming its parts; one that was removed says so.
+
+`Registries.aliases` lists every rename and removal. The table is complete by construction: Sculk's
+boot suite reads the registries of every supported Paper version and fails the build when a key
+disappears between two of them without an entry in it.
+
 ## Entry sets from configuration
 
 `RegistryEntrySet` reads the lists operators write: an entry, a `#tag`, and `!` to exclude either.

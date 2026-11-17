@@ -29,5 +29,11 @@ registerResultsVerification(
     "Changes registries during bootstrap on every Paper anchor, Folia and Canvas and checks them once the server runs.",
     runs,
     resultsPath = "plugins/SculkRegistry/results.properties",
-    required = listOf("composed-enchantment", "modified-entry", "datapack-tag", "entry-set"),
+    required = listOf(
+        "composed-enchantment",
+        "modified-entry",
+        "datapack-tag",
+        "entry-set",
+        "renamed-keys-resolve-on-every-version",
+    ),
 )
