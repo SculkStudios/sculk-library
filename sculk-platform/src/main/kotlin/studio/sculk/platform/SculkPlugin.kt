@@ -7,8 +7,8 @@ import studio.sculk.SculkHandle
 import studio.sculk.annotation.SculkStable
 import studio.sculk.command.CommandHelp
 import studio.sculk.command.CommandSpec
-import studio.sculk.command.HelpCommand
 import studio.sculk.command.CommandText
+import studio.sculk.command.HelpCommand
 import studio.sculk.command.brigadier.BrigadierAdapter
 import studio.sculk.fold
 import studio.sculk.text.SculkTheme
