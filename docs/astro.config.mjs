@@ -27,7 +27,11 @@ export default defineConfig({
 				borderRadius: '10px',
 				borderColor: 'var(--rule-strong)',
 				codeFontFamily: 'var(--mono)',
-				codeFontSize: '14px',
+				// Thin glyphs read faint on a dark ground under Windows rendering; a touch more weight and
+				// white plain text keep code as legible as the prose around it.
+				codeFontSize: '14.5px',
+				codeFontWeight: '450',
+				codeForeground: '#ededed',
 				codeLineHeight: '1.7',
 				uiFontFamily: 'var(--read)',
 				frames: {

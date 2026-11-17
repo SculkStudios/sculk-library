@@ -286,7 +286,7 @@
 	@media (hover: none) { .prose :is(h2, h3) .anchor { opacity: 0.6; } }
 	.prose a { color: var(--link); text-decoration: underline; text-decoration-color: var(--text-3); text-decoration-thickness: 1px; text-underline-offset: 4px; transition: text-decoration-color 140ms var(--ease); }
 	.prose a:hover { color: #fff; text-decoration-color: #fff; }
-	.prose :not(pre) > code { font-family: var(--mono); font-size: 0.86em; color: var(--inline-code); background: var(--raised); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 1px 5px; }
+	.prose :not(pre) > code { font-family: var(--mono); font-weight: 450; font-size: 0.88em; color: var(--inline-code); background: var(--raised); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 1px 5px; }
 	.prose ul { list-style: none; }
 	.prose ul > li { position: relative; padding-left: 20px; }
 	.prose ul > li::before { content: ''; position: absolute; left: 2px; top: 0.72em; width: 5px; height: 5px; border-radius: 50%; background: var(--text-3); }
