@@ -1,8 +1,11 @@
 package studio.sculk.command
 
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
 import studio.sculk.permission.Permission
 import studio.sculk.permission.PermissionCheck
+import studio.sculk.text.Amounts
+import java.math.BigDecimal
 import kotlin.time.Duration
 
 /** Marks the command DSL so an inner block cannot reach an outer builder by accident. */
@@ -125,6 +128,21 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
     public fun long(name: String, min: Long = Long.MIN_VALUE, max: Long = Long.MAX_VALUE): ArgumentHandle<Long> {
         require(min <= max) { "<$name> has min $min above max $max." }
         return argument(name, BuiltinArgument.LongArgument(min, max))
+    }
+
+    /**
+     * An amount written plainly or compactly, `250`, `1.5k` or `2m`, read exactly; see [Arguments.amount].
+     * `amount("price", min = BigDecimal.ONE)` refuses `0` and `-5k` with the expected range in the error.
+     */
+    @SculkExperimental
+    public fun amount(
+        name: String,
+        min: BigDecimal? = null,
+        max: BigDecimal? = null,
+        amounts: Amounts = Amounts.DEFAULT,
+    ): ArgumentHandle<BigDecimal> {
+        require(min == null || max == null || min <= max) { "<$name> has min $min above max $max." }
+        return argument(name, AmountArgument(min, max, amounts))
     }
 
     /** A finite number from [min] to [max], written as a plain decimal such as `12`, `-0.5` or `.5`. */

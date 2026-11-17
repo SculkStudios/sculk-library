@@ -56,6 +56,26 @@ val line = "<muted>Balance: <balance>".mm("balance" to balance)
 Values go in as placeholders here too. `"Welcome, $name".mm()` would put the name into the template
 and let it inject tags. A plugin with its own theme renders through its own `Text` instead.
 
+## Compact numbers
+
+`Amounts` writes numbers the way players read them, `1.5k`, `2.34m`, `7b`, and reads them back. The
+suffixes run `k`, `m`, `b`, `t`, `qa`, `qi`, `sx`, `sp`, `oc`, `no`, `dc`, thousand to decillion,
+and you can pass your own.
+
+```kotlin
+import studio.sculk.text.Amounts
+import studio.sculk.text.compact
+
+player.send("<muted>Balance: <balance>", "balance" to balance.compact())   // Balance: 1.99k
+
+val price = Amounts.DEFAULT.parse("2.5m")   // SculkResult<BigDecimal>, 2500000 exactly
+```
+
+A compact number keeps two decimals by default and rounds toward zero, so a balance of 1,999 shows
+as `1.99k` and never as more than the player has; `Amounts(maxFractionDigits = 1, rounding =
+RoundingMode.HALF_UP)` changes both. Reading is exact, with no floating-point error, and ignores the
+suffix's case. Commands take amounts directly with [`amount("price")`](/guides/commands/#argument-types).
+
 ## Icons and heads in text
 
 Templates can draw a sprite from the game's atlases with `<sprite:atlas:sprite>` and a player's face

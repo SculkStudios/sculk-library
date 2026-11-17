@@ -1,3 +1,13 @@
+public final class studio/sculk/command/AmountArgument : studio/sculk/command/ArgumentType {
+	public final fun getAmounts ()Lstudio/sculk/text/Amounts;
+	public fun getExpected ()Ljava/lang/String;
+	public final fun getMax ()Ljava/math/BigDecimal;
+	public final fun getMin ()Ljava/math/BigDecimal;
+	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
+	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;
+	public fun suggest (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Ljava/util/List;
+}
+
 public final class studio/sculk/command/ArgumentHandle {
 	public final fun getName ()Ljava/lang/String;
 	public final fun isOptional ()Z
@@ -26,6 +36,8 @@ public final class studio/sculk/command/ArgumentType$DefaultImpls {
 
 public final class studio/sculk/command/Arguments {
 	public static final field INSTANCE Lstudio/sculk/command/Arguments;
+	public final fun amount (Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lstudio/sculk/text/Amounts;)Lstudio/sculk/command/ArgumentType;
+	public static synthetic fun amount$default (Lstudio/sculk/command/Arguments;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lstudio/sculk/text/Amounts;ILjava/lang/Object;)Lstudio/sculk/command/ArgumentType;
 	public final fun boolean ()Lstudio/sculk/command/ArgumentType;
 	public final fun choice (Ljava/util/Map;)Lstudio/sculk/command/ArgumentType;
 	public final fun double (DD)Lstudio/sculk/command/ArgumentType;
@@ -115,6 +127,8 @@ public final class studio/sculk/command/BuiltinArgument$UuidArgument : studio/sc
 
 public final class studio/sculk/command/CommandBuilder {
 	public final fun after (Lstudio/sculk/command/ArgumentHandle;Lkotlin/jvm/functions/Function1;)V
+	public final fun amount (Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lstudio/sculk/text/Amounts;)Lstudio/sculk/command/ArgumentHandle;
+	public static synthetic fun amount$default (Lstudio/sculk/command/CommandBuilder;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lstudio/sculk/text/Amounts;ILjava/lang/Object;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun argument (Ljava/lang/String;Lstudio/sculk/command/ArgumentType;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun boolean (Ljava/lang/String;)Lstudio/sculk/command/ArgumentHandle;
 	public final fun choice (Ljava/lang/String;Ljava/util/Map;)Lstudio/sculk/command/ArgumentHandle;

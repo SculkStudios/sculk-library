@@ -131,6 +131,7 @@ yet written. Declare flags after the arguments and before the executor.
 | `choice` | one of a fixed set of words, as a value | parsed by Sculk | parsed by Sculk |
 | `uuid`, `key` | a UUID, a namespaced key | yes | parsed by Sculk |
 | `duration` | `90s`, `5m`, `1h30m`, `2d` | parsed by Sculk | parsed by Sculk |
+| `amount` | `250`, `1.5k`, `2m`, `3b`, read exactly as a `BigDecimal`, with optional bounds | parsed by Sculk | parsed by Sculk |
 
 `sculk-commands-paper` adds Paper's own argument types: `onlinePlayer`, `onlinePlayers`,
 `playerProfiles`, `entity`, `entities`, `blockPosition`, `position`, `world`, `gameMode`,

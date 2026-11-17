@@ -1,6 +1,9 @@
 package studio.sculk.command
 
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
+import studio.sculk.text.Amounts
+import java.math.BigDecimal
 import kotlin.time.Duration
 
 /**
@@ -46,6 +49,16 @@ public object Arguments {
      * digits and `_ - . +`; keys that differ only in case throw.
      */
     public fun <T : Any> choice(choices: Map<String, T>): ArgumentType<T> = BuiltinArgument.ChoiceArgument(choices)
+
+    /**
+     * An amount written plainly or compactly, `250`, `1.5k` or `2m`, read exactly as a [BigDecimal]
+     * and kept from [min] to [max] where given. Throws when [min] is above [max].
+     */
+    @SculkExperimental
+    public fun amount(min: BigDecimal? = null, max: BigDecimal? = null, amounts: Amounts = Amounts.DEFAULT): ArgumentType<BigDecimal> {
+        require(min == null || max == null || min <= max) { "min $min is above max $max." }
+        return AmountArgument(min, max, amounts)
+    }
 
     /** A UUID in its usual hyphenated form. */
     public fun uuid(): ArgumentType<java.util.UUID> = BuiltinArgument.UuidArgument()
