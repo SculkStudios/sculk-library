@@ -1,0 +1,36 @@
+public final class studio/sculk/registry/Registries {
+	public static final field INSTANCE Lstudio/sculk/registry/Registries;
+	public final fun get (Lio/papermc/paper/registry/RegistryKey;Lnet/kyori/adventure/key/Key;)Lstudio/sculk/SculkResult;
+	public final fun tag (Lio/papermc/paper/registry/RegistryKey;Lnet/kyori/adventure/key/Key;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/registry/RegistryBootstrapKt {
+	public static final fun composeRegistry (Lio/papermc/paper/plugin/bootstrap/BootstrapContext;Lio/papermc/paper/registry/event/RegistryEventProvider;Lkotlin/jvm/functions/Function1;)V
+	public static final fun discoverDatapack (Lio/papermc/paper/plugin/bootstrap/BootstrapContext;Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun modifyEntries (Lio/papermc/paper/plugin/bootstrap/BootstrapContext;Lio/papermc/paper/registry/event/RegistryEventProvider;Ljava/util/Collection;Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class studio/sculk/registry/RegistryEntrySet {
+	public static final field Companion Lstudio/sculk/registry/RegistryEntrySet$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExcludes ()Ljava/util/List;
+	public final fun getIncludes ()Ljava/util/List;
+	public final fun getRegistry ()Lio/papermc/paper/registry/RegistryKey;
+	public fun hashCode ()I
+	public final fun resolve ()Lstudio/sculk/SculkResult;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/registry/RegistryEntrySet$Companion {
+	public final fun parse (Lio/papermc/paper/registry/RegistryKey;Ljava/util/List;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/registry/RegistryEntrySet$Selector {
+	public fun <init> (Lnet/kyori/adventure/key/Key;Z)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Lnet/kyori/adventure/key/Key;
+	public fun hashCode ()I
+	public final fun isTag ()Z
+	public fun toString ()Ljava/lang/String;
+}
+

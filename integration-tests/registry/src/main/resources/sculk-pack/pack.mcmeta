@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "description": "Sculk registry suite",
+    "pack_format": 61,
+    "supported_formats": [61, 999],
+    "min_format": 61,
+    "max_format": 999
+  }
+}

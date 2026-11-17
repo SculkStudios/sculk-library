@@ -1,0 +1,93 @@
+---
+title: Registries
+description: sculk-registry, typed registry lookups, tags, entry sets from configuration, bootstrap registry changes and datapacks from your plugin jar.
+sidebar:
+  order: 10
+---
+
+`sculk-registry` (package `studio.sculk.registry`) reads and changes the server's registries the
+same way on every supported Paper version, although Paper renamed the event that adds entries at
+1.21.11.
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-registry:6.0.0-SNAPSHOT")
+}
+```
+
+## Look entries up
+
+Keys from configuration or commands may not exist, so lookups return results:
+
+```kotlin
+import io.papermc.paper.registry.RegistryKey
+import net.kyori.adventure.key.Key
+import studio.sculk.registry.Registries
+
+val sharpness = Registries.get(RegistryKey.ENCHANTMENT, Key.key("minecraft:sharpness")).getOrThrow()
+val logs = Registries.tag(RegistryKey.BLOCK, Key.key("minecraft:logs")) // SculkResult<Set<BlockType>>
+```
+
+A missing entry or tag is an `InvalidInput` failure naming the registry and the key.
+
+## Entry sets from configuration
+
+`RegistryEntrySet` reads the lists operators write: an entry, a `#tag`, and `!` to exclude either.
+Exclusions win, and a bare word means the `minecraft` namespace.
+
+```yaml
+breakable: ["#minecraft:logs", "stone", "!minecraft:oak_log"]
+```
+
+```kotlin
+val set = RegistryEntrySet.parse(RegistryKey.BLOCK, config.breakable).getOrThrow()
+val blocks: Set<BlockType> = set.resolve().getOrThrow()
+```
+
+`parse` checks the text without a server. `resolve` reads the registries and fails listing every
+entry and tag the server does not have, so a typo is an error at load instead of a rule that never
+matches. Resolve once and keep the set; registries do not change after the server starts.
+
+## Change registries at bootstrap
+
+Registries change only while the server bootstraps, so these calls go in your plugin's
+`PluginBootstrap` (a Paper plugin with a `bootstrapper` in `paper-plugin.yml`):
+
+```kotlin
+import io.papermc.paper.plugin.bootstrap.BootstrapContext
+import io.papermc.paper.plugin.bootstrap.PluginBootstrap
+import io.papermc.paper.registry.event.RegistryEvents
+import io.papermc.paper.registry.keys.EnchantmentKeys
+import studio.sculk.registry.composeRegistry
+import studio.sculk.registry.discoverDatapack
+import studio.sculk.registry.modifyEntries
+
+class ShopBootstrap : PluginBootstrap {
+    override fun bootstrap(context: BootstrapContext) {
+        // Add entries.
+        context.composeRegistry(RegistryEvents.ENCHANTMENT) { registry ->
+            registry.register(TypedKey.create(RegistryKey.ENCHANTMENT, Key.key("shop:lifesteal"))) { builder ->
+                builder.description(Component.text("Lifesteal")).maxLevel(3) // ...
+            }
+        }
+        // Change existing ones, vanilla included.
+        context.modifyEntries(RegistryEvents.ENCHANTMENT, listOf(EnchantmentKeys.SHARPNESS)) { _, builder ->
+            builder.maxLevel(10)
+        }
+        // Ship data with the plugin: tags, loot tables, advancements.
+        context.discoverDatapack(javaClass.classLoader, "datapack", "shop")
+    }
+}
+```
+
+`composeRegistry` adds entries at the point Paper calls freezing on 1.21.4 and composing from
+1.21.11. Which registries accept entries depends on the version: enchantments everywhere, dialogs,
+variants and jukebox songs from 1.21.11, trims from 26.2 and pot patterns, timelines and world clocks
+from 26.3. The `RegistryEvents` field exists only where the registry does, so code for a newer
+registry belongs behind a [capability](/concepts/capabilities/) check.
+
+`discoverDatapack` finds the pack through its `pack.mcmeta`, so it works in jars without directory
+entries. Give the pack a `supported_formats` range (and `min_format`/`max_format` for 1.21.9 and
+later) that covers every version you support.
+
+Sculk's own `integration-tests/registry` suite does all three on every anchor, Folia and Canvas.

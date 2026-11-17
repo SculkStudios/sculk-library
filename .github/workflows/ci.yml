@@ -79,6 +79,9 @@ jobs:
       - name: Items on every Paper anchor, Folia and Canvas
         run: ./gradlew :integration-tests:items:verifyItems
 
+      - name: Registries on every Paper anchor, Folia and Canvas
+        run: ./gradlew :integration-tests:registry:verifyRegistry
+
       - name: Example plugins on every server
         run: ./gradlew :integration-tests:examples:verifyExamples
 
