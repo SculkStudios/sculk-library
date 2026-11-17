@@ -1,0 +1,18 @@
+public final class studio/sculk/testkit/paper/FakePersistentDataContainer : org/bukkit/persistence/PersistentDataContainer {
+	public fun <init> ()V
+	public fun copyTo (Lorg/bukkit/persistence/PersistentDataContainer;Z)V
+	public fun get (Lorg/bukkit/NamespacedKey;Lorg/bukkit/persistence/PersistentDataType;)Ljava/lang/Object;
+	public fun getAdapterContext ()Lorg/bukkit/persistence/PersistentDataAdapterContext;
+	public fun getKeys ()Ljava/util/Set;
+	public fun getOrDefault (Lorg/bukkit/NamespacedKey;Lorg/bukkit/persistence/PersistentDataType;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun has (Lorg/bukkit/NamespacedKey;)Z
+	public fun has (Lorg/bukkit/NamespacedKey;Lorg/bukkit/persistence/PersistentDataType;)Z
+	public fun isEmpty ()Z
+	public fun readFromBytes ([BZ)V
+	public fun remove (Lorg/bukkit/NamespacedKey;)V
+	public fun serializeToBytes ()[B
+	public fun set (Lorg/bukkit/NamespacedKey;Lorg/bukkit/persistence/PersistentDataType;Ljava/lang/Object;)V
+	public final fun setRaw (Lorg/bukkit/NamespacedKey;Ljava/lang/Object;)V
+	public fun toString ()Ljava/lang/String;
+}
+

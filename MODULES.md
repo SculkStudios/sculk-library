@@ -17,6 +17,7 @@ planned module is in `REBUILD.md`.
 | `sculk-coroutines` | Execution contexts (`Global`, `Region`, `Entity`, `Async`, `Proxy`), dispatcher contract, scope hierarchy, tasks (repeating, delayed, cron, debounce, throttle, batch), dev-mode thread checker | core | kotlinx-coroutines-core | yes | done |
 | `sculk-platform-api` | Runtime contract implemented by each platform: audiences, permissions, scheduling primitives, capability provider, lifecycle hooks | core, coroutines | — | yes | done |
 | `sculk-testkit` | Fakes for every interface a consumer calls; fake ownership runtime that asserts required versus actual context; deterministic clock and scheduler | core, coroutines, platform-api | kotlinx-coroutines-test | yes | done |
+| `sculk-testkit-paper` | Fakes for the Paper interfaces Sculk's Paper modules use: a persistent data container | testkit | — (paper-api compileOnly) | yes | done |
 
 ## Platforms
 
@@ -44,7 +45,7 @@ planned module is in `REBUILD.md`.
 
 | Module | Capability | Depends on | External | Status |
 | --- | --- | --- | --- | --- |
-| `sculk-items` | `ItemSpec` compiled to data components (native on every anchor, probed per component type); typed PDC codecs for every holder; custom-item provider SPI | text, paper | — | planned |
+| `sculk-items` | `ItemSpec` compiled to data components (native on every anchor; tooltip hiding and `unbreakable` through an adapter per ADR-0028); typed PDC codecs for every holder; custom-item provider SPI | text | — | done |
 | `sculk-registry` | Registry keys, tags, key and value sets, bootstrap mutation, aliases from generated mappings, datapack discovery | paper | — | planned |
 | `sculk-recipes` | Recipe DSL for every vanilla type including brewing and transmute | items, registry | — | planned |
 

@@ -142,7 +142,7 @@ Differences the capability engine must paper over, with the version they appear 
 
 | Version | Difference | Sculk response |
 | --- | --- | --- |
-| 1.21.5 | Tooltip components reworked | Per-component probes |
+| 1.21.5 | Tooltip components reworked: `showInTooltip` flags and `HIDE_TOOLTIP` give way to `TooltipDisplay`; `UNBREAKABLE` loses its value | `ItemSpec` hides tooltip parts through the flags on 1.21.4 and through `TooltipDisplay` from 1.21.5, chosen by a class probe (ADR-0028); `integration-tests/items` checks both on every anchor |
 | 1.21.6 → 1.21.11 | `RegistryFreezeEvent` → `RegistryComposeEvent` | Registry adapter per anchor |
 | 1.21.7 | `PlayerLoginEvent` deprecated for connection events | Connection lifecycle adapter |
 | 1.21.10 | Teleport keeps vanilla passenger semantics; `TeleportFlag.EntityState` is a no-op | Explicit `retainPassengers` option implemented per anchor |

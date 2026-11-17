@@ -43,9 +43,11 @@ include(
     ":sculk-commands-paper",
     ":sculk-commands-velocity",
     ":sculk-testkit",
+    ":sculk-testkit-paper",
     ":sculk-paper",
     ":sculk-canvas",
     ":sculk-velocity",
+    ":sculk-items",
 )
 
 // Never published. Each proves something about the published modules on a real server.
@@ -56,6 +58,7 @@ include(
     ":integration-tests:boot",
     ":integration-tests:commands",
     ":integration-tests:examples",
+    ":integration-tests:items",
     ":integration-tests:threading",
     ":integration-tests:velocity",
 )

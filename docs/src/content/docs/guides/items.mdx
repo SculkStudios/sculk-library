@@ -1,0 +1,123 @@
+---
+title: Items
+description: sculk-items, item specs compiled to data components on every supported Paper version, typed persistent data, and custom items from your plugin and others.
+sidebar:
+  order: 9
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`sculk-items` (packages `studio.sculk.item` and `studio.sculk.pdc`) describes items as data and
+builds them from Paper's data components. The same spec produces the same item on Paper 1.21.4
+through 26.3, Folia and Canvas, although the components themselves changed shape in between.
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-items:6.0.0-SNAPSHOT")
+}
+```
+
+## Describe an item
+
+```kotlin
+import org.bukkit.Material
+import org.bukkit.enchantments.Enchantment
+import studio.sculk.item.TooltipPart
+import studio.sculk.item.item
+
+val blade = item(Material.DIAMOND_SWORD) {
+    name = "<gradient:#7f5af0:#2cb67d>Sculk Blade"
+    lore("<muted>Hums when the Warden is near.")
+    enchant(Enchantment.SHARPNESS, 5)
+    hide(TooltipPart.ENCHANTMENTS, TooltipPart.ATTRIBUTES)
+    unbreakable = true
+}
+
+player.inventory.addItem(blade.create())
+```
+
+A spec is immutable and equal by value, so it can be a constant, a map key or an expected value in
+a test, all without a server. `blade.with { enchant(Enchantment.SHARPNESS, 6) }` makes a changed
+copy.
+
+- `name` and `lore` are trusted MiniMessage templates rendered with your [theme](/guides/text/).
+  Pass a resolver to `create(text, resolver)` to fill [placeholders](/guides/placeholders/) for a
+  viewer. Lore lines are not italic unless the template says so.
+- `name` sets the item's own name (`item_name`), which an anvil rename overrides and which is
+  never italic.
+- Also available: `amount`, `glint`, `hideTooltip`, `model` (an item model key), `customModel`
+  (floats, flags, strings and colours for 1.21.4+ model definitions), `maxStackSize`, `maxDamage`,
+  `damage`, `rarity` and `dyedColor`.
+
+A spec is checked where it is built: an amount outside 1 to 99, a blank name, more than 256 lore
+lines, an enchantment level above 255 or a damageable item that stacks throws at once. Whether the
+material is an item and every enchantment exists needs the server's registries, so a spec read
+from configuration goes through `spec.check()`, which returns a result instead of throwing.
+
+### Hiding tooltip parts
+
+`hide(...)` takes enchantments, attributes, the unbreakable line and the dye colour, and
+`hideTooltip = true` hides the whole tooltip. On 1.21.4 Sculk sets each component's own
+`showInTooltip` flag; from 1.21.5 it writes one `tooltip_display` component. Hidden attribute
+modifiers keep working: only their lines disappear.
+
+## Persistent data
+
+Declare each entry once with a codec, then read and write it on any holder: an item stack, an
+entity, a tile state, a chunk or a world.
+
+```kotlin
+import org.bukkit.NamespacedKey
+import studio.sculk.pdc.PdcCodec
+import studio.sculk.pdc.PdcKey
+import studio.sculk.pdc.read
+import studio.sculk.pdc.write
+
+val OWNER = PdcKey(NamespacedKey("shop", "owner"), PdcCodec.UUID)
+val TAGS = PdcKey(NamespacedKey("shop", "tags"), PdcCodec.STRING.list())
+
+stack.write(OWNER, player.uniqueId)
+val owner: UUID? = stack.read(OWNER).getOrNull()
+```
+
+Codecs cover text, booleans, every number type, bytes, UUIDs (16 bytes), keys, enums by name
+(`PdcCodec.enum<Tier>()`) and lists of any of them; `codec.map(...)` stores your own type through
+an existing one. Stored data is input: a value an older version or another plugin wrote in a
+different shape reads as an `InvalidInput` failure, never as an exception.
+
+An entity, block or chunk is read and written on the thread that owns it, its region on Folia and
+Canvas. A tile state is a snapshot, so call `update()` after writing.
+
+A spec can carry persistent data too: `data(OWNER, id)` inside `item { }`.
+
+## Custom items
+
+Give a spec an `id` and define it, and every stack it makes can be recognised later, whatever
+happens to its name or lore:
+
+```kotlin
+import net.kyori.adventure.key.Key
+import studio.sculk.item.CustomItems
+
+val items = CustomItems()
+items.define(sculk.scope, blade.with { id = Key.key("shop:sculk_blade") })
+
+val stack = items.create(Key.key("shop:sculk_blade")).getOrThrow()
+items.identify(stack) // shop:sculk_blade
+```
+
+Other plugins' items join through `CustomItemProvider`: `items.register(scope, provider)` adds a
+provider for a namespace (`nexo:ruby_sword`), and `create` and `identify` consult it after your own
+specs. Definitions and providers end with the scope they were registered in.
+
+## Testing
+
+`sculk-testkit-paper` has a `FakePersistentDataContainer` for testing persistent data code without
+a server. It stores and checks values the way Paper does, and refuses NBT byte round trips, which
+need a real server.
+
+<Aside>
+  Item stacks themselves need a server: since 1.21 Paper's API-only `ItemStack` delegates to the
+  server implementation. Test specs as data, and stacks on a real server as Sculk's own
+  `integration-tests/items` suite does on every anchor.
+</Aside>

@@ -1,0 +1,173 @@
+public abstract interface class studio/sculk/item/CustomItemProvider {
+	public abstract fun create (Lnet/kyori/adventure/key/Key;I)Lorg/bukkit/inventory/ItemStack;
+	public abstract fun getNamespace ()Ljava/lang/String;
+	public abstract fun identify (Lorg/bukkit/inventory/ItemStack;)Lnet/kyori/adventure/key/Key;
+}
+
+public final class studio/sculk/item/CustomItems {
+	public fun <init> ()V
+	public final fun create (Lnet/kyori/adventure/key/Key;I)Lstudio/sculk/SculkResult;
+	public static synthetic fun create$default (Lstudio/sculk/item/CustomItems;Lnet/kyori/adventure/key/Key;IILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public final fun define (Lstudio/sculk/ResourceScope;Lstudio/sculk/item/ItemSpec;)Lstudio/sculk/SculkHandle;
+	public final fun identify (Lorg/bukkit/inventory/ItemStack;)Lnet/kyori/adventure/key/Key;
+	public final fun register (Lstudio/sculk/ResourceScope;Lstudio/sculk/item/CustomItemProvider;)Lstudio/sculk/SculkHandle;
+	public final fun spec (Lnet/kyori/adventure/key/Key;)Lstudio/sculk/item/ItemSpec;
+}
+
+public final class studio/sculk/item/CustomModel {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColors ()Ljava/util/List;
+	public final fun getFlags ()Ljava/util/List;
+	public final fun getFloats ()Ljava/util/List;
+	public final fun getStrings ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class studio/sculk/item/ItemDsl : java/lang/annotation/Annotation {
+}
+
+public final class studio/sculk/item/ItemSpec {
+	public static final field Companion Lstudio/sculk/item/ItemSpec$Companion;
+	public static final field MAX_ENCHANTMENT_LEVEL I
+	public static final field MAX_LORE I
+	public static final field MAX_STACK I
+	public final fun check ()Lstudio/sculk/SculkResult;
+	public final fun create (Lstudio/sculk/text/Text;Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;)Lorg/bukkit/inventory/ItemStack;
+	public static synthetic fun create$default (Lstudio/sculk/item/ItemSpec;Lstudio/sculk/text/Text;Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;ILjava/lang/Object;)Lorg/bukkit/inventory/ItemStack;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAmount ()I
+	public final fun getCustomModel ()Lstudio/sculk/item/CustomModel;
+	public final fun getDamage ()Ljava/lang/Integer;
+	public final fun getData ()Ljava/util/List;
+	public final fun getDyedColor ()Lorg/bukkit/Color;
+	public final fun getEnchantments ()Ljava/util/Map;
+	public final fun getGlint ()Ljava/lang/Boolean;
+	public final fun getHidden ()Ljava/util/Set;
+	public final fun getHideTooltip ()Z
+	public final fun getId ()Lnet/kyori/adventure/key/Key;
+	public final fun getLore ()Ljava/util/List;
+	public final fun getMaxDamage ()Ljava/lang/Integer;
+	public final fun getMaxStackSize ()Ljava/lang/Integer;
+	public final fun getModel ()Lnet/kyori/adventure/key/Key;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRarity ()Lorg/bukkit/inventory/ItemRarity;
+	public final fun getType ()Lorg/bukkit/Material;
+	public final fun getUnbreakable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun with (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/item/ItemSpec;
+}
+
+public final class studio/sculk/item/ItemSpec$Companion {
+}
+
+public final class studio/sculk/item/ItemSpecBuilder {
+	public final fun data (Lstudio/sculk/pdc/PdcKey;Ljava/lang/Object;)V
+	public final fun enchant (Lnet/kyori/adventure/key/Key;I)V
+	public final fun enchant (Lorg/bukkit/enchantments/Enchantment;I)V
+	public static synthetic fun enchant$default (Lstudio/sculk/item/ItemSpecBuilder;Lnet/kyori/adventure/key/Key;IILjava/lang/Object;)V
+	public static synthetic fun enchant$default (Lstudio/sculk/item/ItemSpecBuilder;Lorg/bukkit/enchantments/Enchantment;IILjava/lang/Object;)V
+	public final fun getAmount ()I
+	public final fun getCustomModel ()Lstudio/sculk/item/CustomModel;
+	public final fun getDamage ()Ljava/lang/Integer;
+	public final fun getDyedColor ()Lorg/bukkit/Color;
+	public final fun getGlint ()Ljava/lang/Boolean;
+	public final fun getHideTooltip ()Z
+	public final fun getId ()Lnet/kyori/adventure/key/Key;
+	public final fun getMaxDamage ()Ljava/lang/Integer;
+	public final fun getMaxStackSize ()Ljava/lang/Integer;
+	public final fun getModel ()Lnet/kyori/adventure/key/Key;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRarity ()Lorg/bukkit/inventory/ItemRarity;
+	public final fun getType ()Lorg/bukkit/Material;
+	public final fun getUnbreakable ()Z
+	public final fun hide ([Lstudio/sculk/item/TooltipPart;)V
+	public final fun lore (Ljava/util/List;)V
+	public final fun lore ([Ljava/lang/String;)V
+	public final fun setAmount (I)V
+	public final fun setCustomModel (Lstudio/sculk/item/CustomModel;)V
+	public final fun setDamage (Ljava/lang/Integer;)V
+	public final fun setDyedColor (Lorg/bukkit/Color;)V
+	public final fun setGlint (Ljava/lang/Boolean;)V
+	public final fun setHideTooltip (Z)V
+	public final fun setId (Lnet/kyori/adventure/key/Key;)V
+	public final fun setMaxDamage (Ljava/lang/Integer;)V
+	public final fun setMaxStackSize (Ljava/lang/Integer;)V
+	public final fun setModel (Lnet/kyori/adventure/key/Key;)V
+	public final fun setName (Ljava/lang/String;)V
+	public final fun setRarity (Lorg/bukkit/inventory/ItemRarity;)V
+	public final fun setType (Lorg/bukkit/Material;)V
+	public final fun setUnbreakable (Z)V
+}
+
+public final class studio/sculk/item/ItemSpecKt {
+	public static final fun item (Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/item/ItemSpec;
+	public static synthetic fun item$default (Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/item/ItemSpec;
+}
+
+public final class studio/sculk/item/TooltipPart : java/lang/Enum {
+	public static final field ATTRIBUTES Lstudio/sculk/item/TooltipPart;
+	public static final field DYED_COLOR Lstudio/sculk/item/TooltipPart;
+	public static final field ENCHANTMENTS Lstudio/sculk/item/TooltipPart;
+	public static final field UNBREAKABLE Lstudio/sculk/item/TooltipPart;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/item/TooltipPart;
+	public static fun values ()[Lstudio/sculk/item/TooltipPart;
+}
+
+public final class studio/sculk/pdc/PdcCodec {
+	public static final field Companion Lstudio/sculk/pdc/PdcCodec$Companion;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun list ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun map (Ljava/lang/Class;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/pdc/PdcCodec;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/pdc/PdcCodec$Companion {
+	public final fun enum (Ljava/lang/Class;)Lstudio/sculk/pdc/PdcCodec;
+	public final fun getBOOLEAN ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getBYTE ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getBYTES ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getDOUBLE ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getFLOAT ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getINT ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getKEY ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getLONG ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getSHORT ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getSTRING ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getUUID ()Lstudio/sculk/pdc/PdcCodec;
+}
+
+public final class studio/sculk/pdc/PdcKey {
+	public fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/pdc/PdcCodec;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCodec ()Lstudio/sculk/pdc/PdcCodec;
+	public final fun getKey ()Lorg/bukkit/NamespacedKey;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/pdc/PdcKeyKt {
+	public static final fun read (Lio/papermc/paper/persistence/PersistentDataContainerView;Lstudio/sculk/pdc/PdcKey;)Lstudio/sculk/SculkResult;
+	public static final fun read (Lio/papermc/paper/persistence/PersistentDataViewHolder;Lstudio/sculk/pdc/PdcKey;)Lstudio/sculk/SculkResult;
+	public static final fun remove (Lorg/bukkit/inventory/ItemStack;Lstudio/sculk/pdc/PdcKey;)V
+	public static final fun remove (Lorg/bukkit/persistence/PersistentDataContainer;Lstudio/sculk/pdc/PdcKey;)V
+	public static final fun remove (Lorg/bukkit/persistence/PersistentDataHolder;Lstudio/sculk/pdc/PdcKey;)V
+	public static final fun write (Lorg/bukkit/inventory/ItemStack;Lstudio/sculk/pdc/PdcKey;Ljava/lang/Object;)V
+	public static final fun write (Lorg/bukkit/persistence/PersistentDataContainer;Lstudio/sculk/pdc/PdcKey;Ljava/lang/Object;)V
+	public static final fun write (Lorg/bukkit/persistence/PersistentDataHolder;Lstudio/sculk/pdc/PdcKey;Ljava/lang/Object;)V
+}
+
+public final class studio/sculk/pdc/PdcValue {
+	public fun <init> (Lstudio/sculk/pdc/PdcKey;Ljava/lang/Object;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Lstudio/sculk/pdc/PdcKey;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
