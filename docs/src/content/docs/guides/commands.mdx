@@ -197,5 +197,5 @@ dispatcher.execute(steve, "balance Alex")
 assertEquals(listOf("Sent 25.0 coins to Alex.", "Alex has 45.0 coins."), steve.plainMessages)
 ```
 
-`FakeCommandSource` comes from [`sculk-testkit`](/guides/testing/). It holds permissions (`*` grants
+`FakeCommandSource` comes from [`sculk-testkit`](/concepts/testing/). It holds permissions (`*` grants
 all) and records every message it is sent.

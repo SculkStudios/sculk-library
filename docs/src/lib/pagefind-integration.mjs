@@ -17,7 +17,7 @@ export function pagefind() {
 				if (added.errors.length) throw new Error(`Pagefind could not index the site: ${added.errors.join(', ')}`);
 				await index.writeFiles({ outputPath: join(site, 'pagefind') });
 				await close();
-				logger.info(`Search index: ${added.page_count} pages.`);
+				logger.info(`Search: scanned ${added.page_count} pages; only those marked data-pagefind-body are searchable.`);
 			},
 		},
 	};

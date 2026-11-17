@@ -55,7 +55,7 @@ under your own shutdown code.
 | Argument | Default | Meaning |
 | --- | --- | --- |
 | `developmentMode` | the `sculk.development` system property | Development checks; see below. |
-| `extensions` | none | Platform extensions such as [`CanvasSupport`](/guides/canvas/). |
+| `extensions` | none | Platform extensions such as [`CanvasSupport`](/start/canvas/). |
 
 ## Extend SculkPaperPlugin
 
@@ -133,7 +133,7 @@ the runtime has already entered is a wiring bug and throws.
 ## Development mode
 
 Start the server with `-Dsculk.development=true`, or pass `developmentMode = true`, to turn on
-development checks. Today that shows in `diagnostics()` and makes [Canvas](/guides/canvas/)
+development checks. Today that shows in `diagnostics()` and makes [Canvas](/start/canvas/)
 report region-data callbacks that exceed their time budget. The full development thread checker
 described in [`THREADING.md`](https://github.com/SculkStudios/sculk-library/blob/dev/THREADING.md#development-thread-checker)
 is not built yet.

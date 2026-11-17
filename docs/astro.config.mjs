@@ -10,6 +10,8 @@ export default defineConfig({
 	site: 'https://docs.sculk.studio',
 	trailingSlash: 'always',
 	build: { format: 'directory' },
+	// Pages that moved to the section their sidebar category names.
+	redirects: { '/guides/canvas/': '/start/canvas/', '/guides/testing/': '/concepts/testing/' },
 	// Expressive Code hooks into Sätteri only when the processor is set explicitly.
 	markdown: { processor: satteri() },
 	integrations: [

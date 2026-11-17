@@ -1,50 +1,47 @@
 ---
 import { getCollection } from 'astro:content';
 import { Code } from 'astro-expressive-code/components';
-import Mark from '../components/Mark.astro';
 import Site from '../layouts/Site.astro';
 import { navigation } from '../lib/nav';
-import { inlineHtml, moduleStatus, readRepoDoc, tablesOf } from '../lib/repo-tables';
+import { moduleStatus, readRepoDoc, tablesOf } from '../lib/repo-tables';
 
 const sections = navigation(await getCollection('docs'));
 
-// The module status reads MODULES.md at build time, so it cannot claim more than the repository does.
-const groups = tablesOf(readRepoDoc('MODULES.md'))
+// The status line reads MODULES.md at build time, so it cannot claim more than the repository does.
+const modules = tablesOf(readRepoDoc('MODULES.md'))
 	.filter((table) => table.columns[0] === 'Module' && table.columns.at(-1) === 'Status')
-	.map((table) => {
-		const described = table.columns.findIndex((column) => column === 'Capability' || column === 'Upstream');
-		return {
-			heading: table.heading,
-			modules: table.rows.map((row) => ({ name: row[0], what: described >= 0 ? row[described] : '', status: moduleStatus(row.at(-1) ?? '') })),
-		};
-	})
-	.filter((group) => group.modules.length > 0);
-const all = groups.flatMap((group) => group.modules);
-const done = all.filter((module) => module.status === 'done').length;
-const level = { done: 'full', 'in progress': 'partial', planned: 'none' } as const;
+	.flatMap((table) => table.rows.map((row) => moduleStatus(row.at(-1) ?? '')));
+const done = modules.filter((status) => status === 'done').length;
 
-const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
+const sample = `class MyPlugin : SculkPaperPlugin() {
     override suspend fun start() {
-        server.pluginManager.registerEvents(this, this)
+        sculk.events.observe<PlayerJoinEvent> { event -> greet(event.player) }
     }
 
-    @EventHandler
-    fun onJoin(event: PlayerJoinEvent) {
-        val player = event.player
-        sculk.scope.launch {
-            val visits = withAsync { readVisits(player.uniqueId) }
-            val greeted = withEntity(player) {
-                player.sendMessage(Component.text("Welcome back. This is visit $visits."))
-            }
-            if (greeted is EntityResult.Gone) logger.info("\${player.name} left first.")
+    private suspend fun greet(player: Player) {
+        val visits = withAsync { readVisits(player.uniqueId) }
+        val greeted = withEntity(player) {
+            player.sendMessage(Component.text("Welcome back, visit $visits."))
         }
+        if (greeted is EntityResult.Gone) logger.info("\${player.name} left")
     }
 }`;
+
+const features = [
+	{ href: '/guides/commands/', title: 'Commands', text: "One typed command DSL, compiled into each platform's own Brigadier tree." },
+	{ href: '/guides/menus/', title: 'GUIs and menus', text: 'Inventory menus drawn from their state, redrawn slot by slot and locked against item theft.' },
+	{ href: '/guides/dialogs/', title: 'Dialogs', text: 'Forms with checked, typed answers on Paper 1.21.7 and later, and a fallback before that.' },
+	{ href: '/guides/hud/', title: 'Scoreboards and HUD', text: 'Sidebars, boss bars, action bars and tab lists that redraw only what changed.' },
+	{ href: '/guides/config/', title: 'Configs', text: "Typed YAML files that keep operators' comments and reload transactionally." },
+	{ href: '/guides/text/', title: 'Text and MiniMessage', text: 'MiniMessage rendering where templates are trusted and player values never parse as tags.' },
+	{ href: '/guides/placeholders/', title: 'Placeholders', text: 'Typed global, per-player and relational placeholders, as MiniMessage tags.' },
+	{ href: '/guides/items/', title: 'Items', text: 'Item specs compiled to data components on every supported Paper version.' },
+];
 ---
-<Site title="Sculk Studio: the Kotlin platform for Minecraft server plugins" description="The Kotlin platform for Paper, Folia, Canvas and Velocity plugins. Work declares what it must own; the platform decides the thread." sections={sections}>
+<Site title="Sculk Studio: the Kotlin platform for Minecraft server plugins" description="Write a Minecraft server plugin once in Kotlin and run it on Paper, Folia, Canvas and Velocity, with every task on the thread that owns what it touches." sections={sections}>
 	<article data-pagefind-body>
 		<h1 class="page-title home-title">The Kotlin platform for Paper, Folia, Canvas and Velocity plugins.</h1>
-		<p class="lede">Work declares what it must own: the global region, a region, an entity, or no game thread at all. The platform decides the thread, so the same code is correct on Paper and on Folia. One API from Paper 1.21.4 to 26.3, verified on real servers with a real Minecraft client.</p>
+		<p class="lede">Write the plugin once in Kotlin. It runs on Paper, Folia, Canvas and Velocity, and every task runs on the thread that owns what it touches, whether that is the main thread on Paper or a region on Folia.</p>
 		<div class="actions">
 			<a class="primary" href="/start/installation/">Install Sculk</a>
 			<a href="/start/why-sculk/">Why Sculk</a>
@@ -53,64 +50,20 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 
 		<div class="prose">
 			<Code code={sample} lang="kotlin" title="MyPlugin.kt" />
-			<p><code>withAsync</code> runs off every game thread; <code>withEntity</code> runs on whichever thread owns the player at that moment, and its result says whether the player was still there. On Paper both are the main thread. On Folia and Canvas they are not, and the code does not change.</p>
+			<p>The observer resumes on the player's own thread. <code>withAsync</code> runs the read off every game thread, and <code>withEntity</code> returns <code>Gone</code> if the player left in the meantime. On Paper all of it is the main thread; on Folia and Canvas it is the player's region, and the code does not change.</p>
 
 			<h2 id="build">What you can build</h2>
 			<div class="features">
-				<a class="feature" href="/guides/commands/"><b>Commands</b><span>One typed command DSL, compiled into each platform's own Brigadier tree.</span></a>
-				<a class="feature" href="/guides/menus/"><b>GUIs and menus</b><span>Inventory menus drawn from their state, redrawn slot by slot and locked against item theft.</span></a>
-				<a class="feature" href="/guides/dialogs/"><b>Dialogs</b><span>Forms with checked, typed answers on Paper 1.21.7 and later, and a fallback before that.</span></a>
-				<a class="feature" href="/guides/hud/"><b>Scoreboards and HUD</b><span>Sidebars, boss bars, action bars and tab lists that redraw only what changed.</span></a>
-				<a class="feature" href="/guides/config/"><b>Configs</b><span>Typed YAML files that keep operators' comments and reload transactionally.</span></a>
-				<a class="feature" href="/guides/text/"><b>Text and MiniMessage</b><span>MiniMessage rendering where templates are trusted and player values never parse as tags.</span></a>
-				<a class="feature" href="/guides/placeholders/"><b>Placeholders</b><span>Typed global, per-player and relational placeholders, as MiniMessage tags.</span></a>
-				<a class="feature" href="/guides/items/"><b>Items</b><span>Item specs compiled to data components on every supported Paper version.</span></a>
+				{features.map((feature) => <a class="feature" href={feature.href}><b>{feature.title}</b><span>{feature.text}</span></a>)}
 			</div>
 
-			<h2 id="modules">Every module</h2>
-			<p>Where every module stands today, read from <a href="https://github.com/SculkStudios/sculk-library/blob/dev/MODULES.md">MODULES.md</a> when this site was built: <span class="num">{done}</span> of <span class="num">{all.length}</span> entries are done. A filled mark is done, half is in progress, hollow is planned.</p>
-			{groups.map((group) => (
-				<>
-					<h3>{group.heading}</h3>
-					<table class="modules">
-						<tbody>
-							{group.modules.map((module) => (
-								<tr>
-									<td class="status"><Mark level={level[module.status]} /><span class="visually-hidden">{module.status}</span></td>
-									<td class="name" set:html={inlineHtml(module.name)} />
-									<td set:html={inlineHtml(module.what)} />
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</>
-			))}
+			<p class="status">Sculk 6 is not released yet: <span class="num">{done}</span> of <span class="num">{modules.length}</span> modules are done. The <a href="/reference/roadmap/">roadmap</a> lists every module and where it stands.</p>
 		</div>
 	</article>
-	<p class="colophon">Sculk Studio is MIT-licensed. It is not an official Minecraft product and is not approved by or associated with Mojang or Microsoft.</p>
-
 	<Fragment slot="margin">
 		<section>
-			<p class="label">Module status</p>
-			<div class="chunks" role="img" aria-label={`${done} of ${all.length} modules done, ${all.filter((m) => m.status === 'in progress').length} in progress, ${all.filter((m) => m.status === 'planned').length} planned`}>
-				{groups.map((group) => group.modules.map((module) => <span class="chunk" data-level={level[module.status]} title={`${module.name.replace(/`/g, '')}: ${module.status}`}></span>))}
-			</div>
-			<p class="note"><span class="num">{done}</span> of <span class="num">{all.length}</span> modules done, one square each. <a href="#modules">See every module</a></p>
-		</section>
-		<section>
 			<p class="label">Status</p>
-			<p class="note">Sculk 6 is a ground-up rewrite on the <code>dev</code> branch and is <strong>not released</strong>. Build the artifacts yourself with <code>publishToMavenLocal</code>; only modules marked done exist today.</p>
-		</section>
-		<section>
-			<p class="label">Runs on</p>
-			<table class="support">
-				<tbody>
-					<tr><td><Mark level="full" /></td><td><b>Paper</b> <span class="num">1.21.4</span> to <span class="num">26.3</span></td></tr>
-					<tr><td><Mark level="full" /></td><td><b>Folia</b> <span class="num">26.3</span></td></tr>
-					<tr><td><Mark level="full" /></td><td><b>Canvas</b> <span class="num">26.3</span></td></tr>
-					<tr><td><Mark level="full" /></td><td><b>Velocity</b> <span class="num">4.3.1</span></td></tr>
-				</tbody>
-			</table>
+			<p class="note">Sculk 6 is a ground-up rewrite on the <code>dev</code> branch and is <strong>not released</strong>. Build it yourself with <code>publishToMavenLocal</code>; only modules marked done exist today.</p>
 		</section>
 		<section>
 			<p class="label">Start here</p>
@@ -118,7 +71,7 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 				<a href="/start/installation/">Install Sculk</a>
 				<a href="/start/first-plugin/">Your first plugin</a>
 				<a href="/concepts/execution/">Threading</a>
-				<a href="/guides/testing/">Testing without a server</a>
+				<a href="/concepts/testing/">Testing</a>
 				<a href="/reference/compatibility/">Compatibility</a>
 			</nav>
 		</section>
@@ -126,37 +79,21 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 </Site>
 
 <style>
-	.home-title { font-size: clamp(32px, 3.2vw, 44px); line-height: 1.12; max-width: 24ch; margin: 8px 0 22px; }
-	.actions { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin: 26px 0 34px; font-size: 15px; }
+	.home-title { font-size: clamp(32px, 3.2vw, 44px); line-height: 1.12; max-width: 24ch; margin: 8px 0 0; }
+	.actions { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin: 28px 0 36px; font-size: 15px; }
 	.actions a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 5px; }
 	.actions a:hover { color: var(--text); text-decoration-color: var(--text); }
 	.actions .primary { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 8px; background: #ededed; color: #000; font-weight: 600; text-decoration: none; transition: background-color 160ms var(--ease); }
 	.actions .primary:hover { background: #fff; color: #000; }
-	/* Every group shares one column grid, so the list reads as one chart across its sections. */
+	.prose { margin-top: 0; }
 	.features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
 	.prose .feature { display: block; padding: 16px 18px; border: 1px solid var(--rule-strong); border-radius: 10px; text-decoration: none; transition: border-color 160ms var(--ease), background-color 160ms var(--ease); }
 	.prose .feature:hover { border-color: #4a4a4a; background: var(--raised); }
 	.feature b { display: block; font-family: var(--display); font-weight: 600; font-size: 15.5px; color: #fff; }
 	.feature span { display: block; margin-top: 4px; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+	.prose .status { margin-top: 32px; color: var(--text-2); }
 	@media (max-width: 600px) { .features { grid-template-columns: minmax(0, 1fr); } }
-	.modules { display: table; table-layout: fixed; width: 100%; margin-top: 10px; }
-	.modules td { padding: 8px 14px 8px 0; }
-	.modules .status { width: 26px; padding-top: 13px; color: var(--text-2); }
-	.modules .name { width: 34%; overflow-wrap: anywhere; }
-	/* Phones: each module's name sits above what it does, so neither squeezes the other. */
-	@media (max-width: 600px) {
-		.modules, .modules tbody, .modules tr, .modules td { display: block; width: auto; }
-		.modules tr { position: relative; padding: 10px 0 10px 26px; border-bottom: 1px solid var(--rule); }
-		.modules td { padding: 0; border: 0; }
-		.modules .status { position: absolute; left: 0; top: 17px; padding-top: 0; }
-		.modules .name { margin-bottom: 4px; }
-	}
-	.chunks { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin-bottom: 10px; }
-	.chunk { aspect-ratio: 1; border: 1.5px solid var(--rule-strong); border-radius: 2px; }
-	.chunk[data-level='full'] { background: var(--text); border-color: var(--text); }
-	.chunk[data-level='partial'] { background: linear-gradient(135deg, var(--text-2) 50%, transparent 50%); border-color: var(--text-2); }
-	.note a { color: var(--text); text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px; }
-	.note { font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
-	.note code { font-family: var(--mono); font-size: 12px; }
+	.note { font-size: 14px; line-height: 1.6; color: var(--text-2); }
+	.note code { font-family: var(--mono); font-size: 12.5px; }
 	.note strong { color: var(--text); }
 </style>
