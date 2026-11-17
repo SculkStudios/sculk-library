@@ -23,20 +23,11 @@ const section = sectionOf(entry.id);
 const editUrl = `https://github.com/SculkStudios/sculk-library/edit/dev/docs/src/content/docs/${entry.id}.mdx`;
 const { title, description, runs, support } = entry.data;
 
-// On screens without the margin, support reads as one sentence: only the exceptions are named.
-const phrases: Partial<Record<SupportLevel, string>> = { partial: 'partial on', none: 'not supported on', 'n/a': 'not applicable on' };
-const exceptions = support
-	? (Object.keys(phrases) as SupportLevel[])
-			.map((level) => ({ level, platforms: PLATFORMS.filter((platform) => support[platform].level === level).map((platform) => PLATFORM_LABELS[platform]) }))
-			.filter((group) => group.platforms.length > 0)
-			.map((group) => `${phrases[group.level]} ${group.platforms.join(' and ')}`)
+// On screens without the margin, the support line speaks for the platform chosen in the masthead.
+const levels: Record<SupportLevel, string> = { full: 'supported', partial: 'in part', none: 'not supported', 'n/a': 'not applicable' };
+const supportLines = support
+	? PLATFORMS.map((platform) => ({ platform, text: `On ${PLATFORM_LABELS[platform]}: ${support[platform].note ?? levels[support[platform].level]}.` }))
 	: [];
-const sentence = exceptions.join('; ');
-const supportLine = support
-	? exceptions.length === 0
-		? 'Runs on Paper, Folia, Canvas and Velocity.'
-		: `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`
-	: undefined;
 ---
 <Site title={title} description={description} sections={sections} current={entry.id}>
 	<article data-pagefind-body data-pagefind-meta={`section:${section ?? "Docs"}`}>
@@ -48,7 +39,7 @@ const supportLine = support
 ${entry.body ?? ''}`}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect><path d="M10.5 5.5V3.75A1.25 1.25 0 009.25 2.5h-5.5A1.25 1.25 0 002.5 3.75v5.5a1.25 1.25 0 001.25 1.25H5.5"></path></svg><span>Copy page</span></button>
 		</div>
 		{description && <p class="lede">{description}</p>}
-		{supportLine && <p class="support-line" data-pagefind-ignore>{supportLine}</p>}
+		{supportLines.length > 0 && <p class="support-line" data-pagefind-ignore>{supportLines.map((line) => <span data-platform={line.platform}>{line.text}</span>)}</p>}
 		<Toc headings={headings} inline />
 		<div class="prose">
 			<Content />

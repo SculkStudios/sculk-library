@@ -11,7 +11,8 @@ export function pagefind() {
 			'astro:build:done': async ({ dir, logger }) => {
 				const { createIndex, close } = await import('pagefind');
 				const site = fileURLToPath(dir);
-				const { index, errors } = await createIndex({});
+				// Code blocks make poor excerpts; their identifiers are still found through the prose around them.
+				const { index, errors } = await createIndex({ excludeSelectors: ['.expressive-code'] });
 				if (!index) throw new Error(`Pagefind could not start: ${errors.join(', ')}`);
 				const added = await index.addDirectory({ path: site });
 				if (added.errors.length) throw new Error(`Pagefind could not index the site: ${added.errors.join(', ')}`);

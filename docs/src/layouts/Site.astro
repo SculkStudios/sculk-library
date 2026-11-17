@@ -53,6 +53,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 		</div>
 		<Search />
 		<script>
+			// On phones each table row stacks, and every cell carries its column name to show beside it.
+			for (const table of document.querySelectorAll<HTMLTableElement>('.prose table')) {
+				const names = [...table.querySelectorAll('thead th')].map((th) => th.textContent?.trim() ?? '');
+				if (names.length < 2) continue;
+				for (const row of table.querySelectorAll('tbody tr')) [...row.children].forEach((cell, i) => cell.setAttribute('data-label', names[i] ?? ''));
+				table.classList.add('stacked');
+			}
 			// A table wider than the column scrolls, so keyboard users must be able to focus it to scroll it.
 			// Measured once the web fonts are in, and again on resize, since both change the width.
 			const focusScrollers = () => {
@@ -94,7 +101,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 				toggle.setAttribute('aria-label', open ? 'Close the contents' : 'Open the contents');
 				document.body.style.overflow = open ? 'hidden' : '';
 				const current = rail?.querySelector<HTMLElement>('[aria-current="page"]');
-				if (open && rail && current) rail.scrollTop = current.offsetTop - rail.clientHeight / 2;
+				const heading = current?.closest('ul')?.previousElementSibling as HTMLElement | null | undefined;
+				if (open && rail && heading) rail.scrollTop = heading.offsetTop - 12;
 			};
 			toggle?.addEventListener('click', () => setMenu(page?.dataset.menu !== 'open'));
 			document.addEventListener('keydown', (event) => {

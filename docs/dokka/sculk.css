@@ -39,6 +39,7 @@
 	--toc-hover-color: #0f0f0f;
 	--toc-link-hover-gradient: none;
 	--toc-button-hover-gradient: none;
+	--content-max-width: 920px;
 	--color-cd-keyword: #cba6f7;
 	--color-cd-keyword-alternative: #cba6f7;
 	--color-cd-function: #89b4fa;
@@ -56,7 +57,7 @@ body { background: #000; -webkit-font-smoothing: antialiased; }
 
 /* The header is the docs site's masthead: black with a hairline, no grey bar. */
 .navigation-wrapper, #navigation-wrapper { background: #000; border-bottom: 1px solid #1f1f1f; }
-.library-name--link { font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+.library-name--link { font-weight: 600; letter-spacing: -0.02em; color: #fff; }
 .library-version { color: #a1a1a1; font-size: 13px; }
 
 /* One theme only, so the theme switch has nothing to switch. */
@@ -86,3 +87,13 @@ a:hover { color: #fff; }
 /* Dokka hard-codes black for summaries in its light theme. */
 .brief-comment, .brief, .brief-comment .paragraph, .brief .paragraph { color: #a1a1a1; }
 .breadcrumbs .delimiter { color: #8f8f8f; }
+
+/* Colour belongs to support marks on this site, so declaration-kind icons are grey. */
+.toc--icon, .toc--link [class*='icon'], .main-content [class*='-icon'] { filter: grayscale(1) brightness(1.4); }
+
+/* Phones: Dokka paints the header controls and version row with text colours; keep them black. */
+@media (max-width: 899px) {
+	.navigation-controls, .library-version { background-color: #000; }
+}
+/* A signature scrolls rather than breaking inside a generic type. */
+.platform-hinted .content .symbol.monospace { white-space: pre; overflow-x: auto; }
