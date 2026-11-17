@@ -44,16 +44,28 @@ refuses throws, and none of the recipes passed stays registered.
 
 ## Every type
 
-| Spec | Makes |
+| Builder | Makes |
 | --- | --- |
 | `shaped(key, result) { rows(...); key(...) }` | Crafting in a pattern of up to 3 × 3 |
-| `RecipeSpec.Shapeless` | Crafting from 1 to 9 ingredients in any arrangement |
-| `RecipeSpec.Cooking` | Furnace, blast furnace, smoker or campfire; cooking time defaults to vanilla's for the block |
-| `RecipeSpec.Stonecutting` | The stonecutter |
-| `RecipeSpec.SmithingTransform` | Upgrading an item, keeping its components by default |
-| `RecipeSpec.SmithingTrim` | Armour trims; from 1.21.5 the recipe names its trim `pattern` |
-| `RecipeSpec.Transmute` | Changing an item's type while keeping its components, as dyeing a shulker box does |
-| `RecipeSpec.Brewing` | A brewing stand mix |
+| `shapeless(key, result) { ingredient(...) }` | Crafting from 1 to 9 ingredients in any arrangement |
+| `cooking(key, cooker, input, result) { ticks = ... }` | Furnace, blast furnace, smoker or campfire; cooking time defaults to vanilla's for the block |
+| `stonecutting(key, input, result)` | The stonecutter |
+| `smithingTransform(key, template, base, addition, result)` | Upgrading an item, keeping its components by default |
+| `smithingTrim(key, template, base, addition, pattern)` | Armour trims; from 1.21.5 the recipe names its trim `pattern` |
+| `transmute(key, input, material, result)` | Changing an item's type while keeping its components, as dyeing a shulker box does |
+| `brewing(key, input, ingredient, result)` | A brewing stand mix |
+
+Each builder returns the matching `RecipeSpec`, a plain value you can also construct directly.
+
+```kotlin
+val glass = shapeless(NamespacedKey(this, "tinted_glass"), item(Material.TINTED_GLASS)) {
+    ingredient(Ingredient.of(Material.GLASS))
+    ingredient(Ingredient.of(Material.AMETHYST_SHARD), count = 2)
+}
+val ingot = cooking(NamespacedKey(this, "sculk_ingot"), RecipeSpec.Cooker.BLASTING, Ingredient.of(Material.ECHO_SHARD), blade) {
+    experience = 1f
+}
+```
 
 Brewing mixes became ordinary recipes in 26.3; Sculk registers them the same way on every
 version.

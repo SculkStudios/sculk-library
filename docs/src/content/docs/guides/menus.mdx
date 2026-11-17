@@ -52,11 +52,14 @@ menus.open(player, counter, Counter())
 - `render` draws every slot from the state. It is cheap to call: item specs compare by value, so
   only slots whose spec changed are written, and unchanged slots keep their identity.
 - A click handler receives the `player`, the `state`, the `slot` and the `click` type, and calls
-  `update`, `close` or `open(otherMenu, state)`. Closing and opening happen after the click, as Paper
-  requires.
+  `update`, `refresh`, `close` or `open(otherMenu, state)`. Closing and opening happen after the
+  click, as Paper requires, and once a handler has asked for either, further clicks in that tick
+  run nothing, so a double click cannot buy twice.
 - A new title opens a new view: Paper cannot retitle an open inventory.
 - `paginate(slots, entries, page, icon) { entry -> ... }` lays a list out over slots and returns the
   `Page` shown (`number`, `count`, `hasNext`, `hasPrevious`), clamping a page that no longer exists.
+  `pager(page, previousSlot, nextSlot, previousIcon, nextIcon) { number -> ... }` adds the arrows,
+  each shown only while there is a page in its direction.
   `border` and `fill` draw around what the render already placed; `at(row, column)` names a slot.
 - Layouts: `MenuLayout.chest(1..6)`, `MenuLayout.HOPPER` and `MenuLayout.DISPENSER`.
 - `placeholders { player -> resolver }` fills [placeholders](/guides/placeholders/) in titles and
