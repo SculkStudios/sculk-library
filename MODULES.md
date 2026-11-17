@@ -63,6 +63,7 @@ planned module is in `REBUILD.md`.
 
 | Module | Capability | Depends on | Status |
 | --- | --- | --- | --- |
+| `sculk-npcs` | Player-shaped NPCs on Paper's Mannequin entity (1.21.9+): skins by UUID or textures, names, poses, equipment, click handlers on the player's thread, look-at on the NPC's own region, removal with a ResourceScope; UnsupportedCapability on 1.21.4 (ADR-0033) | items, paper | in progress |
 | `sculk-scenes` | Scenes over display entities: text, item and block nodes as immutable specs, diffed updates with client interpolation, fixed or following anchors, everyone or chosen viewers, per-viewer text as one entity per viewer; interaction entities, `sculk-effects` animation and a packet backend later (ADR-0032) | items, placeholders, paper | in progress |
 | `sculk-effects` | Animation engine (keyframes, easing, tracks), particle shapes and emitters, Adventure sound cues, post-effects, waypoints, visual budgets | text, paper | planned |
 | `sculk-resourcepack` | Pack descriptors and stack management, hosting SPI, configuration-phase sending, glyph metrics feed | text, paper | planned |

@@ -72,9 +72,11 @@ private const val HUMAN_DELAY_MILLIS = 200L
  *   `CLOSED id`, `TRADES id result` (each offer's result as `namexamount`, `|`-separated), `CHAT text`, `DIALOG title buttons inputs` (labels and `key:type`, each `|`-separated),
  *   `DIALOGCLOSED`, `DIALOGTAG tag dialogs` (`,`-separated keys), `ACTIONBAR text`, `BOSSBAR uuid ADD|REMOVE|UPDATE_TITLE|UPDATE_HEALTH title progress`,
  *   `DISPLAY id type x y z`, `DISPLAYDATA id index=kind:value...`, `DISPLAYMOVE id x y z`, `DISPLAYGONE id` (see EntityWatch),
+ *   `MANNEQUIN id uuid headYaw`, `MANNEQUINNAME id text`, `MANNEQUINDESC id text`, `MANNEQUINSKIN id textures`, `MANNEQUINHEAD id yaw`, `MANNEQUINGONE id` (see MannequinWatch),
  *   `TITLE title subtitle`, `TITLECLEARED`, `NAMETAG player prefix suffix`, `BELOWNAME player text`, `TAB header footer`, `SIDEBAR title lines` (lines top to bottom, `|`-separated, empty when none shows),
  *   `DISCONNECTED reason`;
  * - commands: `CLICK slot LEFT|RIGHT|SHIFT|DROP|HOTBAR n`, `CLOSE`, `COMMAND text`,
+ *   `ATTACK entityId` and `INTERACT entityId` (a left and a main-hand right click on an entity),
  *   `RENAME text` (an anvil's rename field), `TRADE index` (select a merchant offer), `DIALOGCLICK label key=value...` (each value typed as the dialog declares its input), `QUIT`.
  *
  * A slot's name is its item name or custom name in plain text, `#id` for an unnamed item, and the
@@ -98,6 +100,7 @@ fun main(args: Array<String>) {
 private class Bot(private val out: PrintStream) {
     private val plain = PlainTextComponentSerializer.plainText()
     private val entities = EntityWatch { fields -> emit(*fields.toTypedArray()) }
+    private val mannequins = MannequinWatch { fields -> emit(*fields.toTypedArray()) }
     private lateinit var session: ClientNetworkSession
     private val gone = CountDownLatch(1)
 
@@ -150,6 +153,8 @@ private class Bot(private val out: PrintStream) {
     }
 
     private fun received(packet: Packet) {
+        // Before the display watch, which consumes every entity add, data and remove packet.
+        mannequins.received(packet)
         if (entities.received(packet)) return
         when (packet) {
             is ClientboundLoginPacket -> emit("JOINED")
@@ -288,6 +293,8 @@ private class Bot(private val out: PrintStream) {
             "RENAME" -> session.send(ServerboundRenameItemPacket(parts.getOrElse(1) { "" }))
             "TRADE" -> session.send(ServerboundSelectTradePacket(parts[1].toInt()))
             "DIALOGCLICK" -> answer(parts[1], parts.drop(2).associate { it.substringBefore('=') to it.substringAfter('=') })
+            "ATTACK" -> session.send(MannequinWatch.attack(parts[1].toInt()))
+            "INTERACT" -> session.send(MannequinWatch.interact(parts[1].toInt()))
             "QUIT" -> return false
             else -> emit("ERROR", "unknown command '${parts[0]}'")
         }

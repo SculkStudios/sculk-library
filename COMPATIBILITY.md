@@ -78,7 +78,7 @@ Seed table from the jar scans (native since; states on older anchors). Only vers
 | Code of conduct event | 26.2 | Degraded: static server property only |
 | Post-processing effects | 26.3 b35 (`update` b159) | Unavailable |
 | Waypoint style and colour | 1.21.11 | Emulated hide-only through attributes on 1.21.6 to 1.21.10; Unavailable on 1.21.4 and 1.21.5, which have no waypoints |
-| Mannequins | 1.21.11 | Degraded through packet or armour-stand NPC |
+| Mannequins | 1.21.9 (first pinned: 1.21.11) | Unavailable on 1.21.4: `sculk-npcs` returns UnsupportedCapability; a packet NPC belongs to a later packet module |
 | Entity removal reason | 26.2 b109 | Degraded through `EntityRemoveEvent.getCause` |
 | `GameRules` registry | 1.21.11 | Legacy `GameRule` names |
 | Display entities, async teleport, chunk tickets, Folia schedulers, resource-pack stacking | 1.21, so every anchor | — |

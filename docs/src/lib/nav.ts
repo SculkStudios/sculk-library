@@ -63,7 +63,7 @@ export const CATEGORIES: readonly { id: string; label: string; icon: string; pag
 		id: 'interface',
 		label: 'Player UI',
 		icon: 'window',
-		pages: [{ id: 'guides/menus' }, { id: 'guides/dialogs' }, { id: 'guides/hud' }, { id: 'guides/scenes' }],
+		pages: [{ id: 'guides/menus' }, { id: 'guides/dialogs' }, { id: 'guides/hud' }, { id: 'guides/scenes' }, { id: 'guides/npcs' }],
 	},
 	{
 		id: 'content',

@@ -1,0 +1,172 @@
+---
+title: NPCs
+description: "Player-shaped NPCs with skins, names and click handlers, built on Minecraft's mannequin: no fake players and no packets."
+module: sculk-npcs
+since: '6.0'
+runs: entity
+support:
+  paper: { level: partial, note: 'every version but 1.21.4, which has no mannequins and returns UnsupportedCapability' }
+  folia: { level: full }
+  canvas: { level: full }
+  velocity: { level: n/a, note: 'not applicable on a proxy' }
+---
+
+import { Aside } from '~/components/mdx';
+
+`sculk-npcs` (package `studio.sculk.npc`) spawns NPCs as mannequins, the player-shaped entity
+Minecraft added in 1.21.9. A mannequin is a real entity, so there is no fake player in the tab list
+and no packet to keep up with when Minecraft updates.
+
+```kotlin title="build.gradle.kts"
+dependencies {
+    implementation("studio.sculk:sculk-npcs:6.0.0-SNAPSHOT")
+}
+```
+
+The module is experimental: its API may change in a minor release. Opt in where you use it, with
+`@OptIn(SculkExperimental::class)` on a declaration or `@file:OptIn(SculkExperimental::class)` at
+the top of a file.
+
+## An NPC
+
+```kotlin
+import org.bukkit.Material
+import studio.sculk.getOrThrow
+import studio.sculk.item.item
+import studio.sculk.npc.NpcSlot
+import studio.sculk.npc.Npcs
+import studio.sculk.npc.Skin
+import studio.sculk.npc.npc
+
+val guide = npc {
+    name("<primary>Guide <name>", "name" to "Ada")
+    description("<muted>Right-click for help")
+    skin = Skin.player(guideSkinOwner)
+    equip(NpcSlot.MAIN_HAND, item(Material.BOOK))
+    lookAtPlayers()
+    onRightClick { click -> click.player.sendRichMessage("<green>Welcome to the server!") }
+}
+
+// in start():
+val npcs = Npcs(sculk)
+val spawned = npcs.spawn(spawnPoint, guide).getOrThrow()
+```
+
+An `NpcSpec` is immutable: spawn the same one as often as you like, and make variants with
+`guide.with { name("<primary>Captain") }`. `spawn` suspends, so call it from a coroutine in a Sculk
+scope, such as `start()` or `sculk.scope.launch { }`. It returns a `SculkResult<Npc>`.
+
+## The name and the line under it
+
+`name` and `description` are templates rendered with the `Text` you give `Npcs`, so theme styles
+work in them. Values go in as plain text and are never read as markup: a player called `<red>Bob`
+shows as exactly that.
+
+Without `description`, the mannequin shows Minecraft's own "NPC" label under the name.
+`hideDescription()` removes the line. Leave out `name` for an NPC with no name at all.
+
+Every viewer sees the same name. A mannequin has one name, and text that differs per viewer would
+need packets.
+
+## Skins
+
+| Skin | What it shows |
+| --- | --- |
+| `Skin.Default` | Minecraft's default mannequin skin. The default for a spec. |
+| `Skin.player(uuid)` | That player's skin. Sculk looks it up once, off the game threads, and reuses it for every NPC with the same UUID. The NPC wears the default skin until the answer arrives, and keeps it if there is none. |
+| `Skin.textures(value, signature)` | A `textures` profile property, shown from the first tick with no lookup. |
+| `Skin.of(profile)` | Whatever a `PlayerProfile` carries: its textures if it has them, otherwise its player's skin. |
+
+For textures from a config file, use `Skin.parse(value, signature)`. It returns an `InvalidInput`
+failure for text that is not a Base64 `textures` property, where `Skin.textures` throws.
+
+<Aside type="caution">
+  An offline-mode server that is not behind a proxy may not be able to look up a player's skin.
+  Use `Skin.textures` there: copy the value and signature from a site that shows a player's
+  profile, or from `player.playerProfile` while they are online.
+</Aside>
+
+## How it looks and behaves
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `pose` | `NpcPose.STANDING` | Also `SNEAKING`, `SWIMMING`, `GLIDING` and `SLEEPING`. The NPC keeps it. |
+| `mainHand` | `MainHand.RIGHT` | Which hand holds the main-hand item. |
+| `equip(slot, item)` | nothing | An `ItemSpec` in `MAIN_HAND`, `OFF_HAND`, `HEAD`, `CHEST`, `LEGS` or `FEET`. Players cannot take it and the NPC never drops it. |
+| `collidable` | `false` | Whether players and mobs bump into it. |
+| `invulnerable` | `true` | Whether nothing can hurt it. |
+| `silent` | `true` | Whether it makes no sounds. |
+| `immovable` | `true` | Whether nothing can push it or knock it back. |
+
+An item the server cannot build, such as a material that is not an item, makes `spawn` return an
+`InvalidInput` failure before anything is spawned.
+
+## Clicks
+
+```kotlin
+val banker = npc {
+    name("<primary>Banker")
+    onRightClick { click -> menus.open(click.player, bank, BankState()) }
+    onLeftClick { click -> click.player.sendRichMessage("<muted>Right-click to bank.") }
+}
+```
+
+- A handler runs on the clicking player's thread: the main thread on Paper, the player's region
+  thread on Folia and Canvas. It can open a menu or a dialog straight away.
+- `onClick` takes both buttons in one handler; `click.button` says which, and `click.sneaking`
+  whether the player was sneaking.
+- A hit does no damage and no knockback. Only main-hand right clicks count, so one click never runs
+  the handler twice.
+- A player's clicks with one button on one NPC that come closer together than `clickCooldown`
+  (200 milliseconds by default) count once. Set it to `Duration.ZERO` to count every click.
+- Clicks count even when another plugin, such as a spawn protection, cancelled the click first.
+
+## Looking at players
+
+`lookAtPlayers(range = 8.0, everyTicks = 2)` turns the NPC's head towards the nearest player within
+`range` blocks. With nobody in range it turns back to the way it was spawned facing.
+
+Each NPC checks for itself, on its own thread, and only looks at players that thread also owns. It
+never scans every player online. On Folia and Canvas a player standing next to an NPC is almost
+always in the same region; one who is not is ignored until they are.
+
+## How long an NPC lives
+
+An NPC stays until one of these happens:
+
+- you call `npc.despawn()`, which suspends until it is gone, or `npc.close()`, which works from any
+  thread;
+- the scope it was spawned into closes: `npcs.spawn(at, spec, scope)` takes any `ResourceScope`,
+  and the default is the plugin's;
+- the plugin disables;
+- something else removes the entity, such as `/kill`.
+
+Mannequins are never saved with the world. If the server stops or crashes, they are gone when it
+starts again, and your plugin spawns them anew. To move an NPC, despawn it and spawn it again
+where it should stand.
+
+While an NPC lives, Sculk keeps its chunk loaded, so the NPC is not lost when players walk away.
+Every chunk with an NPC in it stays loaded.
+
+`npc.entity` is the mannequin itself, for anything the spec does not cover. Change it only on its
+own thread, inside `withEntity(npc.entity) { }`, and never teleport or remove it directly.
+
+## Older servers
+
+Mannequins arrived in Minecraft 1.21.9. Paper 1.21.11 and every 26.x release have them, and so do
+Folia and Canvas. On 1.21.4, `npcs.isAvailable` is false and `spawn` returns an
+`UnsupportedCapability` failure. `Npcs` registers nothing there, so creating one costs nothing:
+
+```kotlin
+when (val result = npcs.spawn(spawnPoint, guide)) {
+    is SculkResult.Success -> logger.info("The guide is waiting at spawn.")
+    is SculkFailure -> logger.warning(result.describe())
+}
+```
+
+<Aside>
+  Sculk's `integration-tests/npcs` suite spawns NPCs next to a real client on every supported Paper
+  version, Folia and Canvas. It checks the skin, name and line the client sees, right and left
+  clicks on the player's thread, the head following the player, and removal when the scope
+  closes. On 1.21.4 it checks the failure instead.
+</Aside>

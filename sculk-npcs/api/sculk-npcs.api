@@ -1,0 +1,181 @@
+public final class studio/sculk/npc/LookAt {
+	public static final field Companion Lstudio/sculk/npc/LookAt$Companion;
+	public static final field MAX_RANGE D
+	public static final field MAX_TICKS J
+	public fun <init> ()V
+	public fun <init> (DJ)V
+	public synthetic fun <init> (DJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEveryTicks ()J
+	public final fun getRange ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/npc/LookAt$Companion {
+}
+
+public final class studio/sculk/npc/Npc : studio/sculk/SculkHandle {
+	public fun close ()V
+	public final fun despawn (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getEntity ()Lorg/bukkit/entity/LivingEntity;
+	public final fun getId ()Ljava/util/UUID;
+	public final fun getSpec ()Lstudio/sculk/npc/NpcSpec;
+	public final fun isSpawned ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/npc/NpcBuilder {
+	public final fun description (Ljava/lang/String;[Lkotlin/Pair;)V
+	public final fun equip (Lstudio/sculk/npc/NpcSlot;Lstudio/sculk/item/ItemSpec;)V
+	public final fun getClickCooldown-UwyO8pc ()J
+	public final fun getCollidable ()Z
+	public final fun getImmovable ()Z
+	public final fun getInvulnerable ()Z
+	public final fun getMainHand ()Lorg/bukkit/inventory/MainHand;
+	public final fun getPose ()Lstudio/sculk/npc/NpcPose;
+	public final fun getSilent ()Z
+	public final fun getSkin ()Lstudio/sculk/npc/Skin;
+	public final fun hideDescription ()V
+	public final fun lookAtPlayers (DJ)V
+	public static synthetic fun lookAtPlayers$default (Lstudio/sculk/npc/NpcBuilder;DJILjava/lang/Object;)V
+	public final fun name (Ljava/lang/String;[Lkotlin/Pair;)V
+	public final fun onClick (Lkotlin/jvm/functions/Function1;)V
+	public final fun onLeftClick (Lkotlin/jvm/functions/Function1;)V
+	public final fun onRightClick (Lkotlin/jvm/functions/Function1;)V
+	public final fun setClickCooldown-LRDsOJo (J)V
+	public final fun setCollidable (Z)V
+	public final fun setImmovable (Z)V
+	public final fun setInvulnerable (Z)V
+	public final fun setMainHand (Lorg/bukkit/inventory/MainHand;)V
+	public final fun setPose (Lstudio/sculk/npc/NpcPose;)V
+	public final fun setSilent (Z)V
+	public final fun setSkin (Lstudio/sculk/npc/Skin;)V
+}
+
+public final class studio/sculk/npc/NpcClick {
+	public final fun getButton ()Lstudio/sculk/npc/NpcClick$Button;
+	public final fun getNpc ()Lstudio/sculk/npc/Npc;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun getSneaking ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/npc/NpcClick$Button : java/lang/Enum {
+	public static final field LEFT Lstudio/sculk/npc/NpcClick$Button;
+	public static final field RIGHT Lstudio/sculk/npc/NpcClick$Button;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/npc/NpcClick$Button;
+	public static fun values ()[Lstudio/sculk/npc/NpcClick$Button;
+}
+
+public abstract interface annotation class studio/sculk/npc/NpcDsl : java/lang/annotation/Annotation {
+}
+
+public final class studio/sculk/npc/NpcPose : java/lang/Enum {
+	public static final field GLIDING Lstudio/sculk/npc/NpcPose;
+	public static final field SLEEPING Lstudio/sculk/npc/NpcPose;
+	public static final field SNEAKING Lstudio/sculk/npc/NpcPose;
+	public static final field STANDING Lstudio/sculk/npc/NpcPose;
+	public static final field SWIMMING Lstudio/sculk/npc/NpcPose;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/npc/NpcPose;
+	public static fun values ()[Lstudio/sculk/npc/NpcPose;
+}
+
+public final class studio/sculk/npc/NpcSlot : java/lang/Enum {
+	public static final field CHEST Lstudio/sculk/npc/NpcSlot;
+	public static final field FEET Lstudio/sculk/npc/NpcSlot;
+	public static final field HEAD Lstudio/sculk/npc/NpcSlot;
+	public static final field LEGS Lstudio/sculk/npc/NpcSlot;
+	public static final field MAIN_HAND Lstudio/sculk/npc/NpcSlot;
+	public static final field OFF_HAND Lstudio/sculk/npc/NpcSlot;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/npc/NpcSlot;
+	public static fun values ()[Lstudio/sculk/npc/NpcSlot;
+}
+
+public final class studio/sculk/npc/NpcSpec {
+	public static final field Companion Lstudio/sculk/npc/NpcSpec$Companion;
+	public final fun getClickCooldown-UwyO8pc ()J
+	public final fun getCollidable ()Z
+	public final fun getDescription ()Lstudio/sculk/npc/NpcText;
+	public final fun getEquipment ()Ljava/util/Map;
+	public final fun getImmovable ()Z
+	public final fun getInvulnerable ()Z
+	public final fun getLookAt ()Lstudio/sculk/npc/LookAt;
+	public final fun getMainHand ()Lorg/bukkit/inventory/MainHand;
+	public final fun getName ()Lstudio/sculk/npc/NpcText;
+	public final fun getOnLeftClick ()Lkotlin/jvm/functions/Function1;
+	public final fun getOnRightClick ()Lkotlin/jvm/functions/Function1;
+	public final fun getPose ()Lstudio/sculk/npc/NpcPose;
+	public final fun getShowDescription ()Z
+	public final fun getSilent ()Z
+	public final fun getSkin ()Lstudio/sculk/npc/Skin;
+	public fun toString ()Ljava/lang/String;
+	public final fun with (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/npc/NpcSpec;
+}
+
+public final class studio/sculk/npc/NpcSpec$Companion {
+	public final fun getMAX_COOLDOWN-UwyO8pc ()J
+}
+
+public final class studio/sculk/npc/NpcSpecKt {
+	public static final fun npc (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/npc/NpcSpec;
+}
+
+public final class studio/sculk/npc/NpcText {
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTemplate ()Ljava/lang/String;
+	public final fun getValues ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/npc/Npcs {
+	public fun <init> (Lstudio/sculk/paper/PaperRuntime;Lstudio/sculk/text/Text;)V
+	public synthetic fun <init> (Lstudio/sculk/paper/PaperRuntime;Lstudio/sculk/text/Text;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getSpawned ()Ljava/util/Collection;
+	public final fun isAvailable ()Z
+	public final fun npc (Lorg/bukkit/entity/Entity;)Lstudio/sculk/npc/Npc;
+	public final fun spawn (Lorg/bukkit/Location;Lstudio/sculk/npc/NpcSpec;Lstudio/sculk/ResourceScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun spawn$default (Lstudio/sculk/npc/Npcs;Lorg/bukkit/Location;Lstudio/sculk/npc/NpcSpec;Lstudio/sculk/ResourceScope;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract class studio/sculk/npc/Skin {
+	public static final field Companion Lstudio/sculk/npc/Skin$Companion;
+}
+
+public final class studio/sculk/npc/Skin$Companion {
+	public final fun of (Lcom/destroystokyo/paper/profile/PlayerProfile;)Lstudio/sculk/npc/Skin;
+	public final fun parse (Ljava/lang/String;Ljava/lang/String;)Lstudio/sculk/SculkResult;
+	public static synthetic fun parse$default (Lstudio/sculk/npc/Skin$Companion;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public final fun player (Ljava/util/UUID;)Lstudio/sculk/npc/Skin;
+	public final fun textures (Ljava/lang/String;Ljava/lang/String;)Lstudio/sculk/npc/Skin;
+	public static synthetic fun textures$default (Lstudio/sculk/npc/Skin$Companion;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/npc/Skin;
+}
+
+public final class studio/sculk/npc/Skin$Default : studio/sculk/npc/Skin {
+	public static final field INSTANCE Lstudio/sculk/npc/Skin$Default;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/npc/Skin$OfPlayer : studio/sculk/npc/Skin {
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getUuid ()Ljava/util/UUID;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/npc/Skin$Textures : studio/sculk/npc/Skin {
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSignature ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

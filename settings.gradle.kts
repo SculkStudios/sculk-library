@@ -64,6 +64,7 @@ include(
     ":sculk-scenes",
     ":sculk-world",
     ":sculk-config-admin",
+    ":sculk-npcs",
 )
 
 // Never published. Each proves something about the published modules on a real server.
@@ -85,6 +86,7 @@ include(
     ":integration-tests:examples",
     ":integration-tests:items",
     ":integration-tests:menus",
+    ":integration-tests:npcs",
     ":integration-tests:recipes",
     ":integration-tests:registry",
     ":integration-tests:scenes",

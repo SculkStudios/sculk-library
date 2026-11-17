@@ -120,7 +120,7 @@ public object PaperCapabilities {
         Probe(DIALOGS, "io.papermc.paper.dialog.Dialog", "Minecraft 1.21.7"),
         Probe(CONFIGURATION_PHASE, "io.papermc.paper.connection.PlayerConfigurationConnection", "Minecraft 1.21.7"),
         Probe(DATAPACK_DISCOVERY, "io.papermc.paper.datapack.DatapackRegistrar", "Minecraft 1.21.4"),
-        Probe(MANNEQUINS, "org.bukkit.entity.Mannequin", "Minecraft 1.21.11"),
+        Probe(MANNEQUINS, "org.bukkit.entity.Mannequin", "Minecraft 1.21.9"),
         Probe(REMOVAL_REASONS, "io.papermc.paper.entity.RemovalReason", "Minecraft 26.2 (build 109)"),
         Probe(POST_EFFECTS, "io.papermc.paper.entity.PlayerPostEffects", "Minecraft 26.3"),
     )

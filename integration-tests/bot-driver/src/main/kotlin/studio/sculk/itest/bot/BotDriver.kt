@@ -132,6 +132,12 @@ class BotDriver(private val name: String, port: Int) : AutoCloseable {
 
     fun command(text: String) = send("COMMAND", text)
 
+    /** Hits entity [id], as a left click on it. */
+    fun attack(id: Int) = send("ATTACK", id.toString())
+
+    /** Uses entity [id] with the main hand, as a right click on it. */
+    fun interact(id: Int) = send("INTERACT", id.toString())
+
     private fun send(vararg fields: String) {
         input.println(fields.joinToString("\t"))
     }

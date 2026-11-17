@@ -51,4 +51,5 @@ consequences matter more than exhaustive option surveys.
 | 0030 | [Presentation as a per-player render graph with scoreboard leases](0030-presentation-render-graph-and-scoreboard-leases.md) | Accepted |
 | 0031 | [A custom documentation site on Astro, without Starlight](0031-a-custom-docs-site-on-astro.md) | Accepted |
 | 0032 | [Scenes over display entities](0032-scenes-over-display-entities.md) | Proposed |
+| 0033 | [NPCs on Paper's mannequins](0033-npcs-on-mannequins.md) | Proposed |
 | 0034 | [Game rules, world clocks and timelines in sculk-world](0034-world-rules-clocks-and-timelines.md) | Proposed |
