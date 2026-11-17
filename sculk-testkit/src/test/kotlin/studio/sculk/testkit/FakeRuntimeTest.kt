@@ -26,7 +26,7 @@ class FakeRuntimeTest {
     }
 
     @Test
-    fun `a module installs once`() {
+    fun `installing a module twice is refused`() {
         val runtime = FakeRuntime()
         val module = object : SculkModule {
             override val id = "test-module"
@@ -42,11 +42,20 @@ class FakeRuntimeTest {
     }
 
     @Test
-    fun `the platform decides how ownership behaves`() {
+    fun `on Folia an entity's thread does not own the global context`() {
         val zombie = FakeEntity("Zombie")
         val folia = FakeRuntime(platform = FakeRuntime.folia())
         val result = folia.executor.run { withEntity(zombie) { folia.executor.owns(studio.sculk.execution.ExecutionContext.Global) } }
         assertEquals(false, (result as studio.sculk.execution.EntityResult.Ran).value)
+    }
+
+    @Test
+    fun `withEntity on a removed entity reports Gone instead of running`() {
+        val zombie = FakeEntity("Zombie")
+        val runtime = FakeRuntime()
+        runtime.executor.remove(zombie)
+        val result = runtime.executor.run { withEntity(zombie) { "ran" } }
+        assertTrue(result is studio.sculk.execution.EntityResult.Gone, "expected Gone, got $result")
     }
 
     @Test
@@ -103,7 +112,7 @@ class FakeRuntimeTest {
     }
 
     @Test
-    fun `diagnostics describe the runtime`() {
+    fun `diagnostics name the platform and its Minecraft version`() {
         val runtime = FakeRuntime(platform = FakeRuntime.canvas())
         runtime.start()
         val text = runtime.diagnostics().render()

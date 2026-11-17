@@ -1,5 +1,6 @@
 package studio.sculk.paper
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import org.bukkit.Bukkit
 import org.bukkit.event.Cancellable
@@ -36,9 +37,9 @@ public class PaperEvents internal constructor(private val runtime: PaperRuntime)
 
     /**
      * Observers run at MONITOR, when every decision is final. Each starts at once on the thread that
-     * fired the event, which owns it, and resumes after a suspension in the event's own context:
-     * the player's or entity's for their events, the block's region for block events, the global
-     * region otherwise.
+     * fired the event and resumes after a suspension in the event's own context: the player's or
+     * entity's for their events, the block's region for block events, the global region otherwise.
+     * An asynchronous event, such as chat, belongs to no game thread: its observer resumes in Async.
      */
     override fun <E : Any> observe(type: KClass<E>, includeCancelled: Boolean, handler: suspend (E) -> Unit): SculkHandle =
         register(type, BukkitPriority.MONITOR, includeCancelled) { event ->
@@ -69,12 +70,20 @@ public class PaperEvents internal constructor(private val runtime: PaperRuntime)
     private inline fun report(type: KClass<*>, action: () -> Unit) {
         try {
             action()
+        } catch (cancelled: CancellationException) {
+            // A closing scope or a player who left cancels an observer; that is not a failure.
+            throw cancelled
         } catch (failure: Exception) {
             runtime.log.error("A ${type.simpleName} handler in ${runtime.name} failed.", failure)
         }
     }
 
-    private fun contextOf(event: Any): ExecutionContext = when (event) {
+    private fun contextOf(event: Any): ExecutionContext = when {
+        (event as? Event)?.isAsynchronous == true -> ExecutionContext.Async
+        else -> ownerOf(event)
+    }
+
+    private fun ownerOf(event: Any): ExecutionContext = when (event) {
         is PlayerEvent -> ExecutionContext.Entity(event.player.ref)
         is EntityEvent -> ExecutionContext.Entity(event.entity.ref)
         is VehicleEvent -> ExecutionContext.Entity(event.vehicle.ref)

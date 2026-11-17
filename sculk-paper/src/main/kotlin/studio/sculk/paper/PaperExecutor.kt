@@ -55,6 +55,7 @@ public class PaperExecutor(private val plugin: Plugin, override val platform: St
 
     override fun schedule(context: ExecutionContext, delayTicks: Long, work: SculkExecutor.Work): SculkHandle {
         accept(context)
+        // Paper's schedulers refuse delays under one tick; async work has no tick and may start now.
         val delay = delayTicks.coerceAtLeast(1)
         return tasks.submit(work, repeating = false) { task ->
             val consumer = Consumer<ScheduledTask> { task.run() }
@@ -62,6 +63,10 @@ public class PaperExecutor(private val plugin: Plugin, override val platform: St
                 ExecutionContext.Global -> Bukkit.getGlobalRegionScheduler().runDelayed(plugin, consumer, delay).canceller()
 
                 ExecutionContext.Async -> {
+                    if (delayTicks <= 0) {
+                        async.dispatch(EmptyCoroutineContext, Runnable(task::run))
+                        return@submit {}
+                    }
                     val future = timer.schedule({
                         async.dispatch(EmptyCoroutineContext, Runnable(task::run))
                     }, millis(delay), TimeUnit.MILLISECONDS)

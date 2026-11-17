@@ -75,6 +75,8 @@ public class FakeExecutor(
 
     override fun owns(context: ExecutionContext): Boolean {
         val current = running.get() ?: return false
+        // As on Paper, nothing owns a removed entity, so withEntity reports Gone instead of running.
+        if (context is ExecutionContext.Entity && synchronized(lock) { context.entity.id in removed }) return false
         return when (model) {
             ThreadModel.SINGLE_THREAD -> (context == ExecutionContext.Async) == (current == ExecutionContext.Async)
             ThreadModel.REGIONIZED -> sameOwner(current, context)
