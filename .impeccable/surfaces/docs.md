@@ -8,35 +8,43 @@ related_targets: []
 # Sculk docs site
 
 Scope: the whole documentation site at docs.sculk.studio (home, guides, concepts, reference,
-changelog). Mode: Read. Audience and job: see docs/PRODUCT.md. Build path: code-led. Chosen
-sketch: .impeccable/mocks/decision/atlas.html (the owner selected it on 2026-11-17).
+roadmap). Mode: Read. Audience and job: see docs/PRODUCT.md. Build path: code-led. Reference set
+chosen by the owner: the Vercel, Next.js, Linear and Bun docs. Design system: docs/DESIGN.md.
 
 ## Direction contract
 
-THESIS: The API as charted territory. Every page answers "does this work on my server, and on which
-thread?" with a map-legend rail, an ownership map and support marks; it refuses the Starlight/PaperMC
-silhouette (stock header, filled-pill sidebar, coloured callout boxes, centred hero over icon cards).
+THESIS: A quiet monochrome reference. Every page answers "does this work on my server, and on which
+thread?" in the same places: support marks, a "Where it runs" ownership map and one Platform control
+that re-marks the whole site. Everything else stays white and grey so those answers are the only
+colour on the page.
 
-OWN-WORLD: OLED true-black ground (#000) with a 16px chunk grid at very low contrast in the frame
-only; near-black sheet for reading; bone text #e6e2d6; terracotta #f0954f (brightened from #c9824a at the owner's request, 2026-11-17: the first build read dull on OLED) means "you are here" and
-nothing else; teal #3e8f8a and violet #9b8fd6 mean regions (player/region vs global). Archivo (wide,
-tight) for display, Atkinson Hyperlegible Next for reading, JetBrains Mono for code and numbers.
-Support and stability are marks first (filled, half, hollow squares), colour second. No glow.
+OWN-WORLD: OLED true black (#000) as the one ground for masthead, rail, column and margin; no hue on
+any region or panel. Contained objects (code, cards, asides, the search dialog) sit on neutral
+near-black fills behind 1px hairlines. Plain white text (#ffffff headings, #ededed body, #a1a1a1 and
+#8f8f8f secondary), never blue-tinted. Poppins for all text and headings; JetBrains Mono for code,
+versions and keys. Catppuccin Mocha (the owner's editor theme) inside code blocks only, upright, at
+a minimum syntax contrast of 7.5. Colour appears only as status: green full, yellow partial, red
+none, on round support marks and the matching aside icons. No shadows except the search dialog.
 
 STORY: A Kotlin plugin developer finds an API, sees at once where it runs and on which platforms and
 versions it holds, copies a snippet that compiles, and trusts Sculk because the docs never overclaim.
 
-FIRST VIEWPORT: masthead with chunk-grid mark, search (Ctrl K) and the Platform and Version
-selectors; legend rail left with the current page pinned; the reading sheet with breadcrumb, wide
-H1, lede, version/module meta and page actions; the right margin with the "where it runs" chunk map,
-the support legend and the on-this-page list. On the home page the same frame carries a module atlas:
-every module as a legend row with its stability mark. Per-platform marks per module are omitted until MODULES.md records per-platform support; inventing them would break PRODUCT.md principle 1. The layout centres rail, column and margin as one composition (owner, 2026-11-17).
+FIRST VIEWPORT: a sticky masthead with the Sculk Studio mark and name, search (Ctrl K) and the
+Platform and Version controls; the rail on the left in familiar feature categories ("Setup", "Core
+concepts", "Commands and events", "Text and configs", "Player UI", "Items and content", "Reference"),
+each with a small line icon, the current page filled grey and scrolled into view; the column with
+breadcrumb, H1, Since and Module meta, Edit on GitHub and a Copy page button; the right margin with
+"Where it runs", "Support" and "On this page". On the home page the column carries the title, lede,
+one white "Install Sculk" button with two text links, a Kotlin sample, "What you can build" feature
+cards and every module with its status mark; the margin carries the module status squares, the
+release status, "Runs on" and "Start here". Rail, column and margin are centred as one composition.
 
-FORM: Minecraft filled maps and the map-art palette, candidate 3 of 7 on the ordered list.
-seed: 24ef659d885c8af1
-Raises kept: states as marks (cutting bench); one Platform control re-marks the whole page (Miura
-sheet); tabular data-density numerals (datamatics); colour rationed by role (Bauhaus); sections cut
-as blocks with clear gaps (cloud quarry); each API shows the version it arrived in (sticker case).
-Signature interaction: choosing a platform re-marks every support square on the page in one pass.
+FORM: the monochrome developer-docs family of Vercel, Next.js, Linear and Bun: one dark ground,
+hairlines, white type, grey secondary text, gently rounded outlined controls.
+Raises kept: states as marks whose shape carries the meaning; one Platform control re-marks the
+whole site; tabular mono numerals for versions; each API shows the version it arrived in; section
+headings carry # links; plain-word rail tags ("Partial", "Unsupported") for the chosen platform.
+Signature interaction: choosing a platform re-tags the rail and highlights its support row on every
+page in one pass.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

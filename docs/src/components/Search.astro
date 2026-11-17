@@ -102,6 +102,8 @@
 	});
 	input?.addEventListener('input', () => run(input.value));
 	input?.addEventListener('keydown', (event) => {
+		// Closed here as well: Chrome can withhold a modal dialog's own Escape close until the next user gesture.
+		if (event.key === 'Escape') { event.preventDefault(); dialog?.close(); }
 		if (event.key === 'ArrowDown') { event.preventDefault(); select(selected + 1); }
 		if (event.key === 'ArrowUp') { event.preventDefault(); select(selected - 1); }
 		if (event.key === 'Enter') {
