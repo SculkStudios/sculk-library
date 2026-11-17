@@ -1,5 +1,6 @@
 plugins {
     id("sculk.servers")
+    id("sculk.api-reference")
 }
 
 group = "studio.sculk"
@@ -9,3 +10,4 @@ subprojects {
     group = rootProject.group
     version = rootProject.version
 }
+

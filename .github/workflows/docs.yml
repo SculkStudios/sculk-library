@@ -3,8 +3,10 @@ name: Deploy Docs
 on:
   push:
     branches: [main]
+    # The API reference is generated from the modules' KDoc, so a source change redeploys too.
     paths:
       - 'docs/**'
+      - 'sculk-*/src/main/**'
   workflow_dispatch:
 
 permissions:
@@ -26,6 +28,18 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
+
+      - name: Set up Java
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Generate the API reference
+        run: ./gradlew syncApiReference
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0

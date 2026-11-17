@@ -21,6 +21,34 @@ tasks.named("check") {
     dependsOn("checkLicense")
 }
 
+// Dokka reads a module's summary from a Markdown file whose first heading names the module, so the
+// Gradle description is written into one rather than kept twice.
+val dokkaModulePage = tasks.register("writeDokkaModulePage") {
+    val page = layout.buildDirectory.file("dokka-includes/module.md")
+    val module = project.name
+    val summary = provider { project.description.orEmpty() }
+    inputs.property("summary", summary)
+    outputs.file(page)
+    doLast { page.get().asFile.writeText("# Module $module\n\n${summary.get()}\n") }
+}
+
+dokka {
+    moduleName = project.name
+    dokkaSourceSets.configureEach {
+        includes.from(dokkaModulePage)
+        sourceLink {
+            localDirectory = layout.projectDirectory.dir("src/main/kotlin")
+            remoteUrl("https://github.com/SculkStudios/sculk-library/tree/dev/${project.name}/src/main/kotlin")
+            remoteLineSuffix = "#L"
+        }
+    }
+    pluginsConfiguration.html {
+        customStyleSheets.from(isolated.rootProject.projectDirectory.file("docs/dokka/sculk.css"))
+        homepageLink = "https://docs.sculk.studio/"
+        footerMessage = "Sculk Studio is MIT licensed. Not an official Minecraft product."
+    }
+}
+
 mavenPublishing {
     configure(KotlinJvm(javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml"), sourcesJar = SourcesJar.Sources()))
     publishToMavenCentral(automaticRelease = true)

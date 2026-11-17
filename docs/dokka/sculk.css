@@ -1,1 +1,88 @@
-/* Sculk docs styling for the Dokka API reference; filled in below. */
+/*
+ * The API reference in the docs site's own look: one true-black ground, white and grey type,
+ * Poppins for text and JetBrains Mono for code. Dokka's light and dark themes are both mapped to
+ * it, so a reader's stored theme preference cannot bring back the default palette.
+ */
+@font-face { font-family: 'Poppins'; font-weight: 400; font-display: swap; src: url('/fonts/poppins-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 500; font-display: swap; src: url('/fonts/poppins-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 600; font-display: swap; src: url('/fonts/poppins-latin-600-normal.woff2') format('woff2'); }
+
+:root,
+.theme-dark {
+	color-scheme: dark;
+	--dokka-logo-image-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect x='.75' y='.75' width='24.5' height='24.5' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3Cpath d='M9 1v24M17 1v24M1 9h24M1 17h24' stroke='%23fff' stroke-opacity='.35'/%3E%3Crect x='9.5' y='9.5' width='7' height='7' fill='%23ededed'/%3E%3C/svg%3E");
+	--dokka-logo-height: 26px;
+	--dokka-logo-width: 26px;
+	--font-family-default: 'Poppins', system-ui, sans-serif;
+	--font-family-mono: 'JetBrains Mono', ui-monospace, monospace;
+	--color-background: #000;
+	--color-background-page: #000;
+	--color-background-page-dt: #000;
+	--color-background-nav: #000;
+	--color-background-nav-dt: #000;
+	--color-background-footer: #000;
+	--color-background-footer-dt: #000;
+	--color-background-hover: #141414;
+	--color-background-code-block: #121212;
+	--color-background-inline-code: #141414;
+	--color-text: #ededed;
+	--color-text-dt: #ededed;
+	--text-color: #ededed;
+	--color-text-light: #a1a1a1;
+	--color-text-light-dt: #a1a1a1;
+	--text-outline: #2e2e2e;
+	--color-key-blue: #ededed;
+	--color-key-blue-hover: #fff;
+	--color-key-blue-50: rgba(237, 237, 237, 0.5);
+	--focus-outline: #ededed;
+	--toc-color: #a1a1a1;
+	--toc-hover-color: #0f0f0f;
+	--toc-link-hover-gradient: none;
+	--toc-button-hover-gradient: none;
+	--color-cd-keyword: #cba6f7;
+	--color-cd-keyword-alternative: #cba6f7;
+	--color-cd-function: #89b4fa;
+	--color-cd-function-alternative: #89b4fa;
+	--color-cd-builtin: #f9e2af;
+	--color-cd-builtin-alternative: #f9e2af;
+	--color-cd-number: #fab387;
+	--color-cd-number-alternative: #fab387;
+	--color-cd-operator: #94e2d5;
+	--color-cd-operator-alternative: #94e2d5;
+	--color-cd-punctuation: #9399b2;
+}
+
+body { background: #000; -webkit-font-smoothing: antialiased; }
+
+/* The header is the docs site's masthead: black with a hairline, no grey bar. */
+.navigation-wrapper, #navigation-wrapper { background: #000; border-bottom: 1px solid #1f1f1f; }
+.library-name--link { font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+.library-version { color: #a1a1a1; font-size: 13px; }
+
+/* One theme only, so the theme switch has nothing to switch. */
+.navigation-controls--btn_theme { display: none; }
+
+/* The sidebar: a hairline after it, grey items, the current page filled. */
+.sidebar, #leftColumn { background: #000; border-right: 1px solid #1f1f1f; }
+.toc--part_hidden, .toc--row { background: transparent; }
+.toc--part[data-active] > .toc--row .toc--link,
+.toc--part[data-active] > .toc--row .toc--button,
+.toc--part[data-active] > .toc--row .toc--link:hover,
+.toc--part[data-active] > .toc--row .toc--button:hover,
+.toc--part[data-active] > .toc--row .toc--button ~ .toc--link:hover { background: #1f1f1f; color: #fff; }
+
+/* Every module targets the JVM alone, so platform filters and tags carry no information. */
+/* Hidden visually only: Dokka's filter script reads these to decide which rows to show. */
+.filter-section, .platform-bookmarks-row { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+/* Code: Catppuccin Mocha's hues on the site's code ground. */
+.sample-container, .cover .platform-hinted, div.highlight, pre.code, code.block { background: #121212; border: 1px solid #2e2e2e; border-radius: 10px; }
+code, pre { font-family: var(--font-family-mono); }
+
+a { text-decoration-color: #8f8f8f; }
+a:hover { color: #fff; }
+.footer { background: #000; border-top: 1px solid #1f1f1f; color: #8f8f8f; }
+
+/* Dokka hard-codes black for summaries in its light theme. */
+.brief-comment, .brief, .brief-comment .paragraph, .brief .paragraph { color: #a1a1a1; }
+.breadcrumbs .delimiter { color: #8f8f8f; }
