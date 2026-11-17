@@ -1,21 +1,21 @@
 public final class studio/sculk/dialog/DialogBuilder {
-	public final fun amount (Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lstudio/sculk/text/Amounts;)V
-	public static synthetic fun amount$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lstudio/sculk/text/Amounts;ILjava/lang/Object;)V
+	public final fun amount (Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lstudio/sculk/text/Amounts;)Lstudio/sculk/dialog/DialogInput$Amount;
+	public static synthetic fun amount$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Ljava/math/BigDecimal;Lstudio/sculk/text/Amounts;ILjava/lang/Object;)Lstudio/sculk/dialog/DialogInput$Amount;
 	public final fun body ([Ljava/lang/String;)V
 	public final fun button (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun button$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public final fun choice (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
-	public static synthetic fun choice$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun choice (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)Lstudio/sculk/dialog/DialogInput$Choice;
+	public static synthetic fun choice$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Lstudio/sculk/dialog/DialogInput$Choice;
 	public final fun fallback (Lkotlin/jvm/functions/Function1;)V
 	public final fun getCanCloseWithEscape ()Z
-	public final fun input (Lstudio/sculk/dialog/DialogInput;)V
-	public final fun number (Ljava/lang/String;Ljava/lang/String;Lkotlin/ranges/ClosedFloatingPointRange;Ljava/lang/Float;Ljava/lang/Float;)V
-	public static synthetic fun number$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Lkotlin/ranges/ClosedFloatingPointRange;Ljava/lang/Float;Ljava/lang/Float;ILjava/lang/Object;)V
+	public final fun input (Lstudio/sculk/dialog/DialogInput;)Lstudio/sculk/dialog/DialogInput;
+	public final fun number (Ljava/lang/String;Ljava/lang/String;Lkotlin/ranges/ClosedFloatingPointRange;Ljava/lang/Float;Ljava/lang/Float;)Lstudio/sculk/dialog/DialogInput$Number;
+	public static synthetic fun number$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Lkotlin/ranges/ClosedFloatingPointRange;Ljava/lang/Float;Ljava/lang/Float;ILjava/lang/Object;)Lstudio/sculk/dialog/DialogInput$Number;
 	public final fun setCanCloseWithEscape (Z)V
-	public final fun text (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)V
-	public static synthetic fun text$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/Object;)V
-	public final fun toggle (Ljava/lang/String;Ljava/lang/String;Z)V
-	public static synthetic fun toggle$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)V
+	public final fun text (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)Lstudio/sculk/dialog/DialogInput$Text;
+	public static synthetic fun text$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/Object;)Lstudio/sculk/dialog/DialogInput$Text;
+	public final fun toggle (Ljava/lang/String;Ljava/lang/String;Z)Lstudio/sculk/dialog/DialogInput$Toggle;
+	public static synthetic fun toggle$default (Lstudio/sculk/dialog/DialogBuilder;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lstudio/sculk/dialog/DialogInput$Toggle;
 }
 
 public final class studio/sculk/dialog/DialogButton {
@@ -82,6 +82,11 @@ public final class studio/sculk/dialog/DialogPlacement : java/lang/Enum {
 public final class studio/sculk/dialog/DialogResponse {
 	public final fun amount (Ljava/lang/String;)Ljava/math/BigDecimal;
 	public final fun choice (Ljava/lang/String;)Ljava/lang/String;
+	public final fun get (Lstudio/sculk/dialog/DialogInput$Amount;)Ljava/math/BigDecimal;
+	public final fun get (Lstudio/sculk/dialog/DialogInput$Choice;)Ljava/lang/String;
+	public final fun get (Lstudio/sculk/dialog/DialogInput$Number;)Ljava/lang/Float;
+	public final fun get (Lstudio/sculk/dialog/DialogInput$Text;)Ljava/lang/String;
+	public final fun get (Lstudio/sculk/dialog/DialogInput$Toggle;)Ljava/lang/Boolean;
 	public final fun getPlayer ()Lorg/bukkit/entity/Player;
 	public final fun number (Ljava/lang/String;)Ljava/lang/Float;
 	public final fun text (Ljava/lang/String;)Ljava/lang/String;

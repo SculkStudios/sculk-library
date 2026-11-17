@@ -30,12 +30,12 @@ import studio.sculk.dialog.dialog
 
 val setup = dialog("<primary>Shop setup") {
     body("Fill in your shop.")
-    text("name", "Name", maxLength = 24)
-    toggle("open", "Open now")
-    number("price", "Price", 1f..100f, step = 1f, initial = 10f)
-    choice("colour", "Colour", listOf("red" to "Red", "blue" to "Blue"), initial = "red")
+    val name = text("name", "Name", maxLength = 24)
+    val open = toggle("open", "Open now")
+    val price = number("price", "Price", 1f..100f, step = 1f, initial = 10f)
+    val colour = choice("colour", "Colour", listOf("red" to "Red", "blue" to "Blue"), initial = "red")
     button("Save") { answer ->
-        shops.save(answer.player, answer.text("name"), answer.toggle("open") == true, answer.number("price"), answer.choice("colour"))
+        shops.save(answer.player, answer[name], answer[open] == true, answer[price], answer[colour])
     }
     button("Cancel")
     fallback { player -> player.sendMessage(Component.text("Use /shop setup <name> <price> instead.")) }
@@ -51,6 +51,9 @@ dialogs.show(player, setup)
   `<price>` wherever the dialog uses it.
 - One button makes a notice, two a confirmation (Escape presses the second), more a list of
   actions. A button without a handler only closes the dialog.
+- Each input function returns the input, and `answer[input]` reads its answer with the input's
+  own type: a text is a `String?`, a toggle a `Boolean?`, an amount a `BigDecimal?`. The string form,
+  `answer.text("name")`, reads the same values by key.
 - Answers run on the player's thread: the main thread on Paper, the player's region thread on
   Folia and Canvas. `show` may be called from any thread.
 

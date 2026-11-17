@@ -143,6 +143,32 @@ public class DialogResponse internal constructor(
         return (values[key] as? String)?.takeIf { id -> input.options.any { it.first == id } }
     }
 
+    /** What was typed in [input], as [text] reads it; the input must belong to this dialog. */
+    @SculkExperimental
+    public operator fun get(input: DialogInput.Text): String? = text(own(input).key)
+
+    /** Whether [input] is ticked, as [toggle] reads it; the input must belong to this dialog. */
+    @SculkExperimental
+    public operator fun get(input: DialogInput.Toggle): Boolean? = toggle(own(input).key)
+
+    /** [input]'s value, as [number] reads it; the input must belong to this dialog. */
+    @SculkExperimental
+    public operator fun get(input: DialogInput.Number): Float? = number(own(input).key)
+
+    /** The amount typed in [input], as [amount] reads it; the input must belong to this dialog. */
+    @SculkExperimental
+    public operator fun get(input: DialogInput.Amount): BigDecimal? = amount(own(input).key)
+
+    /** The option chosen in [input], as [choice] reads it; the input must belong to this dialog. */
+    @SculkExperimental
+    public operator fun get(input: DialogInput.Choice): String? = choice(own(input).key)
+
+    // An input from another dialog may share a key with one of this dialog's; reading it would be a lie.
+    private fun <I : DialogInput> own(input: I): I {
+        require(spec.inputs.any { it === input }) { "'${input.key}' is an input of another dialog" }
+        return input
+    }
+
     override fun toString(): String = "DialogResponse(${player.name}, $values)"
 }
 
@@ -208,25 +234,28 @@ public class DialogBuilder internal constructor(private val title: String) {
         body += paragraphs
     }
 
-    /** Adds [input] as built; each input's key may appear once. */
-    public fun input(input: DialogInput) {
+    /** Adds [input] as built and returns it, to read the answer with; each input's key may appear once. */
+    public fun <I : DialogInput> input(input: I): I {
         inputs += input
+        return input
     }
 
     /** Adds a text input; see [DialogInput.Text]. Read it with [DialogResponse.text]. */
-    public fun text(key: String, label: String, initial: String = "", maxLength: Int = 32, lines: Int = 1) {
+    public fun text(key: String, label: String, initial: String = "", maxLength: Int = 32, lines: Int = 1): DialogInput.Text =
         input(DialogInput.Text(key, label, initial, maxLength, lines))
-    }
 
     /** Adds a checkbox; see [DialogInput.Toggle]. Read it with [DialogResponse.toggle]. */
-    public fun toggle(key: String, label: String, initial: Boolean = false) {
+    public fun toggle(key: String, label: String, initial: Boolean = false): DialogInput.Toggle =
         input(DialogInput.Toggle(key, label, initial))
-    }
 
     /** Adds a slider; see [DialogInput.Number]. Read it with [DialogResponse.number]. */
-    public fun number(key: String, label: String, range: ClosedFloatingPointRange<Float>, step: Float? = null, initial: Float? = null) {
-        input(DialogInput.Number(key, label, range, step, initial))
-    }
+    public fun number(
+        key: String,
+        label: String,
+        range: ClosedFloatingPointRange<Float>,
+        step: Float? = null,
+        initial: Float? = null,
+    ): DialogInput.Number = input(DialogInput.Number(key, label, range, step, initial))
 
     /** Adds a field for an amount such as `1.5k`; see [DialogInput.Amount]. Read it with [DialogResponse.amount]. */
     @SculkExperimental
@@ -237,14 +266,11 @@ public class DialogBuilder internal constructor(private val title: String) {
         max: BigDecimal? = null,
         initial: BigDecimal? = null,
         amounts: Amounts = Amounts.DEFAULT,
-    ) {
-        input(DialogInput.Amount(key, label, min, max, initial, amounts))
-    }
+    ): DialogInput.Amount = input(DialogInput.Amount(key, label, min, max, initial, amounts))
 
     /** Adds a choice of options; see [DialogInput.Choice]. Read it with [DialogResponse.choice]. */
-    public fun choice(key: String, label: String, options: List<Pair<String, String>>, initial: String? = null) {
+    public fun choice(key: String, label: String, options: List<Pair<String, String>>, initial: String? = null): DialogInput.Choice =
         input(DialogInput.Choice(key, label, options, initial))
-    }
 
     /** A button; [onPress] runs on the player's thread with the checked answer. Without it the button only closes the dialog. */
     public fun button(label: String, tooltip: String? = null, onPress: ((DialogResponse) -> Unit)? = null) {
