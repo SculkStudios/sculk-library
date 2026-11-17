@@ -18,6 +18,8 @@ export default defineConfig({
 	integrations: [
 		expressiveCode({
 			themes: [atlasTheme],
+			// Long lines wrap, keeping their indentation, instead of running off the column.
+			defaultProps: { wrap: true, preserveIndent: true },
 			styleOverrides: {
 				borderRadius: '8px',
 				borderColor: 'var(--rule)',
