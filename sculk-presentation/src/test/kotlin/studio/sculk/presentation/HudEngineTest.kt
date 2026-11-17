@@ -41,6 +41,20 @@ class HudEngineTest {
             sent += "tab:${shown?.let { plain.serialize(it.header) } ?: "hidden"}"
         }
 
+        var yieldNames = false
+
+        override fun nametag(shown: Shown.Nametag?): Boolean {
+            if (yieldNames && shown != null) return false
+            sent += "tag:${shown?.let { plain.serialize(it.prefix) + "|" + plain.serialize(it.suffix) } ?: "hidden"}"
+            return true
+        }
+
+        override fun belowName(shown: Shown.BelowName?): Boolean {
+            if (yieldNames && shown != null) return false
+            sent += "below:${shown?.let { plain.serialize(it.text) } ?: "hidden"}"
+            return true
+        }
+
         override fun sidebar(shown: Shown.Sidebar?): Boolean {
             if (yieldSidebar && shown != null) return false
             sent += "side:${shown?.lines?.joinToString("|") { plain.serialize(it) } ?: "hidden"}"
@@ -127,6 +141,26 @@ class HudEngineTest {
     }
 
     @Test
+    fun `a nametag and below-name line redraw on change and yield to another plugin's team or slot`() {
+        sink.yieldNames = true
+        val hud = engine {
+            nametag(prefix = "[<coins>] ")
+            belowName("Coins <coins>")
+        }
+        assertEquals(20L, hud.wake(0))
+        assertEquals(emptyList<String>(), sink.sent)
+        sink.yieldNames = false
+        assertNull(hud.wake(20))
+        assertEquals(listOf("tag:[10] |", "below:Coins 10"), sink.sent)
+        values["coins"] = "11"
+        assertEquals(true, hud.mark("coins"))
+        hud.wake(21)
+        assertEquals(listOf("tag:[10] |", "below:Coins 10", "tag:[11] |", "below:Coins 11"), sink.sent)
+        hud.close()
+        assertEquals(listOf("tag:hidden", "below:hidden"), sink.sent.takeLast(2))
+    }
+
+    @Test
     fun `closing removes everything that is shown`() {
         val hud = engine {
             bar("a", "A")
@@ -154,5 +188,11 @@ class HudEngineTest {
             }
         }
         assertThrows<IllegalArgumentException> { hud { sidebar("t", *Array(16) { "line" }) } }
+        assertThrows<IllegalArgumentException> {
+            hud {
+                nametag("a")
+                nametag("b")
+            }
+        }
     }
 }

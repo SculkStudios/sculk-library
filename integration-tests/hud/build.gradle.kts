@@ -29,6 +29,7 @@ registerResultsVerification(
         "surfaces-show",
         "a-change-redraws-what-used-it",
         "sidebar-yields-to-another-board",
+        "nametag-yields-to-another-team",
         "titles-render-placeholders",
         "closing-removes-everything",
     ),

@@ -19,6 +19,9 @@ class BotEvent(val kind: String, val fields: List<String>) {
 class BotDriver(private val name: String, port: Int) : AutoCloseable {
     private val events = LinkedBlockingQueue<BotEvent>()
     private val seen = mutableListOf<BotEvent>()
+
+    // The newest event per kind and first field, for events that report a state rather than a change.
+    private val latest = HashMap<String, BotEvent>()
     private val process: Process
     private val input: PrintStream
     private val log = File("bot-$name.log")
@@ -49,10 +52,24 @@ class BotDriver(private val name: String, port: Int) : AutoCloseable {
                 if (System.nanoTime() >= deadline) error("$name saw no $kind within ${seconds}s; it saw ${seen.takeLast(12)}")
                 continue
             }
-            seen += event
+            see(event)
             if (event.kind == "DISCONNECTED" && kind != "DISCONNECTED") error("$name was disconnected: ${event.fields}")
             if (event.kind == kind && matches(event)) return event
         }
+    }
+
+    /**
+     * Waits until the state that [kind] events report for [key], their first field, matches: at once
+     * when the newest such event already did, even if an earlier wait skipped past it.
+     */
+    fun awaitState(kind: String, key: String, seconds: Long = 30, matches: (BotEvent) -> Boolean): BotEvent {
+        latest["$kind\t$key"]?.takeIf(matches)?.let { return it }
+        return await(kind, seconds) { it.fields.firstOrNull() == key && matches(it) }
+    }
+
+    private fun see(event: BotEvent) {
+        seen += event
+        event.fields.firstOrNull()?.let { latest["${event.kind}\t$it"] = event }
     }
 
     /** Whether an event matching [kind] and [matches] arrives within [millis]; for proving something did not happen. */
@@ -62,7 +79,7 @@ class BotDriver(private val name: String, port: Int) : AutoCloseable {
             val left = deadline - System.nanoTime()
             if (left <= 0) return false
             val event = events.poll(left, TimeUnit.NANOSECONDS) ?: return false
-            seen += event
+            see(event)
             if (event.kind == kind && matches(event)) return true
         }
     }

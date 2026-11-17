@@ -13,6 +13,10 @@ internal sealed interface Shown {
     data class TabList(val header: Component, val footer: Component) : Shown
 
     data class Sidebar(val title: Component, val lines: List<Component>) : Shown
+
+    data class Nametag(val prefix: Component, val suffix: Component) : Shown
+
+    data class BelowName(val text: Component) : Shown
 }
 
 /** Where a HUD draws; the Paper implementation talks to the player, tests record. */
@@ -25,6 +29,12 @@ internal interface HudSink {
 
     /** Shows or, with null, removes the sidebar; false when another plugin's board holds the player and Sculk yields. */
     fun sidebar(shown: Shown.Sidebar?): Boolean
+
+    /** Shows or removes the player's nametag; false while another plugin has them in a team. */
+    fun nametag(shown: Shown.Nametag?): Boolean
+
+    /** Shows or removes the player's below-name line; false while another plugin holds that slot. */
+    fun belowName(shown: Shown.BelowName?): Boolean
 }
 
 /** A template rendered, with the placeholder tags it resolved. */
@@ -110,6 +120,10 @@ internal class HudEngine(
             is Surface.TabList -> Shown.TabList(text(surface.header), text(surface.footer))
 
             is Surface.Sidebar -> Shown.Sidebar(text(surface.title), surface.lines.map(::text))
+
+            is Surface.Nametag -> Shown.Nametag(text(surface.prefix), text(surface.suffix))
+
+            is Surface.BelowName -> Shown.BelowName(text(surface.text))
         }
         state.tags = tags
         state.dirty = false
@@ -121,11 +135,12 @@ internal class HudEngine(
 
             is Shown.TabList -> sink.tabList(shown)
 
-            // Another plugin's board holds the player: stay dirty and try again later.
-            is Shown.Sidebar -> if (!sink.sidebar(shown)) {
-                state.dirty = true
-                return
-            }
+            // Another plugin holds the board, team or slot: stay dirty and try again later.
+            is Shown.Sidebar -> if (!sink.sidebar(shown)) return yielded(state)
+
+            is Shown.Nametag -> if (!sink.nametag(shown)) return yielded(state)
+
+            is Shown.BelowName -> if (!sink.belowName(shown)) return yielded(state)
         }
         state.sent = shown
         state.lastSend = now
@@ -138,8 +153,14 @@ internal class HudEngine(
             is Surface.Bar -> sink.bar(surface.id, null)
             is Surface.TabList -> sink.tabList(null)
             is Surface.Sidebar -> sink.sidebar(null)
+            is Surface.Nametag -> sink.nametag(null)
+            is Surface.BelowName -> sink.belowName(null)
         }
         state.sent = null
+    }
+
+    private fun yielded(state: State) {
+        state.dirty = true
     }
 
     private companion object {

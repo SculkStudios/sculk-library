@@ -24,7 +24,7 @@ import kotlin.concurrent.thread
 
 /**
  * Shows a HUD to the test client and checks what it sees: every surface, a placeholder change, the
- * sidebar yielding to another plugin's board, and closing. Writes `results.properties` and stops the
+ * sidebar and nametag yielding to another plugin's board and team, titles, and closing. Writes `results.properties` and stops the
  * server.
  */
 class HudCheckPlugin : SculkPaperPlugin(), Listener {
@@ -56,28 +56,55 @@ class HudCheckPlugin : SculkPaperPlugin(), Listener {
                     actionBar("Coins <itest_coins>")
                     bar("event", "Event <itest_coins>", progress = { 0.5f })
                     tabList("Header <itest_coins>", "Footer")
-                    if (sidebar) sidebar("Sculk", "Coins <itest_coins>", "Static line")
+                    if (sidebar) {
+                        sidebar("Sculk", "Coins <itest_coins>", "Static line")
+                        nametag(prefix = "[<itest_coins>]", suffix = "*")
+                        belowName("Coins <itest_coins>")
+                    }
                 }
                 lateinit var shown: studio.sculk.presentation.PlayerHud
                 verdict("surfaces-show") {
                     if (!sidebar) {
                         val refused = huds.show(player, hud { sidebar("Sculk", "Line") })
                         check(refused is SculkFailure.UnsupportedCapability) { "a sidebar on this server gave $refused" }
+                        val noNames = huds.show(player, hud { nametag("x") })
+                        check(noNames is SculkFailure.UnsupportedCapability) { "a nametag on this server gave $noNames" }
                     }
                     shown = huds.show(player, layout).getOrThrow()
                     bot.await("ACTIONBAR") { it.fields[0] == "Coins 10" }
                     bot.await("BOSSBAR") { it.fields[1] == "ADD" && it.fields[2] == "Event 10" && it.fields[3] == "0.5" }
                     bot.await("TAB") { it.fields[0] == "Header 10" && it.fields[1] == "Footer" }
-                    if (sidebar) bot.await("SIDEBAR") { it.fields[0] == "Sculk" && it.fields[1] == "Coins 10|Static line" }
-                    true to (if (sidebar) "all four" else "three; no sidebar without scoreboards")
+                    if (sidebar) {
+                        bot.await("SIDEBAR") { it.fields[0] == "Sculk" && it.fields[1] == "Coins 10|Static line" }
+                        bot.awaitState("NAMETAG", "SculkBot") { it.fields == listOf("SculkBot", "[10]", "*") }
+                        bot.awaitState("BELOWNAME", "SculkBot") { it.fields == listOf("SculkBot", "Coins 10") }
+                    }
+                    true to (if (sidebar) "all six" else "three; no scoreboards")
                 }
                 verdict("a-change-redraws-what-used-it") {
                     coins = 11
                     changed()
                     bot.await("BOSSBAR") { it.fields[1] == "UPDATE_TITLE" && it.fields[2] == "Event 11" }
                     bot.await("TAB") { it.fields[0] == "Header 11" }
-                    if (sidebar) bot.await("SIDEBAR") { it.fields[1] == "Coins 11|Static line" }
+                    if (sidebar) {
+                        bot.await("SIDEBAR") { it.fields[1] == "Coins 11|Static line" }
+                        bot.awaitState("NAMETAG", "SculkBot") { it.fields == listOf("SculkBot", "[11]", "*") }
+                        bot.awaitState("BELOWNAME", "SculkBot") { it.fields == listOf("SculkBot", "Coins 11") }
+                    }
                     true to "redrawn"
+                }
+                if (sidebar) {
+                    verdict("nametag-yields-to-another-team") {
+                        onGlobal { Bukkit.getScoreboardManager().mainScoreboard.registerNewTeam("foreign").addEntry(player.name) }
+                        coins = 12
+                        changed()
+                        val tookIt = bot.sees("NAMETAG", 2_500) { it.fields[1] == "[12]" }
+                        onGlobal { Bukkit.getScoreboardManager().mainScoreboard.getTeam("foreign")?.unregister() }
+                        val after = bot.await("NAMETAG") { it.fields[1] == "[12]" }
+                        (!tookIt) to "took the player from another team: $tookIt, then $after"
+                    }
+                } else {
+                    results["nametag-yields-to-another-team"] = "SKIP: Folia has no scoreboards"
                 }
                 if (sidebar) {
                     verdict("sidebar-yields-to-another-board") {
@@ -97,7 +124,7 @@ class HudCheckPlugin : SculkPaperPlugin(), Listener {
                 }
                 verdict("titles-render-placeholders") {
                     huds.title(player, "Round <itest_coins>", "Good luck")
-                    bot.await("TITLE") { it.fields[0] == "Round 11" && it.fields[1] == "Good luck" }
+                    bot.await("TITLE") { it.fields[0] == "Round $coins" && it.fields[1] == "Good luck" }
                     huds.clearTitle(player)
                     bot.await("TITLECLEARED")
                     true to "shown and cleared"
@@ -106,7 +133,11 @@ class HudCheckPlugin : SculkPaperPlugin(), Listener {
                     shown.close()
                     bot.await("BOSSBAR") { it.fields[1] == "REMOVE" }
                     bot.await("TAB") { it.fields[0].isEmpty() && it.fields[1].isEmpty() }
-                    if (sidebar) bot.await("SIDEBAR") { it.fields[0].isEmpty() }
+                    if (sidebar) {
+                        bot.await("SIDEBAR") { it.fields[0].isEmpty() }
+                        bot.awaitState("NAMETAG", "SculkBot") { it.fields == listOf("SculkBot", "", "") }
+                        bot.awaitState("BELOWNAME", "SculkBot") { it.fields == listOf("SculkBot", "") }
+                    }
                     true to "removed"
                 }
             }

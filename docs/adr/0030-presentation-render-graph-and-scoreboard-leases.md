@@ -37,6 +37,12 @@ client in the server suites (ADR-0029) can now observe every surface.
 - **Scoreboard leases.** Showing a sidebar takes a lease that remembers the board the player had and
   restores it when the HUD closes. A board that is neither the main board nor Sculk's own is
   foreign: the sidebar yields to it and tries again on its next wake, and never replaces it.
+- **Nametags and below-name lines are the target's surfaces, on shared boards.** They are rendered
+  for the player whose name it is, so every viewer sees the same text: one team and one fixed-format
+  score per player on the main board, copied onto each board Sculk gave a player for a sidebar.
+  A player already in another plugin's team, or another objective in the below-name slot, is
+  foreign in the same sense, and Sculk yields. Text that differs per viewer is left to
+  `sculk-presentation-packets`.
 
 ## Alternatives considered
 
@@ -46,11 +52,12 @@ client in the server suites (ADR-0029) can now observe every surface.
 | A global task re-rendering every player every N ticks | Cannot touch players across Folia regions; renders what did not change. |
 | Declaring dependencies by hand | Drifts from the template; recording them at render time is exact. |
 | Taking the scoreboard unconditionally | Silently clobbers another plugin's board, which TAB's experience shows users report as bugs. |
+| Per-viewer boards with a team and score for every target | Grows with the square of the player count and gives every player a board of Sculk's, hiding every other plugin's main-board teams from all of them. |
 
 ## Consequences
 
 The render engine is unit-tested without a server, and the client suite checks what a player sees
-on every anchor, Folia and Canvas. Below-name lines and nametags cost one score and one team per
-target in every viewer's board, so they grow with the square of the player count; they follow the
-sidebar. Revisit when `sculk-presentation-packets` lands, or if Paper gains per-viewer team or score
-API.
+on every anchor, Folia and Canvas. Nametags and below-name lines cost one team and one score per
+player on the main board and on each Sculk sidebar board. A player who sees a Sculk sidebar does not
+see other plugins' main-board teams; the guide says so. Revisit when `sculk-presentation-packets`
+lands, or if Paper gains per-viewer team or score API.

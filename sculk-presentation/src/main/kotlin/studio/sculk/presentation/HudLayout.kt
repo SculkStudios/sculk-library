@@ -85,11 +85,32 @@ public sealed class Surface(public val update: Update, internal val showWhen: ((
             public const val MAX_LINES: Int = 15
         }
     }
+
+    /**
+     * What every other player sees before and after this player's name, above their head and in
+     * the tab list. Rendered for this player, so all viewers see the same text. Yields while another
+     * plugin has this player in a team; needs scoreboards, which Folia does not offer.
+     */
+    @SculkStable
+    public class Nametag(
+        public val prefix: String = "",
+        public val suffix: String = "",
+        update: Update = Update.OnChange,
+        showWhen: ((Player) -> Boolean)? = null,
+    ) : Surface(update, showWhen)
+
+    /**
+     * The line every other player sees under this player's name. Rendered for this player; yields
+     * while another plugin's objective holds the below-name slot; needs scoreboards.
+     */
+    @SculkStable
+    public class BelowName(public val text: String, update: Update = Update.OnChange, showWhen: ((Player) -> Boolean)? = null) :
+        Surface(update, showWhen)
 }
 
 /**
- * What a player's HUD shows: at most one action bar, tab list and sidebar, and any number of boss
- * bars with distinct ids.
+ * What a player's HUD shows: at most one action bar, tab list, sidebar, nametag and below-name line,
+ * and any number of boss bars with distinct ids.
  *
  * ```kotlin
  * val layout = hud {
@@ -106,7 +127,13 @@ public class HudLayout internal constructor(surfaces: List<Surface>) {
     public val surfaces: List<Surface> = surfaces.toList()
 
     init {
-        listOf(Surface.ActionBar::class, Surface.TabList::class, Surface.Sidebar::class).forEach { kind ->
+        listOf(
+            Surface.ActionBar::class,
+            Surface.TabList::class,
+            Surface.Sidebar::class,
+            Surface.Nametag::class,
+            Surface.BelowName::class,
+        ).forEach { kind ->
             require(surfaces.count { kind.isInstance(it) } <= 1) { "a HUD shows one ${kind.simpleName} at most" }
         }
         val bars = surfaces.filterIsInstance<Surface.Bar>().map { it.id }
@@ -145,6 +172,19 @@ public class HudBuilder internal constructor() {
 
     public fun sidebar(title: String, vararg lines: String, update: Update = Update.OnChange, showWhen: ((Player) -> Boolean)? = null) {
         surface(Surface.Sidebar(title, lines.toList(), update, showWhen))
+    }
+
+    public fun nametag(
+        prefix: String = "",
+        suffix: String = "",
+        update: Update = Update.OnChange,
+        showWhen: ((Player) -> Boolean)? = null,
+    ) {
+        surface(Surface.Nametag(prefix, suffix, update, showWhen))
+    }
+
+    public fun belowName(text: String, update: Update = Update.OnChange, showWhen: ((Player) -> Boolean)? = null) {
+        surface(Surface.BelowName(text, update, showWhen))
     }
 
     internal fun build(): HudLayout = HudLayout(surfaces)

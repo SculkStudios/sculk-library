@@ -26,6 +26,8 @@ import studio.sculk.annotation.SculkStable
 import studio.sculk.placeholder.PlaceholderChange
 import studio.sculk.placeholder.PlaceholderRegistry
 import studio.sculk.text.Text
+import java.util.Collections
+import java.util.IdentityHashMap
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -47,6 +49,7 @@ public class Huds(
 ) {
     private val huds = ConcurrentHashMap<UUID, PlayerHud>()
     private val listener = QuitListener()
+    internal val names = NameBoards(plugin)
 
     init {
         plugin.server.pluginManager.registerEvents(listener, plugin)
@@ -57,18 +60,19 @@ public class Huds(
         }
     }
 
-    /** Whether this server can draw a sidebar: Paper and Canvas, not Folia (ADR-0023). */
+    /** Whether this server can draw a sidebar, nametags and below-name lines: Paper and Canvas, not Folia (ADR-0023). */
     public val sidebarAvailable: Boolean get() = SCOREBOARDS
 
     /**
      * Shows [layout] to [player], replacing any HUD of this `Huds` they had, from any thread. A
-     * layout with a sidebar on a server without scoreboards returns
+     * layout with a sidebar, nametag or below-name line on a server without scoreboards returns
      * [SculkFailure.UnsupportedCapability] and shows nothing.
      */
     public fun show(player: Player, layout: HudLayout): SculkResult<PlayerHud> {
-        if (!SCOREBOARDS && layout.surfaces.any { it is Surface.Sidebar }) {
+        val needsBoard = layout.surfaces.firstOrNull { it is Surface.Sidebar || it is Surface.Nametag || it is Surface.BelowName }
+        if (!SCOREBOARDS && needsBoard != null) {
             return SculkFailure.UnsupportedCapability(
-                "Sidebar",
+                needsBoard::class.simpleName ?: "Scoreboard",
                 "Folia has no scoreboards; sculk-presentation-packets draws them with packets",
             )
         }
@@ -141,7 +145,7 @@ public class PlayerHud internal constructor(
     private val text: Text,
     private val placeholders: PlaceholderRegistry?,
 ) {
-    private val sink = PaperSink(plugin, player)
+    private val sink = PaperSink(plugin, player, huds.names)
     private val engine = HudEngine(layout, player, ::render, sink)
     private val start = System.nanoTime()
     private var pending: Long? = null
@@ -176,10 +180,12 @@ public class PlayerHud internal constructor(
         onPlayer { if (isOpen && engine.mark(tag)) wakeAt(now()) }
     }
 
-    // The player has gone: nothing can be sent, and the server drops their board and bars.
+    // The player has gone: nothing can be sent, and the server drops their board and bars, but the
+    // teams and scores for their name live on shared boards.
     internal fun left() {
         isOpen = false
         huds.ended(this)
+        huds.names.forget(player.name)
     }
 
     private fun render(template: String): Rendered {
@@ -226,7 +232,7 @@ public class PlayerHud internal constructor(
  * Draws on a real player. Scoreboard writes go to the global region on Canvas, which requires them
  * there, and run inline on Paper; assigning the player's board stays on the player's thread.
  */
-private class PaperSink(private val plugin: Plugin, private val player: Player) : HudSink {
+private class PaperSink(private val plugin: Plugin, private val player: Player, private val names: NameBoards) : HudSink {
     private val bars = HashMap<String, BossBar>()
 
     // Written on the global tick on Canvas and read on the player's thread.
@@ -292,6 +298,10 @@ private class PaperSink(private val plugin: Plugin, private val player: Player) 
         return true
     }
 
+    override fun nametag(shown: Shown.Nametag?): Boolean = names.nametag(player.name, shown)
+
+    override fun belowName(shown: Shown.BelowName?): Boolean = names.belowName(player.name, shown?.text)
+
     // Canvas requires creating the board, like every scoreboard write, on the global tick.
     private fun create(main: Scoreboard) {
         creating = true
@@ -302,6 +312,7 @@ private class PaperSink(private val plugin: Plugin, private val player: Player) 
             made.numberFormat(NumberFormat.blank())
             made.setDisplaySlot(DisplaySlot.SIDEBAR)
             latest?.let { fill(made, it) }
+            names.adopt(created)
             objective = made
             board = created
             creating = false
@@ -330,6 +341,7 @@ private class PaperSink(private val plugin: Plugin, private val player: Player) 
         val back = previous ?: Bukkit.getScoreboardManager().mainScoreboard
         board = null
         objective = null
+        names.drop(ours)
         if (player.isOnline && player.scoreboard === ours) player.scoreboard = back
     }
 
@@ -347,6 +359,118 @@ private class PaperSink(private val plugin: Plugin, private val player: Player) 
 
         // Canvas restores scoreboards but checks that writes run on the global tick; Paper has one
         // thread. Folia is regionized too, but never gets here: it has no scoreboards to write.
+        val REGIONIZED: Boolean by lazy {
+            runCatching { Class.forName("io.papermc.paper.threadedregions.RegionizedServer") }.isSuccess
+        }
+    }
+}
+
+/**
+ * The nametags and below-name lines of every HUD of one `Huds`: one team and one score per player,
+ * on the main board and copied onto each board Sculk gave a player for a sidebar, so the cost grows
+ * with the player count, not its square. Text is the target's, the same for every viewer.
+ */
+internal class NameBoards(private val plugin: Plugin) {
+    // Touched only inside writes: the main thread on Paper, the global tick on Canvas.
+    private val nametags = HashMap<String, Shown.Nametag>()
+    private val belowNames = HashMap<String, Component>()
+    private val boards: MutableSet<Scoreboard> = Collections.newSetFromMap(IdentityHashMap())
+
+    /** Shows or removes [entry]'s nametag; false while another plugin has them in a team on the main board. */
+    fun nametag(entry: String, shown: Shown.Nametag?): Boolean {
+        if (shown != null && foreignTeam(entry)) return false
+        writes {
+            when {
+                shown == null -> if (nametags.remove(entry) != null) everyBoard { it.getTeam(TEAM + entry)?.unregister() }
+
+                // Re-checked here: another plugin may have taken the player between the check and this write.
+                foreignTeam(entry) -> {}
+
+                else -> {
+                    nametags[entry] = shown
+                    everyBoard { writeTeam(it, entry, shown) }
+                }
+            }
+        }
+        return true
+    }
+
+    /** Shows or removes [entry]'s below-name line; false while another plugin's objective holds that slot. */
+    fun belowName(entry: String, text: Component?): Boolean {
+        if (text != null && foreignBelowName()) return false
+        writes {
+            when {
+                text == null -> if (belowNames.remove(entry) != null) everyBoard { removeScore(it, entry) }
+
+                foreignBelowName() -> {}
+
+                else -> {
+                    belowNames[entry] = text
+                    everyBoard { writeScore(it, entry, text) }
+                }
+            }
+        }
+        return true
+    }
+
+    fun forget(entry: String) {
+        nametag(entry, null)
+        belowName(entry, null)
+    }
+
+    /** Copies everything onto [board], a board Sculk just made; called inside writes. */
+    fun adopt(board: Scoreboard) {
+        boards += board
+        nametags.forEach { (entry, shown) -> writeTeam(board, entry, shown) }
+        belowNames.forEach { (entry, text) -> writeScore(board, entry, text) }
+    }
+
+    fun drop(board: Scoreboard) {
+        writes { boards -= board }
+    }
+
+    private fun everyBoard(action: (Scoreboard) -> Unit) {
+        action(Bukkit.getScoreboardManager().mainScoreboard)
+        boards.forEach(action)
+    }
+
+    private fun foreignTeam(entry: String): Boolean =
+        Bukkit.getScoreboardManager().mainScoreboard.getEntryTeam(entry)?.let { it.name != TEAM + entry } ?: false
+
+    private fun foreignBelowName(): Boolean =
+        Bukkit.getScoreboardManager().mainScoreboard.getObjective(DisplaySlot.BELOW_NAME)?.let { it.name != OBJECTIVE } ?: false
+
+    private fun writeTeam(board: Scoreboard, entry: String, shown: Shown.Nametag) {
+        val team = board.getTeam(TEAM + entry) ?: board.registerNewTeam(TEAM + entry)
+        if (team.prefix() != shown.prefix) team.prefix(shown.prefix)
+        if (team.suffix() != shown.suffix) team.suffix(shown.suffix)
+        if (!team.hasEntry(entry)) team.addEntry(entry)
+    }
+
+    // The client draws a below-name score as its number format followed by the objective's name, so
+    // a fixed format per player and an empty name show exactly the rendered text.
+    private fun writeScore(board: Scoreboard, entry: String, text: Component) {
+        val objective = board.getObjective(OBJECTIVE)
+            ?: board.registerNewObjective(OBJECTIVE, Criteria.DUMMY, Component.empty()).also { it.setDisplaySlot(DisplaySlot.BELOW_NAME) }
+        val score = objective.getScore(entry)
+        val format = NumberFormat.fixed(text)
+        if (!score.isScoreSet) score.score = 0
+        if (score.numberFormat() != format) score.numberFormat(format)
+    }
+
+    private fun removeScore(board: Scoreboard, entry: String) {
+        val objective = board.getObjective(OBJECTIVE) ?: return
+        if (belowNames.isEmpty()) objective.unregister() else objective.getScore(entry).resetScore()
+    }
+
+    private fun writes(action: () -> Unit) {
+        if (REGIONIZED) Bukkit.getGlobalRegionScheduler().run(plugin) { action() } else action()
+    }
+
+    private companion object {
+        const val TEAM = "sculk_name_"
+        const val OBJECTIVE = "sculk_below"
+
         val REGIONIZED: Boolean by lazy {
             runCatching { Class.forName("io.papermc.paper.threadedregions.RegionizedServer") }.isSuccess
         }

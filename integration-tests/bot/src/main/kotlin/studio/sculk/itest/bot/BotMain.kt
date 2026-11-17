@@ -24,12 +24,15 @@ import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.Serverbound
 import org.geysermc.mcprotocollib.protocol.data.game.BossBarAction
 import org.geysermc.mcprotocollib.protocol.data.game.scoreboard.ObjectiveAction
 import org.geysermc.mcprotocollib.protocol.data.game.scoreboard.ScoreboardPosition
+import org.geysermc.mcprotocollib.protocol.data.game.scoreboard.TeamAction
+import org.geysermc.mcprotocollib.protocol.data.game.chat.numbers.FixedFormat
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundBossEventPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundLoginPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundTabListPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundResetScorePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetDisplayObjectivePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetObjectivePacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetPlayerTeamPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetScorePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundClearTitlesPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundSetActionBarTextPacket
@@ -58,7 +61,7 @@ import kotlin.system.exitProcess
  * - events: `JOINED`, `WINDOW id type title`, `CONTENT id state slot:name...`, `SLOT id state slot name`,
  *   `CLOSED id`, `CHAT text`, `DIALOG title buttons inputs` (labels and `key:type`, each `|`-separated),
  *   `DIALOGCLOSED`, `ACTIONBAR text`, `BOSSBAR uuid ADD|REMOVE|UPDATE_TITLE|UPDATE_HEALTH title progress`,
- *   `TITLE title subtitle`, `TITLECLEARED`, `TAB header footer`, `SIDEBAR title lines` (lines top to bottom, `|`-separated, empty when none shows),
+ *   `TITLE title subtitle`, `TITLECLEARED`, `NAMETAG player prefix suffix`, `BELOWNAME player text`, `TAB header footer`, `SIDEBAR title lines` (lines top to bottom, `|`-separated, empty when none shows),
  *   `DISCONNECTED reason`;
  * - commands: `CLICK slot LEFT|RIGHT|SHIFT|DROP|HOTBAR n`, `CLOSE`, `COMMAND text`,
  *   `DIALOGCLICK label key=value...` (each value typed as the dialog declares its input), `QUIT`.
@@ -95,6 +98,16 @@ private class Bot(private val out: PrintStream) {
     // The scoreboard as the client keeps it: objective titles, scores per objective, and which shows.
     private val objectives = HashMap<String, String>()
     private val scores = HashMap<String, HashMap<String, Pair<Int, String>>>()
+
+    // What a client draws around each name: its team's prefix and suffix, and the below-name text,
+    // reported only when it changes.
+    private class Team(var prefix: String = "", var suffix: String = "", val members: MutableSet<String> = HashSet())
+
+    private val teams = HashMap<String, Team>()
+    private val nametags = HashMap<String, String>()
+    private var belowName: String? = null
+    private val fixed = HashMap<String, HashMap<String, String>>()
+    private val belowNames = HashMap<String, String>()
     private var sidebar: String? = null
 
     // The server sends a title's subtitle first; the title packet is what makes it show.
@@ -165,22 +178,60 @@ private class Bot(private val out: PrintStream) {
                     ObjectiveAction.REMOVE -> {
                         objectives.remove(packet.name)
                         scores.remove(packet.name)
+                        fixed.remove(packet.name)
+                        if (belowName == packet.name) belowName = null
                     }
                     else -> objectives[packet.name] = packet.displayName?.let { plain.serialize(it) }.orEmpty()
                 }
                 sidebarChanged()
+                belowNamesChanged()
             }
-            is ClientboundSetDisplayObjectivePacket -> if (packet.position == ScoreboardPosition.SIDEBAR) {
-                sidebar = packet.name.ifEmpty { null }
-                sidebarChanged()
+            is ClientboundSetDisplayObjectivePacket -> when (packet.position) {
+                ScoreboardPosition.SIDEBAR -> {
+                    sidebar = packet.name.ifEmpty { null }
+                    sidebarChanged()
+                }
+                ScoreboardPosition.BELOW_NAME -> {
+                    belowName = packet.name.ifEmpty { null }
+                    belowNamesChanged()
+                }
+                else -> {}
             }
             is ClientboundSetScorePacket -> {
                 scores.getOrPut(packet.objective) { HashMap() }[packet.owner] = packet.value to (packet.display?.let { plain.serialize(it) } ?: packet.owner)
+                val format = packet.numberFormat
+                val byOwner = fixed.getOrPut(packet.objective) { HashMap() }
+                if (format is FixedFormat) byOwner[packet.owner] = text(format.value) else byOwner.remove(packet.owner)
                 sidebarChanged()
+                belowNamesChanged()
             }
             is ClientboundResetScorePacket -> {
                 if (packet.objective == null) scores.values.forEach { it.remove(packet.owner) } else scores[packet.objective]?.remove(packet.owner)
+                if (packet.objective == null) fixed.values.forEach { it.remove(packet.owner) } else fixed[packet.objective]?.remove(packet.owner)
                 sidebarChanged()
+                belowNamesChanged()
+            }
+            is ClientboundSetPlayerTeamPacket -> {
+                val team = teams.getOrPut(packet.teamName) { Team() }
+                val touched = HashSet(team.members)
+                when (packet.action) {
+                    TeamAction.CREATE, TeamAction.UPDATE -> {
+                        team.prefix = text(packet.playerPrefix)
+                        team.suffix = text(packet.playerSuffix)
+                    }
+                    TeamAction.REMOVE -> {
+                        teams.remove(packet.teamName)
+                        team.members.clear()
+                    }
+                    else -> {}
+                }
+                val players = packet.players?.filterNotNull().orEmpty()
+                when (packet.action) {
+                    TeamAction.CREATE, TeamAction.ADD_PLAYER -> team.members.addAll(players)
+                    TeamAction.REMOVE_PLAYER -> team.members.removeAll(players.toSet())
+                    else -> {}
+                }
+                (touched + players).forEach(::nametagChanged)
             }
             is ClientboundClearDialogPacket -> {
                 dialog = null
@@ -218,6 +269,24 @@ private class Bot(private val out: PrintStream) {
     }
 
     // Reports the sidebar the client would draw, highest score first, only when it differs.
+    private fun text(component: Component?): String = component?.let(plain::serialize).orEmpty()
+
+    private fun nametagChanged(owner: String) {
+        val team = teams.values.firstOrNull { owner in it.members }
+        val shown = "${team?.prefix.orEmpty()}	${team?.suffix.orEmpty()}"
+        if (nametags.put(owner, shown) != shown) emit("NAMETAG", owner, team?.prefix.orEmpty(), team?.suffix.orEmpty())
+    }
+
+    private fun belowNamesChanged() {
+        val now = belowName?.let { fixed[it] }.orEmpty()
+        for (owner in now.keys + belowNames.keys) {
+            val shown = now[owner].orEmpty()
+            if ((belowNames[owner] ?: "") == shown) continue
+            if (shown.isEmpty()) belowNames.remove(owner) else belowNames[owner] = shown
+            emit("BELOWNAME", owner, shown)
+        }
+    }
+
     private fun sidebarChanged() {
         val shown = sidebar?.let { name ->
             val lines = scores[name].orEmpty().values.sortedByDescending { it.first }.joinToString("|") { it.second }

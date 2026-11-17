@@ -72,6 +72,34 @@ huds.clearTitle(player)
 Both templates are rendered with the `Huds`'s placeholders for that player, and both calls work
 from any thread. A player needs no HUD to be shown a title.
 
+## Nametags and below-name lines
+
+A layout can also set how other players see this player's name: a prefix and suffix around it,
+above their head and in the tab list, and a line under it.
+
+```kotlin
+val layout = hud {
+    nametag(prefix = "<rank_prefix> ", suffix = " <muted>[<player_level>]")
+    belowName("<danger><player_health> ❤")
+}
+```
+
+They are rendered for the player whose name it is, so every viewer sees the same text, and redraw
+like any other surface when a placeholder they used changes. Text that differs per viewer needs
+`sculk-presentation-packets`.
+
+Sculk writes one team and one below-name score per player to the server's main board, and copies
+them onto the board of any player who has a Sculk sidebar, so they see them too. If another plugin
+has already put the player in a team, Sculk leaves that team alone and shows its nametag once the
+player has left it; the below-name line likewise waits while another plugin's objective holds that
+slot.
+
+<Aside type="caution">
+  A player with a Sculk sidebar sees Sculk's board, not the main board, so teams that other plugins
+  or `/team` keep on the main board (their prefixes, colours and collision rules) do not show for
+  that player. Sculk's own nametags and below-name lines do.
+</Aside>
+
 ## The sidebar and other plugins' boards
 
 A player sees one scoreboard. The sidebar takes the player's board only from the server's main
@@ -79,11 +107,12 @@ board; if another plugin has given the player its own board, Sculk's sidebar wai
 that board is gone, and when the HUD closes the player gets back the board they had.
 
 The sidebar needs Bukkit scoreboards, which Paper and Canvas have and Folia does not:
-`huds.sidebarAvailable` says which, and showing a layout with a sidebar on Folia returns an
-`UnsupportedCapability` failure. The action bar, boss bars and tab list work everywhere.
+`huds.sidebarAvailable` says which, and showing a layout with a sidebar, nametag or below-name
+line on Folia returns an `UnsupportedCapability` failure. The action bar, boss bars, tab list and
+titles work everywhere.
 
 <Aside>
   Sculk's `integration-tests/hud` suite shows a HUD to a real client on every supported Paper
   version, Folia and Canvas, changes a placeholder, hands the player another plugin's board and
-  closes it, checking what the client receives each time.
+  team, shows a title and closes it, checking what the client receives each time.
 </Aside>
