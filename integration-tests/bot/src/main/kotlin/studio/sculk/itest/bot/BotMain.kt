@@ -57,7 +57,12 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.S
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundAcceptTeleportationPacket
 import java.io.PrintStream
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
+
+
+/** Longer than a tick, so Paper has made a shown dialog's callbacks live before the client answers. */
+private const val HUMAN_DELAY_MILLIS = 200L
 
 /**
  * A headless client for the server suites (ADR-0029). It joins `host port` as `name`, prints what
@@ -99,6 +104,10 @@ private class Bot(private val out: PrintStream) {
     @Volatile private var stateId = 0
 
     @Volatile private var dialog: NbtMap? = null
+
+    // Paper makes a dialog's button callbacks live at its next tick, so an answer sent within the
+    // same tick finds none and is dropped. A player cannot answer that fast; the client waits too.
+    @Volatile private var dialogShownAt = 0L
 
     // The dialog registry as the server sent it while configuring: a dialog shown by id is the entry
     // at that index, and the server's own entries come with their data.
@@ -172,6 +181,7 @@ private class Bot(private val out: PrintStream) {
                     emit("ERROR", "a dialog by id ${packet.dialog.id()} the registry did not send")
                 } else {
                     dialog = shown
+                    dialogShownAt = System.nanoTime()
                     val inputs = shown.getList("inputs", NbtType.COMPOUND, emptyList()).joinToString("|") { "${it.getString("key")}:${it.getString("type").substringAfter(':')}" }
                     emit("DIALOG", text(shown["title"]), buttons(shown).joinToString("|") { text(it["label"]) }, inputs)
                 }
@@ -333,6 +343,8 @@ private class Bot(private val out: PrintStream) {
     // As the client does: the button's custom click carries its additions plus every input's value.
     private fun answer(label: String, values: Map<String, String>) {
         val shown = dialog ?: return emit("ERROR", "no dialog is open")
+        val waited = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - dialogShownAt)
+        if (waited < HUMAN_DELAY_MILLIS) Thread.sleep(HUMAN_DELAY_MILLIS - waited)
         val button = buttons(shown).firstOrNull { text(it["label"]) == label } ?: return emit("ERROR", "no button '$label'")
         val action = button.getCompound("action")
         val payload = action.getCompound("additions", NbtMap.EMPTY).toBuilder()
