@@ -12,6 +12,7 @@ import java.util.UUID
  */
 @SculkStable
 public sealed interface PlaceholderChange {
+    /** The placeholder whose values may have changed. */
     public val key: PlaceholderKey
 
     /** Any value of the placeholder, for every audience. */

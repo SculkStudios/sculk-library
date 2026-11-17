@@ -30,14 +30,19 @@ import java.util.concurrent.CopyOnWriteArrayList
  * anything slow is an async placeholder, whose resolver runs in `ExecutionContext.Async` while renders
  * show the last value. Every member of the registry may be called from any thread.
  *
- * Kept values are bounded to [cacheSize] per placeholder, least recently used first out. Every
- * placeholder and change listener belongs to [scope] and ends with it; closing the registry ends
- * them sooner. Registering a key twice is a wiring bug and throws.
+ * A resolver or format that throws while rendering leaves its tag as written and is reported to
+ * the scope's failure handler, at most once a minute per placeholder.
+ *
+ * Kept values are bounded per placeholder, least recently used first out: [cacheSize] for a global
+ * or audience placeholder, and [cacheSize] squared for a relational one, whose values are kept per
+ * viewer and target. Every placeholder and change listener belongs to [scope] and ends with it;
+ * closing the registry ends them sooner. Registering a key twice is a wiring bug and throws.
  */
 @SculkStable
 public class PlaceholderRegistry(
     internal val scope: SculkScope,
     internal val clock: SculkClock = SculkClock.SYSTEM,
+    /** Values kept per placeholder; a relational placeholder keeps this many squared, as its values are per viewer and target. */
     public val cacheSize: Int = DEFAULT_CACHE_SIZE,
 ) : SculkHandle {
     private val lock = Any()
@@ -49,6 +54,9 @@ public class PlaceholderRegistry(
         require(cacheSize > 0) { "A placeholder cache holds at least one value, but cacheSize was $cacheSize." }
         scope.resources.own(this)
     }
+
+    // Values of a relational placeholder are per pair, so cacheSize viewers each seeing cacheSize targets fit without thrashing.
+    private val relationalCacheSize: Int = (cacheSize.toLong() * cacheSize).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
 
     /** Every open placeholder, ordered by tag: for listing, or for a bridge to another placeholder plugin. */
     public val registered: List<SculkPlaceholder<*>> get() = byTag.values.sortedBy { it.key.tag }
@@ -182,8 +190,9 @@ public class PlaceholderRegistry(
     internal fun <C : PlaceholderContext, T : Any> store(
         refresh: Refresh,
         source: ValueSource<C, T>,
+        relational: Boolean,
         changed: (Slot) -> Unit,
-    ): ValueStore<C, T> = ValueStore(refresh, source, cacheSize, clock, scope, changed)
+    ): ValueStore<C, T> = ValueStore(refresh, source, if (relational) relationalCacheSize else cacheSize, clock, scope, changed)
 
     internal fun listen(listener: (PlaceholderChange) -> Unit): SculkHandle {
         listeners += listener
@@ -195,10 +204,15 @@ public class PlaceholderRegistry(
             try {
                 listener(change)
             } catch (failure: Exception) {
-                val handler = scope.coroutineContext[CoroutineExceptionHandler] ?: throw failure
-                handler.handleException(scope.coroutineContext, failure)
+                report(failure)
             }
         }
+    }
+
+    /** Hands [failure] to the scope's failure handler. */
+    internal fun report(failure: Exception) {
+        val handler = scope.coroutineContext[CoroutineExceptionHandler] ?: throw failure
+        handler.handleException(scope.coroutineContext, failure)
     }
 
     @SculkStable

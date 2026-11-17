@@ -6,7 +6,9 @@ import net.kyori.adventure.text.TranslationArgument
 import net.kyori.adventure.text.minimessage.translation.Argument
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import studio.sculk.SculkFailure
@@ -87,6 +89,40 @@ class TranslationsTest {
         assertEquals("Dag", translator.translate(Component.translatable("greeting"), belgian)?.text())
         assertEquals("3 monety", translator.translate(Component.translatable("coins", TranslationArgument.numeric(3)), polish)?.text())
         assertNull(translator.translate(Component.translatable("missing"), english))
+    }
+
+    @Test
+    fun `a key no bundle has, such as a vanilla one, is not translatable in any locale`() {
+        val translator = translations.translator(Key.key("sculk", "test"))
+        listOf(english, dutch, belgian, polish, Locale.of("fr")).forEach { locale ->
+            assertFalse(translator.canTranslate("block.minecraft.stone", locale), "block.minecraft.stone in $locale")
+            assertNull(translator.translate(Component.translatable("block.minecraft.stone"), locale))
+            assertNull(translator.translate(Component.translatable("item.minecraft.diamond", TranslationArgument.numeric(3)), locale))
+        }
+    }
+
+    @Test
+    fun `a key is translatable where its locale's chain has it, itself or as plural forms`() {
+        val translator = Translations.of(english, mapOf(english to mapOf("greeting" to "Hello"), dutch to mapOf("boats.other" to "boten")))
+            .translator(Key.key("sculk", "test"))
+        assertTrue(translator.canTranslate("greeting", belgian))
+        assertTrue(translator.canTranslate("boats", belgian))
+        assertTrue(translator.canTranslate("boats.other", dutch))
+        assertFalse(translator.canTranslate("boats", english), "only the Dutch bundle has boats")
+        assertFalse(translator.canTranslate("boat", dutch), "a stem is the key before a plural suffix, not a prefix of it")
+    }
+
+    @Test
+    fun `lookups answer the same however often and for however many locales they are made`() {
+        repeat(2) {
+            assertEquals("Dag", translations.template("greeting", belgian))
+            assertEquals("Bye", translations.template("farewell", belgian))
+            assertEquals("5 monet", translations.plural("coins", 5, polish).text())
+            assertEquals("2 coins", translations.plural("coins", 2, Locale.of("fr")).text())
+        }
+        repeat(300) { assertEquals("Hallo", translations.template("greeting", Locale.of("nl", "X$it"))) }
+        assertEquals("Dag", translations.template("greeting", belgian))
+        assertEquals("Hello", translations.template("greeting", Locale.of("de", "AT")))
     }
 
     @Test

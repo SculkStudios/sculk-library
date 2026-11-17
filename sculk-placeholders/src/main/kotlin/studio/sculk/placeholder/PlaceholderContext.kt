@@ -11,6 +11,7 @@ import java.util.UUID
  */
 @SculkStable
 public open class PlaceholderContext internal constructor(
+    /** The placeholder being resolved. */
     public val key: PlaceholderKey,
     private val declared: List<PlaceholderArgument<*>>,
     private val values: List<Any>,

@@ -7,6 +7,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The one place Sculk turns a template into a component.
@@ -18,26 +19,41 @@ import studio.sculk.annotation.SculkStable
  */
 @SculkStable
 public class Text(
+    /** The styles templates may use by name. */
     public val theme: Theme = Theme.DEFAULT,
     internal val miniMessage: MiniMessage = MiniMessage.miniMessage(),
     private val cacheSize: Int = DEFAULT_CACHE_SIZE,
 ) {
-    private val expanded = BoundedCache<String, String>(cacheSize)
+    // Keyed by the template alone, or by the template and the styles a render's placeholders hide.
+    private val expanded = BoundedCache<Any, String>(cacheSize)
 
     /** [template] with the theme's styles expanded into MiniMessage tags. */
     internal fun expand(template: String): String = expanded.getOrPut(template) { theme.expand(template) }
 
+    /** [template] expanded for a render through [resolver]; a style whose name [resolver] also has is left to it. */
+    private fun expand(template: String, resolver: TagResolver): String {
+        if (theme.names.none(resolver::has)) return expand(template)
+        val hidden = theme.names.filterTo(HashSet(), resolver::has)
+        return expanded.getOrPut(template to hidden) { theme.expand(template, hidden) }
+    }
+
     /**
      * Renders [template] with [values] as placeholders: `render("<primary>Hi <name>", "name" to player.name)`.
      * A [ComponentLike] value is inserted as built; null renders as nothing; anything else is its
-     * string form, unparsed.
+     * string form, unparsed. A value named like a theme style takes that name for this render, so
+     * `render("<value>", "value" to x)` shows x and the style is not applied. A name that is not
+     * lower-case letters, digits, `_` or `-` throws [IllegalArgumentException].
      */
     public fun render(template: String, vararg values: Pair<String, Any?>): Component = render(template, resolverOf(values.asList()))
 
+    /** Renders [template] with the entries of [values] as placeholders, exactly as the vararg overload does. */
     public fun render(template: String, values: Map<String, Any?>): Component = render(template, resolverOf(values.toList()))
 
-    /** Renders [template] with a resolver built elsewhere, such as a placeholder context. */
-    public fun render(template: String, resolver: TagResolver): Component = miniMessage.deserialize(expand(template), resolver)
+    /**
+     * Renders [template] with a resolver built elsewhere, such as a placeholder context. A tag
+     * [resolver] has takes precedence over a theme style of the same name for this render.
+     */
+    public fun render(template: String, resolver: TagResolver): Component = miniMessage.deserialize(expand(template, resolver), resolver)
 
     /** This renderer with a different theme and an empty cache. */
     public fun withTheme(theme: Theme): Text = Text(theme, miniMessage, cacheSize)
@@ -46,8 +62,7 @@ public class Text(
         if (values.isEmpty()) return TagResolver.empty()
         return TagResolver.resolver(
             values.map { (name, value) ->
-                require(NAME.matches(name)) { "Placeholder '$name' must be lower-case letters, digits, '_' or '-'." }
-                require(theme[name] == null) { "Placeholder '$name' has the same name as a theme style; rename one of them." }
+                TagNames.requireValid(name, "Placeholder")
                 when (value) {
                     is ComponentLike -> Placeholder.component(name, value)
                     null -> Placeholder.component(name, Component.empty())
@@ -59,8 +74,8 @@ public class Text(
 
     @SculkStable
     public companion object {
+        /** Expanded templates a renderer keeps unless told otherwise. */
         public const val DEFAULT_CACHE_SIZE: Int = 512
-        private val NAME = Regex("[a-z0-9_-]+")
 
         /** A renderer with [Theme.DEFAULT], shared by [mm] and [send]. Thread-safe. */
         @SculkExperimental
@@ -68,15 +83,24 @@ public class Text(
     }
 }
 
-/** A small access-ordered cache; theme expansion is cheap, so a miss costs little. Thread-safe. */
+/**
+ * A cache bounded to [capacity] entries that never locks on a hit. A full cache drops an arbitrary
+ * entry to make room, which suits theme expansion: a miss costs little. Thread-safe.
+ */
 internal class BoundedCache<K : Any, V : Any>(private val capacity: Int) {
-    private val entries = object : LinkedHashMap<K, V>(capacity, LOAD_FACTOR, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>?): Boolean = size > capacity
-    }
+    private val entries = ConcurrentHashMap<K, V>()
 
-    fun getOrPut(key: K, compute: () -> V): V = synchronized(entries) { entries.getOrPut(key, compute) }
+    val size: Int get() = entries.size
 
-    private companion object {
-        const val LOAD_FACTOR = 0.75f
+    fun getOrPut(key: K, compute: () -> V): V {
+        entries[key]?.let { return it }
+        val value = compute()
+        if (capacity <= 0) return value
+        // Racing writers may each make room and then insert, so the size can pass capacity by at most their number.
+        while (entries.size >= capacity) {
+            val dropped = entries.keys.firstOrNull() ?: break
+            entries.remove(dropped)
+        }
+        return entries.putIfAbsent(key, value) ?: value
     }
 }

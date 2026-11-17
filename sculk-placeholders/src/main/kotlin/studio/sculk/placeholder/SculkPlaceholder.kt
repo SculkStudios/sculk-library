@@ -12,6 +12,9 @@ import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration.Companion.minutes
 
 /**
  * A registered placeholder: global, per audience, or relational. Values of type [T] are kept and
@@ -22,7 +25,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 @SculkStable
 public sealed class SculkPlaceholder<T : Any>(
+    /** The key it was registered under, whose [PlaceholderKey.tag] templates write. */
     public val key: PlaceholderKey,
+    /** How long a value is kept before it is computed or loaded again. */
     public val refresh: Refresh,
     /** True when values load in the async context while renders show the last one. */
     public val isAsync: Boolean,
@@ -36,6 +41,8 @@ public sealed class SculkPlaceholder<T : Any>(
     private val closed = AtomicBoolean()
     private val sources = CopyOnWriteArraySet<SculkPlaceholder<*>>()
     private val links = CopyOnWriteArrayList<SculkHandle>()
+    private val nextFailureReport = AtomicLong(Long.MIN_VALUE)
+    private val heldFailures = AtomicInteger()
 
     init {
         require(this.arguments.distinctBy { it.name }.size == this.arguments.size) { "<${key.tag}> declares two arguments with one name." }
@@ -44,6 +51,7 @@ public sealed class SculkPlaceholder<T : Any>(
         }
     }
 
+    /** True once closed, by [close] or with the registry's scope; a closed placeholder no longer resolves. */
     public val isClosed: Boolean get() = closed.get()
 
     /** [value] as this placeholder shows it; null shows as nothing. */
@@ -87,6 +95,22 @@ public sealed class SculkPlaceholder<T : Any>(
         if (!isClosed) registry.signal(change)
     }
 
+    /**
+     * Reports a render that threw [failure] to the registry, at most once per [FAILURE_REPORT_INTERVAL]
+     * with a count of those held back since, so a broken tag on a scoreboard does not log every tick.
+     */
+    internal fun renderFailed(failure: Exception) {
+        val now = registry.clock.monotonicNanos()
+        val due = nextFailureReport.get()
+        if (now < due || !nextFailureReport.compareAndSet(due, now + FAILURE_REPORT_INTERVAL.inWholeNanoseconds)) {
+            heldFailures.incrementAndGet()
+            return
+        }
+        val held = heldFailures.getAndSet(0)
+        val heldBack = if (held == 0) "" else "; $held similar failures since the last report were held back"
+        registry.report(IllegalStateException("<${key.tag}> failed to render and was left as written$heldBack.", failure))
+    }
+
     private fun reaches(other: SculkPlaceholder<*>): Boolean = this === other || sources.any { it.reaches(other) }
 
     /** The tag's [raw] arguments read against [arguments]; a missing, extra or invalid one is a failure naming it. */
@@ -123,7 +147,8 @@ public class GlobalPlaceholder<T : Any> internal constructor(
     registry: PlaceholderRegistry,
     source: ValueSource<PlaceholderContext, T>,
 ) : SculkPlaceholder<T>(key, refresh, source is ValueSource.Async, arguments, format, registry) {
-    override val values: ValueStore<PlaceholderContext, T> = registry.store(refresh, source) { signal(PlaceholderChange.Everyone(key)) }
+    override val values: ValueStore<PlaceholderContext, T> =
+        registry.store(refresh, source, relational = false) { signal(PlaceholderChange.Everyone(key)) }
 
     /**
      * The value for [arguments] under the refresh policy: computed now, kept, or for an async
@@ -157,7 +182,8 @@ public class AudiencePlaceholder<T : Any> internal constructor(
     registry: PlaceholderRegistry,
     source: ValueSource<AudienceContext, T>,
 ) : SculkPlaceholder<T>(key, refresh, source is ValueSource.Async, arguments, format, registry) {
-    override val values: ValueStore<AudienceContext, T> = registry.store(refresh, source) { signal(changeOf(it.subject)) }
+    override val values: ValueStore<AudienceContext, T> =
+        registry.store(refresh, source, relational = false) { signal(changeOf(it.subject)) }
 
     /** The value for [audience] and [arguments] under the refresh policy, as [GlobalPlaceholder.value] describes. */
     public fun value(audience: Audience, arguments: List<String> = emptyList()): SculkResult<T?> =
@@ -207,7 +233,8 @@ public class RelationalPlaceholder<T : Any> internal constructor(
     registry: PlaceholderRegistry,
     source: ValueSource<RelationalContext, T>,
 ) : SculkPlaceholder<T>(key, refresh, source is ValueSource.Async, arguments, format, registry) {
-    override val values: ValueStore<RelationalContext, T> = registry.store(refresh, source) { signal(changeOf(it.subject, it.target)) }
+    override val values: ValueStore<RelationalContext, T> =
+        registry.store(refresh, source, relational = true) { signal(changeOf(it.subject, it.target)) }
 
     /** The value for [viewer] seeing [target] with [arguments], as [GlobalPlaceholder.value] describes. */
     public fun value(viewer: Audience, target: Audience, arguments: List<String> = emptyList()): SculkResult<T?> = parse(arguments).map {
@@ -243,3 +270,5 @@ public class RelationalPlaceholder<T : Any> internal constructor(
         is PlaceholderChange.Everyone, is PlaceholderChange.Audience -> invalidate()
     }
 }
+
+private val FAILURE_REPORT_INTERVAL = 1.minutes

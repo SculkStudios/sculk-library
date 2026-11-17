@@ -1,6 +1,7 @@
 package studio.sculk.placeholder
 
 import studio.sculk.annotation.SculkStable
+import studio.sculk.text.TagNames
 
 /**
  * One argument a placeholder reads from its tag, positionally: `<shop_stat:kills>` gives `kills`
@@ -13,6 +14,7 @@ import studio.sculk.annotation.SculkStable
  */
 @SculkStable
 public class PlaceholderArgument<T : Any> private constructor(
+    /** How errors and the placeholder's documentation refer to the argument; it is never written in a tag. */
     public val name: String,
     /** What a valid value looks like, for errors: `an integer from 0 to 4`. */
     public val expected: String,
@@ -21,9 +23,10 @@ public class PlaceholderArgument<T : Any> private constructor(
     public val default: T?,
 ) {
     init {
-        require(NAME.matches(name)) { "Placeholder argument '$name' must be lower-case letters, digits, '_' or '-'." }
+        TagNames.requireValid(name, "Placeholder argument")
     }
 
+    /** True when a tag may leave this argument out and read [default] instead. */
     public val isOptional: Boolean get() = default != null
 
     /** This argument, optional: a tag that leaves it out reads [default]. Only the last arguments can be optional. */
@@ -35,8 +38,6 @@ public class PlaceholderArgument<T : Any> private constructor(
 
     @SculkStable
     public companion object {
-        private val NAME = Regex("[a-z0-9_-]+")
-
         /** Any text, or text matching [pattern] in full. */
         public fun text(name: String, pattern: Regex? = null): PlaceholderArgument<String> {
             val expected = pattern?.let { "text matching ${it.pattern}" } ?: "text"

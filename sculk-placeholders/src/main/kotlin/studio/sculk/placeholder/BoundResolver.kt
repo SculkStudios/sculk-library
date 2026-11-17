@@ -6,6 +6,7 @@ import net.kyori.adventure.text.minimessage.tag.Tag
 import net.kyori.adventure.text.minimessage.tag.resolver.ArgumentQueue
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import studio.sculk.getOrElse
+import kotlin.coroutines.cancellation.CancellationException
 
 /** Who a render is for: the [audience] audience placeholders describe, and the pair relational ones need. */
 internal class Bound(val audience: Audience?, val viewer: Audience?, val target: Audience?)
@@ -13,6 +14,8 @@ internal class Bound(val audience: Audience?, val viewer: Audience?, val target:
 /**
  * The registry's placeholders as MiniMessage tags for one [bound] render. A tag whose placeholder
  * needs an audience the render does not have is not claimed, so MiniMessage leaves it as written.
+ * A resolver or format that throws leaves its tag as written too and is reported, so one broken
+ * placeholder never takes down the rest of the line.
  */
 internal class BoundResolver(private val registry: PlaceholderRegistry, private val bound: Bound) : TagResolver {
     override fun has(name: String): Boolean = registry.find(name)?.accepts(bound) == true
@@ -21,7 +24,15 @@ internal class BoundResolver(private val registry: PlaceholderRegistry, private 
         val placeholder = registry.find(name)?.takeIf { it.accepts(bound) } ?: return null
         val raw = buildList { while (arguments.hasNext()) add(arguments.pop().value()) }
         // Arguments reach the placeholder as strings; the component it returns is inserted as built, never parsed.
-        val component = placeholder.component(bound, raw).getOrElse {
+        val result = try {
+            placeholder.component(bound, raw)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            placeholder.renderFailed(failure)
+            return null
+        }
+        val component = result.getOrElse {
             arguments.reset()
             throw ctx.newException(it.describe(), arguments)
         }

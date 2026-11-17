@@ -31,8 +31,11 @@ internal class TranslationsTranslator(private val name: Key, text: Text, private
     override fun canTranslate(key: String, locale: Locale): Boolean = translations().has(key, locale)
 
     override fun translate(component: TranslatableComponent, locale: Locale): Component? {
+        val translations = translations()
+        // Adventure 4's GlobalTranslator skips canTranslate and comes here for every translatable component.
+        if (!translations.has(component.key(), locale)) return null
         val count = component.arguments().firstNotNullOfOrNull { it.value() as? Number }?.toLong()
-        val form = count?.let { translations().pluralForm(component.key(), it, locale) } ?: return templates.translate(component, locale)
+        val form = count?.let { translations.pluralForm(component.key(), it, locale) } ?: return templates.translate(component, locale)
         val counted = component.key(form.key).arguments(component.arguments() + Argument.numeric("count", count))
         return templates.translate(counted, locale)
     }

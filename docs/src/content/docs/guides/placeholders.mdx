@@ -118,7 +118,9 @@ separately.
 
 Invalidate everyone with `invalidate()`, one audience with `invalidate(audience)` or
 `invalidate(uniqueId)`, and one pair with `invalidate(viewer, target)`. Kept values are bounded per
-placeholder (`cacheSize`, 1,024 by default), least recently used first out.
+placeholder, least recently used first out: `cacheSize` values (1,024 by default) for a global or
+per-player placeholder, and `cacheSize` squared for a relational one, enough for that many viewers
+each seeing that many targets.
 
 ### Slow values load asynchronously
 

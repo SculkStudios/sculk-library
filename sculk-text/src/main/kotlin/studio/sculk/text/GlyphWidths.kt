@@ -16,21 +16,34 @@ import studio.sculk.annotation.SculkStable
  * for everything else.
  */
 @SculkStable
-public class GlyphWidths(advances: Map<Int, Int>, public val fallback: Int = DEFAULT_ADVANCE) {
+public class GlyphWidths(
+    advances: Map<Int, Int>,
+    /** The advance of every code point the table does not list. */
+    public val fallback: Int = DEFAULT_ADVANCE,
+) {
     private val advances = advances.toMap()
 
+    /** The advance of [codePoint] in pixels, one more when [bold]. */
     public fun width(codePoint: Int, bold: Boolean = false): Int = (advances[codePoint] ?: fallback) + if (bold) 1 else 0
 
+    /** The advance of [char] in pixels, one more when [bold]. */
     public fun width(char: Char, bold: Boolean = false): Int = width(char.code, bold)
 
+    /** The width of [text] in pixels, glyph by glyph, with a surrogate pair counted as one glyph. */
     public fun width(text: String, bold: Boolean = false): Int = text.codePoints().map { width(it, bold) }.sum()
 
-    /** The width of [component] as the client draws it, following bold through the component tree. */
+    /**
+     * The width of [component] as the client draws it, following bold through the component tree.
+     * Only text content is measured: translatable, keybind, score, selector and NBT components
+     * measure zero, because the client or the server decides their text when the component is
+     * sent. Render translations first with `GlobalTranslator.render(component, locale)` to measure them.
+     */
     public fun width(component: Component): Int = segments(component).sumOf { (text, bold) -> width(text, bold) }
 
     /**
      * [component] preceded by enough spaces to centre it in a line [lineWidth] pixels wide, the chat
-     * width by default. A component wider than the line is returned unchanged.
+     * width by default. A component wider than the line is returned unchanged. Measured as [width]
+     * measures it, so a component with translatable or keybind parts is padded as if they were empty.
      */
     public fun centre(component: Component, lineWidth: Int = CHAT_WIDTH): Component {
         val padding = (lineWidth - width(component)) / 2

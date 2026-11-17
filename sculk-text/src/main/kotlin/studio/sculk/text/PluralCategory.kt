@@ -17,7 +17,8 @@ public enum class PluralCategory {
     OTHER,
     ;
 
-    public val suffix: String get() = name.lowercase()
+    /** The lower-case name a translation key ends with for this form: `one` in `coins.one`. */
+    public val suffix: String = name.lowercase()
 
     @SculkStable
     public companion object {

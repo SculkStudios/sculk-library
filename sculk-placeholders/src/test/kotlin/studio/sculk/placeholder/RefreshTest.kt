@@ -105,6 +105,26 @@ class RefreshTest {
     }
 
     @Test
+    fun `a relational placeholder keeps a value for each pair of as many viewers and targets as the cache size`() {
+        val bounded = PlaceholderRegistry(scope.child("bounded"), clock, cacheSize = 2)
+        var computed = 0
+        val colour = bounded.relational("teams:colour", Refresh.UntilInvalidated) { ++computed }
+        val pairs = listOf(steve to alex, alex to steve, steve to steve, alex to alex)
+        repeat(3) { pairs.forEach { (viewer, target) -> colour.value(viewer, target) } }
+        assertEquals(4, computed, "every pair is computed once and then kept")
+        assertEquals(4, colour.values.size)
+    }
+
+    @Test
+    fun `a relational placeholder's values stay bounded, least recently used first out`() {
+        val bounded = PlaceholderRegistry(scope.child("bounded"), clock, cacheSize = 2)
+        val colour = bounded.relational("teams:colour", Refresh.UntilInvalidated) { "red" }
+        val players = listOf(steve, alex, Viewer("Notch"))
+        players.forEach { viewer -> players.forEach { target -> colour.value(viewer, target) } }
+        assertEquals(4, colour.values.size)
+    }
+
+    @Test
     fun `a computation that started earlier never replaces a value computed after it`() {
         var calls = 0
         lateinit var balance: AudiencePlaceholder<String>
@@ -122,7 +142,7 @@ class RefreshTest {
     }
 
     @Test
-    fun `a synchronous resolver that throws fails the render and keeps nothing`() {
+    fun `a synchronous resolver that throws fails the read and keeps nothing`() {
         var fail = true
         val balance = placeholders.audience("shop:balance", Refresh.UntilInvalidated) { if (fail) error("database down") else 7 }
         assertThrows<IllegalStateException> { balance.value(steve) }

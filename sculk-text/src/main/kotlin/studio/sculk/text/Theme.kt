@@ -12,28 +12,33 @@ import studio.sculk.annotation.SculkStable
  */
 @SculkStable
 public class Theme private constructor(private val styles: Map<String, ThemeStyle>) {
+    /** The names of every style, as a template writes them between angle brackets. */
     public val names: Set<String> get() = styles.keys
 
+    /** The style named [name], or null when the theme has none. */
     public operator fun get(name: String): ThemeStyle? = styles[name]
 
     /** A copy with [name] set to [style]. */
     public fun with(name: String, style: ThemeStyle): Theme = Theme(styles + (validName(name) to style))
 
-    /** [template] with every `<name>` and `</name>` of a style replaced by the tags that render it. */
-    internal fun expand(template: String): String {
+    /**
+     * [template] with every `<name>` and `</name>` of a style replaced by the tags that render it,
+     * except the styles in [hidden], which are left as written for a placeholder of the same name.
+     */
+    internal fun expand(template: String, hidden: Set<String> = emptySet()): String {
         if ('<' !in template) return template
         return TAG.replace(template) { match ->
             val (slash, name) = match.destructured
-            val style = styles[name] ?: return@replace match.value
+            val style = styles[name]?.takeIf { name !in hidden } ?: return@replace match.value
             if (slash.isEmpty()) style.open else style.close
         }
     }
 
     @SculkStable
     public companion object {
-        private val TAG = Regex("<(/?)([a-z0-9_-]+)>")
-        private val NAME = Regex("[a-z0-9_-]+")
+        private val TAG = Regex("<(/?)(${TagNames.PATTERN})>")
 
+        /** A theme with no styles, so every tag in a template is left for MiniMessage. */
         public val EMPTY: Theme = Theme(emptyMap())
 
         /** A neutral starting point; every plugin is expected to choose its own colours. */
@@ -47,6 +52,10 @@ public class Theme private constructor(private val styles: Map<String, ThemeStyl
             "danger" to ThemeStyle.Solid("#F2545B"),
         )
 
+        /**
+         * A theme of [styles]; a later pair replaces an earlier one with the same name. Throws
+         * [IllegalArgumentException] for a malformed name or one that would hide a MiniMessage tag.
+         */
         public fun of(vararg styles: Pair<String, ThemeStyle>): Theme = Theme(
             styles.associate { (name, style) ->
                 validName(name) to style
@@ -54,7 +63,7 @@ public class Theme private constructor(private val styles: Map<String, ThemeStyl
         )
 
         private fun validName(name: String): String {
-            require(NAME.matches(name)) { "Theme style '$name' must be lower-case letters, digits, '_' or '-'." }
+            TagNames.requireValid(name, "Theme style")
             require(!TagResolver.standard().has(name)) { "Theme style '$name' would hide MiniMessage's own <$name> tag." }
             return name
         }
@@ -72,7 +81,12 @@ public sealed interface ThemeStyle {
 
     /** One colour, optionally with decorations such as `bold` or `italic`. Keeps a copy of [decorations]. */
     @SculkStable
-    public class Solid(public val hex: String, decorations: List<String> = emptyList()) : ThemeStyle {
+    public class Solid(
+        /** The colour as `#rrggbb`. */
+        public val hex: String,
+        decorations: List<String> = emptyList(),
+    ) : ThemeStyle {
+        /** MiniMessage decoration names, opened in this order and closed in reverse. */
         public val decorations: List<String> = decorations.toList()
 
         init {
@@ -94,6 +108,7 @@ public sealed interface ThemeStyle {
     /** A gradient across two or more colours. Keeps a copy of [colours]. */
     @SculkStable
     public class Gradient(colours: List<String>) : ThemeStyle {
+        /** The colours as `#rrggbb`, from the start of the styled text to its end. */
         public val colours: List<String> = colours.toList()
 
         init {

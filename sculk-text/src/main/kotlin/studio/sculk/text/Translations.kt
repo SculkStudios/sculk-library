@@ -13,6 +13,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Locale
 import java.util.Properties
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.name
 
 /**
@@ -25,11 +26,19 @@ import kotlin.io.path.name
  */
 @SculkStable
 public class Translations private constructor(
+    /** The locale whose bundle answers when the viewer's own locale and language have no template. */
     public val defaultLocale: Locale,
     private val bundles: Map<Locale, Map<String, String>>,
     internal val text: Text,
 ) {
+    /** Every locale with a bundle. */
     public val locales: Set<Locale> get() = bundles.keys
+
+    // GlobalTranslator asks every source about every translatable component, vanilla keys included,
+    // so the keys each bundle can translate, plural stems among them, are known before the first lookup.
+    private val translatable: Map<Locale, Set<String>> = bundles.mapValues { (_, messages) -> messages.keys + pluralStems(messages.keys) }
+    private val anyTranslatable: Set<String> = translatable.values.flatMapTo(HashSet()) { it }
+    private val chains = ConcurrentHashMap<Locale, List<Locale>>()
 
     /** The template for [key] in [locale] after fallback, or null when no bundle has it. */
     public fun template(key: String, locale: Locale = defaultLocale): String? = chain(locale).firstNotNullOfOrNull { bundles[it]?.get(key) }
@@ -56,7 +65,7 @@ public class Translations private constructor(
 
     /** Whether [key] has a template in [locale]'s chain, itself or as plural forms. */
     internal fun has(key: String, locale: Locale): Boolean =
-        template(key, locale) != null || PluralCategory.entries.any { template("$key.${it.suffix}", locale) != null }
+        key in anyTranslatable && chain(locale).any { translatable[it]?.contains(key) == true }
 
     internal fun expandedTemplate(key: String, locale: Locale): String? = template(key, locale)?.let(text::expand)
 
@@ -74,12 +83,27 @@ public class Translations private constructor(
 
     internal class PluralForm(val key: String, val template: String)
 
-    private fun chain(locale: Locale): List<Locale> =
-        listOf(locale, Locale.of(locale.language), defaultLocale, Locale.of(defaultLocale.language)).distinct()
+    /** The locales [locale] falls back through, keeping only those with a bundle. */
+    private fun chain(locale: Locale): List<Locale> {
+        chains[locale]?.let { return it }
+        val chain = listOf(locale, Locale.of(locale.language), defaultLocale, Locale.of(defaultLocale.language))
+            .distinct()
+            .filter { it in bundles }
+        // A client names its own locale; the cap keeps one that sends a new locale each time from growing the cache.
+        if (chains.size < MAX_CACHED_CHAINS) chains.putIfAbsent(locale, chain)
+        return chain
+    }
 
     @SculkStable
     public companion object {
         private val FILE = Regex("""messages(?:_([a-z]{2,3})(?:_([A-Z]{2}))?)?\.properties""")
+        private const val MAX_CACHED_CHAINS = 256
+
+        /** The stem of each plural form in [keys]: `coins` for `coins.one`. */
+        private fun pluralStems(keys: Set<String>): List<String> = keys.mapNotNull { key ->
+            val category = PluralCategory.entries.firstOrNull { key.endsWith(".${it.suffix}") } ?: return@mapNotNull null
+            key.substring(0, key.length - category.suffix.length - 1)
+        }
 
         /** Translations built in code, for tests and plugins that ship messages as constants. */
         public fun of(defaultLocale: Locale, bundles: Map<Locale, Map<String, String>>, text: Text = Text()): Translations =

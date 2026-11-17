@@ -8,13 +8,17 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import studio.sculk.execution.SculkScope
 import studio.sculk.getOrNull
+import studio.sculk.testkit.FakeClock
 import studio.sculk.testkit.FakeExecutor
 import studio.sculk.text.Text
+import java.time.Duration
 import java.util.Locale
 
 class PlaceholderRenderingTest {
-    private val scope = SculkScope.root("plugin", FakeExecutor()) {}
-    private val placeholders = PlaceholderRegistry(scope)
+    private val clock = FakeClock()
+    private val failures = mutableListOf<Throwable>()
+    private val scope = SculkScope.root("plugin", FakeExecutor()) { failures += it }
+    private val placeholders = PlaceholderRegistry(scope, clock)
     private val text = Text()
     private val steve = Viewer("Steve")
     private val alex = Viewer("Alex")
@@ -90,6 +94,36 @@ class PlaceholderRenderingTest {
     fun `placeholders render inside theme styles`() {
         placeholders.global("server:online") { 3 }
         assertEquals("3 online", text.render("<primary><server_online> online</primary>", placeholders.resolver()).plain())
+    }
+
+    @Test
+    fun `a resolver that throws leaves its tag as written, the rest of the line renders, and the failure is reported`() {
+        placeholders.global("server:online") { 3 }
+        placeholders.audience<Int>("shop:balance") { error("database down") }
+        val line = text.render("<server_online> online, balance <shop_balance>", placeholders.resolver(steve))
+        assertEquals("3 online, balance <shop_balance>", line.plain())
+        val reported = failures.single()
+        assertTrue(reported.message.orEmpty().contains("<shop_balance>"), "the report names the tag: ${reported.message}")
+        assertEquals("database down", reported.cause?.message)
+    }
+
+    @Test
+    fun `a format that throws leaves its tag as written too`() {
+        placeholders.audience<Int>("shop:balance", format = { error("bad format") }) { 12 }
+        assertEquals("[<shop_balance>]", text.render("[<shop_balance>]", placeholders.resolver(steve)).plain())
+        assertEquals("bad format", failures.single().cause?.message)
+    }
+
+    @Test
+    fun `a placeholder that keeps failing is reported once a minute with the count held back`() {
+        placeholders.global<Int>("server:tps") { error("no tps") }
+        repeat(20) { text.render("<server_tps>", placeholders.resolver()) }
+        assertEquals(1, failures.size, "renders within a minute of the first report are held back")
+        clock.advance(Duration.ofMinutes(1))
+        text.render("<server_tps>", placeholders.resolver())
+        assertEquals(2, failures.size)
+        val second = failures.last().message.orEmpty()
+        assertTrue(second.contains("held back"), "the second report counts the others: $second")
     }
 
     private fun Component.descendants(): Sequence<Component> = sequenceOf(this) + children().asSequence().flatMap { it.descendants() }
