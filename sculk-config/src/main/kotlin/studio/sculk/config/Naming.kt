@@ -17,6 +17,13 @@ internal fun kebab(name: String): String = buildString(name.length + 4) {
     }
 }
 
+/**
+ * How an enum constant is written: `HARD_CORE` and `hardCore` both become `hard-core`. Reading
+ * ignores case and separators, so files written before this rule still load.
+ */
+internal fun enumName(name: String): String =
+    if (name.all { it.isUpperCase() || it.isDigit() || it == '_' }) name.lowercase().replace('_', '-') else kebab(name).lowercase()
+
 /** The name a sealed subtype is selected by in `type:`: its simple name, kebab-cased. */
 internal fun typeName(serialName: String): String = kebab(serialName.substringAfterLast('.').substringAfterLast('$'))
 

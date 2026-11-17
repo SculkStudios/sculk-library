@@ -71,8 +71,7 @@ internal open class NodeEncoder(private val put: (Node) -> Unit) : AbstractEncod
 
     override fun encodeNull() = place(YamlEncoding.scalar("null", Tag.NULL))
 
-    override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) =
-        encodeString(kebab(enumDescriptor.getElementName(index)).lowercase())
+    override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) = encodeString(enumName(enumDescriptor.getElementName(index)))
 
     override fun encodeInline(descriptor: SerialDescriptor): AbstractEncoder = this
 

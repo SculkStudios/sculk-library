@@ -110,7 +110,7 @@ internal abstract class NodeDecoder(protected val context: DecodeContext) : Abst
 
     override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
         val names = enumDescriptor.elementNames.toList()
-        val expected = "one of ${names.joinToString { kebab(it) }}"
+        val expected = "one of ${names.joinToString { enumName(it) }}"
         val text = scalar(expected)
         val wanted = normalise(text)
         return names.indexOfFirst { normalise(it) == wanted }.takeIf { it >= 0 } ?: fail(expected, received(text))

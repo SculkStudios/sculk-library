@@ -129,6 +129,14 @@ class SculkConfigTest {
     fun `enums accept any case and either separator`() {
         file.writeText("mode: Hard-Core\n")
         assertEquals(Mode.HARD_CORE, load().getOrThrow().value.mode)
+        file.writeText("mode: hard_-core\n")
+        assertEquals(Mode.HARD_CORE, load().getOrThrow().value.mode, "files written before the naming fix still load")
+    }
+
+    @Test
+    fun `an enum constant is written in kebab case`() {
+        load().getOrThrow().save(Settings(mode = Mode.HARD_CORE)).getOrThrow()
+        assertTrue("mode: hard-core" in file.readText(), file.readText())
     }
 
     @Test
