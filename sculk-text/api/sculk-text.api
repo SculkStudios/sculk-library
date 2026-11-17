@@ -95,6 +95,18 @@ public final class studio/sculk/text/ThemeStyle$Solid : studio/sculk/text/ThemeS
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class studio/sculk/text/TranslationFiles {
+	public static final field Companion Lstudio/sculk/text/TranslationFiles$Companion;
+	public final fun getTranslations ()Lstudio/sculk/text/Translations;
+	public final fun register (Lstudio/sculk/ResourceScope;Lnet/kyori/adventure/key/Key;)Lstudio/sculk/SculkHandle;
+	public final fun reload ()Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/text/TranslationFiles$Companion {
+	public final fun load (Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/nio/file/Path;Ljava/util/Locale;Lstudio/sculk/text/Text;)Lstudio/sculk/SculkResult;
+	public static synthetic fun load$default (Lstudio/sculk/text/TranslationFiles$Companion;Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/nio/file/Path;Ljava/util/Locale;Lstudio/sculk/text/Text;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
 public final class studio/sculk/text/Translations {
 	public static final field Companion Lstudio/sculk/text/Translations$Companion;
 	public final fun getDefaultLocale ()Ljava/util/Locale;
@@ -107,7 +119,9 @@ public final class studio/sculk/text/Translations {
 }
 
 public final class studio/sculk/text/Translations$Companion {
+	public final fun load (Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/nio/file/Path;Ljava/util/Locale;Lstudio/sculk/text/Text;)Lstudio/sculk/SculkResult;
 	public final fun load (Ljava/nio/file/Path;Ljava/util/Locale;Lstudio/sculk/text/Text;)Lstudio/sculk/SculkResult;
+	public static synthetic fun load$default (Lstudio/sculk/text/Translations$Companion;Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/nio/file/Path;Ljava/util/Locale;Lstudio/sculk/text/Text;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
 	public static synthetic fun load$default (Lstudio/sculk/text/Translations$Companion;Ljava/nio/file/Path;Ljava/util/Locale;Lstudio/sculk/text/Text;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
 	public final fun of (Ljava/util/Locale;Ljava/util/Map;Lstudio/sculk/text/Text;)Lstudio/sculk/text/Translations;
 	public static synthetic fun of$default (Lstudio/sculk/text/Translations$Companion;Ljava/util/Locale;Ljava/util/Map;Lstudio/sculk/text/Text;ILjava/lang/Object;)Lstudio/sculk/text/Translations;

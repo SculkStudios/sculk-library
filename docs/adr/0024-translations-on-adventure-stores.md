@@ -32,6 +32,15 @@ while `TranslationRegistry` is gone in 5. Paper and Velocity render `Component.t
 - Templates stay trusted and values stay values: arguments enter through MiniMessage translator
   arguments as components or unparsed text, never by string replacement.
 
+## Implementation note (2026-11-17)
+
+Built as decided, with one change: each plugin's source is a `MiniMessageTranslator` over Sculk's
+own bundles rather than a `MiniMessageTranslationStore`, because the store selects no plural form
+and expands no theme style. It is still one `GlobalTranslator` source per plugin, owned by a
+`ResourceScope`. The CLDR rules are generated from CLDR 49 `plurals.json` and tested against every
+integer sample it lists. Adventure 5's `GlobalTranslator` asks a source `canTranslate` before
+translating, which the source answers for plural keys too.
+
 ## Alternatives considered
 
 | Alternative | Why not |

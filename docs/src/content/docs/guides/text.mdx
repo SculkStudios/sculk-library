@@ -7,13 +7,6 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution" title="API settling">
-  `sculk-text` exists and is tested, but its API is changing right now: translations are moving
-  onto Adventure's `MiniMessageTranslationStore` and `GlobalTranslator` with CLDR plural rules
-  ([ADR-0024](https://github.com/SculkStudios/sculk-library/blob/dev/docs/adr/0024-translations-on-adventure-stores.md)).
-  This page describes the concepts that will not change. For exact signatures, see the KDoc.
-</Aside>
-
 `sculk-text` (package `studio.sculk.text`) turns templates into Adventure components. It depends
 only on `sculk-core` and is platform-neutral: the server provides Adventure, and the module runs on
 Paper's Adventure 4.x and on the Adventure 5.2 that Paper 26.2+ and Velocity 4 ship.
@@ -60,7 +53,45 @@ font, for measuring and centring components in chat.
 
 ## Translations and plurals
 
-Per-locale message templates with fallback from the exact locale to its language to a default
-exist today and are being rebuilt on Adventure's translation stores with CLDR plural rules.
-Translated templates are trusted like any other template: translators may style them, players may
-not.
+Ship your messages in the plugin jar as `messages_<language>[_<COUNTRY>].properties` files (UTF-8)
+under one folder, and register them once:
+
+```kotlin
+import net.kyori.adventure.key.Key
+import net.kyori.adventure.text.Component
+import studio.sculk.getOrThrow
+import studio.sculk.text.TranslationFiles
+import java.util.Locale
+
+// in start()
+val messages = TranslationFiles.load(
+    classLoader = javaClass.classLoader,
+    resources = "lang",
+    overrides = dataPath.resolve("lang"),
+    defaultLocale = Locale.ENGLISH,
+).getOrThrow()
+messages.register(sculk.scope, Key.key("myplugin", "messages"))
+
+player.sendMessage(Component.translatable("shop.welcome"))
+```
+
+A translatable component renders in each player's own locale. A lookup falls back from the exact
+locale (`nl_BE`) to its language (`nl`) to the default locale; a key that no bundle has shows as
+its own name, so a gap is visible.
+
+- **Operator overrides.** A server owner changes one message by putting just that key in
+  `plugins/<YourPlugin>/lang/messages_<language>.properties`. Every other key keeps the jar's text,
+  including keys a later version of your plugin adds.
+- **Reload.** `messages.reload()` reads every file again. It applies as a whole or not at all: a
+  file that fails to read leaves the previous messages in place and returns the failure.
+- **Lifetime.** The registration ends with the scope you pass, so a plugin that stops leaves
+  nothing behind in Adventure's global translator.
+- **Plurals.** A key with forms, `coins.one` and `coins.other` (and `zero`, `two`, `few`, `many`
+  where the language has them), takes its count from the first numeric argument:
+  `Component.translatable("coins", TranslationArgument.numeric(3))`, available to the template as
+  `<count>`. The forms follow the CLDR 49 rules of every locale CLDR lists; a language it does not
+  list uses only `other`.
+
+Arguments are values: they fill tags as components or unparsed text and are never parsed as
+MiniMessage. Translated templates are trusted like any other template: translators may style them
+and use theme styles, players may not.

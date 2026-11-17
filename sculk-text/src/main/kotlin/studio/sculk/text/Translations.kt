@@ -6,12 +6,14 @@ import net.kyori.adventure.translation.Translator
 import studio.sculk.SculkFailure
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
+import java.net.URI
+import java.nio.file.FileSystemAlreadyExistsException
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Locale
 import java.util.Properties
 import kotlin.io.path.name
-import kotlin.io.path.reader
 
 /**
  * Message templates per locale, rendered through a [Text]. A lookup falls back from the exact locale
@@ -25,7 +27,7 @@ import kotlin.io.path.reader
 public class Translations private constructor(
     public val defaultLocale: Locale,
     private val bundles: Map<Locale, Map<String, String>>,
-    private val text: Text,
+    internal val text: Text,
 ) {
     public val locales: Set<Locale> get() = bundles.keys
 
@@ -50,7 +52,11 @@ public class Translations private constructor(
      * and the MiniMessage `Argument` helpers fill named tags. A key with plural forms takes its count
      * from its first numeric argument, available to the template as `<count>`.
      */
-    public fun translator(name: Key): Translator = TranslationsTranslator(name, this, text)
+    public fun translator(name: Key): Translator = TranslationsTranslator(name, text) { this }
+
+    /** Whether [key] has a template in [locale]'s chain, itself or as plural forms. */
+    internal fun has(key: String, locale: Locale): Boolean =
+        template(key, locale) != null || PluralCategory.entries.any { template("$key.${it.suffix}", locale) != null }
 
     internal fun expandedTemplate(key: String, locale: Locale): String? = template(key, locale)?.let(text::expand)
 
@@ -86,28 +92,78 @@ public class Translations private constructor(
          */
         public fun load(directory: Path, defaultLocale: Locale, text: Text = Text()): SculkResult<Translations> =
             SculkResult.catching("read the translations in $directory") {
-                val files = Files.list(directory).use { listing -> listing.toList() }.mapNotNull { file ->
-                    val (language, country) = FILE.matchEntire(file.name)?.destructured ?: return@mapNotNull null
-                    val locale = when {
-                        language.isEmpty() -> null
-                        country.isEmpty() -> Locale.of(language)
-                        else -> Locale.of(language, country)
-                    }
-                    locale to file
-                }
-                if (files.isEmpty()) {
+                val bundles = readBundles(directory, defaultLocale)
+                if (bundles.isEmpty()) {
                     return SculkFailure.InvalidInput(directory.toString(), "at least one messages_<language>.properties file", "none")
-                }
-                val bundles = mutableMapOf<Locale, Map<String, String>>()
-                for ((locale, file) in files.sortedBy { (locale, _) -> locale != null }) {
-                    val target = locale ?: defaultLocale
-                    bundles[target] = bundles[target].orEmpty() + read(file)
                 }
                 Translations(defaultLocale, bundles, text)
             }
 
+        /**
+         * Loads a plugin's own bundles from the directory [resources] on [classLoader], usually inside
+         * the plugin jar, then lays the bundles in [overrides] over them key by key: an operator
+         * changes one message by putting only that key in `overrides/messages_<language>.properties`,
+         * and every other key, including keys a later plugin version adds, keeps its default.
+         * [resources] must contain [defaultLocale]'s bundle (`messages_<language>[_<COUNTRY>]` or
+         * `messages`); [overrides] may be missing or empty. Nothing is returned half-loaded: one
+         * unreadable file fails the whole load.
+         */
+        public fun load(
+            classLoader: ClassLoader,
+            resources: String,
+            overrides: Path,
+            defaultLocale: Locale,
+            text: Text = Text(),
+        ): SculkResult<Translations> = SculkResult.catching("read the translations in $resources and $overrides") {
+            // Jars need not contain directory entries, so the folder is found through the default
+            // locale's own bundle, which must exist anyway.
+            val folder = resources.trim('/')
+            val names = defaultBundleNames(defaultLocale)
+            val anchor = names.firstNotNullOfOrNull { classLoader.getResource("$folder/$it") }
+                ?: return SculkFailure.InvalidInput(folder, "${names.joinToString(" or ")} on the classpath", "none of them")
+            val defaults = withDirectory(anchor.toURI()) { file -> readBundles(file.parent, defaultLocale) }
+            val edited = if (Files.isDirectory(overrides)) readBundles(overrides, defaultLocale) else emptyMap()
+            val merged = (defaults.keys + edited.keys).associateWith { locale -> defaults[locale].orEmpty() + edited[locale].orEmpty() }
+            Translations(defaultLocale, merged, text)
+        }
+
+        private fun readBundles(directory: Path, defaultLocale: Locale): Map<Locale, Map<String, String>> {
+            val files = Files.list(directory).use { listing -> listing.toList() }.mapNotNull { file ->
+                val (language, country) = FILE.matchEntire(file.name.trimEnd('/'))?.destructured ?: return@mapNotNull null
+                val locale = when {
+                    language.isEmpty() -> null
+                    country.isEmpty() -> Locale.of(language)
+                    else -> Locale.of(language, country)
+                }
+                locale to file
+            }
+            val bundles = mutableMapOf<Locale, Map<String, String>>()
+            for ((locale, file) in files.sortedBy { (locale, _) -> locale != null }) {
+                val target = locale ?: defaultLocale
+                bundles[target] = bundles[target].orEmpty() + read(file)
+            }
+            return bundles
+        }
+
+        private fun defaultBundleNames(locale: Locale): List<String> = listOfNotNull(
+            locale.country.takeIf { it.isNotEmpty() }?.let { "messages_${locale.language}_$it.properties" },
+            "messages_${locale.language}.properties",
+            "messages.properties",
+        )
+
+        /** Runs [block] on the file [uri] names, opening the jar it points into when it is one. */
+        private fun <T> withDirectory(uri: URI, block: (Path) -> T): T {
+            if (uri.scheme != "jar") return block(Path.of(uri))
+            val opened = try {
+                FileSystems.newFileSystem(uri, emptyMap<String, Any>())
+            } catch (_: FileSystemAlreadyExistsException) {
+                null
+            }
+            return opened.use { block(Path.of(uri)) }
+        }
+
         private fun read(file: Path): Map<String, String> {
-            val properties = Properties().apply { file.reader(Charsets.UTF_8).use(::load) }
+            val properties = Properties().apply { Files.newBufferedReader(file, Charsets.UTF_8).use(::load) }
             return properties.stringPropertyNames().associateWith(properties::getProperty)
         }
     }
