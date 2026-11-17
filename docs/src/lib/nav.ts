@@ -12,11 +12,11 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
 	velocity: 'Velocity',
 };
 
-/** A sidebar entry: a page id, and the shorter name the sidebar shows when the title is long. */
-interface Entry {
-	id: string;
-	label?: string;
-}
+/**
+ * A sidebar entry: a page id, with the shorter name the sidebar shows when the title is long, or a
+ * link to something the content collection does not hold, such as the generated API reference.
+ */
+type Entry = { id: string; label?: string } | { link: string; label: string };
 
 /** The sidebar, in reading order. Every published page must appear here exactly once. */
 export const CATEGORIES: readonly { id: string; label: string; icon: string; pages: readonly Entry[] }[] = [
@@ -75,6 +75,7 @@ export const CATEGORIES: readonly { id: string; label: string; icon: string; pag
 		label: 'Reference',
 		icon: 'file',
 		pages: [
+			{ link: '/api/', label: 'API reference' },
 			{ id: 'reference/compatibility' },
 			{ id: 'reference/api-stability' },
 			{ id: 'reference/roadmap' },
@@ -107,7 +108,7 @@ export function href(id: string): string {
  */
 export function navigation(entries: CollectionEntry<'docs'>[]): NavSection[] {
 	const published = new Map(entries.filter((entry) => !entry.data.draft).map((entry) => [entry.id, entry]));
-	const listed = CATEGORIES.flatMap((category) => category.pages.map((page) => page.id));
+	const listed = CATEGORIES.flatMap((category) => category.pages.flatMap((page) => ('id' in page ? [page.id] : [])));
 	const unlisted = [...published.keys()].filter((id) => !listed.includes(id));
 	if (unlisted.length > 0) throw new Error(`Pages missing from the sidebar in src/lib/nav.ts: ${unlisted.join(', ')}`);
 	return CATEGORIES.map((category) => ({
@@ -115,6 +116,7 @@ export function navigation(entries: CollectionEntry<'docs'>[]): NavSection[] {
 		label: category.label,
 		icon: category.icon,
 		items: category.pages.map((page) => {
+			if ('link' in page) return { id: page.link, href: page.link, label: page.label };
 			const entry = published.get(page.id);
 			if (!entry) throw new Error(`The sidebar in src/lib/nav.ts names a page that does not exist: ${page.id}`);
 			return {
@@ -138,5 +140,5 @@ export function neighbours(sections: NavSection[], id: string): { previous?: Nav
 }
 
 export function sectionOf(id: string): string | undefined {
-	return CATEGORIES.find((category) => category.pages.some((page) => page.id === id))?.label;
+	return CATEGORIES.find((category) => category.pages.some((page) => 'id' in page && page.id === id))?.label;
 }

@@ -1,6 +1,6 @@
 ---
 title: Scoreboards and HUD
-description: sculk-presentation, per-player action bars, boss bars, tab lists and sidebars that redraw only what changed, and never take another plugin's scoreboard.
+description: "Action bars, boss bars, tab lists, sidebars and nametags per player, redrawn only where something changed."
 module: sculk-presentation
 since: '6.0'
 runs: entity
@@ -13,9 +13,8 @@ support:
 
 import { Aside } from '~/components/mdx';
 
-`sculk-presentation` (package `studio.sculk.presentation`) shows each player a HUD built from
-templates and [placeholders](/guides/placeholders/), and redraws a part only when something it
-shows changed.
+`sculk-presentation` (package `studio.sculk.presentation`) builds every part of a HUD from
+templates and [placeholders](/guides/placeholders/), and each player sees their own values.
 
 ```kotlin
 dependencies {

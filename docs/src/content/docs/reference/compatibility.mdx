@@ -1,6 +1,6 @@
 ---
 title: Compatibility
-description: Supported Paper, Folia, Canvas and Velocity versions, support tiers, Java requirements and what CI proves today.
+description: "Which Paper, Folia, Canvas and Velocity versions Sculk supports, on which Java, and what CI checks on every push."
 ---
 
 Summarised from [`COMPATIBILITY.md`](https://github.com/SculkStudios/sculk-library/blob/dev/COMPATIBILITY.md),
@@ -13,13 +13,13 @@ which is authoritative and carries the evidence.
 | Current | Paper 26.3 | Every applicable capability. |
 | Compatible | Paper 1.21.4 (floor), 1.21.11, 26.1.2, 26.2 | The same high-level API where the semantics hold; capabilities report where they do not. |
 | Platform-specialised | Folia, Canvas | Region-aware implementations and platform-exclusive features, tested on obtainable builds only. |
-| Proxy | Velocity 4.2 | A first-class runtime, not a utility. |
-| Canary | Upcoming Paper, Folia, Canvas and Velocity builds | A CI signal. Never advertised as stable. |
+| Proxy | Velocity 4.3.1 | The same core, scopes, tasks and commands as on a server, with the proxy's own execution contexts. |
+| Canary | Upcoming Paper, Folia, Canvas and Velocity builds | Checked by a scheduled CI run so breaking builds are known early; never advertised as supported. |
 
 ## Pinned targets
 
-Sculk pins builds, not versions: Paper backports features in the middle of a release line, so a
-version threshold would be wrong on one side of a backport.
+Sculk pins exact builds rather than version numbers: Paper backports features in the middle of a
+release line, so a version threshold would be wrong on one side of a backport.
 
 | Tier | Target | Pinned artifact | Java | Adventure |
 | --- | --- | --- | --- | --- |

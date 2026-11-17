@@ -4,7 +4,7 @@ import Support from '../components/Support.astro';
 import Toc from '../components/Toc.astro';
 import WhereItRuns from '../components/WhereItRuns.astro';
 import Site from '../layouts/Site.astro';
-import { navigation, neighbours, sectionOf } from '../lib/nav';
+import { PLATFORM_LABELS, PLATFORMS, navigation, neighbours, sectionOf, type SupportLevel } from '../lib/nav';
 
 export async function getStaticPaths() {
 	const entries = await getCollection('docs', (entry) => !entry.data.draft);
@@ -21,18 +21,35 @@ const { Content, headings } = await render(entry);
 const { previous, next } = neighbours(sections, entry.id);
 const section = sectionOf(entry.id);
 const editUrl = `https://github.com/SculkStudios/sculk-library/edit/dev/docs/src/content/docs/${entry.id}.mdx`;
-const { title, description, module, since, runs, support } = entry.data;
+const { title, description, runs, support } = entry.data;
+
+// On screens without the margin, support reads as one sentence: only the exceptions are named.
+const phrases: Partial<Record<SupportLevel, string>> = { partial: 'partial on', none: 'not supported on', 'n/a': 'not applicable on' };
+const exceptions = support
+	? (Object.keys(phrases) as SupportLevel[])
+			.map((level) => ({ level, platforms: PLATFORMS.filter((platform) => support[platform].level === level).map((platform) => PLATFORM_LABELS[platform]) }))
+			.filter((group) => group.platforms.length > 0)
+			.map((group) => `${phrases[group.level]} ${group.platforms.join(' and ')}`)
+	: [];
+const sentence = exceptions.join('; ');
+const supportLine = support
+	? exceptions.length === 0
+		? 'Runs on Paper, Folia, Canvas and Velocity.'
+		: `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`
+	: undefined;
 ---
 <Site title={title} description={description} sections={sections} current={entry.id}>
 	<article data-pagefind-body>
 		<nav aria-label="Breadcrumb"><ol class="crumbs">{section && <li>{section}</li>}<li aria-current="page">{title}</li></ol></nav>
-		<h1 class="page-title">{title}</h1>
-		<div class="meta" data-pagefind-ignore>
-			{since && <span>Since <span class="num">{since}</span></span>}
-			{module && <span>Module <span class="num">{module}</span></span>}
-			<a href={editUrl}>Edit on GitHub</a>
-			<button class="copy-page" type="button" data-source={`# ${title}\n\n${entry.body ?? ''}`}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect><path d="M10.5 5.5V3.75A1.25 1.25 0 009.25 2.5h-5.5A1.25 1.25 0 002.5 3.75v5.5a1.25 1.25 0 001.25 1.25H5.5"></path></svg><span>Copy page</span></button>
+		<div class="title-row">
+			<h1 class="page-title">{title}</h1>
+			<button class="copy-page" type="button" data-pagefind-ignore data-source={`# ${title}
+
+${entry.body ?? ''}`}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect><path d="M10.5 5.5V3.75A1.25 1.25 0 009.25 2.5h-5.5A1.25 1.25 0 002.5 3.75v5.5a1.25 1.25 0 001.25 1.25H5.5"></path></svg><span>Copy page</span></button>
 		</div>
+		{description && <p class="lede">{description}</p>}
+		{supportLine && <p class="support-line" data-pagefind-ignore>{supportLine}</p>}
+		<Toc headings={headings} inline />
 		<div class="prose">
 			<Content />
 		</div>
@@ -41,13 +58,15 @@ const { title, description, module, since, runs, support } = entry.data;
 		{previous && <a href={previous.href} rel="prev"><small>Previous</small><span>{previous.label}</span></a>}
 		{next && <a class="next" href={next.href} rel="next"><small>Next</small><span>{next.label}</span></a>}
 	</nav>
+	<p class="page-edit" data-pagefind-ignore><a href={editUrl}>Edit this page on GitHub</a></p>
 	<p class="colophon">Sculk Studio is not an official Minecraft product and is not approved by or associated with Mojang or Microsoft.</p>
 	<Fragment slot="margin">
-		{runs && <section><p class="label">Where it runs</p><WhereItRuns runs={runs} /></section>}
-		{support && <section><p class="label">Support</p><Support support={support} /></section>}
 		<section><Toc headings={headings} /></section>
+		{support && <section><p class="label">Support</p><Support support={support} /></section>}
+		{runs && <section><p class="label">Where it runs</p><WhereItRuns runs={runs} /></section>}
 	</Fragment>
 </Site>
+
 <script>
 	// Every section heading gets a link to itself; the Markdown processor runs no rehype plugins.
 	for (const heading of document.querySelectorAll<HTMLElement>('.prose :is(h2, h3)[id]')) {

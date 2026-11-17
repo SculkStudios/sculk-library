@@ -3,19 +3,30 @@ import type { MarkdownHeading } from 'astro';
 
 interface Props {
 	headings: MarkdownHeading[];
+	/** Collapsed under the title, for screens too narrow for the margin. */
+	inline?: boolean;
 }
 
+const { inline = false } = Astro.props;
 const headings = Astro.props.headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+const links = headings.map((heading) => ({ depth: heading.depth, slug: heading.slug, text: heading.text }));
 ---
-{headings.length > 0 && (
+{links.length > 1 && (inline ? (
+	<details class="toc-inline" data-pagefind-ignore>
+		<summary>On this page</summary>
+		<nav class="toc" aria-label="On this page">
+			{links.map((link) => <a class={`depth-${link.depth}`} href={`#${link.slug}`}>{link.text}</a>)}
+		</nav>
+	</details>
+) : (
 	<nav class="toc" aria-labelledby="toc-label" data-pagefind-ignore>
 		<p class="label" id="toc-label">On this page</p>
-		{headings.map((heading) => <a class={`depth-${heading.depth}`} href={`#${heading.slug}`}>{heading.text}</a>)}
+		{links.map((link) => <a class={`depth-${link.depth}`} href={`#${link.slug}`}>{link.text}</a>)}
 	</nav>
-)}
+))}
 <script>
 	// Marks the section being read; a pure enhancement over plain anchor links.
-	const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a')];
+	const links = [...document.querySelectorAll<HTMLAnchorElement>('.margin .toc a')];
 	const targets = links.map((link) => document.getElementById(decodeURIComponent(link.hash.slice(1)))).filter((el): el is HTMLElement => el !== null);
 	if (targets.length > 0) {
 		const visible = new Set<Element>();

@@ -13,7 +13,7 @@ interface Props {
 }
 
 const { title, description, sections, current } = Astro.props;
-const pageTitle = current ? `${title} · Sculk Studio` : title;
+const pageTitle = title.includes('Sculk Studio') ? title : `${title} · Sculk Studio`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 <!doctype html>
@@ -57,7 +57,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 			// Measured once the web fonts are in, and again on resize, since both change the width.
 			const focusScrollers = () => {
 				for (const table of document.querySelectorAll<HTMLElement>('.prose table')) {
-					if (table.scrollWidth > table.clientWidth) {
+					const scrolls = table.scrollWidth > table.clientWidth;
+					table.classList.toggle('scrolls', scrolls);
+					if (scrolls) {
 						table.tabIndex = 0;
 						table.setAttribute('aria-label', 'Scrollable table');
 					} else {

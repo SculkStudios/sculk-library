@@ -4,17 +4,27 @@ import Site from '../layouts/Site.astro';
 import { navigation } from '../lib/nav';
 
 const sections = navigation(await getCollection('docs'));
+const routes = [
+	{ href: '/', title: 'Documentation home', text: 'What Sculk is and what you can build with it.' },
+	{ href: '/start/installation/', title: 'Install Sculk', text: 'Add Sculk to a Gradle project and package it.' },
+	{ href: '/reference/roadmap/', title: 'Roadmap', text: 'Every module and where it stands.' },
+];
 ---
-<Site title="Page not found · Sculk Studio" description="This page does not exist in the Sculk Studio documentation." sections={sections}>
+<Site title="Page not found" description="This page does not exist in the Sculk Studio documentation." sections={sections}>
 	<article>
 		<h1 class="page-title">This page does not exist</h1>
-		<div class="prose">
-			<p>The link may be from the 5.x documentation, or the page may have moved. Search with <span class="kbd">Ctrl K</span>, or start from one of these:</p>
-			<ul>
-				<li><a href="/">The documentation home</a></li>
-				<li><a href="/start/installation/">Install Sculk</a></li>
-				<li><a href="/reference/roadmap/">The roadmap</a></li>
-			</ul>
+		<p class="lede">The link may point to the 5.x documentation, or the page may have moved. Search with <span class="kbd">Ctrl K</span>, or start from one of these.</p>
+		<div class="routes">
+			{routes.map((route) => <a href={route.href}><b>{route.title}</b><span>{route.text}</span></a>)}
 		</div>
 	</article>
 </Site>
+
+<style>
+	.page-title { margin-top: 14px; }
+	.routes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 32px; }
+	.routes a { display: block; padding: 16px 18px; border: 1px solid var(--rule-strong); border-radius: 10px; transition: border-color 160ms var(--ease), background-color 160ms var(--ease); }
+	.routes a:hover { border-color: #4a4a4a; background: var(--raised); }
+	.routes b { display: block; font-weight: 600; font-size: 15.5px; color: #fff; }
+	.routes span { display: block; margin-top: 4px; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+</style>

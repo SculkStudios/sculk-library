@@ -1,6 +1,6 @@
 ---
 title: In-game config editor
-description: sculk-config-admin, an in-game editor for a typed configuration, as a dialog where the server has them and a menu where it does not.
+description: "Let operators edit your plugin's configuration in game, in a dialog or, on older servers, a menu."
 module: sculk-config-admin
 since: '6.0'
 runs: entity
@@ -11,9 +11,8 @@ support:
   velocity: { level: n/a, note: 'not applicable on a proxy' }
 ---
 
-`sculk-config-admin` (package `studio.sculk.config.admin`) lets an operator change a
-[configuration](/guides/config/) in game. It builds the editor from the configuration's own
-schema, so there is nothing to describe twice.
+`sculk-config-admin` (package `studio.sculk.config.admin`) builds the editor from a
+[configuration](/guides/config/)'s own schema, so there is nothing to describe twice.
 
 ```kotlin
 dependencies {
