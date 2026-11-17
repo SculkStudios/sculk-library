@@ -45,7 +45,8 @@ Published artifacts are JVM 21 bytecode and run on both Java generations. Detail
 | M2 core, platforms, concurrency | done: `sculk-core`, `sculk-coroutines`, `sculk-platform-api`, `sculk-testkit`, `sculk-paper`, `sculk-canvas`, `sculk-velocity`, threading proven on real Paper, Folia, Canvas and Velocity |
 | M3 author experience | done: text, config, commands, events, placeholders and permissions |
 | M4 content and UI | done: items, registry, recipes, menus, dialogs, presentation and the in-game config editor |
-| M5 to M7 | planned: scenes, world, data, network and integrations; tooling; hardening and the release candidate |
+| M5 world, effects, data and network | in progress: holograms (`sculk-scenes`), NPCs (`sculk-npcs`) and game rules and time (`sculk-world`) built; effects, data, network, packets and integrations next |
+| M6 and M7 | planned: tooling (Gradle plugin, BOM, project generator); hardening and the release candidate |
 
 Which modules exist today and which are planned is in [`MODULES.md`](MODULES.md). The full plan is
 in [`REBUILD.md`](REBUILD.md); decisions are in [`docs/adr`](docs/adr).
