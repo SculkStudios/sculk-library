@@ -47,6 +47,7 @@ public abstract class studio/sculk/platform/SculkPlugin : org/bukkit/plugin/java
 	public fun <init> ()V
 	protected fun bannerArt ()Lstudio/sculk/platform/BannerArt;
 	protected fun bannerFacts ()Ljava/util/List;
+	protected fun commandText ()Lstudio/sculk/command/CommandText;
 	protected final fun commands ([Lstudio/sculk/command/CommandSpec;)V
 	protected fun getBanner ()Z
 	protected fun getBuiltInHelp ()Z
