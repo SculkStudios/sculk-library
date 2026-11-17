@@ -1,0 +1,85 @@
+public final class studio/sculk/inventory/MenuBuilder {
+	public final fun getAllowPlayerInventory ()Z
+	public final fun getText ()Lstudio/sculk/text/Text;
+	public final fun onClose (Lkotlin/jvm/functions/Function2;)V
+	public final fun placeholders (Lkotlin/jvm/functions/Function1;)V
+	public final fun render (Lkotlin/jvm/functions/Function2;)V
+	public final fun setAllowPlayerInventory (Z)V
+	public final fun setText (Lstudio/sculk/text/Text;)V
+	public final fun title (Ljava/lang/String;)V
+	public final fun title (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class studio/sculk/inventory/MenuClick {
+	public final fun close ()V
+	public final fun getClick ()Lorg/bukkit/event/inventory/ClickType;
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun getSlot ()I
+	public final fun getState ()Ljava/lang/Object;
+	public final fun open (Lstudio/sculk/inventory/MenuSpec;Ljava/lang/Object;)V
+	public final fun update (Lkotlin/jvm/functions/Function1;)V
+}
+
+public abstract interface annotation class studio/sculk/inventory/MenuDsl : java/lang/annotation/Annotation {
+}
+
+public final class studio/sculk/inventory/MenuLayout {
+	public static final field Companion Lstudio/sculk/inventory/MenuLayout$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColumns ()I
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/inventory/MenuLayout$Companion {
+	public final fun chest (I)Lstudio/sculk/inventory/MenuLayout;
+	public final fun getDISPENSER ()Lstudio/sculk/inventory/MenuLayout;
+	public final fun getHOPPER ()Lstudio/sculk/inventory/MenuLayout;
+}
+
+public final class studio/sculk/inventory/MenuRender {
+	public final fun at (II)I
+	public final fun border (Lstudio/sculk/item/ItemSpec;)V
+	public final fun fill (Lstudio/sculk/item/ItemSpec;)V
+	public final fun getLayout ()Lstudio/sculk/inventory/MenuLayout;
+	public final fun paginate (Ljava/util/List;Ljava/util/List;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lstudio/sculk/inventory/Page;
+	public static synthetic fun paginate$default (Lstudio/sculk/inventory/MenuRender;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lstudio/sculk/inventory/Page;
+	public final fun slot (ILstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun slot$default (Lstudio/sculk/inventory/MenuRender;ILstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class studio/sculk/inventory/MenuSession {
+	public final fun close ()V
+	public final fun getPlayer ()Lorg/bukkit/entity/Player;
+	public final fun getState ()Ljava/lang/Object;
+	public final fun isOpen ()Z
+	public final fun refresh ()V
+	public fun toString ()Ljava/lang/String;
+	public final fun update (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class studio/sculk/inventory/MenuSpec {
+	public final fun getAllowPlayerInventory ()Z
+	public final fun getLayout ()Lstudio/sculk/inventory/MenuLayout;
+}
+
+public final class studio/sculk/inventory/MenuSpecKt {
+	public static final fun menu (Lstudio/sculk/inventory/MenuLayout;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/inventory/MenuSpec;
+}
+
+public final class studio/sculk/inventory/Menus {
+	public fun <init> (Lorg/bukkit/plugin/Plugin;Lstudio/sculk/ResourceScope;)V
+	public final fun getOpen ()Ljava/util/Collection;
+	public final fun open (Lorg/bukkit/entity/Player;Lstudio/sculk/inventory/MenuSpec;Ljava/lang/Object;)Lstudio/sculk/inventory/MenuSession;
+}
+
+public final class studio/sculk/inventory/Page {
+	public fun <init> (II)V
+	public final fun getCount ()I
+	public final fun getHasNext ()Z
+	public final fun getHasPrevious ()Z
+	public final fun getNumber ()I
+	public fun toString ()Ljava/lang/String;
+}
+

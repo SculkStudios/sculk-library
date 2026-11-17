@@ -1,0 +1,78 @@
+---
+title: Menus
+description: sculk-inventory, inventory menus drawn from their state, redrawn slot by slot, locked against item theft and owned by the player's thread.
+sidebar:
+  order: 12
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`sculk-inventory` (package `studio.sculk.inventory`) builds inventory menus as a function of their
+state. A click changes the state; the menu redraws only the slots whose item changed. Icons are
+[item specs](/guides/items/).
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-inventory:6.0.0-SNAPSHOT")
+}
+```
+
+## A menu
+
+```kotlin
+import studio.sculk.inventory.MenuLayout
+import studio.sculk.inventory.Menus
+import studio.sculk.inventory.menu
+import studio.sculk.item.item
+
+data class Counter(val count: Int = 0, val page: Int = 1)
+
+val counter = menu<Counter>(MenuLayout.chest(3)) {
+    title { state -> "<primary>Page ${state.page}" }
+    render { state ->
+        slot(11, item(Material.LIME_DYE) { name = "Add" }) { update { it.copy(count = it.count + 1) } }
+        slot(13, item(Material.PAPER) { name = "Count ${state.count}" })
+        slot(26, item(Material.ARROW) { name = "Next" }) { update { it.copy(page = it.page + 1) } }
+        fill(item(Material.GRAY_STAINED_GLASS_PANE) { name = " " })
+    }
+    onClose { state, player -> player.sendMessage("You counted to ${state.count}.") }
+}
+
+// once, in start():
+val menus = Menus(this, sculk.scope)
+menus.open(player, counter, Counter())
+```
+
+- `render` draws every slot from the state. It is cheap to call: item specs compare by value, so
+  only slots whose spec changed are written, and unchanged slots keep their identity.
+- A click handler receives the `player`, the `state`, the `slot` and the `click` type, and calls
+  `update`, `close` or `open(otherMenu, state)`. Closing and opening happen after the click, as Paper
+  requires.
+- A new title opens a new view: Paper cannot retitle an open inventory.
+- `paginate(slots, entries, page, icon) { entry -> ... }` lays a list out over slots and returns the
+  `Page` shown (`number`, `count`, `hasNext`, `hasPrevious`), clamping a page that no longer exists.
+  `border` and `fill` draw around what the render already placed; `at(row, column)` names a slot.
+- Layouts: `MenuLayout.chest(1..6)`, `MenuLayout.HOPPER` and `MenuLayout.DISPENSER`.
+- `placeholders { player -> resolver }` fills [placeholders](/guides/placeholders/) in titles and
+  icons per player; `session.refresh()` rebuilds icons whose placeholder values changed.
+
+## Locked by default
+
+Nothing enters or leaves a menu except through its handlers. Every route an item can take into it
+is closed, including the ones that start in the player's own inventory: shift-clicks, double-click
+collecting, number keys and the offhand key, drags that touch the menu and creative-mode clicks.
+`allowPlayerInventory = true` lets players rearrange their own inventory while the menu is open;
+nothing from it reaches the menu either way.
+
+## Threads and lifetime
+
+A session belongs to its player. On Folia and Canvas it draws, receives clicks and runs handlers
+on the player's region thread; on Paper that is the main thread. `menus.open(...)` and
+`session.update { }` may be called from any thread, for example after loading data, and hop to the
+player's thread. The menus of a `Menus` close with the scope it was created with.
+
+<Aside>
+  Sculk's `integration-tests/menus` suite joins every supported Paper version, Folia and Canvas with
+  a real client, clicks, shift-clicks and swaps into a menu, and checks that handlers run on the
+  player's thread and that no item gets in.
+</Aside>
