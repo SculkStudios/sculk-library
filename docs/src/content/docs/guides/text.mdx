@@ -40,6 +40,22 @@ fun greet(player: Player): Component = text.render("<primary>Welcome, <name>!", 
 Never build a template by substituting a value into it, for example with `replace` or string
 interpolation, before rendering: that is exactly the injection this design exists to prevent.
 
+## Quick messages
+
+For a one-off message, `mm` renders a template with the default theme and `send` renders and sends
+it in one call. Both are experimental, so the names may still change before 6.0.
+
+```kotlin
+import studio.sculk.text.mm
+import studio.sculk.text.send
+
+player.send("<primary>Welcome back, visit <visits>.", "visits" to visits)
+val line = "<muted>Balance: <balance>".mm("balance" to balance)
+```
+
+Values go in as placeholders here too. `"Welcome, $name".mm()` would put the name into the template
+and let it inject tags. A plugin with its own theme renders through its own `Text` instead.
+
 ## Themes
 
 A theme gives semantic names to styles: templates say `<primary>`, `<muted>` or `<danger>` instead

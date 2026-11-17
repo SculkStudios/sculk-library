@@ -21,7 +21,7 @@ const sample = `class MyPlugin : SculkPaperPlugin() {
     private suspend fun greet(player: Player) {
         val visits = withAsync { readVisits(player.uniqueId) }
         val greeted = withEntity(player) {
-            player.sendMessage(Component.text("Welcome back, visit $visits."))
+            player.send("Welcome back, visit <visits>.", "visits" to visits)
         }
         if (greeted is EntityResult.Gone) logger.info("\${player.name} left")
     }
@@ -50,7 +50,7 @@ const features = [
 
 		<div class="prose">
 			<Code code={sample} lang="kotlin" title="MyPlugin.kt" />
-			<p>The observer resumes on the player's own thread. <code>withAsync</code> runs the read off every game thread, and <code>withEntity</code> returns <code>Gone</code> if the player left in the meantime. On Paper all of it is the main thread; on Folia and Canvas it is the player's region, and the code does not change.</p>
+			<p>The observer resumes on the player's own thread. <code>withAsync</code> runs the read off every game thread, and <code>withEntity</code> returns <code>Gone</code> if the player left in the meantime. <code>send</code> renders MiniMessage with <code>visits</code> as a placeholder, so a value can never inject tags. On Paper all of it is the main thread; on Folia and Canvas it is the player's region, and the code does not change.</p>
 
 			<h2 id="build">What you can build</h2>
 			<div class="features">

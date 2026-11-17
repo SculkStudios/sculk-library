@@ -5,6 +5,7 @@ import net.kyori.adventure.text.ComponentLike
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
 
 /**
@@ -60,6 +61,10 @@ public class Text(
     public companion object {
         public const val DEFAULT_CACHE_SIZE: Int = 512
         private val NAME = Regex("[a-z0-9_-]+")
+
+        /** A renderer with [Theme.DEFAULT], shared by [mm] and [send]. Thread-safe. */
+        @SculkExperimental
+        public val DEFAULT: Text by lazy { Text() }
     }
 }
 
