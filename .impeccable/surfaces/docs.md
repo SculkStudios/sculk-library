@@ -14,8 +14,8 @@ chosen by the owner: the Vercel, Next.js, Linear and Bun docs. Design system: do
 ## Direction contract
 
 THESIS: A quiet monochrome reference. Every page answers "does this work on my server, and on which
-thread?" in the same places: support marks, a "Where it runs" ownership map and one Platform control
-that re-marks the whole site. Everything else stays white and grey so those answers are the only
+thread?" in the same places: support marks, a "Where it runs" note and one Platform control that
+re-marks the whole site. Everything else stays white and grey so those answers are the only
 colour on the page.
 
 OWN-WORLD: OLED true black (#000) as the one ground for masthead, rail, column and margin; no hue on
@@ -33,11 +33,11 @@ FIRST VIEWPORT: a sticky masthead with the Sculk Studio mark and name, search (C
 Platform and Version controls; the rail on the left in familiar feature categories ("Setup", "Core
 concepts", "Commands and events", "Text and configs", "Player UI", "Items and content", "Reference"),
 each with a small line icon, the current page filled grey and scrolled into view; the column with
-breadcrumb, H1, Since and Module meta, Edit on GitHub and a Copy page button; the right margin with
-"Where it runs", "Support" and "On this page". On the home page the column carries the title, lede,
+breadcrumb, H1 with a Copy page button, a one-sentence summary and the edit link at the foot; the margin with
+"On this page", "Support" and "Where it runs". On the home page the column carries the title, lede,
 one white "Install Sculk" button with two text links, a Kotlin sample, "What you can build" feature
-cards and every module with its status mark; the margin carries the module status squares, the
-release status, "Runs on" and "Start here". Rail, column and margin are centred as one composition.
+cards and a one-line release status linking to the roadmap; the margin carries the release status
+and "Start here". Rail, column and margin are centred as one composition.
 
 FORM: the monochrome developer-docs family of Vercel, Next.js, Linear and Bun: one dark ground,
 hairlines, white type, grey secondary text, gently rounded outlined controls.

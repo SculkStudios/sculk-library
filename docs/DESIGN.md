@@ -159,7 +159,7 @@ components:
 
 A developer reference in white and grey on OLED true black, in the family of the Vercel, Next.js, Linear and Bun docs. The page is one black ground from edge to edge. Structure comes from hairline rules, neutral near-black fills on contained objects, and the weight of white type. Nothing is tinted. The only colour in the interface is the green, yellow and red of the support marks, so a reader's eye goes to support first.
 
-The frame is centred: a navigation rail, a reading column and a right margin form one composition with a sticky masthead above. Every guide carries the same answers in the same places: where its code runs (a monochrome ownership map), which platforms support it (support marks), and what is on the page. One Platform control in the masthead re-marks the whole site.
+The frame is centred: a navigation rail, a reading column and a right margin form one composition with a sticky masthead above. Every guide carries the same answers in the same places: a one-sentence summary under the title, what is on the page, which platforms support it (support marks) and which thread runs its code. On wide screens these sit in the margin with the table of contents first; below 1240px the margin gives way to a support sentence and a collapsible table of contents under the summary. One Platform control in the masthead re-marks the whole site.
 
 Code blocks are the one place with a theme of their own: Catppuccin Mocha, the owner's editor theme, upright and lifted to high contrast. Poppins sets every word of interface and prose; JetBrains Mono sets code, version numbers and keys.
 
@@ -184,7 +184,7 @@ A monochrome interface on true black, with three signal colours that only ever m
 ### Neutral
 - **True Black** (ground): the page, masthead, rail, column and margin. The sheet token resolves to the same value.
 - **Panel Black** (panel): the fill of asides, MDX cards and the search dialog.
-- **Code Black** (code-bg): code blocks and their title bar (the code-bar token is the same value), and the ownership map card.
+- **Code Black** (code-bg): code blocks and their title bar (the code-bar token is the same value).
 - **Raised Grey** (raised): the search trigger, inline code, hover fills on cards, footer links, search results and the Copy page button.
 - **Current Grey** (current): the active rail item and the support row for the selected platform.
 - **Hairline** (rule): column dividers, list borders, table rows, the masthead's bottom edge.
@@ -218,7 +218,7 @@ A monochrome interface on true black, with three signal colours that only ever m
 - **Nav** (400, 14.5px, 1.45): rail links; 500 on the current page. Table of contents links are 14px (13.5px at depth 3).
 - **Label** (600, 14px, sentence case): rail category names and margin section labels ("Where it runs", "Support", "On this page").
 - **Small** (400, 13px): breadcrumb and page meta; 12.5px for footnotes and badges.
-- **Code** (JetBrains Mono, 14px, 1.7): code blocks. Inline code is 0.86em on a raised grey chip. Version numbers, keyboard keys, search result paths and map labels also use the mono.
+- **Code** (JetBrains Mono, 14px, 1.7): code blocks. Inline code is 0.86em on a raised grey chip. Version numbers and keyboard keys also use the mono.
 
 ### Named Rules
 **The One Family Rule.** Poppins sets all interface and prose text, headings included. JetBrains Mono is for code, numbers, keys and paths only.
@@ -247,7 +247,7 @@ Flat. Depth comes from hairlines and from a few steps of near-black fill (#000 g
 
 ## Shapes
 
-Soft rectangles. Containers (cards, asides, code blocks, the dialog, footer links) round at 10px; buttons, the search trigger and the platform select at 8px; rail links, inline code and search results at 6px; keyboard keys at 4px. Support marks are 8px circles. The module status squares in the home margin round at 2px; numbered step counters are square. Category icons are 16px line drawings with 1.4px round strokes.
+Soft rectangles. Containers (cards, asides, code blocks, the dialog, footer links) round at 10px; buttons, the search trigger and the platform select at 8px; rail links, inline code and search results at 6px; keyboard keys at 4px. Support marks are 8px circles; numbered step counters are square. Category icons are 16px line drawings with 1.4px round strokes.
 
 ## Components
 
@@ -264,7 +264,7 @@ Soft rectangles. Containers (cards, asides, code blocks, the dialog, footer link
 
 ### Cards / Containers
 - **Corner Style:** 10px.
-- **Background:** feature cards are transparent on the ground; MDX cards and asides use panel black (#0a0a0a); the map card uses code black.
+- **Background:** feature cards are transparent on the ground; MDX cards and asides use panel black (#0a0a0a).
 - **Shadow Strategy:** none (see Elevation & Depth).
 - **Border:** 1px strong hairline. Feature card hover lifts the border to #4a4a4a and fills raised grey.
 - **Internal Padding:** 16px 18px for cards, 14px 16px for asides.
@@ -285,11 +285,11 @@ Soft rectangles. Containers (cards, asides, code blocks, the dialog, footer link
 ### Support Mark (signature)
 An 8px circle whose shape carries the meaning and whose colour follows it: filled green for full, half-filled yellow (diagonal) for partial, hollow red ring for none, a short grey dash where the platform does not apply. Each mark has a spoken label. In the margin's Support table, the row for the selected platform fills current grey.
 
-### Ownership Map (signature)
-"Where it runs": a small monochrome diagram on a faint 16px grid in a code-black card. The part of the world that owns the code is drawn solid in near white with an 8% white fill; the rest is dashed mid grey (#5a5a5a). Labels are 11px mono. A caption under it states the thread in plain words, the lead in white 600.
+### Where It Runs
+A short note in the margin naming the thread that runs a page's code, the lead in white 600 and the rest in grey: "The player's thread. The main thread on Paper; the region that owns the player on Folia and Canvas."
 
-### Module Status Squares (signature)
-On the home margin, one 2px-rounded square per module in a 12-column grid: solid near white for done, half grey for in progress, hollow hairline for planned, with a count beneath. These squares stay monochrome.
+### Page Summary
+Every guide's description appears under its title at 18px in grey, with Copy page on the title's row and the edit link at the foot of the page.
 
 ### Code Blocks
 Catppuccin Mocha syntax on code black (#121212), with minimum syntax contrast raised to 7.5 so comments read clearly. 10px radius, strong hairline border, no shadow, JetBrains Mono 14px at 1.7. Title tabs share the block's fill, with a near-white underline on the active tab. Long lines wrap at word breaks and keep their indent; on phones they scroll instead.
