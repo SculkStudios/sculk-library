@@ -8,7 +8,9 @@ import studio.sculk.SculkHandle
 import studio.sculk.SculkResult
 import studio.sculk.annotation.SculkStable
 import studio.sculk.getOrNull
+import studio.sculk.map
 import studio.sculk.pdc.read
+import studio.sculk.text.Text
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -61,15 +63,26 @@ public class CustomItems {
     public fun spec(id: Key): ItemSpec? = specs[id]
 
     /**
-     * A new stack of [id], from a defined spec or the provider of its namespace; an
-     * [SculkFailure.InvalidInput] when none knows it, as an id from configuration may not exist.
+     * A new stack of [amount] of [id], from a defined spec, its name and lore rendered by [text], or
+     * from the provider of its namespace, which renders its own. An [SculkFailure.InvalidInput] when
+     * none knows the id, the amount is outside 1 to the item's stack size, or the server cannot build
+     * the spec (see [ItemSpec.check]), as all of these may come from configuration. Any thread.
      */
-    public fun create(id: Key, amount: Int = 1): SculkResult<ItemStack> {
-        specs[id]?.let { spec -> return SculkResult.success(spec.with { this.amount = amount }.create()) }
+    public fun create(id: Key, amount: Int = 1, text: Text = Text()): SculkResult<ItemStack> {
+        if (amount !in 1..ItemSpec.MAX_STACK) return invalidAmount(id, amount, ItemSpec.MAX_STACK)
+        specs[id]?.let { spec ->
+            val most = spec.maxStackSize ?: ItemSpec.MAX_STACK
+            if (amount > most) return invalidAmount(id, amount, most)
+            val sized = if (spec.amount == amount) spec else spec.with { this.amount = amount }
+            return sized.check().map { it.create(text) }
+        }
         val stack = providers.filter { it.namespace == id.namespace() }.firstNotNullOfOrNull { it.create(id, amount) }
         return stack?.let { SculkResult.success(it) }
             ?: SculkFailure.InvalidInput("custom item", "a defined or provided item id", id.asString())
     }
+
+    private fun invalidAmount(id: Key, amount: Int, most: Int): SculkFailure =
+        SculkFailure.InvalidInput("amount of ${id.asString()}", "1 to $most", amount.toString())
 
     /** The custom item id of [stack]: Sculk's own mark first, then each provider in registration order. */
     public fun identify(stack: ItemStack): Key? {

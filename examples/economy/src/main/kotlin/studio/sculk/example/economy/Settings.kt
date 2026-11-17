@@ -22,10 +22,10 @@ data class Settings(
     val autosaveMinutes: Int = 5,
 )
 
-/** Balances on disk, keyed by player UUID. Written by the plugin, not meant for hand editing. */
+/** Balances on disk in cents, keyed by player UUID. Written by the plugin, not meant for hand editing. */
 @Serializable
-data class SavedBalances(val balances: Map<String, Double> = emptyMap()) {
-    fun toLedger(startingBalance: Double): Ledger = Ledger(startingBalance, balances.mapKeys { UUID.fromString(it.key) })
+data class SavedBalances(val balances: Map<String, Long> = emptyMap()) {
+    fun toLedger(startingBalance: Long): Ledger = Ledger(startingBalance, balances.mapKeys { UUID.fromString(it.key) })
 
     companion object {
         fun of(ledger: Ledger): SavedBalances = SavedBalances(ledger.snapshot().mapKeys { it.key.toString() })

@@ -18,9 +18,16 @@ import studio.sculk.text.Text
 /** Parts of an item's tooltip a spec can hide. */
 @SculkStable
 public enum class TooltipPart {
+    /** The enchantment lines. */
     ENCHANTMENTS,
+
+    /** The attribute modifier lines, such as attack damage. */
     ATTRIBUTES,
+
+    /** The "Unbreakable" line. */
     UNBREAKABLE,
+
+    /** The "Dyed" line of dyed leather and wolf armour. */
     DYED_COLOR,
 }
 
@@ -131,16 +138,64 @@ public class ItemSpec private constructor(builder: ItemSpecBuilder) {
     /** A copy with [change] applied on top of this spec. */
     public fun with(change: ItemSpecBuilder.() -> Unit): ItemSpec = ItemSpecBuilder.from(this).apply(change).build()
 
-    override fun equals(other: Any?): Boolean = other is ItemSpec && fields() == other.fields()
+    // Zero until first computed. A spec never changes once built, so racing threads compute the same
+    // value and an int write cannot tear: the String.hashCode idiom, without a lock.
+    private var hash: Int = 0
 
-    override fun hashCode(): Int = fields().hashCode()
+    // Menus compare every slot's spec on each redraw, so this allocates nothing and checks cheap fields first.
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ItemSpec) return false
+        if (hash != 0 && other.hash != 0 && hash != other.hash) return false
+        return type == other.type &&
+            amount == other.amount &&
+            unbreakable == other.unbreakable &&
+            hideTooltip == other.hideTooltip &&
+            glint == other.glint &&
+            maxStackSize == other.maxStackSize &&
+            maxDamage == other.maxDamage &&
+            damage == other.damage &&
+            rarity == other.rarity &&
+            name == other.name &&
+            id == other.id &&
+            model == other.model &&
+            dyedColor == other.dyedColor &&
+            customModel == other.customModel &&
+            lore == other.lore &&
+            enchantments == other.enchantments &&
+            hidden == other.hidden &&
+            data == other.data &&
+            values == other.values
+    }
+
+    override fun hashCode(): Int {
+        var result = hash
+        if (result == 0) {
+            result = type.hashCode()
+            result = 31 * result + amount
+            result = 31 * result + name.hashCode()
+            result = 31 * result + lore.hashCode()
+            result = 31 * result + enchantments.hashCode()
+            result = 31 * result + glint.hashCode()
+            result = 31 * result + unbreakable.hashCode()
+            result = 31 * result + hideTooltip.hashCode()
+            result = 31 * result + hidden.hashCode()
+            result = 31 * result + model.hashCode()
+            result = 31 * result + customModel.hashCode()
+            result = 31 * result + (maxStackSize ?: 0)
+            result = 31 * result + (maxDamage ?: 0)
+            result = 31 * result + (damage ?: 0)
+            result = 31 * result + rarity.hashCode()
+            result = 31 * result + dyedColor.hashCode()
+            result = 31 * result + id.hashCode()
+            result = 31 * result + data.hashCode()
+            result = 31 * result + values.hashCode()
+            hash = result
+        }
+        return result
+    }
 
     override fun toString(): String = "ItemSpec(${type.name}" + (id?.let { ", id=$it" } ?: "") + (name?.let { ", name=$it" } ?: "") + ")"
-
-    private fun fields(): List<Any?> = listOf(
-        type, amount, name, lore, enchantments, glint, unbreakable, hideTooltip, hidden, model, customModel,
-        maxStackSize, maxDamage, damage, rarity, dyedColor, id, data, values,
-    )
 
     @SculkStable
     public companion object {
@@ -165,24 +220,50 @@ public annotation class ItemDsl
 /** Builds an [ItemSpec]; see [item]. */
 @SculkStable
 @ItemDsl
-public class ItemSpecBuilder internal constructor(public var type: Material) {
+public class ItemSpecBuilder internal constructor(
+    /** The material; it must be an item, which [ItemSpec.check] confirms on a running server. */
+    public var type: Material,
+) {
+    /** How many the stack holds, 1 to [ItemSpec.MAX_STACK] and at most [maxStackSize]. */
     public var amount: Int = 1
+
+    /** The item's name, a MiniMessage template; null keeps the material's own name. */
     public var name: String? = null
     internal val lore = mutableListOf<String>()
     internal val enchantments = linkedMapOf<Key, Int>()
+
+    /** Forces the enchantment glint on or off; null leaves it to the enchantments. */
     public var glint: Boolean? = null
+
+    /** Whether the item never takes durability damage. */
     public var unbreakable: Boolean = false
 
     /** Hides the whole tooltip, name included. */
     public var hideTooltip: Boolean = false
     internal val hidden = linkedSetOf<TooltipPart>()
+
+    /** The item model, by its key in a resource pack; null keeps the material's. */
     public var model: Key? = null
+
+    /** The custom model data item model definitions read; null sets none. */
     public var customModel: CustomModel? = null
+
+    /** How many stack together, 1 to [ItemSpec.MAX_STACK]; null keeps the material's. A damageable item takes 1. */
     public var maxStackSize: Int? = null
+
+    /** The durability, at least 1; null keeps the material's. */
     public var maxDamage: Int? = null
+
+    /** The damage already taken, 0 to [maxDamage]. */
     public var damage: Int? = null
+
+    /** The rarity, which colours the name; null keeps the material's. */
     public var rarity: ItemRarity? = null
+
+    /** The dye colour of dyeable items such as leather armour. */
     public var dyedColor: Color? = null
+
+    /** Marks stacks of this spec as the custom item [id], see [CustomItems]. */
     public var id: Key? = null
     internal val data = mutableListOf<PdcValue<*>>()
     internal val values = linkedMapOf<String, String>()

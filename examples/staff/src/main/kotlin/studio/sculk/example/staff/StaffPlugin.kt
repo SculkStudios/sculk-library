@@ -12,6 +12,7 @@ import studio.sculk.config.admin.ConfigAdmin
 import studio.sculk.dialog.Dialogs
 import studio.sculk.dialog.dialog
 import studio.sculk.event.listen
+import studio.sculk.execution.getOrNull
 import studio.sculk.getOrThrow
 import studio.sculk.inventory.MenuLayout
 import studio.sculk.inventory.MenuSpec
@@ -20,6 +21,8 @@ import studio.sculk.inventory.menu
 import studio.sculk.inventory.textPrompt
 import studio.sculk.item.item
 import studio.sculk.paper.SculkPaperPlugin
+import studio.sculk.paper.teleportTo
+import studio.sculk.paper.withEntity
 import studio.sculk.text.Text
 import java.util.UUID
 
@@ -74,31 +77,23 @@ class StaffPlugin : SculkPaperPlugin() {
     }
 
     private val back = item(Material.ARROW) { name = "<muted>Back" }
+    private val previousArrow = item(Material.ARROW) { name = "<muted>Previous page" }
+    private val nextArrow = item(Material.ARROW) { name = "<muted>Next page" }
 
     private val players: MenuSpec<Page> = menu(MenuLayout.chest(6)) {
         text = messages
         title("<primary>Online players")
         render { state ->
             val online = Bukkit.getOnlinePlayers().sortedBy { it.name.lowercase() }
-            val page = paginate((0 until PAGE_SIZE).toList(), online, state.number, icon = { target ->
-                item(Material.PLAYER_HEAD) {
-                    name = "<primary><player>"
-                    value("player", target.name)
-                    lore(if (staff.isFrozen(target.uniqueId)) "<danger>Frozen" else "<muted>Click for actions")
-                }
-            }) { target -> open(actions, Target(target.uniqueId)) }
-            if (page.hasPrevious) {
-                slot(PREVIOUS, item(Material.ARROW) { name = "<muted>Previous page" }) {
-                    update {
-                        it.copy(
-                            number =
-                            it.number - 1,
-                        )
-                    }
-                }
-            }
-            if (page.hasNext) slot(NEXT, item(Material.ARROW) { name = "<muted>Next page" }) { update { it.copy(number = it.number + 1) } }
+            val page = paginate(PLAYER_SLOTS, online, state.number, icon = ::head) { target -> open(actions, Target(target.uniqueId)) }
+            pager(page, PREVIOUS, NEXT, previousArrow, nextArrow) { number -> update { it.copy(number = number) } }
         }
+    }
+
+    private fun head(target: Player) = item(Material.PLAYER_HEAD) {
+        name = "<primary><player>"
+        value("player", target.name)
+        lore(if (staff.isFrozen(target.uniqueId)) "<danger>Frozen" else "<muted>Click for actions")
     }
 
     private val actions: MenuSpec<Target> = menu(MenuLayout.chest(3)) {
@@ -112,31 +107,22 @@ class StaffPlugin : SculkPaperPlugin() {
                 return@render
             }
             val frozen = staff.isFrozen(target.uniqueId)
-            slot(
-                FREEZE,
-                item(if (frozen) Material.BLUE_ICE else Material.ICE) {
-                    name =
-                        if (frozen) "<warning>Unfreeze" else "<primary>Freeze"
-                },
-            ) {
-                val now = staff.toggleFreeze(target.uniqueId)
-                if (now) {
-                    target.sendMessage(
-                        messages.render(settings.value.freezeMessage),
-                    )
-                } else {
-                    target.sendMessage(messages.render("<success>You can move again."))
-                }
-                update { it }
+            val freeze = item(if (frozen) Material.BLUE_ICE else Material.ICE) {
+                name = if (frozen) "<warning>Unfreeze" else "<primary>Freeze"
+            }
+            slot(FREEZE, freeze) {
+                val message = if (staff.toggleFreeze(target.uniqueId)) settings.value.freezeMessage else "<success>You can move again."
+                target.sendMessage(messages.render(message))
+                refresh()
             }
             slot(TELEPORT, item(Material.ENDER_PEARL) { name = "<primary>Teleport to them" }) {
                 val staffMember = player
                 close()
-                // Their location belongs to their region; the teleport to the staff member's.
-                target.scheduler.run(this@StaffPlugin, { _ ->
-                    val there = target.location
-                    staffMember.scheduler.run(this@StaffPlugin, { _ -> staffMember.teleportAsync(there) }, null)
-                }, null)
+                // Their location is read on their thread; teleportTo moves the staff member on theirs.
+                sculk.scope.launch {
+                    val there = withEntity(target) { target.location }.getOrNull() ?: return@launch
+                    staffMember.teleportTo(there)
+                }
             }
             val last = staff.notes(target.uniqueId).lastOrNull()
             slot(
@@ -180,7 +166,7 @@ class StaffPlugin : SculkPaperPlugin() {
         text = messages
         title("<danger>Remove for…")
         render {
-            paginate((0 until 18).toList(), settings.value.reasons, 0, icon = { reason ->
+            paginate(REASON_SLOTS, settings.value.reasons, 0, icon = { reason ->
                 item(Material.PAPER) {
                     name = "<danger><reason>"
                     value("reason", reason)
@@ -195,7 +181,7 @@ class StaffPlugin : SculkPaperPlugin() {
     // The kick runs on the target's own thread; the announcement goes to every player.
     private fun remove(by: Player, target: UUID, reason: String, announce: Boolean) {
         val player = Bukkit.getPlayer(target) ?: return by.sendMessage(messages.render("<muted>That player has already left."))
-        player.scheduler.run(this, { _ -> player.kick(messages.render(settings.value.kickMessage, "reason" to reason)) }, null)
+        sculk.scope.launch { withEntity(player) { player.kick(messages.render(settings.value.kickMessage, "reason" to reason)) } }
         if (announce) {
             Bukkit.getServer().sendMessage(
                 messages.render(
@@ -209,7 +195,8 @@ class StaffPlugin : SculkPaperPlugin() {
     }
 
     private companion object {
-        const val PAGE_SIZE = 45
+        val PLAYER_SLOTS = (0 until 45).toList()
+        val REASON_SLOTS = (0 until 18).toList()
         const val PREVIOUS = 45
         const val NEXT = 53
         const val FREEZE = 10

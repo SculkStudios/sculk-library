@@ -76,22 +76,28 @@ public class DialogResponse internal constructor(
     private val spec: DialogSpec,
     private val values: Map<String, Any?>,
 ) {
+    /**
+     * What the player typed in the text input [key], plain text and never markup; null when it is
+     * missing or longer than the input allows. Throws when the dialog has no text input [key].
+     */
     public fun text(key: String): String? {
         val input = spec.input<DialogInput.Text>(key)
         return (values[key] as? String)?.takeIf { it.length <= input.maxLength }
     }
 
+    /** Whether the checkbox [key] is ticked; null when missing. Throws when the dialog has no toggle [key]. */
     public fun toggle(key: String): Boolean? {
         spec.input<DialogInput.Toggle>(key)
         return values[key] as? Boolean
     }
 
+    /** The slider [key]'s value; null when missing or outside its range. Throws when the dialog has no number input [key]. */
     public fun number(key: String): Float? {
         val input = spec.input<DialogInput.Number>(key)
         return (values[key] as? Float)?.takeIf { it in input.range }
     }
 
-    /** The chosen option's id. */
+    /** The id of the option chosen in [key]; null when missing or not an option. Throws when the dialog has no choice [key]. */
     public fun choice(key: String): String? {
         val input = spec.input<DialogInput.Choice>(key)
         return (values[key] as? String)?.takeIf { id -> input.options.any { it.first == id } }
@@ -153,28 +159,36 @@ public class DialogBuilder internal constructor(private val title: String) {
     private val inputs = mutableListOf<DialogInput>()
     private val buttons = mutableListOf<DialogButton>()
     private var fallback: ((Player) -> Unit)? = null
+
+    /** Whether the player can close the dialog with Escape. */
     public var canCloseWithEscape: Boolean = true
 
+    /** Appends paragraphs of text above the inputs, each a template. */
     public fun body(vararg paragraphs: String) {
         body += paragraphs
     }
 
+    /** Adds [input] as built; each input's key may appear once. */
     public fun input(input: DialogInput) {
         inputs += input
     }
 
+    /** Adds a text input; see [DialogInput.Text]. Read it with [DialogResponse.text]. */
     public fun text(key: String, label: String, initial: String = "", maxLength: Int = 32, lines: Int = 1) {
         input(DialogInput.Text(key, label, initial, maxLength, lines))
     }
 
+    /** Adds a checkbox; see [DialogInput.Toggle]. Read it with [DialogResponse.toggle]. */
     public fun toggle(key: String, label: String, initial: Boolean = false) {
         input(DialogInput.Toggle(key, label, initial))
     }
 
+    /** Adds a slider; see [DialogInput.Number]. Read it with [DialogResponse.number]. */
     public fun number(key: String, label: String, range: ClosedFloatingPointRange<Float>, step: Float? = null, initial: Float? = null) {
         input(DialogInput.Number(key, label, range, step, initial))
     }
 
+    /** Adds a choice of options; see [DialogInput.Choice]. Read it with [DialogResponse.choice]. */
     public fun choice(key: String, label: String, options: List<Pair<String, String>>, initial: String? = null) {
         input(DialogInput.Choice(key, label, options, initial))
     }

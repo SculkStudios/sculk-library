@@ -62,11 +62,14 @@ internal class HudEngine(
 
     private val states = layout.surfaces.map { State(it) }
 
-    /** Marks the surfaces that used [tag]; true when any did, so the driver should wake. */
+    // The surfaces that redraw on a change to each tag, kept as tags are recorded; Manual surfaces never join.
+    private val byTag = HashMap<String, MutableList<State>>()
+
+    /** Marks the surfaces that used [tag], except `Manual` ones; true when any did, so the driver should wake. */
     fun mark(tag: String): Boolean {
-        val hit = states.filter { tag in it.tags }
+        val hit = byTag[tag] ?: return false
         hit.forEach { it.dirty = true }
-        return hit.isNotEmpty()
+        return true
     }
 
     fun markAll() {
@@ -87,7 +90,13 @@ internal class HudEngine(
             val timed = interval != null && now >= state.nextDue
             val fading = surface is Surface.ActionBar && visible && now - state.lastSend >= ACTION_BAR_RESEND
             if (state.dirty || timed || flipped || fading || (state.sent == null && visible)) {
-                if (visible) draw(state, now, force = fading) else hide(state)
+                // A Manual action bar is resent as it was, so the fade never re-renders its placeholders.
+                val unchanged = fading && !state.dirty && !flipped && state.sent != null && surface.update == Update.Manual
+                when {
+                    !visible -> hide(state)
+                    unchanged -> resend(state, now)
+                    else -> draw(state, now, force = fading)
+                }
                 state.shownBefore = visible
                 if (interval != null && timed) state.nextDue = now + interval
             }
@@ -127,7 +136,7 @@ internal class HudEngine(
 
             is Surface.BelowName -> Shown.BelowName(text(surface.text))
         }
-        state.tags = tags
+        if (tags != state.tags) index(state, tags)
         state.dirty = false
         if (shown == state.sent && !force) return
         when (shown) {
@@ -145,6 +154,24 @@ internal class HudEngine(
             is Shown.BelowName -> if (!sink.belowName(shown)) return yielded(state)
         }
         state.sent = shown
+        state.lastSend = now
+    }
+
+    private fun index(state: State, tags: Set<String>) {
+        if (state.surface.update != Update.Manual) {
+            for (tag in state.tags - tags) {
+                val users = byTag[tag] ?: continue
+                users.remove(state)
+                if (users.isEmpty()) byTag.remove(tag)
+            }
+            for (tag in tags - state.tags) byTag.getOrPut(tag) { ArrayList<State>(1) }.add(state)
+        }
+        state.tags = tags
+    }
+
+    private fun resend(state: State, now: Long) {
+        val sent = state.sent as? Shown.ActionBar ?: return
+        sink.actionBar(sent.text)
         state.lastSend = now
     }
 

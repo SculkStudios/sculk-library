@@ -1,8 +1,10 @@
 package studio.sculk.item
 
 import net.kyori.adventure.key.Key
+import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.inventory.ItemRarity
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
@@ -42,6 +44,38 @@ class ItemSpecTest {
         assertNotEquals(blade, sharper)
         assertEquals(mapOf(sharpness to 6), sharper.enchantments)
         assertEquals(blade.lore, sharper.lore)
+    }
+
+    @Test
+    fun `a change to any one field makes a spec unequal, before and after its hash is cached`() {
+        val variants = listOf<ItemSpecBuilder.() -> Unit>(
+            { type = Material.NETHERITE_SWORD },
+            { amount = 1 },
+            { name = "<primary>Other" },
+            { lore("<muted>More") },
+            { enchant(Key.key("minecraft:smite"), 1) },
+            { glint = false },
+            { unbreakable = true },
+            { hideTooltip = true },
+            { hide(TooltipPart.ATTRIBUTES) },
+            { model = Key.key("shop:blade") },
+            { customModel = CustomModel(floats = listOf(1f)) },
+            { maxStackSize = 64 },
+            { maxDamage = 100 },
+            { damage = 0 },
+            { rarity = ItemRarity.EPIC },
+            { dyedColor = Color.RED },
+            { id = Key.key("shop:other") },
+            { data(owner, "Alex") },
+            { value("price", 5) },
+        ).map { change -> item(Material.DIAMOND_SWORD) { amount = 2 }.with(change) }
+        val base = item(Material.DIAMOND_SWORD) { amount = 2 }
+        variants.forEach { assertNotEquals(base, it, "$it") }
+        (variants + base).forEach { it.hashCode() }
+        variants.forEach { assertNotEquals(base, it, "$it with cached hashes") }
+        val again = item(Material.DIAMOND_SWORD) { amount = 2 }
+        assertEquals(base, again)
+        assertEquals(base.hashCode(), again.hashCode())
     }
 
     @Test

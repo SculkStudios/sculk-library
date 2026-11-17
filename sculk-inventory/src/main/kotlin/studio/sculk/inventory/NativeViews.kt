@@ -116,6 +116,7 @@ public class TradeMenu internal constructor(public val title: String, internal v
 /** Builds a [TradeMenu]; see [tradeMenu]. */
 @SculkStable
 public class TradeMenuBuilder internal constructor(private val title: String) {
+    /** Renders the title and every trade's item names and lore; set it to use a theme. */
     public var text: Text = Text()
     private val trades = mutableListOf<Trade>()
 

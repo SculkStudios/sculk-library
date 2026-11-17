@@ -141,7 +141,9 @@ public class MenuSession<S : Any> internal constructor(
     private var rendered: Map<Int, ItemSpec> = emptyMap()
     private var handlers: Map<Int, MenuClick<S>.() -> Unit> = emptyMap()
     private var title: String? = null
-    private var reopening = false
+
+    // Player thread only: one reopen is pending however many updates in a tick change the title.
+    private var retitling = false
 
     // Set the moment a close or a next menu is asked for: the view stays up until the next tick, and a
     // second click in that tick must not run a handler again (a purchase twice, a reward twice).
@@ -195,21 +197,24 @@ public class MenuSession<S : Any> internal constructor(
         title = newTitle
         rendered = emptyMap()
         draw(menu.draw(current), resolver)
-        reopening = isOpen
         // Registered before the window opens: the client can see it before this returns, and a scope
         // closing from another thread in that moment must find the session.
         val first = !isOpen
         isOpen = true
         val live = !first || menus.opened(this)
-        val view = try {
-            player.openInventory(holder.contents)
-        } finally {
-            reopening = false
-        }
+        // The replaced view's close event names the old inventory, which closed() ignores from here on.
+        val view = player.openInventory(holder.contents)
         when {
             view == null && first -> {
                 isOpen = false
                 menus.ended(this)
+            }
+
+            // Another plugin refused the reopen: the session ends, and the old window, which no longer
+            // has a live session behind it, is closed rather than left on screen.
+            view == null -> {
+                closed(holder.contents)
+                if ((player.openInventory.topInventory.getHolder(false) as? MenuHolder)?.session === this) player.closeInventory()
             }
 
             // The scope's listener may already be gone, so the close is ended here as well; closed() runs once.
@@ -223,7 +228,14 @@ public class MenuSession<S : Any> internal constructor(
     private fun redraw() {
         // Paper cannot retitle an open inventory; a new title is a new view, opened after this tick's click.
         if (menu.title(current) != title) {
-            onPlayer(later = true) { if (isOpen) show() }
+            if (retitling) return
+            retitling = true
+            onPlayer(later = true) {
+                retitling = false
+                if (!isOpen) return@onPlayer
+                // A later update in the same tick may have restored the title; then only the slots are stale.
+                if (menu.title(current) != title) show() else draw(menu.draw(current), resolver())
+            }
             return
         }
         draw(menu.draw(current), resolver())
@@ -232,8 +244,10 @@ public class MenuSession<S : Any> internal constructor(
     private fun draw(render: MenuRender<S>, resolver: TagResolver) {
         val inventory = holder?.contents ?: return
         diff(rendered, render.icons).forEach { (slot, item) -> inventory.setItem(slot, item?.create(menu.text, resolver)) }
-        rendered = render.icons.toMap()
-        handlers = render.handlers.toMap()
+        // Kept without a copy: a drawn render refuses further slots, so these maps never change again.
+        render.drawn = true
+        rendered = render.icons
+        handlers = render.handlers
     }
 
     internal fun click(event: InventoryClickEvent) {
@@ -249,7 +263,7 @@ public class MenuSession<S : Any> internal constructor(
     }
 
     internal fun closed(inventory: Inventory) {
-        if (inventory !== holder?.contents || reopening || !isOpen) return
+        if (inventory !== holder?.contents || !isOpen) return
         isOpen = false
         menus.ended(this)
         try {
@@ -259,7 +273,8 @@ public class MenuSession<S : Any> internal constructor(
         }
     }
 
-    // Plugins disable on the main thread on Paper; on Folia the player's region may be elsewhere.
+    // At server shutdown every ownership check passes and nothing scheduled runs (THREADING.md rule 8), so
+    // this closes inline; a scope closed while the server runs may be on another thread and hops instead.
     internal fun closeAtShutdown() {
         if (Bukkit.isOwnedByCurrentRegion(player)) player.closeInventory() else close()
     }

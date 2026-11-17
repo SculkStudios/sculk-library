@@ -52,10 +52,13 @@ public sealed class Ingredient {
 
     @SculkStable
     public companion object {
+        /** Any item of one of [materials], at least one, whatever its components; see [Items]. */
         public fun of(vararg materials: Material): Ingredient = Items(materials.toSet())
 
+        /** Any item in the item tag [key]; [Recipes.register] fails when the server has no such tag. See [Tag]. */
         public fun tag(key: Key): Ingredient = Tag(key)
 
+        /** Exactly a stack of one of [specs], at least one, components included; see [Exact]. */
         public fun exact(vararg specs: ItemSpec): Ingredient = Exact(specs.toList())
     }
 }

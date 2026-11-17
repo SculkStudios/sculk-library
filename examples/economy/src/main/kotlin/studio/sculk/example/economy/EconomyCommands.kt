@@ -4,7 +4,6 @@ import studio.sculk.command.Arguments
 import studio.sculk.command.CommandContext
 import studio.sculk.command.CommandSpec
 import studio.sculk.command.command
-import java.util.Locale
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
@@ -31,11 +30,7 @@ class EconomyCommands(private val ledger: Ledger, private val players: Players, 
         permission(EconomyPermissions.balance)
         val name = word("player").optional().suggests { partial, _ -> players.names().filter { it.startsWith(partial, ignoreCase = true) } }
         executes {
-            val holder =
-                this[name]?.let { target ->
-                    players.find(target) ?: fail("<danger>Nobody called <name> has played here.", "name" to target)
-                }
-                    ?: senderHolder()
+            val holder = this[name]?.let { holder(it) } ?: senderHolder()
             reply(
                 "<primary><name></primary> has <value><amount></value>.",
                 "name" to holder.name,
@@ -48,15 +43,15 @@ class EconomyCommands(private val ledger: Ledger, private val players: Players, 
         description = "Send money to another player"
         permission(EconomyPermissions.pay)
         val target = word("player").suggests { partial, _ -> players.names().filter { it.startsWith(partial, ignoreCase = true) } }
-        val amount = double("amount", min = 0.01)
+        val amount = double("amount", min = MIN_AMOUNT, max = MAX_AMOUNT)
         player {
             val sender = senderHolder()
-            val receiver = players.find(this[target]) ?: fail("<danger>Nobody called <name> has played here.", "name" to this[target])
+            val receiver = holder(this[target])
             if (receiver.id == sender.id) fail("<danger>You cannot pay yourself.")
-            if (!ledger.transfer(sender.id, receiver.id, this[amount])) {
+            if (!ledger.transfer(sender.id, receiver.id, cents(this[amount]))) {
                 fail("<danger>You only have <amount>.", "amount" to money(ledger.balance(sender.id)))
             }
-            reply("<success>Sent <amount> to <name>.", "amount" to money(this[amount]), "name" to receiver.name)
+            reply("<success>Sent <amount> to <name>.", "amount" to money(cents(this[amount])), "name" to receiver.name)
         }
     }
 
@@ -66,27 +61,23 @@ class EconomyCommands(private val ledger: Ledger, private val players: Players, 
         help()
         literal("give", "add") {
             val target = word("player")
-            val amount = double("amount", min = 0.01)
+            val amount = double("amount", min = MIN_AMOUNT, max = MAX_AMOUNT)
             val silent = flag("silent", short = 's')
             executes {
                 val holder = holder(this[target])
-                ledger.deposit(holder.id, this[amount])
-                if (!this[silent]) reply("<success>Gave <amount> to <name>.", "amount" to money(this[amount]), "name" to holder.name)
+                ledger.deposit(holder.id, cents(this[amount]))
+                if (!this[silent]) reply("<success>Gave <amount> to <name>.", "amount" to money(cents(this[amount])), "name" to holder.name)
             }
         }
         literal("take") {
             val target = word("player")
-            val amount = double("amount", min = 0.01)
+            val amount = double("amount", min = MIN_AMOUNT, max = MAX_AMOUNT)
             executes {
                 val holder = holder(this[target])
-                if (!ledger.withdraw(holder.id, this[amount])) {
-                    fail(
-                        "<danger><name> only has <amount>.",
-                        "name" to holder.name,
-                        "amount" to money(ledger.balance(holder.id)),
-                    )
+                if (!ledger.withdraw(holder.id, cents(this[amount]))) {
+                    fail("<danger><name> only has <amount>.", "name" to holder.name, "amount" to money(ledger.balance(holder.id)))
                 }
-                reply("<success>Took <amount> from <name>.", "amount" to money(this[amount]), "name" to holder.name)
+                reply("<success>Took <amount> from <name>.", "amount" to money(cents(this[amount])), "name" to holder.name)
             }
         }
         literal("reset") {
@@ -123,5 +114,12 @@ class EconomyCommands(private val ledger: Ledger, private val players: Players, 
     private fun CommandContext.holder(name: String): Holder =
         players.find(name) ?: fail("<danger>Nobody called <name> has played here.", "name" to name)
 
-    private fun money(amount: Double): String = String.format(Locale.ROOT, "%,.2f %s", amount, settings().currency)
+    private fun money(cents: Long): String = formatMoney(cents, settings().currency)
+
+    private companion object {
+        const val MIN_AMOUNT = 0.01
+
+        // A billion a time keeps every sum far from the end of a Long of cents.
+        const val MAX_AMOUNT = 1_000_000_000.0
+    }
 }

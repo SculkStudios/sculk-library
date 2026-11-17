@@ -19,7 +19,9 @@ import studio.sculk.map
  *
  * [parse] checks the text without a server; [resolve] reads the server's registries and reports
  * names that do not exist there, so a typo in configuration is an error at load, not a rule that
- * never matches. Resolve once and keep the set: registries do not change after bootstrap.
+ * never matches. Entries do not change after bootstrap, but tags do: a datapack reload
+ * (`/minecraft:reload`, after which Paper fires `ServerResourcesReloadedEvent`) can change what a
+ * tag holds, so a set with tag selectors must be resolved again after one; a set of entries keeps.
  */
 @SculkStable
 public class RegistryEntrySet<T : Keyed> private constructor(

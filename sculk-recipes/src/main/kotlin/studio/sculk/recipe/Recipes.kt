@@ -63,66 +63,66 @@ public class Recipes(private val server: Server = Bukkit.getServer()) {
     }
 
     private fun add(spec: RecipeSpec) {
-        if (spec is RecipeSpec.Brewing) {
-            server.potionBrewer.addPotionMix(PotionMix(spec.key, spec.result.create(), choice(spec.input), choice(spec.ingredient)))
-            return
-        }
-        require(server.getRecipe(spec.key) == null) { "the recipe key ${spec.key} is already registered" }
-        require(server.addRecipe(compile(spec), true)) { "the server refused recipe ${spec.key}" }
-    }
+        if (spec !is RecipeSpec.Brewing) require(server.getRecipe(spec.key) == null) { "the recipe key ${spec.key} is already registered" }
+        val recipe: Recipe = when (spec) {
+            is RecipeSpec.Brewing -> {
+                server.potionBrewer.addPotionMix(PotionMix(spec.key, spec.result.create(), choice(spec.input), choice(spec.ingredient)))
+                return
+            }
 
-    private fun remove(spec: RecipeSpec) {
-        if (spec is RecipeSpec.Brewing) server.potionBrewer.removePotionMix(spec.key) else server.removeRecipe(spec.key, true)
-    }
+            is RecipeSpec.Shaped -> ShapedRecipe(spec.key, spec.result.create()).apply {
+                shape(*spec.rows.toTypedArray())
+                spec.keys.forEach { (symbol, ingredient) -> setIngredient(symbol, choice(ingredient)) }
+                group = spec.group
+                category = spec.category
+            }
 
-    private fun compile(spec: RecipeSpec): Recipe = when (spec) {
-        is RecipeSpec.Shaped -> ShapedRecipe(spec.key, spec.result.create()).apply {
-            shape(*spec.rows.toTypedArray())
-            spec.keys.forEach { (symbol, ingredient) -> setIngredient(symbol, choice(ingredient)) }
-            group = spec.group
-            category = spec.category
-        }
+            is RecipeSpec.Shapeless -> ShapelessRecipe(spec.key, spec.result.create()).apply {
+                spec.ingredients.forEach { addIngredient(choice(it)) }
+                group = spec.group
+                category = spec.category
+            }
 
-        is RecipeSpec.Shapeless -> ShapelessRecipe(spec.key, spec.result.create()).apply {
-            spec.ingredients.forEach { addIngredient(choice(it)) }
-            group = spec.group
-            category = spec.category
-        }
+            is RecipeSpec.Cooking -> {
+                val result = spec.result.create()
+                val input = choice(spec.input)
+                when (spec.cooker) {
+                    RecipeSpec.Cooker.FURNACE -> FurnaceRecipe(spec.key, result, input, spec.experience, spec.ticks)
+                    RecipeSpec.Cooker.BLASTING -> BlastingRecipe(spec.key, result, input, spec.experience, spec.ticks)
+                    RecipeSpec.Cooker.SMOKING -> SmokingRecipe(spec.key, result, input, spec.experience, spec.ticks)
+                    RecipeSpec.Cooker.CAMPFIRE -> CampfireRecipe(spec.key, result, input, spec.experience, spec.ticks)
+                }.apply {
+                    group = spec.group
+                    category = spec.category
+                }
+            }
 
-        is RecipeSpec.Cooking -> {
-            val result = spec.result.create()
-            val input = choice(spec.input)
-            when (spec.cooker) {
-                RecipeSpec.Cooker.FURNACE -> FurnaceRecipe(spec.key, result, input, spec.experience, spec.ticks)
-                RecipeSpec.Cooker.BLASTING -> BlastingRecipe(spec.key, result, input, spec.experience, spec.ticks)
-                RecipeSpec.Cooker.SMOKING -> SmokingRecipe(spec.key, result, input, spec.experience, spec.ticks)
-                RecipeSpec.Cooker.CAMPFIRE -> CampfireRecipe(spec.key, result, input, spec.experience, spec.ticks)
-            }.apply {
+            is RecipeSpec.Stonecutting -> StonecuttingRecipe(spec.key, spec.result.create(), choice(spec.input)).apply {
+                group = spec.group
+            }
+
+            is RecipeSpec.SmithingTransform ->
+                SmithingTransformRecipe(
+                    spec.key,
+                    spec.result.create(),
+                    choice(spec.template),
+                    choice(spec.base),
+                    choice(spec.addition),
+                    spec.copyComponents,
+                )
+
+            is RecipeSpec.SmithingTrim -> trim(spec)
+
+            is RecipeSpec.Transmute -> TransmuteRecipe(spec.key, spec.result, choice(spec.input), choice(spec.material)).apply {
                 group = spec.group
                 category = spec.category
             }
         }
+        require(server.addRecipe(recipe, true)) { "the server refused recipe ${spec.key}" }
+    }
 
-        is RecipeSpec.Stonecutting -> StonecuttingRecipe(spec.key, spec.result.create(), choice(spec.input)).apply { group = spec.group }
-
-        is RecipeSpec.SmithingTransform ->
-            SmithingTransformRecipe(
-                spec.key,
-                spec.result.create(),
-                choice(spec.template),
-                choice(spec.base),
-                choice(spec.addition),
-                spec.copyComponents,
-            )
-
-        is RecipeSpec.SmithingTrim -> trim(spec)
-
-        is RecipeSpec.Transmute -> TransmuteRecipe(spec.key, spec.result, choice(spec.input), choice(spec.material)).apply {
-            group = spec.group
-            category = spec.category
-        }
-
-        is RecipeSpec.Brewing -> error("brewing mixes are not recipes before 26.3")
+    private fun remove(spec: RecipeSpec) {
+        if (spec is RecipeSpec.Brewing) server.potionBrewer.removePotionMix(spec.key) else server.removeRecipe(spec.key, true)
     }
 
     private fun trim(spec: RecipeSpec.SmithingTrim): Recipe {

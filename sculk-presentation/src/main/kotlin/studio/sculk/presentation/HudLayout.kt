@@ -4,10 +4,16 @@ import net.kyori.adventure.bossbar.BossBar
 import org.bukkit.entity.Player
 import studio.sculk.annotation.SculkStable
 
-/** When a surface renders again. */
+/**
+ * When a surface renders again. Every surface also renders when it first shows and when its
+ * condition shows it again, and nothing is sent when a render comes out the same as what was sent.
+ */
 @SculkStable
 public sealed class Update {
-    /** When a placeholder the surface used signals a change (ADR-0026); never on a timer. */
+    /**
+     * When a placeholder the surface used signals a change (ADR-0026), never on a timer of its own;
+     * an action bar also renders each time it is resent, every two seconds, as the client fades it.
+     */
     @SculkStable
     public data object OnChange : Update()
 
@@ -25,7 +31,10 @@ public sealed class Update {
         override fun toString(): String = "Every($ticks ticks)"
     }
 
-    /** Only when the plugin calls `PlayerHud.refresh`. */
+    /**
+     * Only when the plugin calls `PlayerHud.refresh`; placeholder changes do not redraw it, and an
+     * action bar is resent as it was last rendered.
+     */
     @SculkStable
     public data object Manual : Update()
 }
@@ -146,14 +155,17 @@ public class HudLayout internal constructor(surfaces: List<Surface>) {
 public class HudBuilder internal constructor() {
     private val surfaces = mutableListOf<Surface>()
 
+    /** Adds [surface] as built. */
     public fun surface(surface: Surface) {
         surfaces += surface
     }
 
+    /** Adds the line above the hotbar; see [Surface.ActionBar]. */
     public fun actionBar(text: String, update: Update = Update.OnChange, showWhen: ((Player) -> Boolean)? = null) {
         surface(Surface.ActionBar(text, update, showWhen))
     }
 
+    /** Adds a boss bar, told apart from the HUD's others by [id]; see [Surface.Bar]. */
     public fun bar(
         id: String,
         title: String,
@@ -166,14 +178,17 @@ public class HudBuilder internal constructor() {
         surface(Surface.Bar(id, title, color, overlay, progress, update, showWhen))
     }
 
+    /** Adds the tab list's header and footer; see [Surface.TabList]. */
     public fun tabList(header: String, footer: String, update: Update = Update.OnChange, showWhen: ((Player) -> Boolean)? = null) {
         surface(Surface.TabList(header, footer, update, showWhen))
     }
 
+    /** Adds the scoreboard sidebar, [lines] top first; see [Surface.Sidebar]. */
     public fun sidebar(title: String, vararg lines: String, update: Update = Update.OnChange, showWhen: ((Player) -> Boolean)? = null) {
         surface(Surface.Sidebar(title, lines.toList(), update, showWhen))
     }
 
+    /** Adds what others see around this player's name; see [Surface.Nametag]. */
     public fun nametag(
         prefix: String = "",
         suffix: String = "",
@@ -183,6 +198,7 @@ public class HudBuilder internal constructor() {
         surface(Surface.Nametag(prefix, suffix, update, showWhen))
     }
 
+    /** Adds the line others see under this player's name; see [Surface.BelowName]. */
     public fun belowName(text: String, update: Update = Update.OnChange, showWhen: ((Player) -> Boolean)? = null) {
         surface(Surface.BelowName(text, update, showWhen))
     }

@@ -1,3 +1,14 @@
+public final class studio/sculk/recipe/CookingBuilder {
+	public final fun getCategory ()Lorg/bukkit/inventory/recipe/CookingBookCategory;
+	public final fun getExperience ()F
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getTicks ()Ljava/lang/Integer;
+	public final fun setCategory (Lorg/bukkit/inventory/recipe/CookingBookCategory;)V
+	public final fun setExperience (F)V
+	public final fun setGroup (Ljava/lang/String;)V
+	public final fun setTicks (Ljava/lang/Integer;)V
+}
+
 public abstract class studio/sculk/recipe/Ingredient {
 	public static final field Companion Lstudio/sculk/recipe/Ingredient$Companion;
 }
@@ -125,7 +136,19 @@ public final class studio/sculk/recipe/RecipeSpec$Transmute : studio/sculk/recip
 }
 
 public final class studio/sculk/recipe/RecipeSpecKt {
+	public static final fun brewing (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;)Lstudio/sculk/recipe/RecipeSpec$Brewing;
+	public static final fun cooking (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/RecipeSpec$Cooker;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/recipe/RecipeSpec$Cooking;
+	public static synthetic fun cooking$default (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/RecipeSpec$Cooker;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/recipe/RecipeSpec$Cooking;
 	public static final fun shaped (Lorg/bukkit/NamespacedKey;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/recipe/RecipeSpec$Shaped;
+	public static final fun shapeless (Lorg/bukkit/NamespacedKey;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/recipe/RecipeSpec$Shapeless;
+	public static final fun smithingTransform (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/recipe/RecipeSpec$SmithingTransform;
+	public static synthetic fun smithingTransform$default (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/recipe/RecipeSpec$SmithingTransform;
+	public static final fun smithingTrim (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lnet/kyori/adventure/key/Key;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/recipe/RecipeSpec$SmithingTrim;
+	public static synthetic fun smithingTrim$default (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lnet/kyori/adventure/key/Key;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/recipe/RecipeSpec$SmithingTrim;
+	public static final fun stonecutting (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/recipe/RecipeSpec$Stonecutting;
+	public static synthetic fun stonecutting$default (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/recipe/RecipeSpec$Stonecutting;
+	public static final fun transmute (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/recipe/RecipeSpec$Transmute;
+	public static synthetic fun transmute$default (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lorg/bukkit/Material;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lstudio/sculk/recipe/RecipeSpec$Transmute;
 }
 
 public final class studio/sculk/recipe/Recipes {
@@ -140,6 +163,32 @@ public final class studio/sculk/recipe/ShapedBuilder {
 	public final fun getGroup ()Ljava/lang/String;
 	public final fun key (CLstudio/sculk/recipe/Ingredient;)V
 	public final fun rows ([Ljava/lang/String;)V
+	public final fun setCategory (Lorg/bukkit/inventory/recipe/CraftingBookCategory;)V
+	public final fun setGroup (Ljava/lang/String;)V
+}
+
+public final class studio/sculk/recipe/ShapelessBuilder {
+	public final fun getCategory ()Lorg/bukkit/inventory/recipe/CraftingBookCategory;
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun ingredient (Lstudio/sculk/recipe/Ingredient;I)V
+	public static synthetic fun ingredient$default (Lstudio/sculk/recipe/ShapelessBuilder;Lstudio/sculk/recipe/Ingredient;IILjava/lang/Object;)V
+	public final fun setCategory (Lorg/bukkit/inventory/recipe/CraftingBookCategory;)V
+	public final fun setGroup (Ljava/lang/String;)V
+}
+
+public final class studio/sculk/recipe/SmithingBuilder {
+	public final fun getCopyComponents ()Z
+	public final fun setCopyComponents (Z)V
+}
+
+public final class studio/sculk/recipe/StonecuttingBuilder {
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun setGroup (Ljava/lang/String;)V
+}
+
+public final class studio/sculk/recipe/TransmuteBuilder {
+	public final fun getCategory ()Lorg/bukkit/inventory/recipe/CraftingBookCategory;
+	public final fun getGroup ()Ljava/lang/String;
 	public final fun setCategory (Lorg/bukkit/inventory/recipe/CraftingBookCategory;)V
 	public final fun setGroup (Ljava/lang/String;)V
 }

@@ -11,7 +11,8 @@ import studio.sculk.annotation.SculkStable
 
 /**
  * Reads the server's registries by key, for keys that come from configuration or commands and so
- * may not exist. Any thread once the server has started; registries do not change after bootstrap.
+ * may not exist. Any thread once the server has started. A registry's entries do not change after
+ * bootstrap, but its tags do on a datapack reload, so what [tag] returned must be read again after one.
  */
 @SculkStable
 public object Registries {

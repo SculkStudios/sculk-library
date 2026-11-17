@@ -103,6 +103,34 @@ class MenuLogicTest {
     }
 
     @Test
+    fun `an empty list shows one empty page`() {
+        val render = MenuRender<Unit>(MenuLayout.chest(1))
+        val page = render.paginate(slots = listOf(0, 1), entries = emptyList<Int>(), page = 3, icon = { gem })
+        assertEquals(0, page.number)
+        assertEquals(1, page.count)
+        assertEquals(emptyMap<Int, Any>(), render.icons)
+    }
+
+    @Test
+    fun `a pager shows only the arrows that lead to a page`() {
+        val arrows = listOf(0, 1, 2).associateWith { number ->
+            MenuRender<Unit>(MenuLayout.chest(1)).apply { pager(Page(number, 3), 0, 8, pane, gem) {} }.icons
+        }
+        assertEquals(mapOf(8 to gem), arrows[0])
+        assertEquals(mapOf(0 to pane, 8 to gem), arrows[1])
+        assertEquals(mapOf(0 to pane), arrows[2])
+    }
+
+    @Test
+    fun `a render that was drawn refuses further slots`() {
+        val render = MenuRender<Unit>(MenuLayout.chest(1))
+        render.slot(0, gem)
+        render.drawn = true
+        assertThrows<IllegalStateException> { render.slot(1, gem) }
+        assertEquals(mapOf(0 to gem), render.icons)
+    }
+
+    @Test
     fun `a border rings the chest and leaves the middle to the rest of the render`() {
         val render = MenuRender<Unit>(MenuLayout.chest(3))
         render.slot(render.at(1, 4), gem)

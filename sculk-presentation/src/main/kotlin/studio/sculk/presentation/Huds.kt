@@ -122,18 +122,15 @@ public class Huds(
             huds[event.player.uniqueId]?.left()
         }
     }
-
-    private companion object {
-        // Folia throws on every scoreboard write; Canvas restores them. Decided by class, because
-        // probing with a write would itself be refused off the main thread on Paper.
-        val SCOREBOARDS: Boolean by lazy { !exists(REGIONIZED_SERVER) || exists(CANVAS_CLASS) }
-
-        const val REGIONIZED_SERVER = "io.papermc.paper.threadedregions.RegionizedServer"
-        const val CANVAS_CLASS = "io.canvasmc.canvas.region.RegionTickData"
-
-        fun exists(name: String): Boolean = runCatching { Class.forName(name, false, Huds::class.java.classLoader) }.isSuccess
-    }
 }
+
+// Decided by class, because probing with a write would itself be refused off the main thread on Paper.
+// Folia and Canvas are regionized; Folia throws on every scoreboard write, and Canvas restores them but
+// checks that each runs on the global tick.
+private val REGIONIZED: Boolean by lazy { exists("io.papermc.paper.threadedregions.RegionizedServer") }
+private val SCOREBOARDS: Boolean by lazy { !REGIONIZED || exists("io.canvasmc.canvas.region.RegionTickData") }
+
+private fun exists(name: String): Boolean = runCatching { Class.forName(name, false, Huds::class.java.classLoader) }.isSuccess
 
 /** One player's HUD. [refresh] redraws everything; [close] removes it. */
 @SculkStable
@@ -149,6 +146,10 @@ public class PlayerHud internal constructor(
     private val engine = HudEngine(layout, player, ::render, sink)
     private val start = System.nanoTime()
     private var pending: Long? = null
+
+    // Every tag a render of this HUD has asked for, so a change to any other costs no task. Written on
+    // the player's thread before the value is read, so a change racing that read is still delivered.
+    @Volatile private var watched: Set<String> = emptySet()
 
     @Volatile public var isOpen: Boolean = true
         private set
@@ -177,6 +178,7 @@ public class PlayerHud internal constructor(
     }
 
     internal fun signal(tag: String) {
+        if (!isOpen || tag !in watched) return
         onPlayer { if (isOpen && engine.mark(tag)) wakeAt(now()) }
     }
 
@@ -191,8 +193,12 @@ public class PlayerHud internal constructor(
 
     private fun render(template: String): Rendered {
         val used = HashSet<String>()
-        val resolver = placeholders?.resolver(player)?.let { Recording(it, used) } ?: TagResolver.empty()
+        val resolver = placeholders?.resolver(player)?.let { Recording(it, used, ::watch) } ?: TagResolver.empty()
         return Rendered(text.render(template, resolver), used)
+    }
+
+    private fun watch(tag: String) {
+        if (tag !in watched) watched = watched + tag
     }
 
     /** At most one wake pending; an earlier request schedules an earlier one. Player thread only. */
@@ -217,9 +223,12 @@ public class PlayerHud internal constructor(
     }
 
     /** Records which tags a render resolved, so a change to one marks this surface. */
-    private class Recording(private val delegate: TagResolver, private val used: MutableSet<String>) : TagResolver {
-        override fun resolve(name: String, arguments: ArgumentQueue, context: Context): Tag? =
-            delegate.resolve(name, arguments, context).also { if (it != null) used += name }
+    private class Recording(private val delegate: TagResolver, private val used: MutableSet<String>, private val watch: (String) -> Unit) :
+        TagResolver {
+        override fun resolve(name: String, arguments: ArgumentQueue, context: Context): Tag? {
+            if (delegate.has(name)) watch(name)
+            return delegate.resolve(name, arguments, context).also { if (it != null) used += name }
+        }
 
         override fun has(name: String): Boolean = delegate.has(name)
     }
@@ -361,12 +370,6 @@ private class PaperSink(private val plugin: Plugin, private val player: Player, 
     private companion object {
         const val OBJECTIVE = "sculk_hud"
         const val ENTRY = "sculk_line_"
-
-        // Canvas restores scoreboards but checks that writes run on the global tick; Paper has one
-        // thread. Folia is regionized too, but never gets here: it has no scoreboards to write.
-        val REGIONIZED: Boolean by lazy {
-            runCatching { Class.forName("io.papermc.paper.threadedregions.RegionizedServer") }.isSuccess
-        }
     }
 }
 
@@ -475,9 +478,5 @@ internal class NameBoards(private val plugin: Plugin) {
     private companion object {
         const val TEAM = "sculk_name_"
         const val OBJECTIVE = "sculk_below"
-
-        val REGIONIZED: Boolean by lazy {
-            runCatching { Class.forName("io.papermc.paper.threadedregions.RegionizedServer") }.isSuccess
-        }
     }
 }

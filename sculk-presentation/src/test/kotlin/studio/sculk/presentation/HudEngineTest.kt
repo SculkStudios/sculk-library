@@ -98,6 +98,49 @@ class HudEngineTest {
     }
 
     @Test
+    fun `a manual surface ignores placeholder changes and redraws only when the whole HUD is refreshed`() {
+        val hud = engine {
+            tabList("Online <online>", "footer", update = Update.Manual)
+            sidebar("Title", "Online <online>")
+        }
+        hud.wake(0)
+        sink.sent.clear()
+        values["online"] = "4"
+        assertEquals(true, hud.mark("online"), "the sidebar still listens")
+        hud.wake(1)
+        assertEquals(listOf("side:Online 4"), sink.sent)
+        hud.markAll()
+        hud.wake(2)
+        assertEquals(listOf("side:Online 4", "tab:Online 4"), sink.sent)
+    }
+
+    @Test
+    fun `a change to a tag only a manual surface used wakes nothing`() {
+        val hud = engine { tabList("Online <online>", "footer", update = Update.Manual) }
+        hud.wake(0)
+        assertEquals(false, hud.mark("online"))
+    }
+
+    @Test
+    fun `a manual action bar is resent as it was rendered, not rendered again`() {
+        val hud = engine { actionBar("Coins <coins>", update = Update.Manual) }
+        hud.wake(0)
+        values["coins"] = "99"
+        hud.wake(40)
+        assertEquals(listOf("bar:Coins 10", "bar:Coins 10"), sink.sent)
+    }
+
+    @Test
+    fun `a tag a surface stops using no longer marks it`() {
+        val hud = engine { tabList("Online <online>", "footer") }
+        hud.wake(0)
+        assertEquals(true, hud.mark("online"))
+        values.remove("online")
+        hud.wake(1)
+        assertEquals(false, hud.mark("online"))
+    }
+
+    @Test
     fun `an interval redraws on time and says when to wake next`() {
         val hud = engine { bar("event", "Coins <coins>", update = Update.Every(20)) }
         assertEquals(20L, hud.wake(0))

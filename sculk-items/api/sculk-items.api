@@ -6,8 +6,8 @@ public abstract interface class studio/sculk/item/CustomItemProvider {
 
 public final class studio/sculk/item/CustomItems {
 	public fun <init> ()V
-	public final fun create (Lnet/kyori/adventure/key/Key;I)Lstudio/sculk/SculkResult;
-	public static synthetic fun create$default (Lstudio/sculk/item/CustomItems;Lnet/kyori/adventure/key/Key;IILjava/lang/Object;)Lstudio/sculk/SculkResult;
+	public final fun create (Lnet/kyori/adventure/key/Key;ILstudio/sculk/text/Text;)Lstudio/sculk/SculkResult;
+	public static synthetic fun create$default (Lstudio/sculk/item/CustomItems;Lnet/kyori/adventure/key/Key;ILstudio/sculk/text/Text;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
 	public final fun define (Lstudio/sculk/ResourceScope;Lstudio/sculk/item/ItemSpec;)Lstudio/sculk/SculkHandle;
 	public final fun identify (Lorg/bukkit/inventory/ItemStack;)Lnet/kyori/adventure/key/Key;
 	public final fun register (Lstudio/sculk/ResourceScope;Lstudio/sculk/item/CustomItemProvider;)Lstudio/sculk/SculkHandle;

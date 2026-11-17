@@ -17,6 +17,7 @@ public final class studio/sculk/inventory/MenuClick {
 	public final fun getSlot ()I
 	public final fun getState ()Ljava/lang/Object;
 	public final fun open (Lstudio/sculk/inventory/MenuSpec;Ljava/lang/Object;)V
+	public final fun refresh ()V
 	public final fun update (Lkotlin/jvm/functions/Function1;)V
 }
 
@@ -43,6 +44,7 @@ public final class studio/sculk/inventory/MenuRender {
 	public final fun border (Lstudio/sculk/item/ItemSpec;)V
 	public final fun fill (Lstudio/sculk/item/ItemSpec;)V
 	public final fun getLayout ()Lstudio/sculk/inventory/MenuLayout;
+	public final fun pager (Lstudio/sculk/inventory/Page;IILstudio/sculk/item/ItemSpec;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function2;)V
 	public final fun paginate (Ljava/util/List;Ljava/util/List;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lstudio/sculk/inventory/Page;
 	public static synthetic fun paginate$default (Lstudio/sculk/inventory/MenuRender;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lstudio/sculk/inventory/Page;
 	public final fun slot (ILstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;)V

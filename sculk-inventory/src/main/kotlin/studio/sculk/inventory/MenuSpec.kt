@@ -49,6 +49,11 @@ public class MenuClick<S : Any> internal constructor(
         session.update(transform)
     }
 
+    /** Draws the menu again from the same state, rebuilding every item, for when something the render reads outside the state changed. */
+    public fun refresh() {
+        session.refresh()
+    }
+
     /** Closes the menu after this click, as Paper requires inventories never close inside a click. */
     public fun close() {
         session.close()
@@ -62,8 +67,16 @@ public class MenuClick<S : Any> internal constructor(
 
 /** A page of a list, see [MenuRender.paginate]. */
 @SculkStable
-public class Page(public val number: Int, public val count: Int) {
+public class Page(
+    /** Which page this is, from zero. */
+    public val number: Int,
+    /** How many pages there are; at least one, even for an empty list. */
+    public val count: Int,
+) {
+    /** Whether a page comes before this one. */
     public val hasPrevious: Boolean get() = number > 0
+
+    /** Whether a page comes after this one. */
     public val hasNext: Boolean get() = number < count - 1
 
     override fun toString(): String = "Page(${number + 1} of $count)"
@@ -81,6 +94,9 @@ public class MenuRender<S : Any> internal constructor(public val layout: MenuLay
     internal val icons = linkedMapOf<Int, ItemSpec>()
     internal val handlers = hashMapOf<Int, MenuClick<S>.() -> Unit>()
 
+    // Set once the session has drawn this render and kept its maps; a handler captured here must not change them.
+    internal var drawn = false
+
     /** The slot at [row] and [column], both from zero. */
     public fun at(row: Int, column: Int): Int {
         require(column in 0 until layout.columns && row in 0 until layout.size / layout.columns) { "($row, $column) is outside $layout" }
@@ -89,6 +105,7 @@ public class MenuRender<S : Any> internal constructor(public val layout: MenuLay
 
     /** Shows [item] in [slot]; [onClick] runs when the player clicks it. */
     public fun slot(slot: Int, item: ItemSpec, onClick: (MenuClick<S>.() -> Unit)? = null) {
+        check(!drawn) { "this render is already drawn; change what the menu shows with update or refresh" }
         require(slot in 0 until layout.size) { "slot $slot is outside $layout" }
         icons[slot] = item
         if (onClick != null) handlers[slot] = onClick else handlers.remove(slot)
@@ -123,10 +140,31 @@ public class MenuRender<S : Any> internal constructor(public val layout: MenuLay
         require(slots.isNotEmpty()) { "paginate needs at least one slot" }
         val count = maxOf(1, (entries.size + slots.size - 1) / slots.size)
         val shown = page.coerceIn(0, count - 1)
-        entries.drop(shown * slots.size).take(slots.size).forEachIndexed { index, entry ->
+        val from = shown * slots.size
+        entries.subList(from, minOf(from + slots.size, entries.size)).forEachIndexed { index, entry ->
             slot(slots[index], icon(entry), onClick?.let { handler -> { handler(entry) } })
         }
         return Page(shown, count)
+    }
+
+    /**
+     * Shows [previousIcon] in [previousSlot] while [page] has a page before it and [nextIcon] in
+     * [nextSlot] while it has one after; a click runs [turn] with the number of the page to show.
+     *
+     * ```kotlin
+     * pager(page, previousSlot = 45, nextSlot = 53, previousArrow, nextArrow) { number -> update { it.copy(page = number) } }
+     * ```
+     */
+    public fun pager(
+        page: Page,
+        previousSlot: Int,
+        nextSlot: Int,
+        previousIcon: ItemSpec,
+        nextIcon: ItemSpec,
+        turn: MenuClick<S>.(page: Int) -> Unit,
+    ) {
+        if (page.hasPrevious) slot(previousSlot, previousIcon) { turn(page.number - 1) }
+        if (page.hasNext) slot(nextSlot, nextIcon) { turn(page.number + 1) }
     }
 }
 
@@ -141,10 +179,10 @@ public class MenuRender<S : Any> internal constructor(public val layout: MenuLay
  * val shop = menu<ShopState>(MenuLayout.chest(6)) {
  *     title { state -> "<primary>Shop, page ${state.page + 1}" }
  *     render { state ->
- *         val page = paginate(slots = (0 until 45).toList(), entries = offers, page = state.page, icon = { it.icon }) { offer ->
+ *         val page = paginate(slots = offerSlots, entries = offers, page = state.page, icon = { it.icon }) { offer ->
  *             buy(player, offer)
  *         }
- *         if (page.hasNext) slot(53, nextArrow) { update { it.copy(page = it.page + 1) } }
+ *         pager(page, previousSlot = 45, nextSlot = 53, previousArrow, nextArrow) { number -> update { it.copy(page = number) } }
  *     }
  * }
  * menus.open(player, shop, ShopState())
@@ -176,6 +214,7 @@ public class MenuBuilder<S : Any> internal constructor(private val layout: MenuL
     /** Renders titles and item names; set it to use a theme. */
     public var text: Text = Text()
 
+    /** Whether the player may use their own inventory while the menu is open; nothing reaches the menu either way. */
     public var allowPlayerInventory: Boolean = false
 
     /** A fixed title, a MiniMessage template. */
@@ -213,5 +252,5 @@ public fun <S : Any> menu(layout: MenuLayout, build: MenuBuilder<S>.() -> Unit):
 /** The slots to write to go from [before] to [after]: changed or new items, and null for slots to empty. */
 internal fun diff(before: Map<Int, ItemSpec>, after: Map<Int, ItemSpec>): Map<Int, ItemSpec?> = buildMap {
     after.forEach { (slot, item) -> if (before[slot] != item) put(slot, item) }
-    before.keys.filter { it !in after }.forEach { put(it, null) }
+    for (slot in before.keys) if (slot !in after) put(slot, null)
 }

@@ -70,25 +70,18 @@ class ShopPlugin : SculkPaperPlugin() {
         value("price", offer.price)
     }
 
+    private val previousArrow = item(Material.ARROW) { name = "<muted>Previous page" }
+    private val nextArrow = item(Material.ARROW) { name = "<muted>Next page" }
+
     private val shop: MenuSpec<Page> = menu(MenuLayout.chest(4)) {
         text = messages
         title("<primary>Shop")
         render { state ->
-            val page = paginate((0 until PAGE_SIZE).toList(), settings.value.offers, state.number, icon = ::icon) { offer ->
+            val page = paginate(OFFER_SLOTS, settings.value.offers, state.number, icon = ::icon) { offer ->
                 close()
                 dialogs.show(player, quantity(offer)).getOrThrow()
             }
-            if (page.hasPrevious) {
-                slot(PREVIOUS, item(Material.ARROW) { name = "<muted>Previous page" }) {
-                    update {
-                        it.copy(
-                            number =
-                            it.number - 1,
-                        )
-                    }
-                }
-            }
-            if (page.hasNext) slot(NEXT, item(Material.ARROW) { name = "<muted>Next page" }) { update { it.copy(number = it.number + 1) } }
+            pager(page, PREVIOUS, NEXT, previousArrow, nextArrow) { number -> update { it.copy(number = number) } }
         }
     }
 
@@ -144,7 +137,7 @@ class ShopPlugin : SculkPaperPlugin() {
     }
 
     private companion object {
-        const val PAGE_SIZE = 27
+        val OFFER_SLOTS = (0 until 27).toList()
         const val PREVIOUS = 27
         const val NEXT = 35
     }

@@ -22,14 +22,14 @@ class EconomyCommandsTest {
 
         override fun names(): Collection<String> = known.keys
     }
-    private val ledger = Ledger(startingBalance = 100.0)
+    private val ledger = Ledger(startingBalance = 10_000)
     private val dispatcher = CommandDispatcher().apply { EconomyCommands(ledger, players) { Settings() }.all.forEach(::register) }
 
     @Test
     fun `a payment moves money between two players and tells the sender`() = runTest {
         dispatcher.execute(steve, "pay Alex 25")
-        assertEquals(75.0, ledger.balance(checkNotNull(steve.uniqueId)))
-        assertEquals(125.0, ledger.balance(checkNotNull(alex.uniqueId)))
+        assertEquals(7_500L, ledger.balance(checkNotNull(steve.uniqueId)))
+        assertEquals(12_500L, ledger.balance(checkNotNull(alex.uniqueId)))
         assertEquals(listOf("Sent 25.00 coins to Alex."), steve.plainMessages)
     }
 
@@ -38,7 +38,7 @@ class EconomyCommandsTest {
         assertEquals(true, dispatcher.execute(steve, "pay Alex 500") is CommandResult.Failed)
         assertEquals(true, dispatcher.execute(steve, "pay Steve 5") is CommandResult.Failed)
         assertEquals(listOf("You only have 100.00 coins.", "You cannot pay yourself."), steve.plainMessages)
-        assertEquals(100.0, ledger.balance(checkNotNull(steve.uniqueId)))
+        assertEquals(10_000L, ledger.balance(checkNotNull(steve.uniqueId)))
     }
 
     @Test
@@ -64,11 +64,11 @@ class EconomyCommandsTest {
 
     @Test
     fun `resetting every balance asks for confirmation first`() = runTest {
-        ledger.deposit(checkNotNull(alex.uniqueId), 10.0)
+        ledger.deposit(checkNotNull(alex.uniqueId), 1_000)
         dispatcher.execute(admin, "eco reset")
-        assertEquals(110.0, ledger.balance(checkNotNull(alex.uniqueId)))
+        assertEquals(11_000L, ledger.balance(checkNotNull(alex.uniqueId)))
         dispatcher.execute(admin, "eco reset")
-        assertEquals(100.0, ledger.balance(checkNotNull(alex.uniqueId)))
+        assertEquals(10_000L, ledger.balance(checkNotNull(alex.uniqueId)))
     }
 
     @Test
@@ -84,8 +84,17 @@ class EconomyCommandsTest {
 
     @Test
     fun `balances survive a save and a reload`() {
-        ledger.deposit(checkNotNull(steve.uniqueId), 5.5)
-        val restored = SavedBalances.of(ledger).toLedger(startingBalance = 100.0)
-        assertEquals(105.5, restored.balance(checkNotNull(steve.uniqueId)))
+        ledger.deposit(checkNotNull(steve.uniqueId), 550)
+        val restored = SavedBalances.of(ledger).toLedger(startingBalance = 10_000)
+        assertEquals(10_550L, restored.balance(checkNotNull(steve.uniqueId)))
+    }
+
+    @Test
+    fun `amounts become whole cents and show with two decimals`() = runTest {
+        assertEquals(1_999L, cents(19.99))
+        assertEquals("1,234.05 coins", formatMoney(123_405, "coins"))
+        dispatcher.execute(steve, "pay Alex 0.1")
+        dispatcher.execute(steve, "pay Alex 0.2")
+        assertEquals(9_970L, ledger.balance(checkNotNull(steve.uniqueId)))
     }
 }

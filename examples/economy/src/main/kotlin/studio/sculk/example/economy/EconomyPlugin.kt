@@ -14,7 +14,6 @@ import studio.sculk.placeholder.PlaceholderRegistry
 import studio.sculk.placeholder.Refresh
 import studio.sculk.task.repeating
 import studio.sculk.text.Text
-import java.util.Locale
 import java.util.UUID
 
 /**
@@ -32,7 +31,7 @@ class EconomyPlugin : SculkPaperPlugin() {
             header = listOf("Economy example for Sculk Studio.")
         }.getOrThrow()
         saved = SculkConfig.load<SavedBalances>(dataPath.resolve("balances.yml")).getOrThrow()
-        ledger = saved.value.toLedger(settings.value.startingBalance)
+        ledger = saved.value.toLedger(cents(settings.value.startingBalance))
 
         sculk.permissions.register(EconomyPermissions)
         val commands = EconomyCommands(ledger, ServerPlayers, settings::value)
@@ -40,7 +39,7 @@ class EconomyPlugin : SculkPaperPlugin() {
 
         val placeholders = PlaceholderRegistry(sculk.scope)
         placeholders.audience("economy:balance", Refresh.Live) {
-            uniqueId?.let { id -> Component.text(String.format(Locale.ROOT, "%,.2f %s", ledger.balance(id), settings.value.currency)) }
+            uniqueId?.let { id -> Component.text(formatMoney(ledger.balance(id), settings.value.currency)) }
         }
         val text = Text()
 
