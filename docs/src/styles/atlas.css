@@ -18,19 +18,19 @@
 	:root {
 		/* Catppuccin Mocha (MIT), set on a true-black OLED ground. */
 		--ground: #000000;
-		--sheet: #07070b;
-		--raised: #11111b;
-		--raised-2: #181825;
-		--rule: #1e1e2e;
-		--rule-strong: #313244;
-		--text: #cdd6f4;
-		--text-2: #bac2de;
-		--text-3: #9399b2;
+		--sheet: #0a0a0a;
+		--raised: #141414;
+		--raised-2: #1c1c1c;
+		--rule: #262626;
+		--rule-strong: #3a3a3a;
+		--text: #ffffff;
+		--text-2: #d4d4d4;
+		--text-3: #a3a3a3;
 		/* Colour by role: mauve is "you are here", blue is a link, teal a player's region and blue
 		   the global region; green, yellow and red follow the support marks. */
 		--here: #cba6f7;
 		--here-soft: rgba(203, 166, 247, 0.12);
-		--link: #89b4fa;
+		--link: #ffffff;
 		--region: #94e2d5;
 		--region-ink: #94e2d5;
 		--region-fill: rgba(148, 226, 213, 0.16);
@@ -40,7 +40,7 @@
 		--partial: #f9e2af;
 		--bad: #f38ba8;
 		--danger: #f38ba8;
-		--inline-code: #f5c2e7;
+		--inline-code: #ffffff;
 		--code-bg: #11111b;
 		--code-bar: #181825;
 		--display: 'Poppins', system-ui, sans-serif;
@@ -239,7 +239,7 @@
 	/* MDX components. */
 	.aside { margin: 22px 0; padding: 14px 16px; border-radius: 8px; background: var(--raised); border: 1px solid var(--rule); }
 	.aside .aside-title { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-	.aside .aside-title svg { flex: none; color: var(--link); }
+	.aside .aside-title svg { flex: none; color: var(--text-2); }
 	.aside > div > * + * { margin-top: 10px; }
 	.aside p { font-size: 15px; }
 	.aside[data-type='caution'] .aside-title svg { color: var(--partial); }
@@ -277,8 +277,8 @@
 	.prose h2 { font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1.2; letter-spacing: -0.02em; margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
 	.prose h3 { font-family: var(--display); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; margin-top: 34px; }
 	.prose h2 + *, .prose h3 + * { margin-top: 10px; }
-	.prose a { color: var(--link); text-decoration: underline; text-decoration-color: rgba(137, 180, 250, 0.4); text-decoration-thickness: 1.5px; text-underline-offset: 4px; transition: text-decoration-color 140ms var(--ease); }
-	.prose a:hover { text-decoration-color: var(--link); }
+	.prose a { color: var(--link); text-decoration: underline; text-decoration-color: rgba(203, 166, 247, 0.6); text-decoration-thickness: 1.5px; text-underline-offset: 4px; transition: text-decoration-color 140ms var(--ease); }
+	.prose a:hover { text-decoration-color: var(--here); }
 	.prose :not(pre) > code { font-family: var(--mono); font-size: 0.86em; color: var(--inline-code); background: var(--raised-2); border: 1px solid var(--rule-strong); border-radius: 5px; padding: 2px 6px; }
 	.prose ul { list-style: none; }
 	.prose ul > li { position: relative; padding-left: 20px; }

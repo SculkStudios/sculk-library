@@ -24,25 +24,25 @@ const lit = (kind: 'region' | 'global') =>
 <figure class="mapcard">
 	<svg viewBox="0 0 262 150" role="img" aria-label={`Ownership map: ${caption.lead} ${caption.rest}`}>
 		<defs>
-			<pattern id="chunks" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M16 0H0V16" fill="none" stroke="#1e1e2e" stroke-width="1"></path></pattern>
+			<pattern id="chunks" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M16 0H0V16" fill="none" stroke="#262626" stroke-width="1"></path></pattern>
 		</defs>
-		<rect x="0.5" y="0.5" width="261" height="149" fill="url(#chunks)" stroke="#313244"></rect>
+		<rect x="0.5" y="0.5" width="261" height="149" fill="url(#chunks)" stroke="#3a3a3a"></rect>
 		{runs === 'proxy' ? (
 			<>
-				<rect x="72.5" y="40.5" width="117" height="69" fill="none" stroke="#313244" stroke-dasharray="4 3"></rect>
-				<text x="131" y="79" text-anchor="middle" fill="#9399b2" font-family="JetBrains Mono Variable, monospace" font-size="10">no world on a proxy</text>
+				<rect x="72.5" y="40.5" width="117" height="69" fill="none" stroke="#3a3a3a" stroke-dasharray="4 3"></rect>
+				<text x="131" y="79" text-anchor="middle" fill="#a3a3a3" font-family="JetBrains Mono Variable, monospace" font-size="10">no world on a proxy</text>
 			</>
 		) : (
 			<>
-				<path d="M64.5 32.5h80v16h32v64h-64v-16h-48z" fill={lit('region') ? 'rgba(148,226,213,.16)' : 'none'} stroke={lit('region') ? '#94e2d5' : '#313244'} stroke-width="1.5"></path>
+				<path d="M64.5 32.5h80v16h32v64h-64v-16h-48z" fill={lit('region') ? 'rgba(148,226,213,.16)' : 'none'} stroke={lit('region') ? '#94e2d5' : '#3a3a3a'} stroke-width="1.5"></path>
 				<rect x="192.5" y="16.5" width="48" height="32" fill={lit('global') ? 'rgba(137,180,250,.16)' : 'none'} stroke={lit('global') ? '#89b4fa' : 'rgba(137,180,250,.5)'} stroke-width="1.5" stroke-dasharray={lit('global') ? undefined : '4 3'}></rect>
 				{(runs === 'entity' || runs === 'sender') && <path d="M120 74.5S115 68 115 64.5a5 5 0 0110 0C125 68 120 74.5 120 74.5z" fill="#cba6f7"></path>}
-				<text x="72" y="128" fill={lit('region') ? '#94e2d5' : '#9399b2'} font-family="JetBrains Mono Variable, monospace" font-size="10">a player's region</text>
+				<text x="72" y="128" fill={lit('region') ? '#94e2d5' : '#a3a3a3'} font-family="JetBrains Mono Variable, monospace" font-size="10">a player's region</text>
 				<text x="192" y="62" fill={lit('global') ? '#89b4fa' : 'rgba(137,180,250,.7)'} font-family="JetBrains Mono Variable, monospace" font-size="10">global</text>
 				{(runs === 'async' || runs === 'any') && (
 					<>
-						<rect x="16.5" y="104.5" width="40" height="32" fill="none" stroke="#9399b2" stroke-width="1.5" stroke-dasharray="4 3"></rect>
-						<text x="16" y="99" fill="#bac2de" font-family="JetBrains Mono Variable, monospace" font-size="10">{runs === 'async' ? 'async' : 'anywhere'}</text>
+						<rect x="16.5" y="104.5" width="40" height="32" fill="none" stroke="#a3a3a3" stroke-width="1.5" stroke-dasharray="4 3"></rect>
+						<text x="16" y="99" fill="#d4d4d4" font-family="JetBrains Mono Variable, monospace" font-size="10">{runs === 'async' ? 'async' : 'anywhere'}</text>
 					</>
 				)}
 			</>
