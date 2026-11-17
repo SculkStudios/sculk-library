@@ -134,64 +134,10 @@ suspend fun flash(location: Location) {
 }
 ```
 
-## Region-safe batches
+## Batches and dispatchers
 
-`regionBatch` runs an action for many locations, each on the thread that owns it, and returns the
-results in input order. Items are grouped by region section at the server's real section size
-(`regionShift`, read from Folia's and Canvas's `grid-exponent` at startup); each group is scheduled
-once and runs its items one after another, in input order.
-
-```kotlin
-import org.bukkit.Location
-import org.bukkit.Material
-import studio.sculk.paper.regionBatch
-
-suspend fun paint(targets: List<Location>): List<Boolean> =
-    regionBatch(targets, { it }) { target ->
-        target.block.type = Material.STONE
-        target.block.type == Material.STONE
-    }
-```
-
-The platform-neutral form takes a function returning `ExecutionContext.Region`:
-`regionBatch(items, locate = { ExecutionContext.Region.ofBlock(world, x, z) }) { ... }`.
-
-| Guaranteed | Not guaranteed |
-| --- | --- |
-| Items in one group run sequentially in submission order, within one tick of one region | Ordering across groups |
-| The result is available once every group completes | Same-tick completion across regions |
-| Every item runs on a thread owning its location | That the region owning a group at run time owned it at submission |
-
-Nothing is atomic across groups. On Paper every location in a world forms one group on the main
-thread. Loading chunks before a batch and splitting a group whose ownership changed are planned
-for `sculk-world` and do not exist yet: load the chunks you touch first, as you would without
-Sculk.
-
-## Dispatchers and ownership checks
-
-The contexts are also available as coroutine dispatchers, through the scope's `SculkExecution`:
-
-```kotlin
-import kotlinx.coroutines.withContext
-import org.bukkit.entity.Player
-import studio.sculk.execution.ExecutionContext
-import studio.sculk.paper.PaperRuntime
-import studio.sculk.paper.ref
-
-suspend fun onPlayerThread(sculk: PaperRuntime, player: Player) {
-    val dispatcher = sculk.scope.execution.dispatcher(ExecutionContext.Entity(player.ref))
-    withContext(dispatcher) { player.level += 1 }
-}
-```
-
-`dispatcher(context)` throws `UnsupportedContextException` at once for a context the platform has
-no thread for, such as a region on a proxy. A dispatcher dispatches only when the current thread
-does not already own the context. Prefer `withEntity` for entities: a raw dispatcher cancels the
-coroutine with `EntityGoneException` instead of returning `Gone`.
-
-`sculk.scope.execution.executor` is the platform's `SculkExecutor`. Its `owns(context)` answers
-whether the calling thread owns a context, and `checkOwned(context, "what")` throws
-`WrongContextException` naming the requirement when it does not.
+Running one action for many locations, each on the thread that owns it, and using the contexts as
+coroutine dispatchers or checking ownership directly, are on [batches and dispatchers](/concepts/batches/).
 
 ## The rules
 

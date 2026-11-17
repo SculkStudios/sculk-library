@@ -39,6 +39,7 @@ export const CATEGORIES: readonly { id: string; label: string; icon: string; pag
 		icon: 'layers',
 		pages: [
 			{ id: 'concepts/execution' },
+			{ id: 'concepts/batches' },
 			{ id: 'concepts/tasks' },
 			{ id: 'concepts/lifecycle' },
 			{ id: 'concepts/capabilities' },
