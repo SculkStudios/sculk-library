@@ -1,5 +1,6 @@
 name: SculkDialogs
 version: "${version}"
 main: studio.sculk.itest.dialogs.DialogsCheckPlugin
+bootstrapper: studio.sculk.itest.dialogs.DialogsCheckBootstrap
 api-version: "1.21"
 folia-supported: true

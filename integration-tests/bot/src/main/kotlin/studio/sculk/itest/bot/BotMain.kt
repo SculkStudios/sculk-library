@@ -38,6 +38,8 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.Clien
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundSetActionBarTextPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundSetSubtitleTextPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundSetTitleTextPacket
+import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundUpdateTagsPacket
+import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundShowDialogGamePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket
@@ -60,7 +62,7 @@ import kotlin.system.exitProcess
  *
  * - events: `JOINED`, `WINDOW id type title`, `CONTENT id state slot:name...`, `SLOT id state slot name`,
  *   `CLOSED id`, `CHAT text`, `DIALOG title buttons inputs` (labels and `key:type`, each `|`-separated),
- *   `DIALOGCLOSED`, `ACTIONBAR text`, `BOSSBAR uuid ADD|REMOVE|UPDATE_TITLE|UPDATE_HEALTH title progress`,
+ *   `DIALOGCLOSED`, `DIALOGTAG tag dialogs` (`,`-separated keys), `ACTIONBAR text`, `BOSSBAR uuid ADD|REMOVE|UPDATE_TITLE|UPDATE_HEALTH title progress`,
  *   `TITLE title subtitle`, `TITLECLEARED`, `NAMETAG player prefix suffix`, `BELOWNAME player text`, `TAB header footer`, `SIDEBAR title lines` (lines top to bottom, `|`-separated, empty when none shows),
  *   `DISCONNECTED reason`;
  * - commands: `CLICK slot LEFT|RIGHT|SHIFT|DROP|HOTBAR n`, `CLOSE`, `COMMAND text`,
@@ -94,6 +96,10 @@ private class Bot(private val out: PrintStream) {
     @Volatile private var stateId = 0
 
     @Volatile private var dialog: NbtMap? = null
+
+    // The dialog registry as the server sent it while configuring: a dialog shown by id is the entry
+    // at that index, and the server's own entries come with their data.
+    private val dialogRegistry = ArrayList<Pair<String, NbtMap?>>()
 
     // The scoreboard as the client keeps it: objective titles, scores per objective, and which shows.
     private val objectives = HashMap<String, String>()
@@ -152,11 +158,22 @@ private class Bot(private val out: PrintStream) {
             }
             is ClientboundContainerClosePacket -> emit("CLOSED", packet.containerId.toString())
             is ClientboundSystemChatPacket -> if (!packet.isOverlay) emit("CHAT", plain.serialize(packet.content))
-            is ClientboundShowDialogGamePacket -> if (packet.dialog.isCustom) {
-                val shown = packet.dialog.custom()
-                dialog = shown
-                val inputs = shown.getList("inputs", NbtType.COMPOUND, emptyList()).joinToString("|") { "${it.getString("key")}:${it.getString("type").substringAfter(':')}" }
-                emit("DIALOG", text(shown["title"]), buttons(shown).joinToString("|") { text(it["label"]) }, inputs)
+            is ClientboundShowDialogGamePacket -> {
+                val shown = if (packet.dialog.isCustom) packet.dialog.custom() else dialogRegistry.getOrNull(packet.dialog.id())?.second
+                if (shown == null) {
+                    emit("ERROR", "a dialog by id ${packet.dialog.id()} the registry did not send")
+                } else {
+                    dialog = shown
+                    val inputs = shown.getList("inputs", NbtType.COMPOUND, emptyList()).joinToString("|") { "${it.getString("key")}:${it.getString("type").substringAfter(':')}" }
+                    emit("DIALOG", text(shown["title"]), buttons(shown).joinToString("|") { text(it["label"]) }, inputs)
+                }
+            }
+            is ClientboundRegistryDataPacket -> if (packet.registry.asString() == "minecraft:dialog") {
+                dialogRegistry.clear()
+                packet.entries.forEach { dialogRegistry += it.id.asString() to (it.data as? NbtMap) }
+            }
+            is ClientboundUpdateTagsPacket -> packet.tags.entries.firstOrNull { it.key.asString() == "minecraft:dialog" }?.value?.forEach { (tag, ids) ->
+                emit("DIALOGTAG", tag.asString(), ids.joinToString(",") { dialogRegistry.getOrNull(it)?.first ?: "#$it" })
             }
             is ClientboundSetActionBarTextPacket -> emit("ACTIONBAR", plain.serialize(packet.text))
             is ClientboundSetSubtitleTextPacket -> subtitle = plain.serialize(packet.text)

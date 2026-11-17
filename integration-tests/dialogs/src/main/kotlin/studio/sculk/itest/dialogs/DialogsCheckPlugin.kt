@@ -1,5 +1,6 @@
 package studio.sculk.itest.dialogs
 
+import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -8,8 +9,10 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.plugin.java.JavaPlugin
 import studio.sculk.SculkFailure
+import studio.sculk.SculkResult
 import studio.sculk.dialog.Dialogs
 import studio.sculk.dialog.dialog
+import studio.sculk.getOrThrow
 import studio.sculk.itest.bot.BotDriver
 import java.io.File
 import java.util.concurrent.CompletableFuture
@@ -19,7 +22,8 @@ import kotlin.concurrent.thread
 
 /**
  * Shows a form to the test client and checks the answers it sends, valid and not, arrive typed on
- * the player's thread; where dialogs do not exist, checks the fallback. Writes `results.properties`
+ * the player's thread, and does the same for a dialog registered at bootstrap; where dialogs do not
+ * exist, checks the fallback. Writes `results.properties`
  * and stops the server.
  */
 class DialogsCheckPlugin : JavaPlugin(), Listener {
@@ -67,6 +71,10 @@ class DialogsCheckPlugin : JavaPlugin(), Listener {
                         val bare = dialogs.show(player, dialog("No fallback") { button("OK") })
                         (bare is SculkFailure.UnsupportedCapability) to "without a fallback show returned $bare"
                     }
+                    verdict("registered-dialogs-show-and-answer") {
+                        val registered = RegisteredRules.registered
+                        (registered is SculkFailure.UnsupportedCapability) to "registering at bootstrap gave $registered"
+                    }
                     results["typed-answers-on-the-players-thread"] = "SKIP: no dialogs before Paper 1.21.7"
                     results["invalid-answers-read-as-null"] = "SKIP: no dialogs before Paper 1.21.7"
                     return@use
@@ -89,6 +97,20 @@ class DialogsCheckPlugin : JavaPlugin(), Listener {
                     bot.answerDialog("Save", "name" to "far too long", "open" to false, "price" to 1000, "colour" to "green")
                     val seen = answers.poll(15, TimeUnit.SECONDS)
                     (seen == "name=null open=false price=null colour=null owned=true") to "handler saw '$seen'"
+                }
+                verdict("registered-dialogs-show-and-answer") {
+                    check(RegisteredRules.registered is SculkResult.Success) { "registering at bootstrap gave ${RegisteredRules.registered}" }
+                    for (tag in listOf("minecraft:pause_screen_additions", "minecraft:quick_actions")) {
+                        bot.awaitState("DIALOGTAG", tag) { "sculk_itest:rules" in it.fields[1].split(',') }
+                    }
+                    val unknown = dialogs.show(player, Key.key("sculk_itest", "missing"))
+                    check(unknown is SculkFailure.InvalidInput) { "an unknown key gave $unknown" }
+                    dialogs.show(player, RegisteredRules.key).getOrThrow()
+                    val shown = bot.await("DIALOG")
+                    check(shown.fields[0] == "Server rules" && shown.fields[1] == "Agree|Leave" && shown.fields[2] == "note:text") { "dialog $shown" }
+                    bot.answerDialog("Agree", "note" to "hi")
+                    val seen = RegisteredRules.answers.poll(15, TimeUnit.SECONDS)
+                    (seen == "agree note=hi owned=true") to "handler saw '$seen'"
                 }
                 verdict("a-button-without-a-handler-only-closes") {
                     dialogs.show(player, form)

@@ -7,6 +7,7 @@ description = "Sculk Studio dialogs: forms with typed, validated answers on Pape
 
 dependencies {
     api(project(":sculk-text"))
+    api(project(":sculk-registry"))
     compileOnly(libs.paper.api.floor)
     testImplementation(libs.paper.api.floor)
     testImplementation(libs.adventure.plain)

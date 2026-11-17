@@ -53,6 +53,39 @@ declaration: text longer than `maxLength`, a number outside the range, an option
 offered or a value of the wrong kind reads as `null`. Asking for an input the dialog does not have
 is a programming error and throws.
 
+## Registered dialogs
+
+A dialog can also be part of the server's data, registered while the server starts, so the client
+can offer it on the pause screen or behind its quick actions key. Register it from a
+`PluginBootstrap` (a `paper-plugin.yml` with a `bootstrapper`), keeping the spec where the plugin
+can reach it too:
+
+```kotlin
+object Forms {
+    val rules: Key = Key.key("myplugin", "rules")
+    val rulesDialog = dialog("<primary>Server rules") {
+        body("Be kind. No griefing.")
+        button("Agree") { answer -> answer.player.sendMessage(Component.text("Thanks!")) }
+        button("Leave")
+    }
+}
+
+class MyBootstrap : PluginBootstrap {
+    override fun bootstrap(context: BootstrapContext) {
+        context.registerDialog(Forms.rules, Forms.rulesDialog, setOf(DialogPlacement.PAUSE_SCREEN))
+    }
+}
+
+// later, in the plugin:
+dialogs.show(player, Forms.rules)
+```
+
+A registered dialog is the same for every player, so its templates are rendered once, without
+placeholders. Its buttons run as soon as the plugin has made a `Dialogs`, with answers checked and
+delivered on the player's thread as for any other dialog, whether the player opened it from the
+pause screen or the plugin showed it. On a server without dialogs `registerDialog` returns an
+`UnsupportedCapability` failure.
+
 ## Older servers
 
 Dialogs exist from Minecraft 1.21.6, so Paper 1.21.7 and later. On an older server (`dialogs.isAvailable`
@@ -62,6 +95,6 @@ prompt, a [menu](/guides/menus/) or nothing, is a decision only your plugin can 
 
 <Aside>
   Sculk's `integration-tests/dialogs` suite shows a form to a real client on every supported Paper
-  version, Folia and Canvas, answers it with valid and invalid values, and checks the fallback on
-  1.21.4.
+  version, Folia and Canvas, answers it with valid and invalid values, does the same for a dialog
+  registered at bootstrap and offered on the pause screen, and checks the fallback on 1.21.4.
 </Aside>

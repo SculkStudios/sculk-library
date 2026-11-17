@@ -23,5 +23,10 @@ registerResultsVerification(
     "Shows dialogs to a real client on every Paper anchor, Folia and Canvas, or their fallback where dialogs do not exist.",
     runs,
     resultsPath = "plugins/SculkDialogs/results.properties",
-    required = listOf("dialog-or-fallback-shows", "typed-answers-on-the-players-thread", "invalid-answers-read-as-null"),
+    required = listOf(
+        "dialog-or-fallback-shows",
+        "typed-answers-on-the-players-thread",
+        "invalid-answers-read-as-null",
+        "registered-dialogs-show-and-answer",
+    ),
 )
