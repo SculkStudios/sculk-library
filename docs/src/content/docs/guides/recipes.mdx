@@ -1,0 +1,70 @@
+---
+title: Recipes
+description: sculk-recipes, every vanilla recipe type as a spec, brewing included, with item spec results and removal when your plugin stops.
+sidebar:
+  order: 11
+---
+
+`sculk-recipes` (package `studio.sculk.recipe`) describes recipes as data, checks them where they
+are declared, and registers them for as long as a scope lives. Results are
+[item specs](/guides/items/), so a recipe can make a custom item.
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-recipes:6.0.0-SNAPSHOT")
+}
+```
+
+## Register recipes
+
+```kotlin
+import org.bukkit.Material
+import org.bukkit.NamespacedKey
+import studio.sculk.recipe.Ingredient
+import studio.sculk.recipe.RecipeSpec
+import studio.sculk.recipe.Recipes
+import studio.sculk.recipe.shaped
+
+val bladeRecipe = shaped(NamespacedKey(this, "sculk_blade"), blade) {
+    rows("E", "E", "S")
+    key('E', Ingredient.of(Material.ECHO_SHARD))
+    key('S', Ingredient.of(Material.STICK))
+}
+
+Recipes(server).register(sculk.scope, bladeRecipe)
+```
+
+Register in the global context, as a plugin's start does: on Paper the main thread, on Folia and
+Canvas the global region. Players see the recipes at once, and closing the scope removes them.
+`register` is all or nothing: a taken key, a missing tag or trim pattern, or a recipe the server
+refuses throws, and none of the recipes passed stays registered.
+
+## Every type
+
+| Spec | Makes |
+| --- | --- |
+| `shaped(key, result) { rows(...); key(...) }` | Crafting in a pattern of up to 3 × 3 |
+| `RecipeSpec.Shapeless` | Crafting from 1 to 9 ingredients in any arrangement |
+| `RecipeSpec.Cooking` | Furnace, blast furnace, smoker or campfire; cooking time defaults to vanilla's for the block |
+| `RecipeSpec.Stonecutting` | The stonecutter |
+| `RecipeSpec.SmithingTransform` | Upgrading an item, keeping its components by default |
+| `RecipeSpec.SmithingTrim` | Armour trims; from 1.21.5 the recipe names its trim `pattern` |
+| `RecipeSpec.Transmute` | Changing an item's type while keeping its components, as dyeing a shulker box does |
+| `RecipeSpec.Brewing` | A brewing stand mix |
+
+Brewing mixes became ordinary recipes in 26.3; Sculk registers them the same way on every
+version.
+
+## Ingredients
+
+- `Ingredient.of(Material.STICK, Material.BLAZE_ROD)`: any of these items.
+- `Ingredient.tag(Key.key("minecraft:planks"))`: any item in a tag.
+- `Ingredient.exact(token)`: exactly a stack of an item spec, components included, for recipes
+  that take a custom item and not any item of its type.
+
+## Checked where declared
+
+A pattern that is not a grid, a symbol without a key, a key the pattern never uses, a shapeless
+recipe outside 1 to 9 ingredients, negative experience and an exact ingredient in a transmute
+recipe all throw when the spec is built, without a server. Sculk's own `integration-tests/recipes`
+suite crafts with every type on every anchor, Folia and Canvas.

@@ -47,7 +47,7 @@ planned module is in `REBUILD.md`.
 | --- | --- | --- | --- | --- |
 | `sculk-items` | `ItemSpec` compiled to data components (native on every anchor; tooltip hiding and `unbreakable` through an adapter per ADR-0028); typed PDC codecs for every holder; custom-item provider SPI | text | — | done |
 | `sculk-registry` | Registry keys, tags, key and value sets, bootstrap mutation, aliases from generated mappings, datapack discovery | core | — | in progress: lookups, tags, entry sets from configuration, bootstrap compose and entry changes (freeze on 1.21.4, compose from 1.21.11, ADR-0028) and datapack discovery done; aliases from generated mappings pending |
-| `sculk-recipes` | Recipe DSL for every vanilla type including brewing and transmute | items, registry | — | planned |
+| `sculk-recipes` | Recipe DSL for every vanilla type including brewing and transmute | items | — | done |
 
 ## Interface
 

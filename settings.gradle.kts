@@ -49,6 +49,7 @@ include(
     ":sculk-velocity",
     ":sculk-items",
     ":sculk-registry",
+    ":sculk-recipes",
 )
 
 // Never published. Each proves something about the published modules on a real server.
@@ -60,6 +61,7 @@ include(
     ":integration-tests:commands",
     ":integration-tests:examples",
     ":integration-tests:items",
+    ":integration-tests:recipes",
     ":integration-tests:registry",
     ":integration-tests:threading",
     ":integration-tests:velocity",

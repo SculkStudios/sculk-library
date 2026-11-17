@@ -1,0 +1,146 @@
+public abstract class studio/sculk/recipe/Ingredient {
+	public static final field Companion Lstudio/sculk/recipe/Ingredient$Companion;
+}
+
+public final class studio/sculk/recipe/Ingredient$Companion {
+	public final fun exact ([Lstudio/sculk/item/ItemSpec;)Lstudio/sculk/recipe/Ingredient;
+	public final fun of ([Lorg/bukkit/Material;)Lstudio/sculk/recipe/Ingredient;
+	public final fun tag (Lnet/kyori/adventure/key/Key;)Lstudio/sculk/recipe/Ingredient;
+}
+
+public final class studio/sculk/recipe/Ingredient$Exact : studio/sculk/recipe/Ingredient {
+	public fun <init> (Ljava/util/List;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSpecs ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/recipe/Ingredient$Items : studio/sculk/recipe/Ingredient {
+	public fun <init> (Ljava/util/Set;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaterials ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/recipe/Ingredient$Tag : studio/sculk/recipe/Ingredient {
+	public fun <init> (Lnet/kyori/adventure/key/Key;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Lnet/kyori/adventure/key/Key;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class studio/sculk/recipe/RecipeSpec {
+	public synthetic fun <init> (Lorg/bukkit/NamespacedKey;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getKey ()Lorg/bukkit/NamespacedKey;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/recipe/RecipeSpec$Brewing : studio/sculk/recipe/RecipeSpec {
+	public fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;)V
+	public final fun getIngredient ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getInput ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getResult ()Lstudio/sculk/item/ItemSpec;
+}
+
+public final class studio/sculk/recipe/RecipeSpec$Cooker : java/lang/Enum {
+	public static final field BLASTING Lstudio/sculk/recipe/RecipeSpec$Cooker;
+	public static final field CAMPFIRE Lstudio/sculk/recipe/RecipeSpec$Cooker;
+	public static final field FURNACE Lstudio/sculk/recipe/RecipeSpec$Cooker;
+	public static final field SMOKING Lstudio/sculk/recipe/RecipeSpec$Cooker;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lstudio/sculk/recipe/RecipeSpec$Cooker;
+	public static fun values ()[Lstudio/sculk/recipe/RecipeSpec$Cooker;
+}
+
+public final class studio/sculk/recipe/RecipeSpec$Cooking : studio/sculk/recipe/RecipeSpec {
+	public fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/RecipeSpec$Cooker;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;FLjava/lang/Integer;Ljava/lang/String;Lorg/bukkit/inventory/recipe/CookingBookCategory;)V
+	public synthetic fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/RecipeSpec$Cooker;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;FLjava/lang/Integer;Ljava/lang/String;Lorg/bukkit/inventory/recipe/CookingBookCategory;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCategory ()Lorg/bukkit/inventory/recipe/CookingBookCategory;
+	public final fun getCooker ()Lstudio/sculk/recipe/RecipeSpec$Cooker;
+	public final fun getExperience ()F
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getInput ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getResult ()Lstudio/sculk/item/ItemSpec;
+	public final fun getTicks ()I
+}
+
+public final class studio/sculk/recipe/RecipeSpec$Shaped : studio/sculk/recipe/RecipeSpec {
+	public fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/item/ItemSpec;Ljava/util/List;Ljava/util/Map;Ljava/lang/String;Lorg/bukkit/inventory/recipe/CraftingBookCategory;)V
+	public synthetic fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/item/ItemSpec;Ljava/util/List;Ljava/util/Map;Ljava/lang/String;Lorg/bukkit/inventory/recipe/CraftingBookCategory;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCategory ()Lorg/bukkit/inventory/recipe/CraftingBookCategory;
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getKeys ()Ljava/util/Map;
+	public final fun getResult ()Lstudio/sculk/item/ItemSpec;
+	public final fun getRows ()Ljava/util/List;
+}
+
+public final class studio/sculk/recipe/RecipeSpec$Shapeless : studio/sculk/recipe/RecipeSpec {
+	public fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/item/ItemSpec;Ljava/util/List;Ljava/lang/String;Lorg/bukkit/inventory/recipe/CraftingBookCategory;)V
+	public synthetic fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/item/ItemSpec;Ljava/util/List;Ljava/lang/String;Lorg/bukkit/inventory/recipe/CraftingBookCategory;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCategory ()Lorg/bukkit/inventory/recipe/CraftingBookCategory;
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getIngredients ()Ljava/util/List;
+	public final fun getResult ()Lstudio/sculk/item/ItemSpec;
+}
+
+public final class studio/sculk/recipe/RecipeSpec$SmithingTransform : studio/sculk/recipe/RecipeSpec {
+	public fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;Z)V
+	public synthetic fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAddition ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getBase ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getCopyComponents ()Z
+	public final fun getResult ()Lstudio/sculk/item/ItemSpec;
+	public final fun getTemplate ()Lstudio/sculk/recipe/Ingredient;
+}
+
+public final class studio/sculk/recipe/RecipeSpec$SmithingTrim : studio/sculk/recipe/RecipeSpec {
+	public fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lnet/kyori/adventure/key/Key;Z)V
+	public synthetic fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lnet/kyori/adventure/key/Key;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAddition ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getBase ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getCopyComponents ()Z
+	public final fun getPattern ()Lnet/kyori/adventure/key/Key;
+	public final fun getTemplate ()Lstudio/sculk/recipe/Ingredient;
+}
+
+public final class studio/sculk/recipe/RecipeSpec$Stonecutting : studio/sculk/recipe/RecipeSpec {
+	public fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;Ljava/lang/String;)V
+	public synthetic fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/item/ItemSpec;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getInput ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getResult ()Lstudio/sculk/item/ItemSpec;
+}
+
+public final class studio/sculk/recipe/RecipeSpec$Transmute : studio/sculk/recipe/RecipeSpec {
+	public fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lorg/bukkit/Material;Ljava/lang/String;Lorg/bukkit/inventory/recipe/CraftingBookCategory;)V
+	public synthetic fun <init> (Lorg/bukkit/NamespacedKey;Lstudio/sculk/recipe/Ingredient;Lstudio/sculk/recipe/Ingredient;Lorg/bukkit/Material;Ljava/lang/String;Lorg/bukkit/inventory/recipe/CraftingBookCategory;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCategory ()Lorg/bukkit/inventory/recipe/CraftingBookCategory;
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getInput ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getMaterial ()Lstudio/sculk/recipe/Ingredient;
+	public final fun getResult ()Lorg/bukkit/Material;
+}
+
+public final class studio/sculk/recipe/RecipeSpecKt {
+	public static final fun shaped (Lorg/bukkit/NamespacedKey;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/recipe/RecipeSpec$Shaped;
+}
+
+public final class studio/sculk/recipe/Recipes {
+	public fun <init> ()V
+	public fun <init> (Lorg/bukkit/Server;)V
+	public synthetic fun <init> (Lorg/bukkit/Server;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun register (Lstudio/sculk/ResourceScope;[Lstudio/sculk/recipe/RecipeSpec;)Lstudio/sculk/SculkHandle;
+}
+
+public final class studio/sculk/recipe/ShapedBuilder {
+	public final fun getCategory ()Lorg/bukkit/inventory/recipe/CraftingBookCategory;
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun key (CLstudio/sculk/recipe/Ingredient;)V
+	public final fun rows ([Ljava/lang/String;)V
+	public final fun setCategory (Lorg/bukkit/inventory/recipe/CraftingBookCategory;)V
+	public final fun setGroup (Ljava/lang/String;)V
+}
+
