@@ -9,7 +9,7 @@
 </dialog>
 <script>
 	interface PagefindResult {
-		data: () => Promise<{ url: string; excerpt: string; meta: { title?: string } }>;
+		data: () => Promise<{ url: string; excerpt: string; meta: { title?: string; section?: string } }>;
 	}
 	interface Pagefind {
 		search: (query: string) => Promise<{ results: PagefindResult[] }>;
@@ -37,9 +37,41 @@
 		return pagefind;
 	}
 
-	function where(url: string): string {
-		const parts = url.split('/').filter(Boolean);
-		return parts.length > 1 ? parts.slice(0, -1).join(' / ') : 'docs';
+	// Shown before anything is typed: where most readers start.
+	const starts = [
+		{ section: 'Setup', title: 'Install Sculk', url: '/start/installation/' },
+		{ section: 'Setup', title: 'Your first plugin', url: '/start/first-plugin/' },
+		{ section: 'Core concepts', title: 'Threading', url: '/concepts/execution/' },
+		{ section: 'Commands and events', title: 'Commands', url: '/guides/commands/' },
+		{ section: 'Player UI', title: 'GUIs and menus', url: '/guides/menus/' },
+	];
+
+	function result(section: string, title: string, url: string, excerpt?: string): HTMLAnchorElement {
+		const link = document.createElement('a');
+		link.href = url;
+		link.setAttribute('role', 'option');
+		const crumb = document.createElement('span');
+		crumb.className = 'where';
+		crumb.textContent = section;
+		const name = document.createElement('span');
+		name.className = 'title';
+		name.textContent = title;
+		link.append(crumb, name);
+		if (excerpt) {
+			const text = document.createElement('span');
+			text.className = 'excerpt';
+			// Pagefind escapes page text and adds only <mark> around matches.
+			text.innerHTML = excerpt;
+			link.append(text);
+		}
+		return link;
+	}
+
+	function showStarts() {
+		if (!list) return;
+		list.innerHTML = '<p class="search-empty">Start here</p>';
+		for (const start of starts) list.append(result(start.section, start.title, start.url));
+		selected = -1;
 	}
 
 	function select(index: number) {
@@ -53,7 +85,7 @@
 	async function run(query: string) {
 		const id = ++runId;
 		if (!list) return;
-		if (query.trim().length < 2) return show('Type at least two letters.');
+		if (query.trim().length < 2) return showStarts();
 		const engine = await load();
 		if (!engine) return show('Search is built with the site; run a build to search here.');
 		const { results } = await engine.search(query);
@@ -61,23 +93,7 @@
 		if (id !== runId) return;
 		if (data.length === 0) return show(`Nothing matches “${query.replace(/[<>&]/g, '')}”.`);
 		list.innerHTML = '';
-		for (const page of data) {
-			const link = document.createElement('a');
-			link.href = page.url;
-			link.setAttribute('role', 'option');
-			const crumb = document.createElement('span');
-			crumb.className = 'where';
-			crumb.textContent = where(page.url);
-			const title = document.createElement('span');
-			title.className = 'title';
-			title.textContent = page.meta.title ?? page.url;
-			const excerpt = document.createElement('span');
-			excerpt.className = 'excerpt';
-			// Pagefind escapes page text and adds only <mark> around matches.
-			excerpt.innerHTML = page.excerpt;
-			link.append(crumb, title, excerpt);
-			list.append(link);
-		}
+		for (const page of data) list.append(result(page.meta.section ?? 'Docs', page.meta.title ?? page.url, page.url, page.excerpt));
 		select(0);
 	}
 
@@ -86,7 +102,7 @@
 		dialog.showModal();
 		input?.focus();
 		input?.select();
-		if (!input?.value) show('Search every guide, concept and reference page.');
+		if (!input?.value) showStarts();
 	}
 
 	document.querySelectorAll('[data-search-open]').forEach((button) => button.addEventListener('click', open));

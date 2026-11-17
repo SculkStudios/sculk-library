@@ -21,7 +21,8 @@ export default defineConfig({
 			// Lifts Catppuccin's dimmer tokens, comments above all, to read clearly on the dark block.
 			minSyntaxHighlightingColorContrast: 7.5,
 			// Long lines wrap, keeping their indentation, instead of running off the column.
-			defaultProps: { wrap: true, preserveIndent: true },
+			// Shell commands use the plain code frame: a terminal frame adds an empty title bar to every one.
+			defaultProps: { wrap: true, preserveIndent: true, overridesByLang: { 'bash,sh,shell,powershell': { frame: 'code' } } },
 			styleOverrides: {
 				borderRadius: '10px',
 				borderColor: 'var(--rule-strong)',

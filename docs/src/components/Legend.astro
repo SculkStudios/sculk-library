@@ -28,7 +28,7 @@ const { sections, current } = Astro.props;
 				{section.items.map((item) => (
 					<li>
 						<a href={item.href} aria-current={item.id === current ? 'page' : undefined}>
-							{item.label}
+							<span class="label-text">{item.label}</span>
 							{item.support && PLATFORMS.map((platform) => {
 								const level = item.support?.[platform];
 								return level === 'partial' || level === 'none' ? (

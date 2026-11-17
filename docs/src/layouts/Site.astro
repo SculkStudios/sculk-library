@@ -86,10 +86,19 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 			if (rail && here && here.offsetTop > rail.clientHeight - 80) rail.scrollTop = here.offsetTop - rail.clientHeight / 2;
 			const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
 			const page = document.querySelector<HTMLElement>('.page');
-			toggle?.addEventListener('click', () => {
-				const open = page?.dataset.menu !== 'open';
-				if (page) page.dataset.menu = open ? 'open' : '';
+			// The phone menu: opens on the current page, locks the page behind it, and closes on Escape.
+			const setMenu = (open: boolean) => {
+				if (!page || !toggle) return;
+				page.dataset.menu = open ? 'open' : '';
 				toggle.setAttribute('aria-expanded', String(open));
+				toggle.setAttribute('aria-label', open ? 'Close the contents' : 'Open the contents');
+				document.body.style.overflow = open ? 'hidden' : '';
+				const current = rail?.querySelector<HTMLElement>('[aria-current="page"]');
+				if (open && rail && current) rail.scrollTop = current.offsetTop - rail.clientHeight / 2;
+			};
+			toggle?.addEventListener('click', () => setMenu(page?.dataset.menu !== 'open'));
+			document.addEventListener('keydown', (event) => {
+				if (event.key === 'Escape' && page?.dataset.menu === 'open') setMenu(false);
 			});
 		</script>
 	</body>

@@ -9,7 +9,7 @@ import { Aside } from '~/components/mdx';
 nothing runs until the test advances it, and it answers ownership questions the way Paper, Folia
 or Velocity would. A wrong-context bug that would race on Folia fails here, every time.
 
-```kotlin
+```kotlin title="build.gradle.kts"
 dependencies {
     testImplementation("studio.sculk:sculk-testkit:6.0.0-SNAPSHOT")
     testImplementation(platform("org.junit:junit-bom:6.1.3"))

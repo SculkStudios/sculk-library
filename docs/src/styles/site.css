@@ -101,6 +101,8 @@
 	.select svg { position: absolute; right: 11px; pointer-events: none; }
 	.select option { background: var(--sheet); color: var(--text); }
 	.menu-toggle { display: none; }
+	.menu-toggle .icon-close, .menu-toggle[aria-expanded='true'] .icon-open { display: none; }
+	.menu-toggle[aria-expanded='true'] .icon-close { display: block; }
 	.version { padding: 0 4px; font-size: 13px; color: var(--text-2); white-space: nowrap; }
 
 	.page { display: grid; grid-template-columns: var(--rail) minmax(0, var(--column)) var(--margin); justify-content: center; min-height: calc(100vh - var(--mast)); }
@@ -162,7 +164,8 @@
 		.select > span:first-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 		.menu-toggle { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); cursor: pointer; }
 		.page { grid-template-columns: minmax(0, 1fr); }
-		.legend { position: fixed; inset: var(--mast) 0 0 0; z-index: 9; width: auto; height: auto; display: none; }
+		/* The drawer is exactly the screen below the masthead, so its own list scrolls rather than the page. */
+		.legend { position: fixed; top: var(--mast); left: 0; right: 0; z-index: 9; width: auto; height: calc(100dvh - var(--mast)); display: none; }
 		.page[data-menu='open'] .legend { display: block; }
 		.sheet { padding: 28px 18px 64px; }
 	}
@@ -180,7 +183,8 @@
 	.mark[data-level='n/a'] { color: var(--text-3); width: 8px; height: 1.5px; border: 0; border-radius: 1px; background: currentColor; }
 	
 	/* One control re-marks the site: the rail tags a page only where the chosen platform falls short. */
-	.nav-tag { display: none; margin-left: auto; padding: 0 6px; border: 1px solid var(--rule-strong); border-radius: 5px; font-size: 11px; font-weight: 500; line-height: 18px; color: var(--text-2); }
+	.legend a .label-text { min-width: 0; }
+	.nav-tag { display: none; flex: none; align-self: flex-start; margin: 1px 0 0 auto; padding: 0 6px; border: 1px solid var(--rule-strong); border-radius: 5px; font-size: 11px; font-weight: 500; line-height: 18px; color: var(--text-2); }
 	html[data-platform='paper'] .nav-tag[data-platform='paper'],
 	html[data-platform='folia'] .nav-tag[data-platform='folia'],
 	html[data-platform='canvas'] .nav-tag[data-platform='canvas'],
@@ -218,13 +222,14 @@
 	.search-field { display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 54px; border-bottom: 1px solid var(--rule); }
 	.search-field input { flex: 1; background: transparent; border: 0; outline: 0; font-size: 16px; color: var(--text); }
 	.search-field input::placeholder { color: var(--text-3); }
+	.search-field input::-webkit-search-cancel-button { appearance: none; display: none; }
 	.search-results { max-height: calc(70vh - 96px); overflow-y: auto; padding: 8px; }
 	.search-results a { display: block; padding: 10px 12px; border-radius: 6px; }
 	.search-results a:hover, .search-results a[aria-selected='true'] { background: var(--raised); }
-	.search-results .where { font-family: var(--mono); font-size: 11.5px; color: var(--text-3); }
+	.search-results .where { font-size: 12px; font-weight: 500; color: var(--text-3); }
 	.search-results .title { display: block; font-family: var(--display); font-weight: 600; font-size: 15px; }
 	.search-results .excerpt { display: block; font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
-	.search-results mark { background: none; color: var(--text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+	.search-results mark { background: none; color: #fff; font-weight: 500; }
 	.search-empty { padding: 22px 16px; font-size: 14px; color: var(--text-3); }
 	.search-foot { display: flex; gap: 18px; padding: 10px 16px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--text-3); }
 

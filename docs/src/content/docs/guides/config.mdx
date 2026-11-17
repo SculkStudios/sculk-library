@@ -19,7 +19,7 @@ import { Aside } from '~/components/mdx';
 `sculk-config` (package `studio.sculk.config`) reads a YAML file into a Kotlin data class with
 kotlinx.serialization. It depends only on `sculk-core` and runs anywhere, including on a proxy.
 
-```kotlin
+```kotlin title="build.gradle.kts"
 plugins {
     kotlin("plugin.serialization") version "2.4.21"
 }
