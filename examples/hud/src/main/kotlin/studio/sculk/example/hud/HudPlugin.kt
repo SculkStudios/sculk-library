@@ -58,6 +58,8 @@ class HudPlugin : SculkPaperPlugin() {
             (audience as? Player)?.let { player -> rankOf(settings.value.ranks, player::hasPermission)?.let { text.render(it.display) } }
         }
         placeholders.global("event:left", Refresh.Every(1.seconds)) { countdown(eventLeft()) }
+        // A value from the config enters templates as a placeholder, never pasted into them.
+        placeholders.global("server:address") { settings.value.address }
 
         huds = Huds(this, sculk.scope.resources, placeholders, text)
         layout = layout(settings.value, huds.sidebarAvailable)
@@ -65,7 +67,7 @@ class HudPlugin : SculkPaperPlugin() {
         sculk.events.listen<PlayerJoinEvent> { event ->
             online.invalidate()
             val player = event.player
-            huds.title(player, settings.value.welcome, "<muted>${settings.value.address}")
+            huds.title(player, settings.value.welcome, "<muted><server_address>")
             if (player.persistentDataContainer.get(hidden, PersistentDataType.BOOLEAN) != true) huds.show(player, layout).getOrThrow()
         }
         sculk.events.listen<PlayerQuitEvent> { online.invalidate() }
@@ -102,7 +104,7 @@ class HudPlugin : SculkPaperPlugin() {
 
     // Folia cannot draw scoreboards, so the layout there keeps only what works everywhere.
     private fun layout(settings: HudSettings, scoreboards: Boolean): HudLayout = hud {
-        tabList(header = settings.title, footer = "<muted>Online: <value><server_online></value> · ${settings.address}")
+        tabList(header = settings.title, footer = "<muted>Online: <value><server_online></value> · <server_address>")
         bar("event", "<warning>Event ends in <event_left>", progress = { eventProgress() }, update = Update.Every(20))
         if (scoreboards) {
             sidebar(
@@ -113,7 +115,7 @@ class HudPlugin : SculkPaperPlugin() {
                 "",
                 "<muted>Event: <warning><event_left>",
                 "",
-                "<primary>${settings.address}",
+                "<primary><server_address>",
             )
             nametag(prefix = "<player_rank> <gray>")
             belowName("<red><player_health> ❤")

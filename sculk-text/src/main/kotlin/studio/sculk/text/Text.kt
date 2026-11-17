@@ -57,6 +57,13 @@ public class Text(
     public fun render(template: String, resolver: TagResolver): Component =
         miniMessage.deserialize(expand(template, resolver), if (OBJECTS) resolver else TagResolver.resolver(resolver, NO_OBJECTS))
 
+    /**
+     * [values] as placeholders, read exactly as [render] reads them, to combine with another resolver:
+     * `render(template, TagResolver.resolver(placeholders(values), context))`.
+     */
+    @SculkExperimental
+    public fun placeholders(values: Map<String, Any?>): TagResolver = resolverOf(values.toList())
+
     /** This renderer with a different theme and an empty cache. */
     public fun withTheme(theme: Theme): Text = Text(theme, miniMessage, cacheSize)
 

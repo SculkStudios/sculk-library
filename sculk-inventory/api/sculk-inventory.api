@@ -7,6 +7,7 @@ public final class studio/sculk/inventory/MenuBuilder {
 	public final fun setAllowPlayerInventory (Z)V
 	public final fun setText (Lstudio/sculk/text/Text;)V
 	public final fun title (Ljava/lang/String;)V
+	public final fun title (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
 	public final fun title (Lkotlin/jvm/functions/Function1;)V
 }
 

@@ -73,6 +73,7 @@ public final class studio/sculk/text/Text {
 	public fun <init> (Lstudio/sculk/text/Theme;Lnet/kyori/adventure/text/minimessage/MiniMessage;I)V
 	public synthetic fun <init> (Lstudio/sculk/text/Theme;Lnet/kyori/adventure/text/minimessage/MiniMessage;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getTheme ()Lstudio/sculk/text/Theme;
+	public final fun placeholders (Ljava/util/Map;)Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;
 	public final fun render (Ljava/lang/String;Ljava/util/Map;)Lnet/kyori/adventure/text/Component;
 	public final fun render (Ljava/lang/String;Lnet/kyori/adventure/text/minimessage/tag/resolver/TagResolver;)Lnet/kyori/adventure/text/Component;
 	public final fun render (Ljava/lang/String;[Lkotlin/Pair;)Lnet/kyori/adventure/text/Component;

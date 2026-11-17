@@ -3,6 +3,7 @@ package studio.sculk.inventory
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.ClickType
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
 import studio.sculk.item.ItemSpec
 import studio.sculk.text.Text
@@ -177,7 +178,7 @@ public class MenuRender<S : Any> internal constructor(public val layout: MenuLay
  * data class ShopState(val page: Int = 0)
  *
  * val shop = menu<ShopState>(MenuLayout.chest(6)) {
- *     title { state -> "<primary>Shop, page ${state.page + 1}" }
+ *     title("<primary>Shop, page <page>") { state -> mapOf("page" to state.page + 1) }
  *     render { state ->
  *         val page = paginate(slots = offerSlots, entries = offers, page = state.page, icon = { it.icon }) { offer ->
  *             buy(player, offer)
@@ -191,7 +192,7 @@ public class MenuRender<S : Any> internal constructor(public val layout: MenuLay
 @SculkStable
 public class MenuSpec<S : Any> internal constructor(
     public val layout: MenuLayout,
-    internal val title: (S) -> String,
+    internal val title: (S) -> MenuTitle,
     internal val render: MenuRender<S>.(S) -> Unit,
     internal val text: Text,
     internal val placeholders: ((Player) -> TagResolver)?,
@@ -206,7 +207,7 @@ public class MenuSpec<S : Any> internal constructor(
 @SculkStable
 @MenuDsl
 public class MenuBuilder<S : Any> internal constructor(private val layout: MenuLayout) {
-    private var title: (S) -> String = { "" }
+    private var title: (S) -> MenuTitle = { MenuTitle("") }
     private var render: MenuRender<S>.(S) -> Unit = {}
     private var placeholders: ((Player) -> TagResolver)? = null
     private var onClose: ((S, Player) -> Unit)? = null
@@ -219,12 +220,26 @@ public class MenuBuilder<S : Any> internal constructor(private val layout: MenuL
 
     /** A fixed title, a MiniMessage template. */
     public fun title(template: String) {
-        title = { template }
+        title = { MenuTitle(template) }
     }
 
-    /** A title drawn from the state. Changing it reopens the menu, as Paper cannot retitle an open inventory. */
+    /**
+     * A title whose [template] stays fixed and takes [values] from the state as placeholders:
+     * `title("<primary>Page <page>") { state -> mapOf("page" to state.page + 1) }`. Values are never parsed
+     * as markup, so a player's name is safe here. A change of value reopens the menu, as Paper cannot
+     * retitle an open inventory.
+     */
+    @SculkExperimental
+    public fun title(template: String, values: (S) -> Map<String, Any?>) {
+        title = { state -> MenuTitle(template, values(state)) }
+    }
+
+    /**
+     * A title template drawn from the state. Prefer the overload with values for anything that is not
+     * itself a template: text put into this string is parsed as MiniMessage.
+     */
     public fun title(draw: (S) -> String) {
-        title = draw
+        title = { state -> MenuTitle(draw(state)) }
     }
 
     /** Draws the slots for a state. Runs on the player's thread each time the state changes. */
@@ -254,3 +269,6 @@ internal fun diff(before: Map<Int, ItemSpec>, after: Map<Int, ItemSpec>): Map<In
     after.forEach { (slot, item) -> if (before[slot] != item) put(slot, item) }
     for (slot in before.keys) if (slot !in after) put(slot, null)
 }
+
+/** A menu title: a template and the values it shows, equal when both are, so a change can be seen. */
+internal data class MenuTitle(val template: String, val values: Map<String, Any?> = emptyMap())

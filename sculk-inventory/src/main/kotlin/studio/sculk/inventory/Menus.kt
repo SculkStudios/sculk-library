@@ -15,6 +15,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.plugin.Plugin
 import studio.sculk.ResourceScope
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
 import studio.sculk.item.ItemSpec
 import java.util.concurrent.ConcurrentHashMap
@@ -140,7 +141,7 @@ public class MenuSession<S : Any> internal constructor(
     private var holder: MenuHolder? = null
     private var rendered: Map<Int, ItemSpec> = emptyMap()
     private var handlers: Map<Int, MenuClick<S>.() -> Unit> = emptyMap()
-    private var title: String? = null
+    private var title: MenuTitle? = null
 
     // Player thread only: one reopen is pending however many updates in a tick change the title.
     private var retitling = false
@@ -183,11 +184,12 @@ public class MenuSession<S : Any> internal constructor(
         onPlayer(later = true) { menus.open(player, next, state) }
     }
 
+    @OptIn(SculkExperimental::class)
     internal fun show() {
         val resolver = resolver()
         val newTitle = menu.title(current)
         val holder = MenuHolder(this)
-        val component = menu.text.render(newTitle, resolver)
+        val component = menu.text.render(newTitle.template, TagResolver.resolver(menu.text.placeholders(newTitle.values), resolver))
         holder.contents = when (menu.layout.kind) {
             MenuLayout.Kind.CHEST -> Bukkit.createInventory(holder, menu.layout.size, component)
             MenuLayout.Kind.HOPPER -> Bukkit.createInventory(holder, InventoryType.HOPPER, component)

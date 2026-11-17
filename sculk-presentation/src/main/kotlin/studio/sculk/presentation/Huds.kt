@@ -22,6 +22,7 @@ import org.bukkit.scoreboard.Scoreboard
 import studio.sculk.ResourceScope
 import studio.sculk.SculkFailure
 import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
 import studio.sculk.placeholder.PlaceholderChange
 import studio.sculk.placeholder.PlaceholderRegistry
@@ -88,8 +89,21 @@ public class Huds(
      * it after [times]. A title belongs to no HUD and needs none.
      */
     public fun title(player: Player, title: String, subtitle: String = "", times: Title.Times = Title.DEFAULT_TIMES) {
+        showTitle(player, title, subtitle, TagResolver.empty(), times)
+    }
+
+    /**
+     * Shows [title] and [subtitle] as [title] above does, with [values] as placeholders in both, never
+     * parsed as markup: `huds.title(player, "<primary>Welcome", "<muted><address>", mapOf("address" to address))`.
+     */
+    @SculkExperimental
+    public fun title(player: Player, title: String, subtitle: String, values: Map<String, Any?>, times: Title.Times = Title.DEFAULT_TIMES) {
+        showTitle(player, title, subtitle, text.placeholders(values), times)
+    }
+
+    private fun showTitle(player: Player, title: String, subtitle: String, values: TagResolver, times: Title.Times) {
         val show = {
-            val resolver = placeholders?.resolver(player) ?: TagResolver.empty()
+            val resolver = TagResolver.resolver(values, placeholders?.resolver(player) ?: TagResolver.empty())
             player.showTitle(Title.title(text.render(title, resolver), text.render(subtitle, resolver), times))
         }
         if (Bukkit.isOwnedByCurrentRegion(player)) show() else player.scheduler.run(plugin, { show() }, null)
