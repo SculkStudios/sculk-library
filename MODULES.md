@@ -57,7 +57,7 @@ planned module is in `REBUILD.md`.
 | `sculk-dialogs` | `DialogSpec`, typed responses, registered and dynamic dialogs, explicit fallback | text | in progress: dynamic dialogs with text, toggle, number and choice inputs, checked typed answers on the player's thread and the explicit fallback done and tested with a real client; registered (datapack) dialogs pending |
 | `sculk-presentation` | Render graph with update policies; sidebar, below-name, tab list, header and footer, action bar, boss bars, titles, nametags; conditions; scoreboard leases. No packet dependency: on Folia, sidebar, below-name and nametag teams report `Unavailable` (ADR-0023) | text, placeholders, paper | in progress: action bar, boss bars, tab header and footer and the sidebar with recorded placeholder dependencies, diffed output and scoreboard leases done and tested with a real client (ADR-0030); below-name, nametags and titles pending |
 | `sculk-presentation-packets` | Opt-in packet-backed sidebar, below-name and nametag teams for Folia, through whichever packet backend is installed | presentation, packets-api | planned |
-| `sculk-config-admin` | Opt-in operator editor generated from a config schema, dialog first with explicit fallback | config, dialogs, inventory | planned |
+| `sculk-config-admin` | Opt-in operator editor generated from a config schema, dialog first with explicit fallback | config, dialogs, inventory | done: a dialog editor built from `ConfigFile.fields`, a menu fallback, validated saves through `ConfigFile.update`, tested with a real client |
 
 ## Visuals and assets
 

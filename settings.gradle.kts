@@ -61,6 +61,7 @@ include(
     ":sculk-inventory",
     ":sculk-dialogs",
     ":sculk-presentation",
+    ":sculk-config-admin",
 )
 
 // Never published. Each proves something about the published modules on a real server.
@@ -73,6 +74,7 @@ include(
     ":integration-tests:boot",
     ":integration-tests:client",
     ":integration-tests:commands",
+    ":integration-tests:config-admin",
     ":integration-tests:dialogs",
     ":integration-tests:hud",
     ":integration-tests:examples",

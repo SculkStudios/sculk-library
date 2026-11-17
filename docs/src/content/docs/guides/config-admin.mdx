@@ -1,0 +1,49 @@
+---
+title: Config editor
+description: sculk-config-admin, an in-game editor for a typed configuration, as a dialog where the server has them and a menu where it does not.
+sidebar:
+  order: 15
+---
+
+`sculk-config-admin` (package `studio.sculk.config.admin`) lets an operator change a
+[configuration](/guides/config/) in game. It builds the editor from the configuration's own
+schema, so there is nothing to describe twice.
+
+```kotlin
+dependencies {
+    implementation("studio.sculk:sculk-config-admin:6.0.0-SNAPSHOT")
+}
+```
+
+```kotlin
+import studio.sculk.config.admin.ConfigAdmin
+import studio.sculk.dialog.Dialogs
+import studio.sculk.inventory.Menus
+
+// in start():
+val admin = ConfigAdmin(this, Dialogs(this), Menus(this, sculk.scope.resources))
+
+// behind your own permission, for example in a command:
+admin.open(player, settings)
+```
+
+## What it shows
+
+Every scalar setting of the configuration, from `ConfigFile.fields()`: text, toggles, whole and
+decimal numbers and enum choices, nested sections by their dotted path. Numbers with `@Range` or
+`@DecimalRange` become sliders within those bounds. A secret shows an empty field: leave it empty
+to keep the stored value. Lists, maps and sealed choices are left to the file.
+
+- **With dialogs** (Paper 1.21.7 and later): one form with every setting, and Save and Cancel.
+- **Without** (1.21.4): a menu of the settings with their values and comments. Clicking a toggle
+  switches it, clicking a choice moves to the next, left and right click step a bounded number
+  (shift for ten steps), and a text setting tells the operator to edit the file.
+
+## Saving
+
+Only settings that changed are written, through `ConfigFile.update`: the new values pass every
+check a load would run, the file keeps its comments and order, and the operator is told in chat
+what was saved, or why nothing was, such as `Not saved: shop.yml: title: expected a value that is
+not blank`. The file is written off the player's thread.
+
+Who may open the editor is your decision; `open` checks no permission itself.
