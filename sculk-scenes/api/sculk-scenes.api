@@ -1,0 +1,364 @@
+public abstract class studio/sculk/scene/Anchor {
+	public static final field Companion Lstudio/sculk/scene/Anchor$Companion;
+}
+
+public final class studio/sculk/scene/Anchor$At : studio/sculk/scene/Anchor {
+	public final fun getLocation ()Lorg/bukkit/Location;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/Anchor$Companion {
+	public final fun at (Lorg/bukkit/Location;)Lstudio/sculk/scene/Anchor$At;
+	public final fun following (Lorg/bukkit/entity/Entity;Lstudio/sculk/scene/Vec3;J)Lstudio/sculk/scene/Anchor$Following;
+	public static synthetic fun following$default (Lstudio/sculk/scene/Anchor$Companion;Lorg/bukkit/entity/Entity;Lstudio/sculk/scene/Vec3;JILjava/lang/Object;)Lstudio/sculk/scene/Anchor$Following;
+}
+
+public final class studio/sculk/scene/Anchor$Following : studio/sculk/scene/Anchor {
+	public final fun getEntity ()Lorg/bukkit/entity/Entity;
+	public final fun getOffset ()Lstudio/sculk/scene/Vec3;
+	public final fun getPeriodTicks ()J
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/BlockNode : studio/sculk/scene/SceneNode {
+	public fun <init> (Ljava/lang/String;Lorg/bukkit/block/data/BlockData;Lstudio/sculk/scene/DisplayOptions;)V
+	public synthetic fun <init> (Ljava/lang/String;Lorg/bukkit/block/data/BlockData;Lstudio/sculk/scene/DisplayOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun copy (Ljava/lang/String;Lstudio/sculk/scene/DisplayOptions;)Lstudio/sculk/scene/BlockNode;
+	public static synthetic fun copy$default (Lstudio/sculk/scene/BlockNode;Ljava/lang/String;Lstudio/sculk/scene/DisplayOptions;ILjava/lang/Object;)Lstudio/sculk/scene/BlockNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDisplay ()Lstudio/sculk/scene/DisplayOptions;
+	public fun getId ()Ljava/lang/String;
+	public final fun getState ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun withBlock (Lorg/bukkit/block/data/BlockData;)Lstudio/sculk/scene/BlockNode;
+}
+
+public final class studio/sculk/scene/BlockNodeBuilder : studio/sculk/scene/DisplayBuilder {
+}
+
+public abstract class studio/sculk/scene/DisplayBuilder {
+	public final fun getBillboard ()Lorg/bukkit/entity/Display$Billboard;
+	public final fun getBrightness ()Lorg/bukkit/entity/Display$Brightness;
+	public final fun getInterpolationDelayTicks ()I
+	public final fun getInterpolationTicks ()I
+	public final fun getTransform ()Lstudio/sculk/scene/Transform;
+	public final fun getViewRange ()F
+	public final fun setBillboard (Lorg/bukkit/entity/Display$Billboard;)V
+	public final fun setBrightness (Lorg/bukkit/entity/Display$Brightness;)V
+	public final fun setInterpolationDelayTicks (I)V
+	public final fun setInterpolationTicks (I)V
+	public final fun setTransform (Lstudio/sculk/scene/Transform;)V
+	public final fun setViewRange (F)V
+}
+
+public final class studio/sculk/scene/DisplayOptions {
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/scene/Transform;Lorg/bukkit/entity/Display$Billboard;Lorg/bukkit/entity/Display$Brightness;FII)V
+	public synthetic fun <init> (Lstudio/sculk/scene/Transform;Lorg/bukkit/entity/Display$Billboard;Lorg/bukkit/entity/Display$Brightness;FIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lstudio/sculk/scene/Transform;
+	public final fun component2 ()Lorg/bukkit/entity/Display$Billboard;
+	public final fun component3 ()Lorg/bukkit/entity/Display$Brightness;
+	public final fun component4 ()F
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun copy (Lstudio/sculk/scene/Transform;Lorg/bukkit/entity/Display$Billboard;Lorg/bukkit/entity/Display$Brightness;FII)Lstudio/sculk/scene/DisplayOptions;
+	public static synthetic fun copy$default (Lstudio/sculk/scene/DisplayOptions;Lstudio/sculk/scene/Transform;Lorg/bukkit/entity/Display$Billboard;Lorg/bukkit/entity/Display$Brightness;FIIILjava/lang/Object;)Lstudio/sculk/scene/DisplayOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBillboard ()Lorg/bukkit/entity/Display$Billboard;
+	public final fun getBrightness ()Lorg/bukkit/entity/Display$Brightness;
+	public final fun getInterpolationDelayTicks ()I
+	public final fun getInterpolationTicks ()I
+	public final fun getTransform ()Lstudio/sculk/scene/Transform;
+	public final fun getViewRange ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/ItemNode : studio/sculk/scene/SceneNode {
+	public fun <init> (Ljava/lang/String;Lstudio/sculk/item/ItemSpec;Lorg/bukkit/entity/ItemDisplay$ItemDisplayTransform;Lstudio/sculk/scene/DisplayOptions;)V
+	public synthetic fun <init> (Ljava/lang/String;Lstudio/sculk/item/ItemSpec;Lorg/bukkit/entity/ItemDisplay$ItemDisplayTransform;Lstudio/sculk/scene/DisplayOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lstudio/sculk/item/ItemSpec;
+	public final fun component3 ()Lorg/bukkit/entity/ItemDisplay$ItemDisplayTransform;
+	public final fun component4 ()Lstudio/sculk/scene/DisplayOptions;
+	public final fun copy (Ljava/lang/String;Lstudio/sculk/item/ItemSpec;Lorg/bukkit/entity/ItemDisplay$ItemDisplayTransform;Lstudio/sculk/scene/DisplayOptions;)Lstudio/sculk/scene/ItemNode;
+	public static synthetic fun copy$default (Lstudio/sculk/scene/ItemNode;Ljava/lang/String;Lstudio/sculk/item/ItemSpec;Lorg/bukkit/entity/ItemDisplay$ItemDisplayTransform;Lstudio/sculk/scene/DisplayOptions;ILjava/lang/Object;)Lstudio/sculk/scene/ItemNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDisplay ()Lstudio/sculk/scene/DisplayOptions;
+	public fun getId ()Ljava/lang/String;
+	public final fun getItem ()Lstudio/sculk/item/ItemSpec;
+	public final fun getItemTransform ()Lorg/bukkit/entity/ItemDisplay$ItemDisplayTransform;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/ItemNodeBuilder : studio/sculk/scene/DisplayBuilder {
+	public final fun getItemTransform ()Lorg/bukkit/entity/ItemDisplay$ItemDisplayTransform;
+	public final fun setItemTransform (Lorg/bukkit/entity/ItemDisplay$ItemDisplayTransform;)V
+}
+
+public final class studio/sculk/scene/Rotation {
+	public static final field Companion Lstudio/sculk/scene/Rotation$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getW ()F
+	public final fun getX ()F
+	public final fun getY ()F
+	public final fun getZ ()F
+	public fun hashCode ()I
+	public final fun then (Lstudio/sculk/scene/Rotation;)Lstudio/sculk/scene/Rotation;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/Rotation$Companion {
+	public final fun around (Lstudio/sculk/scene/Vec3;F)Lstudio/sculk/scene/Rotation;
+	public final fun getIDENTITY ()Lstudio/sculk/scene/Rotation;
+	public final fun quaternion (FFFF)Lstudio/sculk/scene/Rotation;
+	public final fun x (F)Lstudio/sculk/scene/Rotation;
+	public final fun y (F)Lstudio/sculk/scene/Rotation;
+	public final fun z (F)Lstudio/sculk/scene/Rotation;
+}
+
+public abstract interface class studio/sculk/scene/Scene {
+	public static final field Companion Lstudio/sculk/scene/Scene$Companion;
+	public static final field JUMP_BLOCKS D
+	public abstract fun close ()V
+	public abstract fun getAnchor ()Lstudio/sculk/scene/Anchor;
+	public abstract fun getSpec ()Lstudio/sculk/scene/SceneSpec;
+	public abstract fun getVisibility ()Lstudio/sculk/scene/Visibility;
+	public abstract fun hide (Lorg/bukkit/entity/Player;)V
+	public abstract fun isOpen ()Z
+	public abstract fun isShownTo (Lorg/bukkit/entity/Player;)Z
+	public abstract fun isSpawned ()Z
+	public abstract fun move (Lstudio/sculk/scene/Anchor;)V
+	public abstract fun refresh ()V
+	public abstract fun show (Lorg/bukkit/entity/Player;)V
+	public abstract fun update (Lstudio/sculk/scene/SceneSpec;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/scene/Scene$Companion {
+	public static final field JUMP_BLOCKS D
+}
+
+public final class studio/sculk/scene/SceneBuilder {
+	public final fun block (Ljava/lang/String;Lorg/bukkit/block/data/BlockData;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun block$default (Lstudio/sculk/scene/SceneBuilder;Ljava/lang/String;Lorg/bukkit/block/data/BlockData;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun getTeleportTicks ()I
+	public final fun item (Ljava/lang/String;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun item$default (Lstudio/sculk/scene/SceneBuilder;Ljava/lang/String;Lstudio/sculk/item/ItemSpec;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun node (Lstudio/sculk/scene/SceneNode;)V
+	public final fun remove (Ljava/lang/String;)V
+	public final fun setTeleportTicks (I)V
+	public final fun text (Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;)V
+	public static synthetic fun text$default (Lstudio/sculk/scene/SceneBuilder;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public abstract interface annotation class studio/sculk/scene/SceneDsl : java/lang/annotation/Annotation {
+}
+
+public abstract class studio/sculk/scene/SceneNode {
+	public abstract fun getDisplay ()Lstudio/sculk/scene/DisplayOptions;
+	public abstract fun getId ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/SceneSpec {
+	public static final field Companion Lstudio/sculk/scene/SceneSpec$Companion;
+	public static final field MAX_NODES I
+	public static final field MAX_TELEPORT_TICKS I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getNodes ()Ljava/util/List;
+	public final fun getTeleportTicks ()I
+	public fun hashCode ()I
+	public final fun node (Ljava/lang/String;)Lstudio/sculk/scene/SceneNode;
+	public final fun requireNode (Ljava/lang/String;)Lstudio/sculk/scene/SceneNode;
+	public fun toString ()Ljava/lang/String;
+	public final fun with (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/scene/SceneSpec;
+	public final fun withText (Ljava/lang/String;Ljava/lang/String;)Lstudio/sculk/scene/SceneSpec;
+	public final fun withTransform (Ljava/lang/String;Lstudio/sculk/scene/Transform;)Lstudio/sculk/scene/SceneSpec;
+}
+
+public final class studio/sculk/scene/SceneSpec$Companion {
+	public final fun getEMPTY ()Lstudio/sculk/scene/SceneSpec;
+}
+
+public final class studio/sculk/scene/SceneSpecKt {
+	public static final fun scene (Lkotlin/jvm/functions/Function1;)Lstudio/sculk/scene/SceneSpec;
+}
+
+public abstract interface class studio/sculk/scene/Scenes {
+	public abstract fun getOpen ()Ljava/util/Collection;
+	public abstract fun spawn (Lstudio/sculk/scene/SceneSpec;Lstudio/sculk/scene/Anchor;Lstudio/sculk/scene/Visibility;)Lstudio/sculk/SculkResult;
+	public static synthetic fun spawn$default (Lstudio/sculk/scene/Scenes;Lstudio/sculk/scene/SceneSpec;Lstudio/sculk/scene/Anchor;Lstudio/sculk/scene/Visibility;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/scene/Scenes$DefaultImpls {
+	public static synthetic fun spawn$default (Lstudio/sculk/scene/Scenes;Lstudio/sculk/scene/SceneSpec;Lstudio/sculk/scene/Anchor;Lstudio/sculk/scene/Visibility;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/scene/ScenesKt {
+	public static final fun Scenes (Lorg/bukkit/plugin/Plugin;Lstudio/sculk/execution/SculkScope;Lstudio/sculk/placeholder/PlaceholderRegistry;Lstudio/sculk/text/Text;)Lstudio/sculk/scene/Scenes;
+	public static synthetic fun Scenes$default (Lorg/bukkit/plugin/Plugin;Lstudio/sculk/execution/SculkScope;Lstudio/sculk/placeholder/PlaceholderRegistry;Lstudio/sculk/text/Text;ILjava/lang/Object;)Lstudio/sculk/scene/Scenes;
+}
+
+public final class studio/sculk/scene/TextNode : studio/sculk/scene/SceneNode {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/scene/TextStyle;Lstudio/sculk/scene/DisplayOptions;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/scene/TextStyle;Lstudio/sculk/scene/DisplayOptions;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lstudio/sculk/scene/TextStyle;
+	public final fun component4 ()Lstudio/sculk/scene/DisplayOptions;
+	public final fun component5 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/scene/TextStyle;Lstudio/sculk/scene/DisplayOptions;Z)Lstudio/sculk/scene/TextNode;
+	public static synthetic fun copy$default (Lstudio/sculk/scene/TextNode;Ljava/lang/String;Ljava/lang/String;Lstudio/sculk/scene/TextStyle;Lstudio/sculk/scene/DisplayOptions;ZILjava/lang/Object;)Lstudio/sculk/scene/TextNode;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDisplay ()Lstudio/sculk/scene/DisplayOptions;
+	public fun getId ()Ljava/lang/String;
+	public final fun getPerViewer ()Z
+	public final fun getStyle ()Lstudio/sculk/scene/TextStyle;
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/TextNodeBuilder : studio/sculk/scene/DisplayBuilder {
+	public final fun getAlignment ()Lorg/bukkit/entity/TextDisplay$TextAlignment;
+	public final fun getBackground ()Lorg/bukkit/Color;
+	public final fun getLineWidth ()I
+	public final fun getSeeThrough ()Z
+	public final fun getShadow ()Z
+	public final fun setAlignment (Lorg/bukkit/entity/TextDisplay$TextAlignment;)V
+	public final fun setBackground (Lorg/bukkit/Color;)V
+	public final fun setLineWidth (I)V
+	public final fun setSeeThrough (Z)V
+	public final fun setShadow (Z)V
+}
+
+public final class studio/sculk/scene/TextStyle {
+	public static final field Companion Lstudio/sculk/scene/TextStyle$Companion;
+	public static final field DEFAULT_LINE_WIDTH I
+	public fun <init> ()V
+	public fun <init> (Lorg/bukkit/Color;ZZLorg/bukkit/entity/TextDisplay$TextAlignment;I)V
+	public synthetic fun <init> (Lorg/bukkit/Color;ZZLorg/bukkit/entity/TextDisplay$TextAlignment;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lorg/bukkit/Color;
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()Lorg/bukkit/entity/TextDisplay$TextAlignment;
+	public final fun component5 ()I
+	public final fun copy (Lorg/bukkit/Color;ZZLorg/bukkit/entity/TextDisplay$TextAlignment;I)Lstudio/sculk/scene/TextStyle;
+	public static synthetic fun copy$default (Lstudio/sculk/scene/TextStyle;Lorg/bukkit/Color;ZZLorg/bukkit/entity/TextDisplay$TextAlignment;IILjava/lang/Object;)Lstudio/sculk/scene/TextStyle;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlignment ()Lorg/bukkit/entity/TextDisplay$TextAlignment;
+	public final fun getBackground ()Lorg/bukkit/Color;
+	public final fun getLineWidth ()I
+	public final fun getSeeThrough ()Z
+	public final fun getShadow ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/TextStyle$Companion {
+}
+
+public final class studio/sculk/scene/Transform {
+	public static final field Companion Lstudio/sculk/scene/Transform$Companion;
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/scene/Vec3;Lstudio/sculk/scene/Vec3;Lstudio/sculk/scene/Rotation;Lstudio/sculk/scene/Rotation;)V
+	public synthetic fun <init> (Lstudio/sculk/scene/Vec3;Lstudio/sculk/scene/Vec3;Lstudio/sculk/scene/Rotation;Lstudio/sculk/scene/Rotation;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lstudio/sculk/scene/Vec3;
+	public final fun component2 ()Lstudio/sculk/scene/Vec3;
+	public final fun component3 ()Lstudio/sculk/scene/Rotation;
+	public final fun component4 ()Lstudio/sculk/scene/Rotation;
+	public final fun copy (Lstudio/sculk/scene/Vec3;Lstudio/sculk/scene/Vec3;Lstudio/sculk/scene/Rotation;Lstudio/sculk/scene/Rotation;)Lstudio/sculk/scene/Transform;
+	public static synthetic fun copy$default (Lstudio/sculk/scene/Transform;Lstudio/sculk/scene/Vec3;Lstudio/sculk/scene/Vec3;Lstudio/sculk/scene/Rotation;Lstudio/sculk/scene/Rotation;ILjava/lang/Object;)Lstudio/sculk/scene/Transform;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRightRotation ()Lstudio/sculk/scene/Rotation;
+	public final fun getRotation ()Lstudio/sculk/scene/Rotation;
+	public final fun getScale ()Lstudio/sculk/scene/Vec3;
+	public final fun getTranslation ()Lstudio/sculk/scene/Vec3;
+	public fun hashCode ()I
+	public final fun moved (Lstudio/sculk/scene/Vec3;)Lstudio/sculk/scene/Transform;
+	public final fun rotated (Lstudio/sculk/scene/Rotation;)Lstudio/sculk/scene/Transform;
+	public final fun scaled (F)Lstudio/sculk/scene/Transform;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/Transform$Companion {
+	public final fun getIDENTITY ()Lstudio/sculk/scene/Transform;
+}
+
+public final class studio/sculk/scene/Vec3 {
+	public static final field Companion Lstudio/sculk/scene/Vec3$Companion;
+	public fun <init> (FFF)V
+	public final fun component1 ()F
+	public final fun component2 ()F
+	public final fun component3 ()F
+	public final fun copy (FFF)Lstudio/sculk/scene/Vec3;
+	public static synthetic fun copy$default (Lstudio/sculk/scene/Vec3;FFFILjava/lang/Object;)Lstudio/sculk/scene/Vec3;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getX ()F
+	public final fun getY ()F
+	public final fun getZ ()F
+	public fun hashCode ()I
+	public final fun plus (Lstudio/sculk/scene/Vec3;)Lstudio/sculk/scene/Vec3;
+	public final fun times (F)Lstudio/sculk/scene/Vec3;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/Vec3$Companion {
+	public final fun getONE ()Lstudio/sculk/scene/Vec3;
+	public final fun getZERO ()Lstudio/sculk/scene/Vec3;
+	public final fun of (F)Lstudio/sculk/scene/Vec3;
+}
+
+public abstract class studio/sculk/scene/Visibility {
+	public static final field Companion Lstudio/sculk/scene/Visibility$Companion;
+}
+
+public final class studio/sculk/scene/Visibility$Companion {
+	public final fun only (Ljava/util/Collection;)Lstudio/sculk/scene/Visibility$Only;
+	public final fun only ([Lorg/bukkit/entity/Player;)Lstudio/sculk/scene/Visibility$Only;
+}
+
+public final class studio/sculk/scene/Visibility$Everyone : studio/sculk/scene/Visibility {
+	public static final field INSTANCE Lstudio/sculk/scene/Visibility$Everyone;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/Visibility$Only : studio/sculk/scene/Visibility {
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getViewers ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/scene/testing/FakeScene : studio/sculk/scene/Scene {
+	public fun close ()V
+	public fun getAnchor ()Lstudio/sculk/scene/Anchor;
+	public final fun getAnchors ()Ljava/util/List;
+	public final fun getHistory ()Ljava/util/List;
+	public final fun getRefreshes ()I
+	public fun getSpec ()Lstudio/sculk/scene/SceneSpec;
+	public fun getVisibility ()Lstudio/sculk/scene/Visibility;
+	public fun hide (Lorg/bukkit/entity/Player;)V
+	public fun isOpen ()Z
+	public fun isShownTo (Lorg/bukkit/entity/Player;)Z
+	public fun isSpawned ()Z
+	public fun move (Lstudio/sculk/scene/Anchor;)V
+	public fun refresh ()V
+	public fun show (Lorg/bukkit/entity/Player;)V
+	public final fun textOf (Ljava/lang/String;Lnet/kyori/adventure/audience/Audience;)Lnet/kyori/adventure/text/Component;
+	public static synthetic fun textOf$default (Lstudio/sculk/scene/testing/FakeScene;Ljava/lang/String;Lnet/kyori/adventure/audience/Audience;ILjava/lang/Object;)Lnet/kyori/adventure/text/Component;
+	public fun update (Lstudio/sculk/scene/SceneSpec;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/scene/testing/FakeScenes : studio/sculk/scene/Scenes {
+	public fun <init> ()V
+	public fun <init> (Lstudio/sculk/placeholder/PlaceholderRegistry;Lstudio/sculk/text/Text;)V
+	public synthetic fun <init> (Lstudio/sculk/placeholder/PlaceholderRegistry;Lstudio/sculk/text/Text;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getOpen ()Ljava/util/Collection;
+	public final fun getSpawned ()Ljava/util/List;
+	public fun spawn (Lstudio/sculk/scene/SceneSpec;Lstudio/sculk/scene/Anchor;Lstudio/sculk/scene/Visibility;)Lstudio/sculk/SculkResult;
+}
+

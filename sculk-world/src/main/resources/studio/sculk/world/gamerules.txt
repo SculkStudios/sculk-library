@@ -1,0 +1,74 @@
+# Game rules by their registry key (Paper 1.21.11 and later) and their name on Paper 1.21.4, one per line:
+#   <key> <1.21.4 name> [inverted | fire-radius]   the same rule under both names
+#   <key> -                                         no such rule on 1.21.4
+#   - <1.21.4 name>                                 a 1.21.4 rule with no successor
+# Keys without a namespace are minecraft:. Lookups read every line both ways. The pairs are the ones
+# Paper's own org.bukkit.GameRule constants bridge from 1.21.11 on, read from each paper-api jar;
+# the rule set is identical from 1.21.11 through 26.3.
+#   inverted     the 1.21.4 rule is the negation (disableRaids against raids)
+#   fire-radius  1.21.4 has only doFireTick, so the radius is 0 (off) or -1 (everywhere)
+
+show_advancement_messages announceAdvancements
+command_block_output commandBlockOutput
+player_movement_check disablePlayerMovementCheck inverted
+elytra_movement_check disableElytraMovementCheck inverted
+advance_time doDaylightCycle
+entity_drops doEntityDrops
+fire_spread_radius_around_player doFireTick fire-radius
+limited_crafting doLimitedCrafting
+mob_drops doMobLoot
+projectiles_can_break_blocks projectilesCanBreakBlocks
+spawn_mobs doMobSpawning
+block_drops doTileDrops
+advance_weather doWeatherCycle
+keep_inventory keepInventory
+log_admin_commands logAdminCommands
+mob_griefing mobGriefing
+natural_health_regeneration naturalRegeneration
+reduced_debug_info reducedDebugInfo
+send_command_feedback sendCommandFeedback
+show_death_messages showDeathMessages
+spectators_generate_chunks spectatorsGenerateChunks
+raids disableRaids inverted
+spawn_phantoms doInsomnia
+immediate_respawn doImmediateRespawn
+drowning_damage drowningDamage
+fall_damage fallDamage
+fire_damage fireDamage
+freeze_damage freezeDamage
+spawn_patrols doPatrolSpawning
+spawn_wandering_traders doTraderSpawning
+spawn_wardens doWardenSpawning
+forgive_dead_players forgiveDeadPlayers
+universal_anger universalAnger
+block_explosion_drop_decay blockExplosionDropDecay
+mob_explosion_drop_decay mobExplosionDropDecay
+tnt_explosion_drop_decay tntExplosionDropDecay
+water_source_conversion waterSourceConversion
+lava_source_conversion lavaSourceConversion
+global_sound_events globalSoundEvents
+spread_vines doVinesSpread
+ender_pearls_vanish_on_death enderPearlsVanishOnDeath
+random_tick_speed randomTickSpeed
+respawn_radius spawnRadius
+max_entity_cramming maxEntityCramming
+max_command_sequence_length maxCommandChainLength
+max_command_forks maxCommandForkCount
+max_block_modifications commandModificationBlockLimit
+players_sleeping_percentage playersSleepingPercentage
+max_snow_accumulation_height snowAccumulationHeight
+players_nether_portal_default_delay playersNetherPortalDefaultDelay
+players_nether_portal_creative_delay playersNetherPortalCreativeDelay
+max_minecart_speed minecartMaxSpeed
+
+# Added after 1.21.4.
+allow_entering_nether_using_portals -
+command_blocks_work -
+locator_bar -
+pvp -
+spawn_monsters -
+spawner_blocks_work -
+tnt_explodes -
+
+# Gone after 1.21.4, with the spawn chunks it sized.
+- spawnChunkRadius

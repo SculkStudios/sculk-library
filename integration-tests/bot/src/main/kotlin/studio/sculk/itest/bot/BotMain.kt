@@ -71,6 +71,7 @@ private const val HUMAN_DELAY_MILLIS = 200L
  * - events: `JOINED`, `WINDOW id type title`, `CONTENT id state slot:name...`, `SLOT id state slot name`,
  *   `CLOSED id`, `TRADES id result` (each offer's result as `namexamount`, `|`-separated), `CHAT text`, `DIALOG title buttons inputs` (labels and `key:type`, each `|`-separated),
  *   `DIALOGCLOSED`, `DIALOGTAG tag dialogs` (`,`-separated keys), `ACTIONBAR text`, `BOSSBAR uuid ADD|REMOVE|UPDATE_TITLE|UPDATE_HEALTH title progress`,
+ *   `DISPLAY id type x y z`, `DISPLAYDATA id index=kind:value...`, `DISPLAYMOVE id x y z`, `DISPLAYGONE id` (see EntityWatch),
  *   `TITLE title subtitle`, `TITLECLEARED`, `NAMETAG player prefix suffix`, `BELOWNAME player text`, `TAB header footer`, `SIDEBAR title lines` (lines top to bottom, `|`-separated, empty when none shows),
  *   `DISCONNECTED reason`;
  * - commands: `CLICK slot LEFT|RIGHT|SHIFT|DROP|HOTBAR n`, `CLOSE`, `COMMAND text`,
@@ -96,6 +97,7 @@ fun main(args: Array<String>) {
 
 private class Bot(private val out: PrintStream) {
     private val plain = PlainTextComponentSerializer.plainText()
+    private val entities = EntityWatch { fields -> emit(*fields.toTypedArray()) }
     private lateinit var session: ClientNetworkSession
     private val gone = CountDownLatch(1)
 
@@ -148,6 +150,7 @@ private class Bot(private val out: PrintStream) {
     }
 
     private fun received(packet: Packet) {
+        if (entities.received(packet)) return
         when (packet) {
             is ClientboundLoginPacket -> emit("JOINED")
             is ClientboundPlayerPositionPacket -> {

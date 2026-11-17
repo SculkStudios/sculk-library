@@ -55,7 +55,7 @@ jobs:
     needs: build
     strategy:
       fail-fast: false
-      # Thirteen jobs resolving at once draw HTTP 429 from Maven Central; six at a time stays clear.
+      # Fifteen jobs resolving at once draw HTTP 429 from Maven Central; six at a time stays clear.
       max-parallel: 6
       matrix:
         include:
@@ -89,6 +89,12 @@ jobs:
           - suite: hud
             about: HUD seen by a real client on every Paper anchor, Folia and Canvas
             task: ":integration-tests:hud:verifyHud"
+          - suite: scenes
+            about: Scenes seen by two real clients on every Paper anchor, Folia and Canvas
+            task: ":integration-tests:scenes:verifyScenes"
+          - suite: world
+            about: Game rules and world clocks on every Paper anchor, Folia and Canvas
+            task: ":integration-tests:world:verifyWorld"
           - suite: config-admin
             about: Config editor used by a real client on every Paper anchor, Folia and Canvas
             task: ":integration-tests:config-admin:verifyConfigAdmin"

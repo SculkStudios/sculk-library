@@ -63,13 +63,13 @@ export const CATEGORIES: readonly { id: string; label: string; icon: string; pag
 		id: 'interface',
 		label: 'Player UI',
 		icon: 'window',
-		pages: [{ id: 'guides/menus' }, { id: 'guides/dialogs' }, { id: 'guides/hud' }],
+		pages: [{ id: 'guides/menus' }, { id: 'guides/dialogs' }, { id: 'guides/hud' }, { id: 'guides/scenes' }],
 	},
 	{
 		id: 'content',
 		label: 'Items and content',
 		icon: 'cube',
-		pages: [{ id: 'guides/items' }, { id: 'guides/recipes' }, { id: 'guides/registry' }],
+		pages: [{ id: 'guides/items' }, { id: 'guides/recipes' }, { id: 'guides/registry' }, { id: 'guides/world' }],
 	},
 	{
 		id: 'reference',

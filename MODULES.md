@@ -63,7 +63,7 @@ planned module is in `REBUILD.md`.
 
 | Module | Capability | Depends on | Status |
 | --- | --- | --- | --- |
-| `sculk-scenes` | Scene graph over display and interaction entities; anchors; parenting; native or virtual backend per node | effects, packets-api, paper | planned |
+| `sculk-scenes` | Scenes over display entities: text, item and block nodes as immutable specs, diffed updates with client interpolation, fixed or following anchors, everyone or chosen viewers, per-viewer text as one entity per viewer; interaction entities, `sculk-effects` animation and a packet backend later (ADR-0032) | items, placeholders, paper | in progress |
 | `sculk-effects` | Animation engine (keyframes, easing, tracks), particle shapes and emitters, Adventure sound cues, post-effects, waypoints, visual budgets | text, paper | planned |
 | `sculk-resourcepack` | Pack descriptors and stack management, hosting SPI, configuration-phase sending, glyph metrics feed | text, paper | planned |
 | `sculk-resourcepack-ktor` | Embedded pack host | resourcepack, web-ktor | planned |
@@ -72,7 +72,7 @@ planned module is in `REBUILD.md`.
 
 | Module | Capability | Depends on | Status |
 | --- | --- | --- | --- |
-| `sculk-world` | Region-partitioned batches, chunk tickets, world keys and name migration, borders, ray tracing, world creation and unloading | coroutines, paper | planned |
+| `sculk-world` | Game rules by registry key on every version (1.21.4 names translated), rule change events, world clocks and timelines on 26.3 (ADR-0034); region-partitioned batches, chunk tickets, world keys and name migration, borders, ray tracing, world creation and unloading to come | coroutines, paper | in progress |
 | `sculk-entity` | Spawn specs, async teleport with ownership re-entry, pathfinder and goal helpers, attributes, equipment, lifecycle handles | coroutines, paper | planned |
 
 ## Data and network

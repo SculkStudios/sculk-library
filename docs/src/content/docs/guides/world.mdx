@@ -1,0 +1,149 @@
+---
+title: Game rules and time
+description: "Read and set game rules by one name on every Paper version, watch them change, and use world clocks and timelines on 26.3."
+module: sculk-world
+since: '6.0'
+runs: global
+support:
+  paper: { level: partial, note: 'game rules on every version; world clocks and timelines on 26.3 only' }
+  folia: { level: full, note: 'writes on the global region' }
+  canvas: { level: full, note: 'writes on the global region' }
+  velocity: { level: n/a, note: 'not applicable on a proxy' }
+---
+
+import { Aside } from '~/components/mdx';
+
+`sculk-world` (package `studio.sculk.world`) reads and sets game rules the same way on every
+supported Paper version, although Minecraft renamed every rule at 1.21.11, and gives you world
+clocks and timelines where the server has them.
+
+```kotlin title="build.gradle.kts"
+dependencies {
+    implementation("studio.sculk:sculk-world:6.0.0-SNAPSHOT")
+}
+```
+
+<Aside type="caution" title="Experimental">
+  The whole module is `@SculkExperimental` and may change in a minor release. Opt in with
+  `@OptIn(SculkExperimental::class)` on the code that uses it.
+</Aside>
+
+## Read and set a rule
+
+Rules are `GameRuleKey` constants, named after their registry keys:
+
+```kotlin
+import studio.sculk.world.GameRuleKey
+import studio.sculk.world.WorldRules
+
+val keep: Boolean = WorldRules.get(world, GameRuleKey.KEEP_INVENTORY).getOrThrow()
+val ticks: Int = WorldRules.get(world, GameRuleKey.RANDOM_TICK_SPEED).getOrThrow()
+
+// From any coroutine of your plugin's scope: hops to the global region and back.
+WorldRules.set(world, GameRuleKey.KEEP_INVENTORY, true)
+```
+
+- Reads run on any thread.
+- Writes run on the global region: the main thread on Paper, the global region thread on Folia and
+  Canvas. `set` gets there for you and runs at once when you are already there. Code that is already
+  on the global region and cannot suspend, such as a console command, calls `setNow`, which throws if
+  it is called from anywhere else.
+- `set` returns the value the world holds afterwards, because another plugin can change it while
+  the change happens. If another plugin cancels it, the result is a `ChangeCancelled` failure.
+- `WorldRules.default(world, rule)` gives the value a new world starts with.
+
+## The same name on every version
+
+Until 1.21.4 rules had camel-case names like `doDaylightCycle`. From 1.21.11 they are registry keys
+like `minecraft:advance_time`, and a few changed meaning too. You always use the new key and Sculk
+translates:
+
+| You use | On 1.21.4 Sculk uses |
+| --- | --- |
+| `ADVANCE_TIME`, `KEEP_INVENTORY` and most others | the old name for the same rule |
+| `RAIDS`, `PLAYER_MOVEMENT_CHECK`, `ELYTRA_MOVEMENT_CHECK` | `disableRaids` and the other `disable…` rules, inverted |
+| `FIRE_SPREAD_RADIUS_AROUND_PLAYER` | `doFireTick`: `0` turns fire spread off and `-1` lets it spread everywhere. Any other radius fails, because 1.21.4 cannot limit fire to a distance. |
+| `PVP`, `TNT_EXPLODES`, `LOCATOR_BAR`, `SPAWN_MONSTERS`, `ALLOW_ENTERING_NETHER_USING_PORTALS`, `COMMAND_BLOCKS_WORK`, `SPAWNER_BLOCKS_WORK` | nothing: 1.21.4 has no such rule, so you get an `UnsupportedCapability` failure |
+
+`spawnChunkRadius` exists only on 1.21.4 and has no new key, so Sculk cannot reach it.
+
+`max_minecart_speed` only works when the world has the minecart experiment turned on. Otherwise
+reading or setting it fails with `UnsupportedCapability`, on every version.
+
+## Rules from configuration
+
+Server owners write rule names in configs. `GameRuleKey.parse` accepts the new key with or without
+`minecraft:`, and the old 1.21.4 name, on any server:
+
+```yaml
+rules:
+  keepInventory: true        # the 1.21.4 name works on 26.3
+  random_tick_speed: 5       # so does the new key on 1.21.4
+```
+
+```kotlin
+for ((name, value) in config.rules) {
+    val rule = WorldRules.resolve(name).getOrElse { failure -> logger.warning(failure.describe()); continue }
+    WorldRules.setText(world, rule, value).onFailure { logger.warning(it.describe()) }
+}
+```
+
+`resolve` is `parse` plus any rule the server has that is newer than Sculk's list. `setText` reads
+the value with the rule's type (`true`/`false` or a whole number) before setting it. From 1.21.11
+rules have ranges, and a value outside one, such as a negative tick speed, fails with `InvalidInput`
+and the server's reason; 1.21.4 accepts any whole number.
+
+`WorldRules.available()` lists every rule the server has, by key, for tab completion or a menu.
+
+## Watch rules change
+
+```kotlin
+WorldRules.onChange(sculk.events, GameRuleKey.KEEP_INVENTORY) { change ->
+    logger.info("keep_inventory is now ${change.value} in ${change.world.key}, set by ${change.sender?.name ?: "a plugin"}")
+}
+```
+
+The handler runs for changes from `/gamerule` and from plugins, after other plugins have had their
+say and only if the change goes ahead. It runs just before the world stores the value, so use
+`change.value` rather than reading the world. It stops when the scope that owns `sculk.events` closes.
+`onChange(events) { change -> }` without a rule hears every rule.
+
+## World clocks and timelines (26.3)
+
+Minecraft 26.3 replaced the single day counter with **clocks**: tick counters with their own rate
+that can be paused. The overworld and the End each follow one; the Nether follows none. **Timelines**
+follow a clock and repeat over a period: the day is 24000 ticks of the overworld clock, the moon's
+eight phases 192000.
+
+```kotlin
+import studio.sculk.world.ClockKey
+import studio.sculk.world.TimelineKey
+import studio.sculk.world.WorldTime
+
+if (WorldTime.isAvailable) {
+    val clock = WorldTime.clock(world, ClockKey.OVERWORLD).getOrThrow()   // ticks, paused, rate
+    val day = WorldTime.position(world, TimelineKey.DAY).getOrThrow()
+    logger.info("Day ${day.cycle}, ${day.tick} ticks in")
+
+    // Twice as fast, from any coroutine; runs on the global region.
+    WorldTime.update(world, ClockKey.OVERWORLD, rate = 2f)
+    // Pause and jump to noon of the current day.
+    WorldTime.update(world, ClockKey.OVERWORLD, paused = true, ticks = day.cycle * 24_000 + 6_000)
+}
+```
+
+- Every world keeps its own state for every clock, unless Paper's `time.affects-all-worlds` setting
+  makes them share it.
+- `update` changes only what you pass and returns the clock as it reads afterwards. Setting `ticks`
+  fires Paper's `ClockTimeSkipEvent`, so another plugin may cancel or change the jump. `updateNow`
+  is the version for code already on the global region.
+- Negative ticks and a rate that is not a positive number fail with `InvalidInput` before anything
+  changes; so does a clock the server does not have.
+- `WorldTime.timelines()` lists every timeline with its clock and period, datapack ones included.
+
+Before 26.3 there are no clocks: every `WorldTime` call returns an `UnsupportedCapability` failure
+and `isAvailable` is false. Bukkit's `World.getTime` and `World.setTime` keep working on every
+version.
+
+Sculk's own `integration-tests/world` suite runs all of this on every supported Paper version,
+Folia and Canvas, and checks each 1.21.4 translation against Paper's own constants.

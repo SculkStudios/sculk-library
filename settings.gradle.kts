@@ -61,6 +61,8 @@ include(
     ":sculk-inventory",
     ":sculk-dialogs",
     ":sculk-presentation",
+    ":sculk-scenes",
+    ":sculk-world",
     ":sculk-config-admin",
 )
 
@@ -85,6 +87,8 @@ include(
     ":integration-tests:menus",
     ":integration-tests:recipes",
     ":integration-tests:registry",
+    ":integration-tests:scenes",
+    ":integration-tests:world",
     ":integration-tests:threading",
     ":integration-tests:velocity",
 )

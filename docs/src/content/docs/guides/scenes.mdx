@@ -1,0 +1,202 @@
+---
+title: Holograms and displays
+description: "Floating text, items and blocks built from display entities, redrawn only where something changed, shown to everyone or to chosen players."
+module: sculk-scenes
+since: '6.0'
+runs: entity
+support:
+  paper: { level: full, note: '1.21.4 to 26.3, every display option' }
+  folia: { level: full, note: "on each display's region" }
+  canvas: { level: full, note: "on each display's region" }
+  velocity: { level: n/a, note: 'not applicable on a proxy' }
+---
+
+import { Aside } from '~/components/mdx';
+
+`sculk-scenes` (package `studio.sculk.scene`) draws holograms, floating labels and small models
+with Minecraft's display entities. A scene is a list of text, item and block displays placed at an
+anchor; you change it by handing it a new list, and only what differs is sent.
+
+```kotlin title="build.gradle.kts"
+dependencies {
+    implementation("studio.sculk:sculk-scenes:6.0.0-SNAPSHOT")
+}
+```
+
+<Aside type="caution" title="Experimental">
+  The whole module is `@SculkExperimental` and may change in a minor release. Opt in with
+  `@OptIn(SculkExperimental::class)` on the code that uses it, or once for your module.
+</Aside>
+
+## A hologram
+
+```kotlin
+import org.bukkit.Material
+import studio.sculk.getOrThrow
+import studio.sculk.item.item
+import studio.sculk.placeholder.PlaceholderRegistry
+import studio.sculk.scene.Anchor
+import studio.sculk.scene.Scenes
+import studio.sculk.scene.Transform
+import studio.sculk.scene.Vec3
+import studio.sculk.scene.scene
+
+// in start():
+val placeholders = PlaceholderRegistry(sculk.scope)
+val scenes = Scenes(this, sculk.scope, placeholders)
+
+val board = scene {
+    text("title", "<primary>Daily rewards") { transform = Transform(translation = Vec3(0f, 0.6f, 0f)) }
+    text("online", "<muted>Online: <value><server_online>") { shadow = true }
+    item("chest", item(Material.CHEST)) {
+        transform = Transform(translation = Vec3(0f, -0.4f, 0f), scale = Vec3.of(0.5f))
+    }
+}
+
+val hologram = scenes.spawn(board, Anchor.at(spawnLocation)).getOrThrow()
+```
+
+- Each node has an id. Text faces the viewer by default (`billboard = CENTER`); items and blocks
+  keep a fixed facing, turned by the anchor's yaw and by their own transform.
+- A transform is applied as Minecraft does: `scale`, then `rotation`, then `translation`, all in
+  blocks from the anchor. `Rotation.y(45f)`, `Rotation.x(...)`, `Rotation.around(axis, degrees)`
+  and `then` build rotations.
+- Every display can set `brightness` (block and sky light, or `null` for the world's light) and
+  `viewRange`, a multiplier of Minecraft's default distance.
+- Text can set `background` (a colour, `null` for Minecraft's translucent default, zero alpha for
+  none), `shadow`, `seeThrough`, `alignment` and `lineWidth`.
+- `block("base", blockData)` takes any `BlockData`; the node keeps its state string, so the spec
+  stays the same whatever happens to that `BlockData` afterwards.
+
+Templates are MiniMessage rendered with the `Text` theme you pass to `Scenes` and your
+[placeholders](/guides/placeholders/); a value never becomes markup.
+
+## Changing a scene
+
+A spec never changes. Build the next one and hand it over:
+
+```kotlin
+hologram.update(board.withText("title", "<primary>Rewards reset in <value><rewards_reset>"))
+
+hologram.update(
+    board.with {
+        item("chest", item(Material.ENDER_CHEST)) {
+            transform = Transform(translation = Vec3(0f, -0.2f, 0f), scale = Vec3.of(0.6f))
+            interpolationTicks = 10
+        }
+        remove("online")
+    },
+)
+```
+
+- Nodes are matched by id. Only the parts that differ are written: new text alone, a new transform
+  alone, a new item alone. A node whose kind changed is replaced, and a node no longer in the spec
+  is removed.
+- `interpolationTicks` makes the client slide to a new transform over that many ticks instead of
+  jumping; `interpolationDelayTicks` waits before it starts.
+- A text redraws by itself when a placeholder it used signals a change, and nothing is sent when
+  the result equals what is shown. `hologram.refresh()` renders every text again, for values that
+  change without a signal.
+
+A small animation is a series of updates, each with interpolation:
+
+```kotlin
+import studio.sculk.scene.ItemNode
+import studio.sculk.scene.Rotation
+import studio.sculk.task.repeating
+
+var angle = 0f
+sculk.scope.repeating(periodTicks = 20) {
+    angle += 90f
+    val turned = Transform(rotation = Rotation.y(angle), scale = Vec3.of(0.5f))
+    val next = board.change<ItemNode>("chest") { node -> node.copy(display = node.display.copy(transform = turned, interpolationTicks = 20)) }
+    hologram.update(next)
+}
+```
+
+## Following an entity
+
+```kotlin
+val tag = scene {
+    teleportTicks = 2
+    text("rank", "<rank_prefix> <muted><player_level>")
+}
+scenes.spawn(tag, Anchor.following(player, Vec3(0f, 2.3f, 0f)))
+```
+
+The displays move with the entity, gliding over `teleportTicks` (up to 59). They follow it across
+Folia and Canvas regions; a move to another world or further than 16 blocks at once, such as a
+teleport, spawns them afresh where it arrives rather than streaking across the map. When the
+followed entity is a player, shared text renders with that player's placeholders. The scene closes
+when the entity is removed from the world, as when a mob dies, a player quits or the entity's chunk
+unloads.
+
+`hologram.move(Anchor.at(location))` moves a fixed scene the same way, and `move(Anchor.following(...))`
+makes it follow.
+
+## Who sees it
+
+```kotlin
+import studio.sculk.scene.Visibility
+
+val secret = scenes.spawn(board, Anchor.at(vault), Visibility.only(owner, partner)).getOrThrow()
+secret.show(friend)
+secret.hide(partner)
+```
+
+- `Visibility.Everyone` (the default) shows the scene to every player in range; `hide(player)`
+  hides it from one of them.
+- `Visibility.only(host, guest)`, or `Visibility.only(ids)` with player UUIDs, shows it to chosen
+  players only. They are kept by id, so a player who
+  leaves and comes back sees it again.
+- `isShownTo(player)` says whether the scene is meant for that player, in range or not.
+
+### Text that differs per viewer
+
+```kotlin
+val welcome = scene { text("hello", "Welcome back, <player_name>", perViewer = true) }
+scenes.spawn(welcome, Anchor.at(lobby), Visibility.only(host, guest))
+```
+
+A display entity carries one text for every player who sees it, so a `perViewer` node gets one
+entity per chosen viewer, shown to that viewer alone and rendered with their placeholders. That
+needs chosen viewers: spawning or updating a scene with per-viewer text for `Visibility.Everyone`
+returns an `UnsupportedCapability` failure and shows nothing. Per-viewer text for everyone in range
+needs packets, and comes with a later packet module.
+
+## Threads, chunks and cleanup
+
+Every call on `Scenes` and `Scene` works from any thread and returns at once. Each display is
+created and changed only on the thread that owns it: the main thread on Paper, the display's region
+on Folia and Canvas. Visibility changes run on the viewer's own thread.
+
+- A scene whose chunk is not loaded waits for it; showing a hologram never loads a chunk.
+  `isSpawned` says whether its displays are in the world right now.
+- When the chunk unloads, the displays go with it, and they come back when it loads again. A
+  display someone else removes, with `/kill` for example, is put back.
+- Displays are never saved with the world. Every scene ends when the scope given to `Scenes`
+  closes, or with `hologram.close()`, and its displays are removed.
+
+A scene costs one entity per node, plus one per node and viewer for per-viewer text.
+
+## Testing
+
+`FakeScenes` (package `studio.sculk.scene.testing`) stands in for `Scenes` in unit tests. It keeps
+every spec, anchor, show and hide, refuses what the real one refuses, and renders text as a server
+would:
+
+```kotlin
+val scenes = FakeScenes(placeholders)
+plugin.showLeaderboard(scenes)
+val scene = scenes.spawned.single()
+assertEquals("Top: Alex", plain.serialize(scene.textOf("top")))
+```
+
+It has no world, so it cannot say whether anything spawned: `isSpawned` throws.
+
+<Aside>
+  Sculk's `integration-tests/scenes` suite shows scenes to two real clients on every supported Paper
+  version, Folia and Canvas: it spawns every kind of display, updates one, shows a scene to one
+  player and then the other, gives each player their own text, waits for a chunk to load and unload,
+  follows a player across a far teleport and closes the scope, checking what each client receives.
+</Aside>

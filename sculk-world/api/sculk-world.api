@@ -1,0 +1,196 @@
+public final class studio/sculk/world/ChangeCancelled : studio/sculk/SculkFailure {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getChange ()Ljava/lang/String;
+	public fun getHint ()Ljava/lang/String;
+	public fun getMessage ()Ljava/lang/String;
+}
+
+public final class studio/sculk/world/ClockKey {
+	public static final field Companion Lstudio/sculk/world/ClockKey$Companion;
+	public fun <init> (Lnet/kyori/adventure/key/Key;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Lnet/kyori/adventure/key/Key;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/world/ClockKey$Companion {
+	public final fun getOVERWORLD ()Lstudio/sculk/world/ClockKey;
+	public final fun getTHE_END ()Lstudio/sculk/world/ClockKey;
+	public final fun parse (Ljava/lang/String;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/world/ClockState {
+	public fun <init> (Lstudio/sculk/world/ClockKey;JZF)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClock ()Lstudio/sculk/world/ClockKey;
+	public final fun getPaused ()Z
+	public final fun getRate ()F
+	public final fun getTicks ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/world/GameRuleChange {
+	public final fun getRule ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSender ()Lorg/bukkit/command/CommandSender;
+	public final fun getValue ()Ljava/lang/Object;
+	public final fun getWorld ()Lorg/bukkit/World;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/world/GameRuleKey {
+	public static final field Companion Lstudio/sculk/world/GameRuleKey$Companion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Lnet/kyori/adventure/key/Key;
+	public final fun getType ()Lstudio/sculk/world/GameRuleType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/world/GameRuleKey$Companion {
+	public final fun boolean (Lnet/kyori/adventure/key/Key;)Lstudio/sculk/world/GameRuleKey;
+	public final fun getADVANCE_TIME ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getADVANCE_WEATHER ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getALLOW_ENTERING_NETHER_USING_PORTALS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getBLOCK_DROPS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getBLOCK_EXPLOSION_DROP_DECAY ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getCOMMAND_BLOCKS_WORK ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getCOMMAND_BLOCK_OUTPUT ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getDROWNING_DAMAGE ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getELYTRA_MOVEMENT_CHECK ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getENDER_PEARLS_VANISH_ON_DEATH ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getENTITY_DROPS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getFALL_DAMAGE ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getFIRE_DAMAGE ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getFIRE_SPREAD_RADIUS_AROUND_PLAYER ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getFORGIVE_DEAD_PLAYERS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getFREEZE_DAMAGE ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getGLOBAL_SOUND_EVENTS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getIMMEDIATE_RESPAWN ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getKEEP_INVENTORY ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getLAVA_SOURCE_CONVERSION ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getLIMITED_CRAFTING ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getLOCATOR_BAR ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getLOG_ADMIN_COMMANDS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getMAX_BLOCK_MODIFICATIONS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getMAX_COMMAND_FORKS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getMAX_COMMAND_SEQUENCE_LENGTH ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getMAX_ENTITY_CRAMMING ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getMAX_MINECART_SPEED ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getMAX_SNOW_ACCUMULATION_HEIGHT ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getMOB_DROPS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getMOB_EXPLOSION_DROP_DECAY ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getMOB_GRIEFING ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getNATURAL_HEALTH_REGENERATION ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getPLAYERS_NETHER_PORTAL_CREATIVE_DELAY ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getPLAYERS_NETHER_PORTAL_DEFAULT_DELAY ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getPLAYERS_SLEEPING_PERCENTAGE ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getPLAYER_MOVEMENT_CHECK ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getPROJECTILES_CAN_BREAK_BLOCKS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getPVP ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getRAIDS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getRANDOM_TICK_SPEED ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getREDUCED_DEBUG_INFO ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getRESPAWN_RADIUS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSEND_COMMAND_FEEDBACK ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSHOW_ADVANCEMENT_MESSAGES ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSHOW_DEATH_MESSAGES ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSPAWNER_BLOCKS_WORK ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSPAWN_MOBS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSPAWN_MONSTERS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSPAWN_PATROLS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSPAWN_PHANTOMS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSPAWN_WANDERING_TRADERS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSPAWN_WARDENS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSPECTATORS_GENERATE_CHUNKS ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getSPREAD_VINES ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getTNT_EXPLODES ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getTNT_EXPLOSION_DROP_DECAY ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getUNIVERSAL_ANGER ()Lstudio/sculk/world/GameRuleKey;
+	public final fun getVanilla ()Ljava/util/List;
+	public final fun getWATER_SOURCE_CONVERSION ()Lstudio/sculk/world/GameRuleKey;
+	public final fun integer (Lnet/kyori/adventure/key/Key;)Lstudio/sculk/world/GameRuleKey;
+	public final fun parse (Ljava/lang/String;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/world/GameRuleType {
+	public static final field Companion Lstudio/sculk/world/GameRuleType$Companion;
+	public final fun getName ()Ljava/lang/String;
+	public final fun parse (Ljava/lang/String;)Lstudio/sculk/SculkResult;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/world/GameRuleType$Companion {
+	public final fun getBOOLEAN ()Lstudio/sculk/world/GameRuleType;
+	public final fun getINTEGER ()Lstudio/sculk/world/GameRuleType;
+}
+
+public final class studio/sculk/world/Timeline {
+	public fun <init> (Lstudio/sculk/world/TimelineKey;Lstudio/sculk/world/ClockKey;Ljava/lang/Integer;)V
+	public final fun at (J)Lstudio/sculk/world/TimelinePosition;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClock ()Lstudio/sculk/world/ClockKey;
+	public final fun getKey ()Lstudio/sculk/world/TimelineKey;
+	public final fun getPeriodTicks ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/world/TimelineKey {
+	public static final field Companion Lstudio/sculk/world/TimelineKey$Companion;
+	public fun <init> (Lnet/kyori/adventure/key/Key;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Lnet/kyori/adventure/key/Key;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/world/TimelineKey$Companion {
+	public final fun getDAY ()Lstudio/sculk/world/TimelineKey;
+	public final fun getEARLY_GAME ()Lstudio/sculk/world/TimelineKey;
+	public final fun getMOON ()Lstudio/sculk/world/TimelineKey;
+	public final fun getVILLAGER_SCHEDULE ()Lstudio/sculk/world/TimelineKey;
+	public final fun parse (Ljava/lang/String;)Lstudio/sculk/SculkResult;
+}
+
+public final class studio/sculk/world/TimelinePosition {
+	public fun <init> (Lstudio/sculk/world/Timeline;J)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClockTicks ()J
+	public final fun getCycle ()J
+	public final fun getTick ()J
+	public final fun getTimeline ()Lstudio/sculk/world/Timeline;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class studio/sculk/world/WorldRules {
+	public static final field INSTANCE Lstudio/sculk/world/WorldRules;
+	public final fun available ()Ljava/util/List;
+	public final fun default (Lorg/bukkit/World;Lstudio/sculk/world/GameRuleKey;)Lstudio/sculk/SculkResult;
+	public final fun get (Lorg/bukkit/World;Lstudio/sculk/world/GameRuleKey;)Lstudio/sculk/SculkResult;
+	public final fun getRegistryBacked ()Z
+	public final fun onChange (Lstudio/sculk/event/SculkEvents;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
+	public final fun onChange (Lstudio/sculk/event/SculkEvents;Lstudio/sculk/world/GameRuleKey;Lkotlin/jvm/functions/Function1;)Lstudio/sculk/SculkHandle;
+	public final fun resolve (Ljava/lang/String;)Lstudio/sculk/SculkResult;
+	public final fun set (Lorg/bukkit/World;Lstudio/sculk/world/GameRuleKey;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setNow (Lorg/bukkit/World;Lstudio/sculk/world/GameRuleKey;Ljava/lang/Object;)Lstudio/sculk/SculkResult;
+	public final fun setText (Lorg/bukkit/World;Lstudio/sculk/world/GameRuleKey;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class studio/sculk/world/WorldTime {
+	public static final field INSTANCE Lstudio/sculk/world/WorldTime;
+	public final fun clock (Lorg/bukkit/World;Lstudio/sculk/world/ClockKey;)Lstudio/sculk/SculkResult;
+	public final fun clocks ()Lstudio/sculk/SculkResult;
+	public final fun defaultClock (Lorg/bukkit/World;)Lstudio/sculk/SculkResult;
+	public final fun isAvailable ()Z
+	public final fun position (Lorg/bukkit/World;Lstudio/sculk/world/TimelineKey;)Lstudio/sculk/SculkResult;
+	public final fun timeline (Lstudio/sculk/world/TimelineKey;)Lstudio/sculk/SculkResult;
+	public final fun timelines ()Lstudio/sculk/SculkResult;
+	public final fun update (Lorg/bukkit/World;Lstudio/sculk/world/ClockKey;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Float;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun update$default (Lstudio/sculk/world/WorldTime;Lorg/bukkit/World;Lstudio/sculk/world/ClockKey;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Float;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun updateNow (Lorg/bukkit/World;Lstudio/sculk/world/ClockKey;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Float;)Lstudio/sculk/SculkResult;
+	public static synthetic fun updateNow$default (Lstudio/sculk/world/WorldTime;Lorg/bukkit/World;Lstudio/sculk/world/ClockKey;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Float;ILjava/lang/Object;)Lstudio/sculk/SculkResult;
+}
+
