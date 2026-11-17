@@ -56,7 +56,8 @@ public class TextPromptBuilder internal constructor(private val title: String) {
 
     /**
      * A rule for the text: null accepts it, and a message template is shown under the result while
-     * the player cannot answer with what they typed.
+     * the player cannot answer with what they typed. The template can show the typed text as `<text>`,
+     * a placeholder that is never parsed as markup: `"<danger><text> is taken"`.
      */
     public fun check(rule: (text: String) -> String?) {
         check = rule
@@ -204,7 +205,7 @@ internal class NativeViews(private val plugin: Plugin) : Listener {
         if (shown.view.topInventory !== event.inventory) return
         val text = (shown.view as AnvilView).renameText ?: shown.prompt.initial
         val problem = shown.prompt.check(text)
-        event.result = named(text, problem?.let { shown.prompt.text.render(it) })
+        event.result = named(text, problem?.let { shown.prompt.text.render(it, "text" to text) })
         // A cost above zero would show as levels; nothing is paid, the click is taken over below.
         event.view.repairCost = 0
     }

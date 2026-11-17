@@ -22,7 +22,9 @@ import io.papermc.paper.registry.event.RegistryEvents
 import io.papermc.paper.registry.keys.tags.DialogTagKeys
 import io.papermc.paper.tag.TagEntry
 import net.kyori.adventure.key.Key
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickCallback
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -39,10 +41,17 @@ import io.papermc.paper.registry.data.dialog.input.DialogInput as PaperInput
 
 /** Paper 1.21.7 and later. Instantiated by name only, after a probe found the dialog API. */
 internal class PaperDialogAdapter : DialogAdapter {
-    override fun show(player: Player, spec: DialogSpec, text: Text, answer: (button: Int, values: Map<String, Any?>) -> Unit) {
+    override fun show(
+        player: Player,
+        spec: DialogSpec,
+        text: Text,
+        values: TagResolver,
+        answer: (button: Int, values: Map<String, Any?>) -> Unit,
+    ) {
+        val render = { template: String -> text.render(template, values) }
         // One use per showing; an unanswered dialog's callbacks expire with the lifetime.
-        val type = type(spec, text) { index -> DialogAction.customClick({ view, _ -> answer(index, read(spec, view)) }, OPTIONS) }
-        player.showDialog(Dialog.create { factory -> factory.empty().base(base(spec, text)).type(type) })
+        val type = type(spec, render) { index -> DialogAction.customClick({ view, _ -> answer(index, read(spec, view)) }, OPTIONS) }
+        player.showDialog(Dialog.create { factory -> factory.empty().base(base(spec, render)).type(type) })
     }
 
     override fun close(player: Player) {
@@ -52,8 +61,9 @@ internal class PaperDialogAdapter : DialogAdapter {
     override fun register(context: BootstrapContext, key: Key, spec: DialogSpec, text: Text, placements: Set<DialogPlacement>) {
         val typed = TypedKey.create(RegistryKey.DIALOG, key)
         // A registered dialog outlives any callback, so its buttons send a key the listener routes.
-        val type = type(spec, text) { index -> DialogAction.customClick(Key.key(key.namespace(), "${key.value()}$BUTTON$index"), null) }
-        val base = base(spec, text)
+        val render = { template: String -> text.render(template) }
+        val type = type(spec, render) { index -> DialogAction.customClick(Key.key(key.namespace(), "${key.value()}$BUTTON$index"), null) }
+        val base = base(spec, render)
         context.composeRegistry(RegistryEvents.DIALOG) { registry -> registry.register(typed) { builder -> builder.base(base).type(type) } }
         if (placements.isEmpty()) return
         context.lifecycleManager.registerEventHandler(LifecycleEvents.TAGS.preFlatten(RegistryKey.DIALOG)) { event ->
@@ -94,16 +104,16 @@ internal class PaperDialogAdapter : DialogAdapter {
         plugin.server.pluginManager.registerEvents(listener, plugin)
     }
 
-    private fun base(spec: DialogSpec, text: Text): DialogBase = DialogBase.builder(text.render(spec.title))
+    private fun base(spec: DialogSpec, render: (String) -> Component): DialogBase = DialogBase.builder(render(spec.title))
         .canCloseWithEscape(spec.canCloseWithEscape)
-        .body(spec.body.map { DialogBody.plainMessage(text.render(it)) })
-        .inputs(spec.inputs.map { input(it, text) })
+        .body(spec.body.map { DialogBody.plainMessage(render(it)) })
+        .inputs(spec.inputs.map { input(it, render) })
         .build()
 
-    private fun type(spec: DialogSpec, text: Text, action: (index: Int) -> DialogAction): DialogType {
+    private fun type(spec: DialogSpec, render: (String) -> Component, action: (index: Int) -> DialogAction): DialogType {
         val buttons = spec.buttons.mapIndexed { index, button ->
-            ActionButton.builder(text.render(button.label))
-                .apply { button.tooltip?.let { tooltip(text.render(it)) } }
+            ActionButton.builder(render(button.label))
+                .apply { button.tooltip?.let { tooltip(render(it)) } }
                 .action(action(index))
                 .build()
         }
@@ -114,29 +124,29 @@ internal class PaperDialogAdapter : DialogAdapter {
         }
     }
 
-    private fun input(input: DialogInput, text: Text): PaperInput = when (input) {
-        is DialogInput.Text -> PaperInput.text(input.key, text.render(input.label))
+    private fun input(input: DialogInput, render: (String) -> Component): PaperInput = when (input) {
+        is DialogInput.Text -> PaperInput.text(input.key, render(input.label))
             .initial(input.initial)
             .maxLength(input.maxLength)
             .apply { if (input.lines > 1) multiline(TextDialogInput.MultilineOptions.create(input.lines, null)) }
             .build()
 
-        is DialogInput.Toggle -> PaperInput.bool(input.key, text.render(input.label)).initial(input.initial).build()
+        is DialogInput.Toggle -> PaperInput.bool(input.key, render(input.label)).initial(input.initial).build()
 
-        is DialogInput.Number -> PaperInput.numberRange(input.key, text.render(input.label), input.range.start, input.range.endInclusive)
+        is DialogInput.Number -> PaperInput.numberRange(input.key, render(input.label), input.range.start, input.range.endInclusive)
             .apply { input.step?.let { step(it) } }
             .apply { input.initial?.let { initial(it) } }
             .build()
 
-        is DialogInput.Amount -> PaperInput.text(input.key, text.render(input.label))
+        is DialogInput.Amount -> PaperInput.text(input.key, render(input.label))
             .initial(input.initial?.let(input.amounts::compact).orEmpty())
             .maxLength(input.maxLength)
             .build()
 
         is DialogInput.Choice -> PaperInput.singleOption(
             input.key,
-            text.render(input.label),
-            input.options.map { (id, label) -> SingleOptionDialogInput.OptionEntry.create(id, text.render(label), id == input.initial) },
+            render(input.label),
+            input.options.map { (id, label) -> SingleOptionDialogInput.OptionEntry.create(id, render(label), id == input.initial) },
         ).build()
     }
 

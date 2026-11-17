@@ -4,6 +4,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.command.command
 import studio.sculk.command.paper.commands
 import studio.sculk.config.ConfigFile
@@ -73,20 +74,21 @@ class ShopPlugin : SculkPaperPlugin() {
     private val previousArrow = item(Material.ARROW) { name = "<muted>Previous page" }
     private val nextArrow = item(Material.ARROW) { name = "<muted>Next page" }
 
+    @OptIn(SculkExperimental::class)
     private val shop: MenuSpec<Page> = menu(MenuLayout.chest(4)) {
         text = messages
         title("<primary>Shop")
         render { state ->
             val page = paginate(OFFER_SLOTS, settings.value.offers, state.number, icon = ::icon) { offer ->
                 close()
-                dialogs.show(player, quantity(offer)).getOrThrow()
+                dialogs.show(player, quantity(offer), mapOf("price" to offer.price, "amount" to offer.amount)).getOrThrow()
             }
             pager(page, PREVIOUS, NEXT, previousArrow, nextArrow) { number -> update { it.copy(number = number) } }
         }
     }
 
     private fun quantity(offer: Offer) = dialog("<primary>How many?") {
-        body("Each costs ${offer.price} emerald(s) for ${offer.amount}.")
+        body("Each costs <price> emerald(s) for <amount>.")
         number("quantity", "Quantity", 1f..settings.value.maxQuantity.toFloat(), step = 1f, initial = 1f)
         button("<success>Buy") { answer -> buy(answer.player, offer, answer.number("quantity")?.toInt() ?: return@button) }
         button("Cancel")

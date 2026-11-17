@@ -46,7 +46,9 @@ dialogs.show(player, setup)
 ```
 
 - Titles, body paragraphs, labels and option labels are templates rendered with the `Text` you
-  give `Dialogs`, so theme styles work in them.
+  give `Dialogs`, so theme styles work in them. Values such as a price or a player's name go in as
+  placeholders, never into the template: `dialogs.show(player, spec, mapOf("price" to price))` fills
+  `<price>` wherever the dialog uses it.
 - One button makes a notice, two a confirmation (Escape presses the second), more a list of
   actions. A button without a handler only closes the dialog.
 - Answers run on the player's thread: the main thread on Paper, the player's region thread on

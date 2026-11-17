@@ -108,6 +108,7 @@ public final class studio/sculk/dialog/Dialogs {
 	public final fun isAvailable ()Z
 	public final fun show (Lorg/bukkit/entity/Player;Lnet/kyori/adventure/key/Key;)Lstudio/sculk/SculkResult;
 	public final fun show (Lorg/bukkit/entity/Player;Lstudio/sculk/dialog/DialogSpec;)Lstudio/sculk/SculkResult;
+	public final fun show (Lorg/bukkit/entity/Player;Lstudio/sculk/dialog/DialogSpec;Ljava/util/Map;)Lstudio/sculk/SculkResult;
 }
 
 public final class studio/sculk/dialog/RegisteredDialogsKt {
