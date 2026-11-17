@@ -18,13 +18,15 @@ export default defineConfig({
 		expressiveCode({
 			// Catppuccin Mocha, the owner's editor theme (MIT), on its own crust and mantle shades.
 			themes: ['catppuccin-mocha'],
+			// Lifts Catppuccin's dimmer tokens, comments above all, to read clearly on the dark block.
+			minSyntaxHighlightingColorContrast: 7.5,
 			// Long lines wrap, keeping their indentation, instead of running off the column.
 			defaultProps: { wrap: true, preserveIndent: true },
 			styleOverrides: {
-				borderRadius: '8px',
-				borderColor: 'var(--rule)',
+				borderRadius: '10px',
+				borderColor: 'var(--rule-strong)',
 				codeFontFamily: 'var(--mono)',
-				codeFontSize: '13.5px',
+				codeFontSize: '14px',
 				codeLineHeight: '1.7',
 				uiFontFamily: 'var(--read)',
 				frames: {
