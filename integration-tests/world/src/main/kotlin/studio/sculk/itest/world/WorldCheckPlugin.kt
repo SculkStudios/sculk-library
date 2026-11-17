@@ -158,7 +158,8 @@ class WorldCheckPlugin : SculkPaperPlugin() {
     }
 
     private suspend fun checkClocks(world: World) {
-        val expected = server.minecraftVersion == "26.3"
+        // Folia 26.3 and Canvas 26.3 forked Paper before clocks were added: the API decides, not the version.
+        val expected = runCatching { Class.forName("io.papermc.paper.world.WorldClock") }.isSuccess
         verdict("clocks-or-unsupported-capability") {
             if (!WorldTime.isAvailable) {
                 val read = WorldTime.clock(world, ClockKey.OVERWORLD)
@@ -186,8 +187,8 @@ class WorldCheckPlugin : SculkPaperPlugin() {
             ok to "clocks $clocks, default $default, overworld $state, unknown $unknown, nether follows $netherClock"
         }
         if (!WorldTime.isAvailable) {
-            results["clock-writes-hop-and-read-back"] = "SKIP: no world clocks before Paper 26.3"
-            results["timelines-follow-their-clock"] = "SKIP: no timelines before Paper 26.3"
+            results["clock-writes-hop-and-read-back"] = "SKIP: this server's API has no world clocks"
+            results["timelines-follow-their-clock"] = "SKIP: this server's API has no timelines"
             return
         }
         verdict("clock-writes-hop-and-read-back") {

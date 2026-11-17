@@ -6,8 +6,8 @@ since: '6.0'
 runs: global
 support:
   paper: { level: partial, note: 'game rules on every version; world clocks and timelines on 26.3 only' }
-  folia: { level: full, note: 'writes on the global region' }
-  canvas: { level: full, note: 'writes on the global region' }
+  folia: { level: partial, note: 'game rules, written on the global region; no clocks in Folia 26.3 yet' }
+  canvas: { level: partial, note: 'game rules, written on the global region; no clocks in Canvas 26.3 yet' }
   velocity: { level: n/a, note: 'not applicable on a proxy' }
 ---
 
@@ -141,8 +141,10 @@ if (WorldTime.isAvailable) {
   changes; so does a clock the server does not have.
 - `WorldTime.timelines()` lists every timeline with its clock and period, datapack ones included.
 
-Before 26.3 there are no clocks: every `WorldTime` call returns an `UnsupportedCapability` failure
-and `isAvailable` is false. Bukkit's `World.getTime` and `World.setTime` keep working on every
+Clocks exist on Paper 26.3. Folia 26.3 and Canvas 26.3 forked Paper before clocks were added, and
+older versions never had them: there every `WorldTime` call returns an `UnsupportedCapability`
+failure and `isAvailable` is false. Sculk checks the server's API, not its version number, so clocks
+appear on Folia and Canvas as soon as their builds include them. Bukkit's `World.getTime` and `World.setTime` keep working on every
 version.
 
 Sculk's own `integration-tests/world` suite runs all of this on every supported Paper version,

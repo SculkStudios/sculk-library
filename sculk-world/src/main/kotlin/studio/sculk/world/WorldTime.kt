@@ -30,9 +30,10 @@ public interface ClockAdapter {
 }
 
 /**
- * World clocks and the timelines that follow them, on Paper 26.3 and later, Folia and Canvas
- * included. Everywhere else every call returns [SculkFailure.UnsupportedCapability]: older servers
- * keep a single day time, read through Bukkit's `World.getTime`.
+ * World clocks and the timelines that follow them, wherever the server's API has them: Paper 26.3
+ * and later, and Folia and Canvas once their builds include them (their 26.3 builds forked Paper
+ * before clocks). Everywhere else every call returns [SculkFailure.UnsupportedCapability]; those
+ * servers keep a single day time, read through Bukkit's `World.getTime`.
  *
  * Every world keeps its own state for every clock, unless Paper's `time.affects-all-worlds` setting
  * makes them share one. Clocks are global state: every write runs on the global region (the main
@@ -126,7 +127,7 @@ public object WorldTime {
 
     private fun unsupported(): SculkFailure = SculkFailure.UnsupportedCapability(
         "World clocks and timelines",
-        "they were added in Paper 26.3",
+        "they were added in Paper 26.3, and this server's API does not have them",
         hint = "World.getTime and World.setTime keep working on every version.",
     )
 
