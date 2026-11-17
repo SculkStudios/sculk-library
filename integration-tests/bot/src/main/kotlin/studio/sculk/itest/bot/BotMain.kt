@@ -31,7 +31,10 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetDisplayObjectivePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetObjectivePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.scoreboard.ClientboundSetScorePacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundClearTitlesPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundSetActionBarTextPacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundSetSubtitleTextPacket
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.title.ClientboundSetTitleTextPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundShowDialogGamePacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundSystemChatPacket
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.player.ClientboundPlayerPositionPacket
@@ -55,7 +58,7 @@ import kotlin.system.exitProcess
  * - events: `JOINED`, `WINDOW id type title`, `CONTENT id state slot:name...`, `SLOT id state slot name`,
  *   `CLOSED id`, `CHAT text`, `DIALOG title buttons inputs` (labels and `key:type`, each `|`-separated),
  *   `DIALOGCLOSED`, `ACTIONBAR text`, `BOSSBAR uuid ADD|REMOVE|UPDATE_TITLE|UPDATE_HEALTH title progress`,
- *   `TAB header footer`, `SIDEBAR title lines` (lines top to bottom, `|`-separated, empty when none shows),
+ *   `TITLE title subtitle`, `TITLECLEARED`, `TAB header footer`, `SIDEBAR title lines` (lines top to bottom, `|`-separated, empty when none shows),
  *   `DISCONNECTED reason`;
  * - commands: `CLICK slot LEFT|RIGHT|SHIFT|DROP|HOTBAR n`, `CLOSE`, `COMMAND text`,
  *   `DIALOGCLICK label key=value...` (each value typed as the dialog declares its input), `QUIT`.
@@ -93,6 +96,9 @@ private class Bot(private val out: PrintStream) {
     private val objectives = HashMap<String, String>()
     private val scores = HashMap<String, HashMap<String, Pair<Int, String>>>()
     private var sidebar: String? = null
+
+    // The server sends a title's subtitle first; the title packet is what makes it show.
+    private var subtitle = ""
     private var lastSidebar: String? = null
 
     fun connect(host: String, port: Int, name: String) {
@@ -140,6 +146,12 @@ private class Bot(private val out: PrintStream) {
                 emit("DIALOG", text(shown["title"]), buttons(shown).joinToString("|") { text(it["label"]) }, inputs)
             }
             is ClientboundSetActionBarTextPacket -> emit("ACTIONBAR", plain.serialize(packet.text))
+            is ClientboundSetSubtitleTextPacket -> subtitle = plain.serialize(packet.text)
+            is ClientboundSetTitleTextPacket -> emit("TITLE", plain.serialize(packet.text), subtitle)
+            is ClientboundClearTitlesPacket -> {
+                subtitle = ""
+                emit("TITLECLEARED")
+            }
             is ClientboundBossEventPacket -> emit(
                 "BOSSBAR",
                 packet.uuid.toString(),

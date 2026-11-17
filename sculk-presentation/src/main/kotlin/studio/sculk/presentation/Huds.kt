@@ -7,6 +7,7 @@ import net.kyori.adventure.text.minimessage.Context
 import net.kyori.adventure.text.minimessage.tag.Tag
 import net.kyori.adventure.text.minimessage.tag.resolver.ArgumentQueue
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -75,6 +76,24 @@ public class Huds(
         huds.put(player.uniqueId, hud)?.close()
         hud.start()
         return SculkResult.success(hud)
+    }
+
+    /**
+     * Shows [title] and [subtitle], templates rendered with this `Huds`'s placeholders, to [player]
+     * once, from any thread; it shows on the player's next tick at the latest and the client fades
+     * it after [times]. A title belongs to no HUD and needs none.
+     */
+    public fun title(player: Player, title: String, subtitle: String = "", times: Title.Times = Title.DEFAULT_TIMES) {
+        val show = {
+            val resolver = placeholders?.resolver(player) ?: TagResolver.empty()
+            player.showTitle(Title.title(text.render(title, resolver), text.render(subtitle, resolver), times))
+        }
+        if (Bukkit.isOwnedByCurrentRegion(player)) show() else player.scheduler.run(plugin, { show() }, null)
+    }
+
+    /** Clears [player]'s title, from any thread. */
+    public fun clearTitle(player: Player) {
+        if (Bukkit.isOwnedByCurrentRegion(player)) player.clearTitle() else player.scheduler.run(plugin, { player.clearTitle() }, null)
     }
 
     /** The HUD [player] has from this `Huds`, if any. */

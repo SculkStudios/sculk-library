@@ -60,6 +60,18 @@ ids, and up to fifteen sidebar lines.
 A HUD runs on its player's thread, ends when they leave, and every HUD of a `Huds` ends with its
 scope. `huds.show` replaces a player's previous HUD from the same `Huds`.
 
+## Titles
+
+A title is shown once and fades by itself, so it is not part of a layout:
+
+```kotlin
+huds.title(player, "<primary>Round <game_round>", "<muted>Good luck", Title.Times.times(fadeIn, stay, fadeOut))
+huds.clearTitle(player)
+```
+
+Both templates are rendered with the `Huds`'s placeholders for that player, and both calls work
+from any thread. A player needs no HUD to be shown a title.
+
 ## The sidebar and other plugins' boards
 
 A player sees one scoreboard. The sidebar takes the player's board only from the server's main

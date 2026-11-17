@@ -25,5 +25,11 @@ registerResultsVerification(
     "Shows a HUD to a real client on every Paper anchor, Folia and Canvas and checks what it sees as values change.",
     runs,
     resultsPath = "plugins/SculkHud/results.properties",
-    required = listOf("surfaces-show", "a-change-redraws-what-used-it", "sidebar-yields-to-another-board", "closing-removes-everything"),
+    required = listOf(
+        "surfaces-show",
+        "a-change-redraws-what-used-it",
+        "sidebar-yields-to-another-board",
+        "titles-render-placeholders",
+        "closing-removes-everything",
+    ),
 )

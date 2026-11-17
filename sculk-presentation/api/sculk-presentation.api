@@ -21,9 +21,12 @@ public final class studio/sculk/presentation/HudLayoutKt {
 public final class studio/sculk/presentation/Huds {
 	public fun <init> (Lorg/bukkit/plugin/Plugin;Lstudio/sculk/ResourceScope;Lstudio/sculk/placeholder/PlaceholderRegistry;Lstudio/sculk/text/Text;)V
 	public synthetic fun <init> (Lorg/bukkit/plugin/Plugin;Lstudio/sculk/ResourceScope;Lstudio/sculk/placeholder/PlaceholderRegistry;Lstudio/sculk/text/Text;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearTitle (Lorg/bukkit/entity/Player;)V
 	public final fun getSidebarAvailable ()Z
 	public final fun hud (Lorg/bukkit/entity/Player;)Lstudio/sculk/presentation/PlayerHud;
 	public final fun show (Lorg/bukkit/entity/Player;Lstudio/sculk/presentation/HudLayout;)Lstudio/sculk/SculkResult;
+	public final fun title (Lorg/bukkit/entity/Player;Ljava/lang/String;Ljava/lang/String;Lnet/kyori/adventure/title/Title$Times;)V
+	public static synthetic fun title$default (Lstudio/sculk/presentation/Huds;Lorg/bukkit/entity/Player;Ljava/lang/String;Ljava/lang/String;Lnet/kyori/adventure/title/Title$Times;ILjava/lang/Object;)V
 }
 
 public final class studio/sculk/presentation/PlayerHud {

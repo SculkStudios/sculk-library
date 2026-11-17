@@ -95,6 +95,13 @@ class HudCheckPlugin : SculkPaperPlugin(), Listener {
                 } else {
                     results["sidebar-yields-to-another-board"] = "SKIP: Folia has no scoreboards"
                 }
+                verdict("titles-render-placeholders") {
+                    huds.title(player, "Round <itest_coins>", "Good luck")
+                    bot.await("TITLE") { it.fields[0] == "Round 11" && it.fields[1] == "Good luck" }
+                    huds.clearTitle(player)
+                    bot.await("TITLECLEARED")
+                    true to "shown and cleared"
+                }
                 verdict("closing-removes-everything") {
                     shown.close()
                     bot.await("BOSSBAR") { it.fields[1] == "REMOVE" }
