@@ -111,6 +111,7 @@
 	.select svg { position: absolute; right: 11px; pointer-events: none; }
 	.select option { background: var(--sheet); color: var(--text); }
 	.menu-toggle { display: none; }
+	.version { border-color: transparent; background: transparent; padding: 0 4px; }
 
 	.page { display: grid; grid-template-columns: var(--rail) minmax(0, var(--column)) var(--margin); justify-content: center; min-height: calc(100vh - var(--mast)); }
 
@@ -137,7 +138,7 @@
 
 	.foot { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--rule); display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 	.foot a { display: block; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 8px; transition: border-color 160ms var(--ease), background-color 160ms var(--ease); }
-	.foot a:hover { border-color: var(--rule-strong); background: var(--raised); }
+	.foot a:hover { border-color: var(--text-3); background: var(--raised); }
 	.foot small { display: block; font-size: 12.5px; color: var(--text-3); }
 	.foot span { font-family: var(--display); font-stretch: 108%; font-weight: 600; font-size: 16px; }
 	.foot .next { text-align: right; grid-column: 2; }
@@ -234,7 +235,7 @@
 	.search-results .where { font-family: var(--mono); font-size: 11.5px; color: var(--text-3); }
 	.search-results .title { display: block; font-family: var(--display); font-stretch: 108%; font-weight: 600; font-size: 15px; }
 	.search-results .excerpt { display: block; font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
-	.search-results mark { background: none; color: var(--text); text-decoration: underline; text-decoration-color: var(--here); text-underline-offset: 3px; }
+	.search-results mark { background: none; color: var(--text); font-weight: 700; text-decoration: underline; text-decoration-color: var(--text-3); text-underline-offset: 3px; }
 	.search-empty { padding: 22px 16px; font-size: 14px; color: var(--text-3); }
 	.search-foot { display: flex; gap: 18px; padding: 10px 16px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--text-3); }
 
@@ -244,7 +245,7 @@
 	.aside .aside-title svg { flex: none; color: var(--text-2); }
 	.aside > div > * + * { margin-top: 10px; }
 	.aside p { font-size: 15.5px; }
-	.aside[data-type='caution'] .aside-title svg { color: var(--here); }
+	.aside[data-type='caution'] .aside-title svg { color: var(--text); }
 	.aside[data-type='danger'] { border-color: rgba(224, 138, 124, 0.55); }
 	.aside[data-type='danger'] .aside-title svg { color: var(--danger); }
 	.steps { counter-reset: step; margin: 22px 0; }
@@ -259,7 +260,7 @@
 	.badge { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
 	.badge .mark { color: var(--text-2); }
 	.badge[data-variant='success'] .mark { color: var(--region-ink); }
-	.badge[data-variant='caution'] .mark { color: var(--here); }
+	.badge[data-variant='caution'] .mark { color: var(--text-2); }
 }
 
 @layer prose {
@@ -271,15 +272,15 @@
 	.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin: 20px 0 8px; font-size: 13px; color: var(--text-3); }
 	.meta .num { color: var(--text-2); font-size: 12.5px; }
 	.meta a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 4px; }
-	.meta a:hover { text-decoration-color: var(--here); }
+	.meta a:hover { color: var(--text); text-decoration-color: var(--text-2); }
 
 	.prose { max-width: 70ch; }
 	.prose > * + * { margin-top: 14px; }
 	.prose h2 { font-family: var(--display); font-stretch: 112%; font-weight: 700; font-size: 30px; line-height: 1.2; letter-spacing: -0.02em; margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule); text-wrap: balance; }
 	.prose h3 { font-family: var(--display); font-stretch: 108%; font-weight: 650; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; margin-top: 34px; }
 	.prose h2 + *, .prose h3 + * { margin-top: 10px; }
-	.prose a { text-decoration: underline; text-decoration-color: rgba(201, 130, 74, 0.6); text-decoration-thickness: 1.5px; text-underline-offset: 4px; transition: text-decoration-color 140ms var(--ease); }
-	.prose a:hover { text-decoration-color: var(--here); }
+	.prose a { text-decoration: underline; text-decoration-color: var(--text-3); text-decoration-thickness: 1.5px; text-underline-offset: 4px; transition: text-decoration-color 140ms var(--ease); }
+	.prose a:hover { text-decoration-color: var(--text); }
 	.prose :not(pre) > code { font-family: var(--mono); font-size: 0.86em; background: var(--raised-2); border: 1px solid var(--rule); border-radius: 4px; padding: 1px 6px; }
 	.prose ul { list-style: none; }
 	.prose ul > li { position: relative; padding-left: 20px; }
@@ -294,4 +295,10 @@
 	.prose blockquote { padding-left: 16px; border-left: 1px solid var(--rule-strong); color: var(--text-2); }
 	.prose hr { border: 0; border-top: 1px solid var(--rule); margin: 32px 0; }
 	.prose .expressive-code { margin-top: 18px; max-width: none; width: calc(var(--column) - 2 * clamp(28px, 4vw, 60px)); max-width: 100%; }
+}
+
+/* Outside the layers on purpose: Expressive Code's styles are unlayered and would win over any
+   layered rule. Where the copy button shows without hover, untitled blocks make room above the code. */
+@media (hover: none) {
+	.prose .expressive-code .frame:not(.has-title) pre { padding-top: 2.8rem; }
 }

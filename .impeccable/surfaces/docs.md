@@ -18,7 +18,7 @@ thread?" with a map-legend rail, an ownership map and support marks; it refuses 
 silhouette (stock header, filled-pill sidebar, coloured callout boxes, centred hero over icon cards).
 
 OWN-WORLD: OLED true-black ground (#000) with a 16px chunk grid at very low contrast in the frame
-only; near-black sheet for reading; bone text #e6e2d6; terracotta #c9824a means "you are here" and
+only; near-black sheet for reading; bone text #e6e2d6; terracotta #f0954f (brightened from #c9824a at the owner's request, 2026-11-17: the first build read dull on OLED) means "you are here" and
 nothing else; teal #3e8f8a and violet #9b8fd6 mean regions (player/region vs global). Archivo (wide,
 tight) for display, Atkinson Hyperlegible Next for reading, JetBrains Mono for code and numbers.
 Support and stability are marks first (filled, half, hollow squares), colour second. No glow.
@@ -30,7 +30,7 @@ FIRST VIEWPORT: masthead with chunk-grid mark, search (Ctrl K) and the Platform 
 selectors; legend rail left with the current page pinned; the reading sheet with breadcrumb, wide
 H1, lede, version/module meta and page actions; the right margin with the "where it runs" chunk map,
 the support legend and the on-this-page list. On the home page the same frame carries a module atlas:
-every module as a legend row with stability and per-platform marks.
+every module as a legend row with its stability mark. Per-platform marks per module are omitted until MODULES.md records per-platform support; inventing them would break PRODUCT.md principle 1. The layout centres rail, column and margin as one composition (owner, 2026-11-17).
 
 FORM: Minecraft filled maps and the map-art palette, candidate 3 of 7 on the ordered list.
 seed: 24ef659d885c8af1

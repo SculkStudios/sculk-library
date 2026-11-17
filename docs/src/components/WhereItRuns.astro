@@ -35,14 +35,14 @@ const lit = (kind: 'region' | 'global') =>
 		) : (
 			<>
 				<path d="M64.5 32.5h80v16h32v64h-64v-16h-48z" fill={lit('region') ? 'rgba(62,143,138,.22)' : 'none'} stroke={lit('region') ? '#3e8f8a' : '#2c3236'} stroke-width="1.5"></path>
-				<rect x="192.5" y="16.5" width="48" height="32" fill={lit('global') ? 'rgba(155,143,214,.22)' : 'none'} stroke={lit('global') ? '#9b8fd6' : '#2c3236'} stroke-width="1.5" stroke-dasharray={lit('global') ? undefined : '4 3'}></rect>
-				{(runs === 'entity' || runs === 'sender') && <path d="M120 74.5S115 68 115 64.5a5 5 0 0110 0C125 68 120 74.5 120 74.5z" fill="#c9824a"></path>}
-				<text x="72" y="128" fill={lit('region') ? '#7fb8b2' : '#8d9088'} font-family="JetBrains Mono Variable, monospace" font-size="10">a player's region</text>
-				<text x="192" y="62" fill={lit('global') ? '#b8acea' : '#8d9088'} font-family="JetBrains Mono Variable, monospace" font-size="10">global</text>
+				<rect x="192.5" y="16.5" width="48" height="32" fill={lit('global') ? 'rgba(155,143,214,.22)' : 'none'} stroke={lit('global') ? '#9b8fd6' : 'rgba(155,143,214,.55)'} stroke-width="1.5" stroke-dasharray={lit('global') ? undefined : '4 3'}></rect>
+				{(runs === 'entity' || runs === 'sender') && <path d="M120 74.5S115 68 115 64.5a5 5 0 0110 0C125 68 120 74.5 120 74.5z" fill="#f0954f"></path>}
+				<text x="72" y="128" fill={lit('region') ? '#5fe0d2' : '#9fa29a'} font-family="JetBrains Mono Variable, monospace" font-size="10">a player's region</text>
+				<text x="192" y="62" fill={lit('global') ? '#c7bbff' : 'rgba(199,187,255,.7)'} font-family="JetBrains Mono Variable, monospace" font-size="10">global</text>
 				{(runs === 'async' || runs === 'any') && (
 					<>
-						<rect x="16.5" y="104.5" width="40" height="32" fill="none" stroke="#c9824a" stroke-width="1.5" stroke-dasharray="4 3"></rect>
-						<text x="16" y="99" fill="#c9824a" font-family="JetBrains Mono Variable, monospace" font-size="10">{runs === 'async' ? 'async' : 'anywhere'}</text>
+						<rect x="16.5" y="104.5" width="40" height="32" fill="none" stroke="#9fa29a" stroke-width="1.5" stroke-dasharray="4 3"></rect>
+						<text x="16" y="99" fill="#c6c8c0" font-family="JetBrains Mono Variable, monospace" font-size="10">{runs === 'async' ? 'async' : 'anywhere'}</text>
 					</>
 				)}
 			</>

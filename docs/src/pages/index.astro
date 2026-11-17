@@ -118,7 +118,14 @@ const sample = `class MyPlugin : SculkPaperPlugin(), Listener {
 	.atlas td { padding: 8px 14px 8px 0; }
 	.atlas .status { width: 26px; padding-top: 13px; color: var(--text-2); }
 	.atlas .name { width: 34%; overflow-wrap: anywhere; }
-	@media (max-width: 860px) { .atlas .name { width: 42%; } }
+	/* Phones: each module's name sits above what it does, so neither squeezes the other. */
+	@media (max-width: 600px) {
+		.atlas, .atlas tbody, .atlas tr, .atlas td { display: block; width: auto; }
+		.atlas tr { position: relative; padding: 10px 0 10px 26px; border-bottom: 1px solid var(--rule); }
+		.atlas td { padding: 0; border: 0; }
+		.atlas .status { position: absolute; left: 0; top: 15px; }
+		.atlas .name { margin-bottom: 4px; }
+	}
 	.note { font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
 	.note code { font-family: var(--mono); font-size: 12px; }
 	.note strong { color: var(--text); }

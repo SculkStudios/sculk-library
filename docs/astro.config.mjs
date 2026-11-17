@@ -34,7 +34,7 @@ export default defineConfig({
 					terminalTitlebarBackground: 'var(--code-bar)',
 					editorActiveTabBackground: 'var(--code-bar)',
 					editorActiveTabIndicatorTopColor: 'transparent',
-					editorActiveTabIndicatorBottomColor: 'var(--here)',
+					editorActiveTabIndicatorBottomColor: 'var(--text-3)',
 					editorTabBarBorderBottomColor: 'var(--rule)',
 					terminalTitlebarBorderBottomColor: 'var(--rule)',
 					frameBoxShadowCssValue: 'none',
