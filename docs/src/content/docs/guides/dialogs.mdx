@@ -52,11 +52,27 @@ dialogs.show(player, setup)
 - Answers run on the player's thread: the main thread on Paper, the player's region thread on
   Folia and Canvas. `show` may be called from any thread.
 
+## Amounts
+
+A slider suits a small range. For prices and balances, `amount` gives a text field that takes what
+players type, `250`, `1.5k` or `2m`, and reads it back exactly as a `BigDecimal`:
+
+```kotlin
+val sell = dialog("<primary>Sell") {
+    amount("price", "Price", min = BigDecimal.ONE, max = BigDecimal("1000000"), initial = BigDecimal("10000"))
+    button("Sell") { answer -> answer.amount("price")?.let { listings.add(answer.player, it) } }
+}
+```
+
+The field starts with the initial value written compactly (`10k`); `answer.amount("price")` is null
+for text that is not an amount or falls outside the range. The suffixes are those of
+[compact numbers](/guides/text/#compact-numbers), and an `Amounts` of your own can replace them.
+
 ## Answers are checked
 
 A client may send anything back, so every getter checks the value against the input's
-declaration: text longer than `maxLength`, a number outside the range, an option id that was not
-offered or a value of the wrong kind reads as `null`. Asking for an input the dialog does not have
+declaration: text longer than `maxLength`, a number or amount outside the range, an option id that
+was not offered or a value of the wrong kind reads as `null`. Asking for an input the dialog does not have
 is a programming error and throws.
 
 ## Registered dialogs

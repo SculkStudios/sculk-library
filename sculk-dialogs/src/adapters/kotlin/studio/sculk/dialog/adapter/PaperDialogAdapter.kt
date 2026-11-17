@@ -1,3 +1,5 @@
+@file:OptIn(SculkExperimental::class)
+
 package studio.sculk.dialog.adapter
 
 import io.papermc.paper.connection.PlayerGameConnection
@@ -25,6 +27,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.plugin.Plugin
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.dialog.DialogAdapter
 import studio.sculk.dialog.DialogInput
 import studio.sculk.dialog.DialogPlacement
@@ -125,6 +128,11 @@ internal class PaperDialogAdapter : DialogAdapter {
             .apply { input.initial?.let { initial(it) } }
             .build()
 
+        is DialogInput.Amount -> PaperInput.text(input.key, text.render(input.label))
+            .initial(input.initial?.let(input.amounts::compact).orEmpty())
+            .maxLength(input.maxLength)
+            .build()
+
         is DialogInput.Choice -> PaperInput.singleOption(
             input.key,
             text.render(input.label),
@@ -135,7 +143,7 @@ internal class PaperDialogAdapter : DialogAdapter {
     // The client sends whatever it likes; values are read by declared kind and checked by DialogResponse.
     private fun read(spec: DialogSpec, view: DialogResponseView): Map<String, Any?> = spec.inputs.associate { input ->
         input.key to when (input) {
-            is DialogInput.Text, is DialogInput.Choice -> view.getText(input.key)
+            is DialogInput.Text, is DialogInput.Amount, is DialogInput.Choice -> view.getText(input.key)
             is DialogInput.Toggle -> view.getBoolean(input.key)
             is DialogInput.Number -> view.getFloat(input.key)
         }

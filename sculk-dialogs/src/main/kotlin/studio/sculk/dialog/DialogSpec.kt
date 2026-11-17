@@ -1,7 +1,11 @@
 package studio.sculk.dialog
 
 import org.bukkit.entity.Player
+import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkExperimental
 import studio.sculk.annotation.SculkStable
+import studio.sculk.text.Amounts
+import java.math.BigDecimal
 
 /** One field of a dialog's form. [key] names it in the [DialogResponse]; [label] is a template. */
 @SculkStable
@@ -46,6 +50,30 @@ public sealed class DialogInput(public val key: String, public val label: String
         }
     }
 
+    /**
+     * An amount typed plainly or compactly, `250`, `1.5k` or `2m`, read exactly by [amounts] and kept
+     * from [min] to [max] where given. It shows as a text field holding [initial] in compact form.
+     */
+    @SculkExperimental
+    public class Amount(
+        key: String,
+        label: String,
+        public val min: BigDecimal? = null,
+        public val max: BigDecimal? = null,
+        public val initial: BigDecimal? = null,
+        public val amounts: Amounts = Amounts.DEFAULT,
+    ) : DialogInput(key, label) {
+        init {
+            require(min == null || max == null || min <= max) { "$key: min $min is above max $max" }
+            initial?.let { require(it in this) { "$key: initial must be from min to max" } }
+        }
+
+        internal operator fun contains(value: BigDecimal): Boolean = (min == null || value >= min) && (max == null || value <= max)
+
+        /** The most characters the field takes: room for any amount, compact or written out. */
+        public val maxLength: Int get() = MAX_AMOUNT_LENGTH
+    }
+
     /** One of [options], given as id to label template; [initial] is an id. */
     @SculkStable
     public class Choice(key: String, label: String, options: List<Pair<String, String>>, public val initial: String? = null) :
@@ -63,6 +91,7 @@ public sealed class DialogInput(public val key: String, public val label: String
         val KEY = Regex("[A-Za-z0-9_]+")
         const val ABSOLUTE_MAX_LENGTH = 32_767
         const val MAX_LINES = 512
+        const val MAX_AMOUNT_LENGTH = 64
     }
 }
 
@@ -95,6 +124,17 @@ public class DialogResponse internal constructor(
     public fun number(key: String): Float? {
         val input = spec.input<DialogInput.Number>(key)
         return (values[key] as? Float)?.takeIf { it in input.range }
+    }
+
+    /**
+     * The amount typed in [key], read exactly: `1.5k` is 1500. Null when missing, not an amount or
+     * outside the input's range. Throws when the dialog has no amount input [key].
+     */
+    @SculkExperimental
+    public fun amount(key: String): BigDecimal? {
+        val input = spec.input<DialogInput.Amount>(key)
+        val typed = values[key] as? String ?: return null
+        return (input.amounts.parse(typed) as? SculkResult.Success)?.value?.takeIf { it in input }
     }
 
     /** The id of the option chosen in [key]; null when missing or not an option. Throws when the dialog has no choice [key]. */
@@ -186,6 +226,19 @@ public class DialogBuilder internal constructor(private val title: String) {
     /** Adds a slider; see [DialogInput.Number]. Read it with [DialogResponse.number]. */
     public fun number(key: String, label: String, range: ClosedFloatingPointRange<Float>, step: Float? = null, initial: Float? = null) {
         input(DialogInput.Number(key, label, range, step, initial))
+    }
+
+    /** Adds a field for an amount such as `1.5k`; see [DialogInput.Amount]. Read it with [DialogResponse.amount]. */
+    @SculkExperimental
+    public fun amount(
+        key: String,
+        label: String,
+        min: BigDecimal? = null,
+        max: BigDecimal? = null,
+        initial: BigDecimal? = null,
+        amounts: Amounts = Amounts.DEFAULT,
+    ) {
+        input(DialogInput.Amount(key, label, min, max, initial, amounts))
     }
 
     /** Adds a choice of options; see [DialogInput.Choice]. Read it with [DialogResponse.choice]. */
