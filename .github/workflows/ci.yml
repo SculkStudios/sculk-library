@@ -55,6 +55,8 @@ jobs:
     needs: build
     strategy:
       fail-fast: false
+      # Thirteen jobs resolving at once draw HTTP 429 from Maven Central; six at a time stays clear.
+      max-parallel: 6
       matrix:
         include:
           - suite: boot
