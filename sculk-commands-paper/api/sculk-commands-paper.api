@@ -1,4 +1,4 @@
-public final class studio/sculk/command/paper/PaperArgument : studio/sculk/command/ArgumentType {
+public final class studio/sculk/command/paper/PaperArgument : studio/sculk/command/ArgumentType, studio/sculk/command/NativeArgument {
 	public fun getExpected ()Ljava/lang/String;
 	public fun getShape ()Lstudio/sculk/command/ArgumentShape;
 	public fun parse (Ljava/lang/String;Lstudio/sculk/command/CommandSource;)Lstudio/sculk/SculkResult;

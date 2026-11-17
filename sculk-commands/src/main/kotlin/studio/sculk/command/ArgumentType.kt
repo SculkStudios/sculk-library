@@ -4,6 +4,7 @@ import net.kyori.adventure.key.InvalidKeyException
 import net.kyori.adventure.key.Key
 import studio.sculk.SculkFailure
 import studio.sculk.SculkResult
+import studio.sculk.annotation.SculkInternal
 import studio.sculk.annotation.SculkStable
 import java.util.UUID
 import kotlin.time.Duration
@@ -35,15 +36,26 @@ public interface ArgumentType<T : Any> {
 /** How much input an argument consumes. */
 @SculkStable
 public enum class ArgumentShape {
-    /** Up to the next space. */
+    /**
+     * One unquoted word, as Brigadier reads it: only ASCII letters, digits and `_ - . +`. A value
+     * with any other character, such as `#ff0000` or a URL, needs [QUOTABLE] or [GREEDY].
+     */
     WORD,
 
-    /** A word, or a quoted string with spaces. */
+    /** A word as [WORD] reads it, or a quoted string that may hold any character, spaces included. */
     QUOTABLE,
 
     /** The rest of the input; only valid as the last argument. */
     GREEDY,
 }
+
+/**
+ * An argument type its platform reads with a native argument type, which defines its own syntax:
+ * its text is not limited to the characters of [ArgumentShape.WORD], and [CommandDispatcher] hands
+ * the whole token to [ArgumentType.parse].
+ */
+@SculkInternal
+public interface NativeArgument
 
 /** The argument types every platform maps natively. Sealed so a platform compiler handles each one. */
 @SculkStable
@@ -55,7 +67,8 @@ public sealed class BuiltinArgument<T : Any> : ArgumentType<T> {
         override val shape: ArgumentShape get() = ArgumentShape.WORD
         override val expected: String get() = "true or false"
 
-        override fun parse(text: String, source: CommandSource): SculkResult<Boolean> = when (text.lowercase()) {
+        /** Exactly `true` or `false`; Brigadier's boolean is case-sensitive. */
+        override fun parse(text: String, source: CommandSource): SculkResult<Boolean> = when (text) {
             "true" -> SculkResult.success(true)
             "false" -> SculkResult.success(false)
             else -> invalid(text)
@@ -71,8 +84,10 @@ public sealed class BuiltinArgument<T : Any> : ArgumentType<T> {
         override val shape: ArgumentShape get() = ArgumentShape.WORD
         override val expected: String get() = "a whole number${rangeText(min, max, Int.MIN_VALUE, Int.MAX_VALUE)}"
 
-        override fun parse(text: String, source: CommandSource): SculkResult<Int> =
-            text.toIntOrNull()?.takeIf { it in min..max }?.let { SculkResult.success(it) } ?: invalid(text)
+        override fun parse(text: String, source: CommandSource): SculkResult<Int> {
+            val value = if (WHOLE_NUMBER.matches(text)) text.toIntOrNull() else null
+            return if (value != null && value in min..max) SculkResult.success(value) else invalid(text)
+        }
     }
 
     @SculkStable
@@ -80,8 +95,10 @@ public sealed class BuiltinArgument<T : Any> : ArgumentType<T> {
         override val shape: ArgumentShape get() = ArgumentShape.WORD
         override val expected: String get() = "a whole number${rangeText(min, max, Long.MIN_VALUE, Long.MAX_VALUE)}"
 
-        override fun parse(text: String, source: CommandSource): SculkResult<Long> =
-            text.toLongOrNull()?.takeIf { it in min..max }?.let { SculkResult.success(it) } ?: invalid(text)
+        override fun parse(text: String, source: CommandSource): SculkResult<Long> {
+            val value = if (WHOLE_NUMBER.matches(text)) text.toLongOrNull() else null
+            return if (value != null && value in min..max) SculkResult.success(value) else invalid(text)
+        }
     }
 
     @SculkStable
@@ -89,8 +106,10 @@ public sealed class BuiltinArgument<T : Any> : ArgumentType<T> {
         override val shape: ArgumentShape get() = ArgumentShape.WORD
         override val expected: String get() = "a number${rangeText(min, max, -Double.MAX_VALUE, Double.MAX_VALUE)}"
 
-        override fun parse(text: String, source: CommandSource): SculkResult<Double> =
-            text.toDoubleOrNull()?.takeIf { it.isFinite() && it in min..max }?.let { SculkResult.success(it) } ?: invalid(text)
+        override fun parse(text: String, source: CommandSource): SculkResult<Double> {
+            val value = if (DECIMAL.matches(text)) text.toDoubleOrNull() else null
+            return if (value != null && value.isFinite() && value in min..max) SculkResult.success(value) else invalid(text)
+        }
     }
 
     /** Text of the given [shape], optionally limited in length and to a pattern. */
@@ -116,14 +135,21 @@ public sealed class BuiltinArgument<T : Any> : ArgumentType<T> {
         }
     }
 
-    /** One of a fixed set of words, each standing for a value. Matching ignores case. */
+    /**
+     * One of a fixed set of words, each standing for a value. Matching ignores case, so two choices
+     * that differ only in case are refused; each choice is a word as [ArgumentShape.WORD] reads it.
+     */
     @SculkStable
     public class ChoiceArgument<T : Any> internal constructor(choices: Map<String, T>) : BuiltinArgument<T>() {
         public val choices: Map<String, T> = choices.mapKeys { it.key.lowercase() }
 
         init {
             require(this.choices.isNotEmpty()) { "A choice argument needs at least one choice." }
-            require(this.choices.keys.none { ' ' in it }) { "Choices are single words." }
+            require(this.choices.size == choices.size) {
+                val clashes = choices.keys.groupBy { it.lowercase() }.values.filter { it.size > 1 }
+                "Choices ${clashes.joinToString { it.joinToString(" and ") }} differ only in case."
+            }
+            require(this.choices.keys.all(::isUnquotedWord)) { "Choices are single words of letters, digits, '_', '-', '.' or '+'." }
         }
 
         override val shape: ArgumentShape get() = ArgumentShape.WORD
@@ -149,7 +175,11 @@ public sealed class BuiltinArgument<T : Any> : ArgumentType<T> {
         }
     }
 
-    /** A namespaced key such as `minecraft:stone`; a bare value takes the `minecraft` namespace, as the game does. */
+    /**
+     * A namespaced key such as `minecraft:stone`; a bare value takes the `minecraft` namespace, as the
+     * game does. Paper reads keys natively. Velocity has no key type and reads a word, which cannot
+     * hold `:` or `/`, so on a proxy only a bare value such as `stone` is accepted.
+     */
     @SculkStable
     public class KeyArgument internal constructor() : BuiltinArgument<Key>() {
         override val shape: ArgumentShape get() = ArgumentShape.WORD
@@ -162,7 +192,7 @@ public sealed class BuiltinArgument<T : Any> : ArgumentType<T> {
         }
     }
 
-    /** A duration written as units such as `90s`, `5m`, `1h30m` or `2d`, between [min] and [max]. */
+    /** A finite duration written as units such as `90s`, `5m`, `1h30m` or `2d`, between [min] and [max]. */
     @SculkStable
     public class DurationArgument internal constructor(public val min: Duration, public val max: Duration) : BuiltinArgument<Duration>() {
         override val shape: ArgumentShape get() = ArgumentShape.WORD
@@ -182,7 +212,8 @@ public sealed class BuiltinArgument<T : Any> : ArgumentType<T> {
                     else -> amount.days
                 }
             }
-            return if (total in min..max) SculkResult.success(total) else invalid(text)
+            // Amounts too large for a Duration saturate to INFINITE rather than failing.
+            return if (total.isFinite() && total in min..max) SculkResult.success(total) else invalid(text)
         }
 
         private companion object {
@@ -190,6 +221,17 @@ public sealed class BuiltinArgument<T : Any> : ArgumentType<T> {
         }
     }
 }
+
+// Brigadier reads a number from `0-9 . -` only, so `+5`, `1e3`, `NaN`, `0x1F` and `5d` fail on a server.
+private val WHOLE_NUMBER = Regex("-?[0-9]+")
+private val DECIMAL = Regex("""-?([0-9]+(\.[0-9]*)?|\.[0-9]+)""")
+
+/** True when [char] may appear in an unquoted word; Brigadier's `StringReader.isAllowedInUnquotedString`. */
+internal fun isUnquotedChar(char: Char): Boolean =
+    char in '0'..'9' || char in 'A'..'Z' || char in 'a'..'z' || char == '_' || char == '-' || char == '.' || char == '+'
+
+/** True when [word] is a non-empty word a server reads unquoted. */
+internal fun isUnquotedWord(word: String): Boolean = word.isNotEmpty() && word.all(::isUnquotedChar)
 
 private fun <T : Comparable<T>> rangeText(min: T, max: T, floor: T, ceiling: T): String = when {
     min == floor && max == ceiling -> ""

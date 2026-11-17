@@ -63,6 +63,7 @@ public class CommandContext internal constructor(
         source.audience.sendMessage(text.render(template, *values))
     }
 
+    /** Sends [message] to the sender unchanged; the theme is not applied. */
     public fun reply(message: Component) {
         source.audience.sendMessage(message)
     }

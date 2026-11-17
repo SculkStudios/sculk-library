@@ -24,6 +24,7 @@ import studio.sculk.command.ArgumentShape
 import studio.sculk.command.ArgumentType
 import studio.sculk.command.CommandBuilder
 import studio.sculk.command.CommandSource
+import studio.sculk.command.NativeArgument
 import com.mojang.brigadier.arguments.ArgumentType as BrigadierType
 
 /**
@@ -39,7 +40,8 @@ public class PaperArgument<T : Any, N : Any> internal constructor(
     override val expected: String,
     override val shape: ArgumentShape,
     private val resolve: (N, CommandSourceStack) -> T,
-) : ArgumentType<T> {
+) : ArgumentType<T>,
+    NativeArgument {
     internal fun resolveRaw(raw: Any, stack: CommandSourceStack): T {
         @Suppress("UNCHECKED_CAST")
         return resolve(raw as N, stack)

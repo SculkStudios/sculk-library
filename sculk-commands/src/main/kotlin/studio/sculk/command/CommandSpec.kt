@@ -61,7 +61,7 @@ public sealed class CommandNode {
     /** Who may see and use this node and everything below it. */
     public abstract val requirement: Requirement
 
-    /** A fixed word. Matching ignores case. */
+    /** A fixed word, always lower case. Matching is case-sensitive, as Brigadier's literals are. */
     @SculkStable
     public class Literal internal constructor(
         override val name: String,
@@ -75,9 +75,8 @@ public sealed class CommandNode {
 
         override val children: List<CommandNode> = children.toList()
 
-        /** True when [word] is this literal or one of its aliases, ignoring case. */
-        public fun matches(word: String): Boolean =
-            name.equals(word, ignoreCase = true) || aliases.any { it.equals(word, ignoreCase = true) }
+        /** True when [word] is exactly this literal or one of its aliases; `ADD` does not match `add`. */
+        public fun matches(word: String): Boolean = word == name || word in aliases
 
         override fun toString(): String = "Literal($name)"
     }

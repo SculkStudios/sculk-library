@@ -5,7 +5,8 @@ import studio.sculk.annotation.SculkStable
 /**
  * A cursor over command input, with Brigadier's quoting rules so the interpreter and the compiled
  * trees read the same text the same way: words stop at a space, quoted strings take `"` or `'` and
- * `\` escapes, and a greedy read takes the rest of the line.
+ * `\` escapes, and a greedy read takes the rest of the line. A word may still hold characters
+ * Brigadier refuses unquoted; [CommandDispatcher] rejects those, as a server does.
  */
 @SculkStable
 public class CommandReader(public val input: String, cursor: Int = 0) {

@@ -66,14 +66,17 @@ public class CommandDispatcher(public val text: Text = Text(), public val messag
         val partial = reader.remaining
         return node.children.filter { it.requirement.test(source) }.flatMap { child ->
             reader.reset(start)
+            val quoted = reader.atQuote()
             val token = read(child, reader) ?: return@flatMap emptyList()
             when {
                 !reader.canRead -> offers(child, partial, source)
 
                 child is CommandNode.Literal && child.matches(token) -> completions(child, reader, source)
 
-                child is CommandNode.Argument<*> && child.type.parse(
+                child is CommandNode.Argument<*> && parse(
+                    child,
                     token,
+                    quoted,
                     source,
                 ) is SculkResult.Success -> completions(child, reader, source)
 
@@ -101,6 +104,7 @@ public class CommandDispatcher(public val text: Text = Text(), public val messag
         for (child in node.children.sortedBy { it is CommandNode.Argument<*> }) {
             if (!child.requirement.test(source)) continue
             reader.reset(start)
+            val quoted = reader.atQuote()
             val token = read(child, reader) ?: continue
             val next = when (child) {
                 is CommandNode.Literal -> if (child.matches(token)) {
@@ -109,7 +113,7 @@ public class CommandDispatcher(public val text: Text = Text(), public val messag
                     continue
                 }
 
-                is CommandNode.Argument<*> -> when (val parsed = child.type.parse(token, source)) {
+                is CommandNode.Argument<*> -> when (val parsed = parse(child, token, quoted, source)) {
                     is SculkResult.Success -> match(child, reader, source, values + (child.handle.declaration to parsed.value))
 
                     is SculkFailure.InvalidInput -> Match.Invalid(start, child.name, parsed)
@@ -137,6 +141,24 @@ public class CommandDispatcher(public val text: Text = Text(), public val messag
             ArgumentShape.GREEDY -> reader.readRest()
         }
     }
+
+    /**
+     * Parses [token] as a server would. A platform reads a word, and the unquoted form of a quotable
+     * string, with Brigadier's unquoted reader, which stops at any character outside `A-Z a-z 0-9 _ - . +`.
+     */
+    private fun parse(node: CommandNode.Argument<*>, token: String, quoted: Boolean, source: CommandSource): SculkResult<Any> {
+        val type = node.type
+        val unquoted = type.shape == ArgumentShape.WORD || (type.shape == ArgumentShape.QUOTABLE && !quoted)
+        if (unquoted && !type.readsNatively() && !token.all(::isUnquotedChar)) {
+            return SculkFailure.InvalidInput("argument", "${type.expected}, using only letters, digits and _ - . +", "'$token'")
+        }
+        return type.parse(token, source)
+    }
+
+    // Paper reads keys natively, `minecraft:stone` included; Velocity's word refuses the colon (see KeyArgument).
+    private fun ArgumentType<*>.readsNatively(): Boolean = this is NativeArgument || this is BuiltinArgument.KeyArgument
+
+    private fun CommandReader.atQuote(): Boolean = canRead && (peek() == '"' || peek() == '\'')
 
     private sealed class Match(val position: Int) {
         class Complete(val executor: CommandExecutor, val values: Map<ArgumentDeclaration, Any?>) : Match(Int.MAX_VALUE)

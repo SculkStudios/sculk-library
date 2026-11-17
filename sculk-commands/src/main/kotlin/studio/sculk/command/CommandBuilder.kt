@@ -112,43 +112,60 @@ public class CommandBuilder internal constructor(private val scope: Draft, priva
         return ArgumentHandle(name, declaration)
     }
 
+    /** `true` or `false`, in lower case. */
     public fun boolean(name: String): ArgumentHandle<Boolean> = argument(name, BuiltinArgument.BooleanArgument())
 
+    /** A whole number from [min] to [max], written as digits with an optional leading `-`. */
     public fun integer(name: String, min: Int = Int.MIN_VALUE, max: Int = Int.MAX_VALUE): ArgumentHandle<Int> {
         require(min <= max) { "<$name> has min $min above max $max." }
         return argument(name, BuiltinArgument.IntegerArgument(min, max))
     }
 
+    /** A whole number from [min] to [max], written as [integer] reads one. */
     public fun long(name: String, min: Long = Long.MIN_VALUE, max: Long = Long.MAX_VALUE): ArgumentHandle<Long> {
         require(min <= max) { "<$name> has min $min above max $max." }
         return argument(name, BuiltinArgument.LongArgument(min, max))
     }
 
+    /** A finite number from [min] to [max], written as a plain decimal such as `12`, `-0.5` or `.5`. */
     public fun double(name: String, min: Double = -Double.MAX_VALUE, max: Double = Double.MAX_VALUE): ArgumentHandle<Double> {
         require(min <= max) { "<$name> has min $min above max $max." }
         return argument(name, BuiltinArgument.DoubleArgument(min, max))
     }
 
-    /** One word, up to the next space. */
+    /**
+     * One word of letters, digits and `_ - . +`, as a server reads it unquoted, of at most
+     * [maxLength] characters and matching [pattern] in full when given. For values with other
+     * characters, such as `#ff0000` or a URL, use [string] or [greedy].
+     */
     public fun word(name: String, maxLength: Int = Int.MAX_VALUE, pattern: Regex? = null): ArgumentHandle<String> =
         argument(name, BuiltinArgument.StringArgument(ArgumentShape.WORD, maxLength, pattern))
 
-    /** A word, or quoted text with spaces. */
+    /**
+     * A word as [word] reads it, or quoted text that may hold any character, spaces included; at
+     * most [maxLength] characters and matching [pattern] in full when given.
+     */
     public fun string(name: String, maxLength: Int = Int.MAX_VALUE, pattern: Regex? = null): ArgumentHandle<String> =
         argument(name, BuiltinArgument.StringArgument(ArgumentShape.QUOTABLE, maxLength, pattern))
 
-    /** The rest of the input. Must be the last argument. */
+    /** The rest of the input, any characters, at most [maxLength] of them. Must be the last argument. */
     public fun greedy(name: String, maxLength: Int = Int.MAX_VALUE): ArgumentHandle<String> =
         argument(name, BuiltinArgument.StringArgument(ArgumentShape.GREEDY, maxLength, null))
 
-    /** One of [choices], by key; matching ignores case. */
+    /**
+     * One of the keys of [choices], ignoring case, read as its value. Each key is a word as [word]
+     * reads it; keys that differ only in case throw.
+     */
     public fun <T : Any> choice(name: String, choices: Map<String, T>): ArgumentHandle<T> =
         argument(name, BuiltinArgument.ChoiceArgument(choices))
 
+    /** A UUID in its usual hyphenated form. */
     public fun uuid(name: String): ArgumentHandle<java.util.UUID> = argument(name, BuiltinArgument.UuidArgument())
 
+    /** A namespaced key; see [BuiltinArgument.KeyArgument] for how each platform reads it. */
     public fun key(name: String): ArgumentHandle<net.kyori.adventure.key.Key> = argument(name, BuiltinArgument.KeyArgument())
 
+    /** A finite duration such as `90s` or `1h30m`, from [min] to [max]; the default [max] leaves it unbounded. */
     public fun duration(name: String, min: Duration = Duration.ZERO, max: Duration = Duration.INFINITE): ArgumentHandle<Duration> {
         require(min <= max) { "<$name> has min $min above max $max." }
         return argument(name, BuiltinArgument.DurationArgument(min, max))
@@ -302,11 +319,7 @@ internal class Draft private constructor(val name: String, val aliases: List<Str
 
     fun clashesWith(other: Draft): Boolean = when {
         argument != null && other.argument != null -> true
-
-        argument == null && other.argument == null -> (aliases + name).any { word ->
-            (other.aliases + other.name).any { it.equals(word, true) }
-        }
-
+        argument == null && other.argument == null -> (aliases + name).any { it in other.aliases || it == other.name }
         else -> false
     }
 

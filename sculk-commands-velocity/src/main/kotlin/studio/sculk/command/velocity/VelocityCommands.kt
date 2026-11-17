@@ -64,8 +64,10 @@ public class VelocityCommands internal constructor(
         }
         val command = BrigadierCommand(compile(spec))
         val plugin = runtime.container.instance.orElseThrow { IllegalStateException("${runtime.name} has no plugin instance yet.") }
-        manager.register(manager.metaBuilder(command).aliases(*spec.aliases.toTypedArray()).plugin(plugin).build(), command)
-        runtime.scope.resources.onClose { manager.unregister(spec.name) }
+        val meta = manager.metaBuilder(command).aliases(*spec.aliases.toTypedArray()).plugin(plugin).build()
+        manager.register(meta, command)
+        // Unregistering by name would remove only that label and leave the aliases registered.
+        runtime.scope.resources.onClose { manager.unregister(meta) }
     }
 
     public fun register(vararg specs: CommandSpec) {

@@ -1,5 +1,10 @@
 package studio.sculk.command
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -74,9 +79,47 @@ class CommandDispatcherTest {
             },
         )
         dispatcher.execute(steve, "economy give")
-        dispatcher.execute(steve, "eco ADD")
+        dispatcher.execute(steve, "eco add")
         dispatcher.execute(steve, "eco take")
         assertEquals(listOf("give", "give", "take"), ran)
+    }
+
+    @Test
+    fun `a literal matches only in the case it was declared, as Brigadier's literals do`() = runTest {
+        register(command("economy", "eco") { literal("give", "add") { executes {} } })
+        listOf("eco GIVE", "eco Add").forEach { input ->
+            assertTrue(dispatcher.execute(steve, input) is CommandResult.UnknownCommand, input)
+        }
+        assertEquals(CommandResult.Success, dispatcher.execute(steve, "eco add"))
+    }
+
+    @Test
+    fun `a word holds only the characters a server reads unquoted`() = runTest {
+        register(command("warp") { word("name").also { executes {} } })
+        assertEquals(CommandResult.Success, dispatcher.execute(steve, "warp Spawn_1.a-b+c"))
+        listOf("café", "a:b", "a/b", "#home", "\"home\"").forEach { name ->
+            assertTrue(dispatcher.execute(steve, "warp $name") is CommandResult.InvalidArgument, name)
+        }
+        steve.clearMessages()
+        dispatcher.execute(steve, "warp #home")
+        assertEquals(listOf("Invalid <name>: expected a word, using only letters, digits and _ - . +, found '#home'."), steve.plainMessages)
+    }
+
+    @Test
+    fun `text a server refuses unquoted is accepted once quoted`() = runTest {
+        val seen = mutableListOf<String>()
+        register(command("tag") { string("colour").also { colour -> executes { seen += this[colour] } } })
+        assertTrue(dispatcher.execute(steve, "tag #ff0000") is CommandResult.InvalidArgument)
+        assertEquals(CommandResult.Success, dispatcher.execute(steve, "tag \"#ff0000\""))
+        assertEquals(listOf("#ff0000"), seen)
+    }
+
+    @Test
+    fun `a key keeps its namespace, which Paper reads natively`() = runTest {
+        val seen = mutableListOf<String>()
+        register(command("sound") { key("sound").also { sound -> executes { seen += this[sound].asString() } } })
+        assertEquals(CommandResult.Success, dispatcher.execute(steve, "sound minecraft:block.note_block.bell"))
+        assertEquals(listOf("minecraft:block.note_block.bell"), seen)
     }
 
     @Test
@@ -215,6 +258,93 @@ class CommandDispatcherTest {
         )
         dispatcher.execute(steve, "claim")
         assertEquals(CommandResult.Success, dispatcher.execute(steve, "claim"))
+    }
+
+    @Test
+    fun `a second run while the first is still suspended is refused by the cooldown`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var runs = 0
+        register(
+            command("kit") {
+                use(Cooldown(10.minutes, FakeClock()))
+                executes {
+                    runs++
+                    gate.await()
+                }
+            },
+        )
+        val first = async(start = CoroutineStart.UNDISPATCHED) { dispatcher.execute(steve, "kit") }
+        dispatcher.execute(steve, "kit")
+        gate.complete(Unit)
+        assertEquals(CommandResult.Success, first.await())
+        assertEquals(1, runs)
+        assertEquals(listOf("You can use this again in 10m."), steve.plainMessages)
+    }
+
+    @Test
+    fun `a run that throws or is cancelled does not start the cooldown`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        var attempts = 0
+        register(
+            command("claim") {
+                use(Cooldown(1.hours, FakeClock()))
+                executes {
+                    attempts++
+                    if (attempts == 1) error("database is down")
+                    if (attempts == 2) gate.await()
+                }
+            },
+        )
+        assertTrue(dispatcher.execute(steve, "claim") is CommandResult.Error)
+        launch(start = CoroutineStart.UNDISPATCHED) { dispatcher.execute(steve, "claim") }.cancelAndJoin()
+        assertEquals(CommandResult.Success, dispatcher.execute(steve, "claim"))
+        assertEquals(3, attempts)
+    }
+
+    @Test
+    fun `senders without a unique id share a cooldown only with the same kind and name`() = runTest {
+        var runs = 0
+        register(
+            command("kit") {
+                use(Cooldown(10.minutes, FakeClock()))
+                executes { runs++ }
+            },
+        )
+        dispatcher.execute(console, "kit")
+        dispatcher.execute(FakeCommandSource("@", SenderKind.BLOCK), "kit")
+        dispatcher.execute(FakeCommandSource("@", SenderKind.BLOCK), "kit")
+        assertEquals(2, runs)
+    }
+
+    @Test
+    fun `expired cooldowns and unanswered confirmations are forgotten`() = runTest {
+        val clock = FakeClock()
+        val cooldown = Cooldown(1.minutes, clock)
+        val confirmation = Confirmation(10.seconds, clock)
+        register(
+            command("kit") {
+                use(cooldown)
+                executes {}
+            },
+        )
+        register(
+            command("reset") {
+                use(confirmation)
+                executes {}
+            },
+        )
+        repeat(20) { index ->
+            val player = FakeCommandSource("Player$index")
+            dispatcher.execute(player, "kit")
+            dispatcher.execute(player, "reset")
+        }
+        assertEquals(20, cooldown.trackedSenders)
+        assertEquals(20, confirmation.trackedSenders)
+        clock.advance(java.time.Duration.ofMinutes(2))
+        dispatcher.execute(steve, "kit")
+        dispatcher.execute(steve, "reset")
+        assertEquals(1, cooldown.trackedSenders)
+        assertEquals(1, confirmation.trackedSenders)
     }
 
     @Test
