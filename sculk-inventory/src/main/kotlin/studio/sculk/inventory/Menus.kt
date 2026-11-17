@@ -32,9 +32,15 @@ public class Menus(internal val plugin: Plugin, scope: ResourceScope) {
     private val sessions = ConcurrentHashMap.newKeySet<MenuSession<*>>()
     private val listener = MenuListener()
 
+    // Volatile with the concurrent set: a session registering while the scope closes either is seen by
+    // the close or sees shutDown itself, so no menu outlives its scope.
+    @Volatile
+    private var shutDown = false
+
     init {
         plugin.server.pluginManager.registerEvents(listener, plugin)
         scope.onClose {
+            shutDown = true
             sessions.toList().forEach { it.closeAtShutdown() }
             HandlerList.unregisterAll(listener)
         }
@@ -50,8 +56,10 @@ public class Menus(internal val plugin: Plugin, scope: ResourceScope) {
         return session
     }
 
-    internal fun opened(session: MenuSession<*>) {
+    /** Registers [session]; false once the scope has closed, when the menu must not stay open. */
+    internal fun opened(session: MenuSession<*>): Boolean {
         sessions += session
+        return !shutDown
     }
 
     internal fun ended(session: MenuSession<*>) {
@@ -158,14 +166,27 @@ public class MenuSession<S : Any> internal constructor(
         rendered = emptyMap()
         draw(menu.draw(current), resolver)
         reopening = isOpen
-        try {
+        // Registered before the window opens: the client can see it before this returns, and a scope
+        // closing from another thread in that moment must find the session.
+        val first = !isOpen
+        isOpen = true
+        val live = !first || menus.opened(this)
+        val view = try {
             player.openInventory(holder.contents)
         } finally {
             reopening = false
         }
-        if (!isOpen) {
-            isOpen = true
-            menus.opened(this)
+        when {
+            view == null && first -> {
+                isOpen = false
+                menus.ended(this)
+            }
+
+            // The scope's listener may already be gone, so the close is ended here as well; closed() runs once.
+            !live -> {
+                player.closeInventory()
+                closed(holder.contents)
+            }
         }
     }
 
